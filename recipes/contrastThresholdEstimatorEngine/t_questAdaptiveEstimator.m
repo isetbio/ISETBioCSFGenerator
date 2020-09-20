@@ -11,7 +11,7 @@ retina.visualizeMosaic();
 
 % estimate on the log contrast domain
 estDomain  = -5 : 0.025 : 0;
-slopeRange = 0.1 : 0.5 : 100;
+slopeRange = 0.1 : 0.5 : 50;
 
 observer = PoissonTemplateObserver(retina, display.CRT12BitDisplay, 'L+M+S', 1);
 
@@ -134,3 +134,44 @@ fprintf('%d trials recorded, (log) threshold estimate: %.2f +/- %.2f \n', estima
 [threshold, para] = estimator.thresholdMLE('showPlot', true);
 fprintf('Maximum likelihood fit parameters: %0.1f, %0.1f, %0.1f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
+
+
+%% CSF
+spatialFreq = [0.25, 0.5, 1, 2, 4, 6, 8, 10, 15, 20];
+threshold = zeros(1, length(spatialFreq));
+
+for idx = 1:length(spatialFreq)
+    threshold(idx) = adaptiveQUEST(retina, display.CRT12BitDisplay, spatialFreq, estDomain, slopeRange);
+end
+
+%% helper function
+function threshold = adaptiveQUEST(retina, display, spatialFreq, estDomain, slopeRange)
+observer = PoissonTemplateObserver(retina, display, 'L+M+S', spatialFreq);
+
+% Multiple QUEST+ object for adaptive procedure
+estimator = QuestThresholdEstimator('minTrial', 64, 'maxTrial', 512, 'stopCriterion', 0.025, ...
+    'estDomain', estDomain, 'numEstimator', 3, 'slopeRange', slopeRange);
+
+[crst, flag] = estimator.nextStimulus();
+while (flag)
+    
+    % log contrast -> contrast
+    stimCrst = 10 ^ crst;
+    
+    % code for scene engine, neural engine, and classifier engine
+    % here we combined them in the Observer class object
+    response = observer.singleTrial(stimCrst) + 1;
+    
+    [crst, flag] = estimator.singleTrial(crst, response);
+    
+    % [threshold, stderr] = estimator.thresholdEstimate();    
+    % fprintf('Trial count: %d, threshold estimate: %.3f, stderr: %.3f \n', estimator.nTrial, threshold, stderr);
+end
+
+% Show results
+fprintf('%d trials recorded \n', estimator.nTrial);
+
+[threshold, para] = estimator.thresholdMLE('showPlot', true);
+fprintf('Maximum likelihood fit parameters: %0.1f, %0.1f, %0.1f, %0.2f\n', ...
+    para(1), para(2), para(3), para(4));
+end
