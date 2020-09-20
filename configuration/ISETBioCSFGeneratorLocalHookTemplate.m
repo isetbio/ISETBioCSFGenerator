@@ -1,8 +1,7 @@
-% ISETbioAdaPEELocalHook
+% ISETCSFGeneratorLocalHook
 %
-% Template for setting preferences for the ISETbio Adaptive Performance
-% Estimator Engine toolbox
-
+% Template for setting preferences for the ISETBio CSF Generator Toolbox
+%
 % 9/20/2020  npc    Wrote it.
 
 %% Clear prefs
@@ -11,7 +10,9 @@
 if (ispref('ISETbioAdaPEE'))
     rmpref('ISETbioAdaPEE');
 end
-
+if (ispref('ISETBioCSFGenerator'))
+    rmpref('ISETBioCSFGenerator');
+end
 
 % Root dir
-setpref('ISETbioAdaPEE','recipesDir',fullfile(tbLocateToolbox('ISETbioAdaPEE'),'recipes'));
+setpref('ISETBioBioCSFGenerator','recipesDir',fullfile(tbLocateToolbox('ISETBioCSFGenerator'),'recipes'));
