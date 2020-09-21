@@ -65,7 +65,7 @@ function imageStim = getStimulusCSF(stimType, stimCrst, stimFreq)
     test.spatialModulationParams = getModulationParamsForStimType(stimType, stimCrst, stimFreq);
             
     % Stimulus field of view
-    fieldOfViewDegs = 1;
+    fieldOfViewDegs = 4;
     
     % Presentation display
     presentationDisplay = generatePresentationDisplay(); 

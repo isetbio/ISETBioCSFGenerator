@@ -209,6 +209,7 @@ classdef QuestThresholdEstimator < ContrastThresholdEstimator
             p = inputParser;
             p.addParameter('showPlot',  false);
             p.addParameter('newFigure', false);
+            p.addParameter('pointSize', 25);
             parse(p, varargin{:});
             
             if p.Results.showPlot
@@ -219,7 +220,7 @@ classdef QuestThresholdEstimator < ContrastThresholdEstimator
                 for idx = 1:length(stimVal)
                     prop = responseVec(stimVec == stimVal(idx));
                     
-                    scatter(stimVal(idx), sum(prop) / length(prop), 2.5e3 / length(stimVec) * length(prop), ...
+                    scatter(stimVal(idx), sum(prop) / length(prop), p.Results.pointSize * 100 / length(stimVec) * length(prop), ...
                         'MarkerEdgeColor', zeros(1, 3), 'MarkerFaceColor', ones(1, 3) * 0.5, 'MarkerFaceAlpha', 0.5);
                     hold on;
                 end
@@ -230,7 +231,10 @@ classdef QuestThresholdEstimator < ContrastThresholdEstimator
                 plot(stimSpace, fitCurve(:, 2), '-', 'Color', [1.0 0.2 0.0], 'LineWidth', 3);
                 
                 xlim([min(this.estDomain), max(this.estDomain)]);
+                xlabel('Contrast');
+                
                 ylim([0, 1]);
+                ylabel('P Correct');
             end
             
         end
