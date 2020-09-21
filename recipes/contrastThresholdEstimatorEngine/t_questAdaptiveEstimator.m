@@ -177,12 +177,12 @@ function threshold = QUEST(retina, display, spatialFreq, estDomain, slopeRange, 
 observer = PoissonTemplateObserver(retina, display, 'L+M+S', spatialFreq);
 
 % Run 100 trials
-estimator = QuestThresholdEstimator('minTrial', 160, 'maxTrial', 1024, 'stopCriterion', 0.05, ...
+estimator = QuestThresholdEstimator('minTrial', 120, 'maxTrial', 1024, 'stopCriterion', 0.05, ...
     'estDomain', estDomain, 'numEstimator', 1, 'slopeRange', slopeRange);
 
 [crst, flag] = estimator.nextStimulus();
-% 16 trial for each contrast level
-nRepeat = 16;
+% 12 trial for each contrast level
+nRepeat = 12;
 while (flag)
     
     % log contrast -> contrast
