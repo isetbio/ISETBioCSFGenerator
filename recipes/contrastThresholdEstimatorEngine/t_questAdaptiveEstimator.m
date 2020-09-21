@@ -176,13 +176,13 @@ function threshold = QUEST(retina, display, spatialFreq, estDomain, slopeRange, 
 
 observer = PoissonTemplateObserver(retina, display, 'L+M+S', spatialFreq);
 
-% Run 100 trials
-estimator = QuestThresholdEstimator('minTrial', 120, 'maxTrial', 1024, 'stopCriterion', 0.05, ...
+estimator = QuestThresholdEstimator('minTrial', 100, 'maxTrial', 1024, 'stopCriterion', 0.05, ...
     'estDomain', estDomain, 'numEstimator', 1, 'slopeRange', slopeRange);
 
 [crst, flag] = estimator.nextStimulus();
-% 12 trial for each contrast level
-nRepeat = 12;
+
+% 10 trial for each contrast level
+nRepeat = 10;
 while (flag)
     
     % log contrast -> contrast
@@ -201,7 +201,7 @@ fprintf('%d trials recorded \n', estimator.nTrial);
 
 subplot(3, 3, figIdx);
 % title(sprintf('spatial frequency: %.2f cyc/deg \n', spatialFreq * 2));
-[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 10);
+[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 8);
 
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
