@@ -1,4 +1,4 @@
-classdef QuestThresholdEstimator < ContrastThresholdEstimator
+classdef QuestThresholdEngine < ContrastThresholdEngine
     %QuestThresholdEstimator  Adaptive contrast threshold estimation procedure
     % based on the QUEST+ routine. The class maintain an array of questData
     % ojbect and loop through them sequentially. A stop criterion can be
@@ -76,9 +76,9 @@ classdef QuestThresholdEstimator < ContrastThresholdEstimator
     methods
         
         % Constructor method
-        function this = QuestThresholdEstimator(varargin)
+        function this = QuestThresholdEngine(varargin)
             
-            this@ContrastThresholdEstimator(varargin{:});
+            this@ContrastThresholdEngine(varargin{:});
             
             p = inputParser;
             p.KeepUnmatched = true;
