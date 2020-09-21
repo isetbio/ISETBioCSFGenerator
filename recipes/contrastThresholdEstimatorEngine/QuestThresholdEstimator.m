@@ -207,11 +207,14 @@ classdef QuestThresholdEstimator < ContrastThresholdEstimator
             threshold = para(1);
             
             p = inputParser;
-            p.addParameter('showPlot', false);
+            p.addParameter('showPlot',  false);
+            p.addParameter('newFigure', false);
             parse(p, varargin{:});
             
             if p.Results.showPlot
-                figure();
+                if p.Results.newFigure
+                    figure();
+                end
                 stimVal = unique(stimVec);
                 for idx = 1:length(stimVal)
                     prop = responseVec(stimVec == stimVal(idx));
@@ -225,6 +228,9 @@ classdef QuestThresholdEstimator < ContrastThresholdEstimator
                 
                 fitCurve = qpPFWeibull(stimSpace', para);
                 plot(stimSpace, fitCurve(:, 2), '-', 'Color', [1.0 0.2 0.0], 'LineWidth', 3);
+                
+                xlim([min(this.estDomain), max(this.estDomain)]);
+                ylim([0, 1]);
             end
             
         end

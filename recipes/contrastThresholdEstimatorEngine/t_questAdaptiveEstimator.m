@@ -10,8 +10,8 @@ retina = ConeResponse('eccBasedConeDensity', true, 'eccBasedConeQuantal', true, 
 retina.visualizeMosaic();
 
 % estimate on the log contrast domain
-estDomain  = -5 : 0.025 : 0;
-slopeRange = 0.1 : 0.5 : 50;
+estDomain  = -6 : 0.025 : 0;
+slopeRange = 0.1 : 1 : 100;
 
 observer = PoissonTemplateObserver(retina, display.CRT12BitDisplay, 'L+M+S', 1);
 
@@ -137,22 +137,79 @@ fprintf('Maximum likelihood fit parameters: %0.1f, %0.1f, %0.1f, %0.2f\n', ...
 
 
 %% CSF
-spatialFreq = [0.25, 0.5, 1, 2, 4, 6, 8, 10, 15, 20];
+plotlabOBJ = plotlab();
+%    
+% Apply the default plotlab recipe 
+% overriding just the figure size
+plotlabOBJ.applyRecipe(...
+  'figureWidthInches', 10, ...
+  'figureHeightInches', 10);
+
+spatialFreq = [1, 2, 4, 8, 12, 16, 20, 30, 40];
 threshold = zeros(1, length(spatialFreq));
 
+figure();
 for idx = 1:length(spatialFreq)
-    threshold(idx) = adaptiveQUEST(retina, display.CRT12BitDisplay, spatialFreq, estDomain, slopeRange);
+    threshold(idx) = adaptiveQUEST(retina, display.CRT12BitDisplay, spatialFreq(idx), estDomain, slopeRange, idx);
 end
 
+%% Plot CSF
+figure();
+crstThreshold = 10 .^ threshold;
+plot(spatialFreq * 2, log(1 ./ crstThreshold), '-ok', 'LineWidth', 2);
+box off;
+
+ytickVal = yticks();
+yticklabels(floor(exp(ytickVal)));
+
+xlabel('Spatial Frequency');
+ylabel('Sensitivity');
+
 %% helper function
-function threshold = adaptiveQUEST(retina, display, spatialFreq, estDomain, slopeRange)
+function threshold = adaptiveQUEST(retina, display, spatialFreq, estDomain, slopeRange, figIdx)
+
 observer = PoissonTemplateObserver(retina, display, 'L+M+S', spatialFreq);
 
 % Multiple QUEST+ object for adaptive procedure
-estimator = QuestThresholdEstimator('minTrial', 64, 'maxTrial', 512, 'stopCriterion', 0.025, ...
+estimator = QuestThresholdEstimator('minTrial', 80, 'maxTrial', 256, 'stopCriterion', 0.05, ...
+    'estDomain', estDomain, 'numEstimator', 3, 'slopeRange', slopeRange);
+
+[nextCrst, nextFlag] = estimator.nextStimulus();
+while (nextFlag)
+    
+    % log contrast -> contrast
+    stimCrst = 10 ^ nextCrst;
+    
+    % code for scene engine, neural engine, and classifier engine
+    % here we combined them in the Observer class object
+    response = observer.singleTrial(stimCrst) + 1;
+    
+    [nextCrst, nextFlag] = estimator.singleTrial(nextCrst, response);
+end
+
+% Show results
+fprintf('%d trials recorded \n', estimator.nTrial);
+
+subplot(3, 3, figIdx);
+% title(sprintf('spatial frequency: %.2f cyc/deg \n', spatialFreq * 2));
+[threshold, para] = estimator.thresholdMLE('showPlot', true);
+
+fprintf('Maximum likelihood fit parameters: %0.1f, %0.1f, %0.1f, %0.2f\n', ...
+    para(1), para(2), para(3), para(4));
+
+end
+
+function threshold = adaptiveQUEST_mul(retina, display, spatialFreq, estDomain, slopeRange, figIdx)
+
+observer = PoissonTemplateObserver(retina, display, 'L+M+S', spatialFreq);
+
+% Multiple QUEST+ object for adaptive procedure
+estimator = QuestThresholdEstimator('minTrial', 256, 'maxTrial', 4096, 'stopCriterion', 0.025, ...
     'estDomain', estDomain, 'numEstimator', 3, 'slopeRange', slopeRange);
 
 [crst, flag] = estimator.nextStimulus();
+% 32 trial for each contrast level
+nRepeat = 32;
 while (flag)
     
     % log contrast -> contrast
@@ -160,18 +217,23 @@ while (flag)
     
     % code for scene engine, neural engine, and classifier engine
     % here we combined them in the Observer class object
-    response = observer.singleTrial(stimCrst) + 1;
+    [~, response] = observer.multiTrial(stimCrst, nRepeat);
+    response = response + 1;
     
-    [crst, flag] = estimator.singleTrial(crst, response);
+    [crst, flag] = estimator.multiTrial(crst * ones(1, nRepeat), response);
     
-    % [threshold, stderr] = estimator.thresholdEstimate();    
+    % [threshold, stderr] = estimator.thresholdEstimate();
     % fprintf('Trial count: %d, threshold estimate: %.3f, stderr: %.3f \n', estimator.nTrial, threshold, stderr);
 end
 
 % Show results
 fprintf('%d trials recorded \n', estimator.nTrial);
 
+subplot(3, 3, figIdx);
+% title(sprintf('spatial frequency: %.2f cyc/deg \n', spatialFreq * 2));
 [threshold, para] = estimator.thresholdMLE('showPlot', true);
+
 fprintf('Maximum likelihood fit parameters: %0.1f, %0.1f, %0.1f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
+
 end
