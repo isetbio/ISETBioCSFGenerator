@@ -83,7 +83,7 @@ function t_testNeuralResponseCompute
 end
 
 function renderNeuralResponseSequence(theResponseSequence, theResponseTemporalSupportSeconds)
-    figure(2);
+    figure(2); clf;
     meanResponse = squeeze(mean(theResponseSequence,1));
     cellsNum = size(meanResponse ,1);
     imagesc(theResponseTemporalSupportSeconds, 1:cellsNum, meanResponse);
