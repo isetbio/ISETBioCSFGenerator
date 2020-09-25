@@ -16,6 +16,9 @@ classdef neuralResponseEngine < handle
         
         % The coneMosaic - generated and returned by the user-supplied function
         theConeMosaic = [];
+        
+        % Valid noise flags
+        validNoiseFlags = {'none', 'random'};
     end
     
     % Public methods
@@ -30,24 +33,22 @@ classdef neuralResponseEngine < handle
         end
         
         % Compute method
-        function [theNeuralResponse, temporalSupportSeconds] = compute(obj, theSceneSequence, theSceneTemporalSupportSeconds, instancesNum)
-            % Recompute the scene for the new scene contrast
-            [theNeuralResponse, temporalSupportSeconds, theOptics, theConeMosaic] = obj.neuralComputeFunction(...
-                obj, obj.neuralParams, theSceneSequence, theSceneTemporalSupportSeconds, instancesNum);
-     
-            % Save the optics and the cone mosaics - to be re-used if more
-            % computations are requested
-            obj.theOptics = theOptics;
-            obj.theConeMosaic = theConeMosaic;
-            
+        function [theNeuralResponses, temporalSupportSeconds] = compute(obj, ...
+                theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin)
+            % Call the user-supplied compute function
+            [theNeuralResponses, temporalSupportSeconds, obj.theOptics, obj.theConeMosaic] = obj.neuralComputeFunction(...
+                obj, obj.neuralParams, theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin{:});
         end
+        
+        % Method to validate the passed noiseFlags
+        validateNoiseFlags(obj,noiseFlags);
     end
     
     % Private methods
     methods (Access = private)
         % Method to validate and set the scene compute function handle
         validateAndSetComputeFunctionHandle(obj,sceneComputeFunctionHandle);
-        % % Method to validate and set the scene params struct
+        % Method to validate and set the scene params struct
         validateAndSetParamsStruct(obj,sceneParamsStruct);
     end
     

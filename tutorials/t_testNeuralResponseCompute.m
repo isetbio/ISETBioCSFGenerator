@@ -71,23 +71,42 @@ function t_testNeuralResponseCompute
 
     % Compute 8 instances of neural responses to the input scene sequence
     instancesNum = 8;
-    [theIsomerizationsSequence, theIsomerizationsTemporalSupportSeconds] = ...
-        theNeuralEngine.compute(theSceneSequence, theSceneTemporalSupportSeconds, instancesNum);
+    % Types of noise for thr computed responses
+    % This has to be a cell array list with valid entries: {'none', 'random', 'rngSeed_someInt'}
+    noiseFlags = {'rNgSeed345', 'rNgSeed345', 'rNgSeed346', 'random', 'none'};
+    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
+            theSceneSequence, ...
+            theSceneTemporalSupportSeconds, ...
+            instancesNum, ...
+            'noiseFlags', noiseFlags ...
+            );
+    
 
-    % Visualize result
+    % Visualize all responses computes (different figures for different
+    % noise flags)
     debugNeuralResponseGeneration = true;
     if (debugNeuralResponseGeneration)
-        renderNeuralResponseSequence(theIsomerizationsSequence, theIsomerizationsTemporalSupportSeconds);
+        for idx = 1:length(noiseFlags)
+            renderNeuralResponseSequence(idx, theResponses(noiseFlags{idx}), theResponseTemporalSupportSeconds, noiseFlags{idx});
+        end
     end
     
 end
 
-function renderNeuralResponseSequence(theResponseSequence, theResponseTemporalSupportSeconds)
-    figure(2); clf;
+function renderNeuralResponseSequence(figNo, theResponseSequence, theResponseTemporalSupportSeconds, titleLabel)
+    figure(figNo); clf;
     meanResponse = squeeze(mean(theResponseSequence,1));
     cellsNum = size(meanResponse ,1);
+    subplot(1,2,1);
+    imagesc(theResponseTemporalSupportSeconds, 1:cellsNum, squeeze(theResponseSequence(1,:,:)));
+    xlabel('time (sec)');
+    ylabel('cells');
+    title(sprintf('1st response instance (%s)', titleLabel));
+    
+    subplot(1,2,2);
     imagesc(theResponseTemporalSupportSeconds, 1:cellsNum, meanResponse);
     xlabel('time (sec)');
     ylabel('cells');
+    title(sprintf('mean response (%s)', titleLabel));
     colormap(gray);
 end
