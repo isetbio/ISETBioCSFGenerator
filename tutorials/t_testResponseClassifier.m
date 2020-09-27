@@ -31,50 +31,43 @@ function t_testResponseClassifier
     % Configure the function handle and the params for the @sceneGenerationEngine
     sceneComputeFunction = @uniformFieldTemporalModulation;
 
+    % Instantiate a sceneGenerationEngine with the above sceneComputeFunctionHandle
+    % No sceneParams passed, so we are using the default params specified
+    % in the sceneComputeFunction
+    theSceneEngine = sceneEngine(sceneComputeFunction);
+    
     % Configure the function handle and the params for the @neuralResponseEnginey
     neuralComputeFunction = @photopigmentExcitationsWithNoEyeMovements;
 
-
-    % =======  RESPONSE CLASSIFIER PARAMS  ======= 
-    % Configure the function handle and the params for the @responseClassifierEngine
-    % This is a function that the USER has to supply
-    classifierComputeFunction = @pcaSVMClassifier;
-    % This is a struct that the USER has to supply and which is to work
-    % with the user-supplied function handle
-    customClassifierParams = struct(...
-        'PCAComponentsNum', 2, ...
-        'taskIntervals', 2, ...
-        'classifierType', 'svm', ...
-        'kernelFunction', 'linear', ...
-        'crossValidationFoldsNum', 10);
-    
-    
-    % STEP 0. Instantiate the engines
-
-    % Instantiate a sceneGenerationEngine with the above sceneComputeFunctionHandle and sceneParams
-    theSceneEngine = sceneEngine(sceneComputeFunction);
-    
-    % Instantiate a neuralResponseEngine with the desired neural response params
+    % Instantiate a neuralResponseEngine. No responseParams passed, so we
+    % are using the default params specified in the neuralComputeFunction
     theNeuralEngine = neuralResponseEngine(neuralComputeFunction);
     
-    % Instantiate a responseClassifierEngine with the above classifierComputeFunctionHandle and classifierParams
-    theClassifierEngine = responseClassifierEngine(classifierComputeFunction, customClassifierParams);
+    % User-supplied computeFunction for the @responseClassifierEngine
+    classifierComputeFunction = @pcaSVMClassifier;
+    % User-supplied struct with params appropriate for the @responseClassifierEngine computeFunction
+    customClassifierParams = struct(...
+        'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
+        'taskIntervals', 2, ...             % simulate a 2-interval task
+        'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
+        'kernelFunction', 'linear', ...     % linear
+        'classifierType', 'svm' ...         % binary SVM classifier
+        );
    
-    
-    % STEP 1. Generate the NULL and TEST stimulus scene sequences
-    
-    % The NULL stimulus scene
+    % Instantiate a responseClassifierEngine with the above classifierComputeFunctionHandle and custom classifierParams
+    theClassifierEngine = responseClassifierEngine(classifierComputeFunction);
+   
+    % Generate the NULL stimulus sequence
     nullContrast = 0.0;
     % Compute the TEST stimulus
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
-    % The TEST stimulus scene
+    % Generate the TEST stimulus sequence
     testContrast = 0.7/100;
     % Compute the TEST stimulus
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
-    
-    % Step 2. Compute NULL and TEST response data for training the classifier
+    % Compute respose instances to the NULL and TEST stimuli for training the classifier
     trainingInstancesNum = 256;
     
     [inSampleNullStimResponses, theIsomerizationsTemporalSupportSeconds] = ...
@@ -89,18 +82,19 @@ function t_testResponseClassifier
         trainingInstancesNum, ...
         'noiseFlags', {'random'});
 
-    
-    % Step 3. Train the classifier on the inSample responses
-    trainingData = theClassifierEngine.compute(...
+    % Train the binary classifier on the above NULL/TEST response set
+    trainingData = theClassifierEngine.compute('train',...
         inSampleNullStimResponses('random'), ...
-        inSampleTestStimResponses('random'), ...
-        'train');
+        inSampleTestStimResponses('random'));
     
+    % Test predictions of the trained classifier on 10 out of sample
+    % response instance at a time
+    outOfSampleInstancesNum = 1;
+    outOfSampleInstancesNum = max([outOfSampleInstancesNum theClassifierEngine.classifierParams.taskIntervals]);
     
-    outOfSampleInstancesNum = 2;
-    
+    % Repeat out-of-sample predictions a total of 100 times
     for trial = 1:100
-        % Step 4. Compute NULL and TEST response data for testing the classifier
+        % Compute new respose instances to the NULL and TEST stimuli
         outOfSampleNullStimResponses = theNeuralEngine.compute(...
             theNullSceneSequence, ...
             theSceneTemporalSupportSeconds, ...
@@ -113,17 +107,18 @@ function t_testResponseClassifier
             outOfSampleInstancesNum, ...
             'noiseFlags', {'random'});
 
-        predictedData = theClassifierEngine.compute(...
+        % Run the classifier on the new response instances
+        predictedData = theClassifierEngine.compute('predict',...
             outOfSampleNullStimResponses('random'), ...
-            outOfSampleTestStimResponses('random'), ...
-            'predict');
+            outOfSampleTestStimResponses('random'));
 
-        % Visualize
-         debugClassifier = true;
-         if (debugClassifier)
+        % Visualize the classifier performance on the in-sample (training) and 
+        % the out of sample responses
+        debugClassifier = true;
+        if (debugClassifier)
              plotClassifierResults(theClassifierEngine.classifierParams, trainingData, predictedData);
              drawnow;
-         end
+        end
    end
         
 end

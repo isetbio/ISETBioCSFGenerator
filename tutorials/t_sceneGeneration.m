@@ -30,10 +30,9 @@ function t_sceneGeneration
 %    09/21/2020  NPC  Wrote it.
 
     % Configure the function handle and the params for the @sceneEngine
-    % This is a function that the USER has to supply
+    % User supplied compute function
     sceneComputeFunction = @uniformFieldTemporalModulation;
-    % This is a struct that the USER has to supply and which is to work
-    % with the user-supplied function handle
+    % User supplied struct with params appropriate for the @sceneEngine sceneComputeFunction
     customSceneParams = struct(...
         'fovDegs', 0.25, ...                        % 0.25 degs across
         'meanLuminanceCdPerM2', 100, ...            % 100 cd/m2 mean luminance
@@ -43,7 +42,8 @@ function t_sceneGeneration
         'sizePixels', 64 ...                        % 64 x 64 pixels
     );
 
-    % Instantiate a sceneEngine with the above sceneComputeFunctionHandle and the custom scene params
+    % Instantiate a sceneEngine with the above sceneComputeFunctionHandle 
+    % and the custom scene params
     theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
     
     % Specify a pedestal luminance with 70% contrast

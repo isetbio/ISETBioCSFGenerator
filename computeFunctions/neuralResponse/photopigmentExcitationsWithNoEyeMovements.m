@@ -118,12 +118,9 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
     randomNoiseResponseInstances = theResponses('random');
 %}
 
-    % Default params for this compute function
-    defaultNeuralResponseParams = generateDefaultParams();
-
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
-        dataOut = defaultNeuralResponseParams;
+        dataOut = generateDefaultParams();
         return;
     end
     

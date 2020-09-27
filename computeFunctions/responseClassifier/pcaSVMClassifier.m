@@ -1,43 +1,37 @@
-function dataOut = pcaSVMClassifier(classifierOBJ, theNULLResponses, theTESTResponses, classifierParams, operationMode)
-
-    % Default params for this compute function
-    defaultClassifierParams = generateDefaultParams();
+function dataOut = pcaSVMClassifier(classifierOBJ, operationMode, theNULLResponses, theTESTResponses, classifierParams)
 
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
-        dataOut = defaultClassifierParams;
+        % Default params for this compute function
+        dataOut = generateDefaultParams();
         return;
     end
     
     % Feature assembly phase
     [features, classLabels] = computeFeatures(classifierParams, theNULLResponses, theTESTResponses);
-    
-    % Feature dimensionality reduction phase
+    size(features)
+    pause
+    % Feature preprocessing analysis
     if (strcmp(operationMode, 'train'))
-        % Pre-processing: standardizing
-        % Determine centering and scaling constants
+        % Compute pre-processing constants: centering/scaling factor
         m = mean(features,1);
         s = std(features,1,1);
-        % Standardize
-        features = bsxfun(@times, bsxfun(@minus, features, m), 1./s);
-
-        % Pre-processing: projection to PC space
         % Determine PCs
         principalComponents = pca(features,'NumComponents', classifierParams.PCAComponentsNum);
-        % Project all responses to the space defined by the first classifierParams.PCAComponentsNum
-        features = features * principalComponents;
     else
-        % Pre-processing: standardizing using the centering/scaling
-        % constants derived during the training phase
+        % Retrieve pre-processing constants and PCs derived during the training phase
         m = classifierOBJ.preProcessingConstants.centering;
         s = classifierOBJ.preProcessingConstants.scaling;
-        features = bsxfun(@times, bsxfun(@minus, features, m), 1./s);
-        
-        % Pre-processing: projection to PC space using the PC's derived during the training phase
-        features = features * classifierOBJ.preProcessingConstants.principalComponents;    
+        principalComponents = classifierOBJ.preProcessingConstants.principalComponents; 
     end
 
-    % Classification phase
+    % Standardize features
+    features = bsxfun(@times, bsxfun(@minus, features, m), 1./s);
+        
+    % Feature dimensionality reduction via projection to the space defined by the first classifierParams.PCAComponentsNum
+    features = features * principalComponents;
+        
+    % Classify
     if (strcmp(operationMode, 'train'))
         % Train an SVM classifier on the data
         [trainedSVM, pCorrectInSample, decisionBoundary] = classifierTrain(classifierParams, features, classLabels);
@@ -76,10 +70,10 @@ function [compactSVMModel, pCorrectInSample, decisionBoundary] = classifierTrain
      svmModel = fitcsvm(features, classLabels, ...
                 'KernelFunction', classifierParams.kernelFunction);
             
-     % Cross-validate the SVM
+     % Cross-validate the SVM yp obtain pCorrect for the in-Sample data
      crossValidatedSVM = crossval(svmModel,'KFold', classifierParams.crossValidationFoldsNum);
      
-     % Compute percent correct
+     % Compute pCorrect via cross-validation
      percentCorrect = 1 - kfoldLoss(crossValidatedSVM,'lossfun','classiferror','mode','individual');
      stdErr = std(percentCorrect)/sqrt(classifierParams.crossValidationFoldsNum);
      pCorrectInSample = mean(percentCorrect);
@@ -125,25 +119,28 @@ function [features, classLabels] = computeFeatures(classifierParams, theNULLResp
         features = zeros(2*nTrials, responseSize);
         classLabels = zeros(2*nTrials, 1);
         
-        % Class 1 data and labels
+        % Class 0 data are the null response data
         features(1:nTrials,:) = theNULLResponses;
         classLabels(1:nTrials,1) = 0;
         
-        % Class 2 data and labels
+        % Class 0 data are the test response data
         features(nTrials+(1:nTrials),:) = theTESTResponses;
         classLabels(nTrials+(1:nTrials),1) = 1;
     else
-        features = zeros(nTrials, 2*responseSize);
-        classLabels = zeros(nTrials, 1);
         halfTrials = floor(nTrials/2);
+        if (halfTrials<1)
+            error('For a 2-interval classifier, we need at least 2 trials');
+        end
+        features = zeros(2*halfTrials, 2*responseSize);
+        classLabels = zeros(2*halfTrials, 1);
         
-        % Class 1 data and labels
+        % Class 0 data contain the null responses in the 1st interval
         features(1:halfTrials,:) = cat(2, ...
             theNULLResponses(1:halfTrials,:), ...
             theTESTResponses(1:halfTrials,:));
         classLabels(1:halfTrials,1) = 0;
         
-        % Class 2 data and labels
+        % Class 1 data contain the null responses in the 2nd interval
         features(halfTrials+(1:halfTrials),:) = cat(2, ...
             theTESTResponses(halfTrials+(1:halfTrials),:), ...
             theNULLResponses(halfTrials+(1:halfTrials),:));

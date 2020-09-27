@@ -65,13 +65,10 @@ function dataOut = uniformFieldTemporalModulation(testContrast,sceneParamsStruct
         theSceneEngineOBJ.compute(testContrast);
     
 %}
-
-    % Default params for this compute function
-    defaultSceneParams = generateDefaultParams();
-
+`
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
-        dataOut = defaultSceneParams;
+        dataOut = generateDefaultParams();
         return;
     end
     
