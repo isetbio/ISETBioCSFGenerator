@@ -28,16 +28,36 @@ classdef neuralResponseEngine < handle
             % Validate and set the scene compute function handle
             obj.validateAndSetComputeFunctionHandle(neuralComputeFunctionHandle);
             
-            % Validate and set the scene params
+            % If we dont receice a paramsStruct as the second argument use
+            % the default params returned by the
+            % neuralComputeFunctionHandle
+            if (nargin == 1)
+                neuralResponseParamsStruct = obj.neuralComputeFunction();
+            end
+             
+            % Validate and set the scene params struct
             obj.validateAndSetParamsStruct(neuralResponseParamsStruct);
         end
         
         % Compute method
-        function [theNeuralResponses, temporalSupportSeconds] = compute(obj, ...
+        function [neuralResponses, temporalSupportSeconds] = compute(obj, ...
                 theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin)
             % Call the user-supplied compute function
-            [theNeuralResponses, temporalSupportSeconds, obj.theOptics, obj.theConeMosaic] = obj.neuralComputeFunction(...
-                obj, obj.neuralParams, theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin{:});
+            dataOut = obj.neuralComputeFunction(obj, obj.neuralParams, theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin{:});
+            
+            % Parse dataOut struct
+            neuralResponses = dataOut.neuralResponses;
+            temporalSupportSeconds = dataOut.temporalSupport;
+            
+            % Set out optics and coneMosaic properties for future
+            % computations
+            if (isfield(dataOut, 'theOptics'))
+                obj.theOptics = dataOut.theOptics;
+            end
+            if (isfield(dataOut, 'theConeMosaic'))
+                obj.theConeMosaic = dataOut.theConeMosaic;
+            end
+             
         end
         
         % Method to validate the passed noiseFlags

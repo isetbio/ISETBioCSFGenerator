@@ -1,5 +1,13 @@
 function validateAndSetParamsStruct(obj, paramsStruct)
     
+    % Accept an empty params struct
+    if (isempty(paramsStruct))
+        % Set the neuralParams to the default params struct, which is returned
+        % by the neuralComputeFunction when it is called with no input arguments
+        obj.neuralParams = obj.neuralComputeFunction();
+        return;
+    end
+    
     % Assert that the input is a struct
     assert(isstruct(paramsStruct), ...
         'Expected a struct during neuralResponseEngine instantiation');

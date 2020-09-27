@@ -10,23 +10,48 @@ classdef responseClassifierEngine < handle
         classifierComputeFunction
         % User-passed struct with all classifier computation params
         classifierParams
+        
+        % The trained classifier
+        trainedClassifier = [];
+        
+        % Preprocessing params from training dataset
+        preProcessingConstants = [];
+        
+        % Valid modes of operation
+        validOperationModes = {'train', 'predict'};
     end
     
     % Public methods
     methods
         % Constructor
         function obj = responseClassifierEngine(classifierComputeFunctionHandle, classifierParamsStruct)
-            % Validate and set the scene compute function handle
+            % Validate and set the classifier compute function handle
             obj.validateAndSetComputeFunctionHandle(classifierComputeFunctionHandle);
             
-            % Validate and set the scene params
+            % If we dont receice a paramsStruct as the second argument use
+            % the default params returned by the
+            % classifierComputeFunctionHandle
+            if (nargin == 1)
+                classifierParamsStruct = obj.classifierComputeFunction();
+            end
+            
+            % Validate and set the classifier params
             obj.validateAndSetParamsStruct(classifierParamsStruct);
         end
         
         % Compute method
-        function [pCorrect, classificationData, decisionBoundary] = compute(obj, nullResponses, testResponses)
-            % Run the classifier for these null and test responses
-            [pCorrect, classificationData, decisionBoundary] = obj.classifierComputeFunction(obj.classifierParams, nullResponses, testResponses);
+        function dataOut = compute(obj, nullResponses, testResponses, operationMode)
+            % Validate the operationMode
+            assert(ismember(operationMode, obj.validOperationModes), sprintf('The passed responseClassifierEngine.compute() ''%s'' is invalid.', operationMode));
+            
+            % Call the user-supplied compute function
+            dataOut = obj.classifierComputeFunction(obj,nullResponses, testResponses, obj.classifierParams, operationMode);
+        
+            % Set the trainedClassifier property for future predictions
+            if (isfield(dataOut, 'trainedClassifier'))
+                obj.trainedClassifier = dataOut.trainedClassifier;
+                obj.preProcessingConstants = dataOut.preProcessingConstants;
+            end
         end
     end
     

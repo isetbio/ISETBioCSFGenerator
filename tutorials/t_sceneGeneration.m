@@ -1,13 +1,17 @@
-function t_testSceneGeneration
-% How to generate a simple scene sequence using @sceneGenerationEngine objects
+function t_sceneGeneration
+% How the @sceneEngine object to generate a simple scene sequence
 %
 % Syntax:
-%    t_testSceneGeneration
+%    t_sceneGeneration
 %
 % Description:
 %    Demonstrates how to generate a stimulus sequence using a
-%    @sceneGeneration object. The scene represents a uniform field whose
-%    luminance is stepped up during some interval.
+%    @sceneEngine object and a scene compute function. The scene computed by
+%    the 'uniformFieldTemporalModulation' compute function is a uniform field whose
+%    luminance is stepped up during some interval. Here we are passing a
+%    custom scene params struct during instantiation of the @sceneEngine object.
+%    If no scene params struct were passed, the default scene params 
+%    defined in the 'uniformFieldTemporalModulation' compute function would be used.
 %
 % Inputs:
 %    None.
@@ -20,17 +24,17 @@ function t_testSceneGeneration
 %
 %
 % See Also:
-%   t_testNeuralResponseCompute
+%   t_neuralResponseCompute
 
 % History:
 %    09/21/2020  NPC  Wrote it.
 
-    % Configure the function handle and the params for the @sceneGenerationEngine
+    % Configure the function handle and the params for the @sceneEngine
     % This is a function that the USER has to supply
     sceneComputeFunction = @uniformFieldTemporalModulation;
     % This is a struct that the USER has to supply and which is to work
     % with the user-supplied function handle
-    sceneParams = struct(...
+    customSceneParams = struct(...
         'fovDegs', 0.25, ...                        % 0.25 degs across
         'meanLuminanceCdPerM2', 100, ...            % 100 cd/m2 mean luminance
         'frameDurationSeconds', 50/1000, ...        % 50 msec frame duration
@@ -39,8 +43,8 @@ function t_testSceneGeneration
         'sizePixels', 64 ...                        % 64 x 64 pixels
     );
 
-    % Instantiate a sceneGenerationEngine with the above sceneComputeFunctionHandle and sceneParams
-    theSceneEngine = sceneGenerationEngine(sceneComputeFunction, sceneParams);
+    % Instantiate a sceneEngine with the above sceneComputeFunctionHandle and the custom scene params
+    theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
     
     % Specify a pedestal luminance with 70% contrast
     testContrast = 0.7;

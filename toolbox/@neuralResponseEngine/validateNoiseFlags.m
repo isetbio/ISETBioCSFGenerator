@@ -1,5 +1,7 @@
 function validateNoiseFlags(obj,noiseFlags)
 
+    assert(iscell(noiseFlags), 'noiseFlags must be a cell array');
+    
     for idx = 1:length(noiseFlags)
         if ismember(ieParamFormat(noiseFlags{idx}), obj.validNoiseFlags)
             continue;

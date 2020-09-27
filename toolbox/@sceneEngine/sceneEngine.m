@@ -1,4 +1,4 @@
-classdef sceneGenerationEngine < handle
+classdef sceneEngine < handle
     %% Public properties
     properties
 
@@ -15,18 +15,29 @@ classdef sceneGenerationEngine < handle
     % Public methods
     methods
         % Constructor
-        function obj = sceneGenerationEngine(sceneComputeFunctionHandle, sceneParamsStruct)
+        function obj = sceneEngine(sceneComputeFunctionHandle, sceneParamsStruct)
             % Validate and set the scene compute function handle
             obj.validateAndSetComputeFunctionHandle(sceneComputeFunctionHandle);
             
-            % Validate and set the scene params
+            % If we dont receice a paramsStruct as the second argument use
+            % the default params returned by the sceneComputeFunctionHandle
+            if (nargin == 1)
+                sceneParamsStruct = obj.sceneComputeFunction();
+            end
+            
+            % Validate and set the scene params struct
             obj.validateAndSetParamsStruct(sceneParamsStruct);
         end
         
         % Compute method
         function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast)
-            % Recompute the scene for the new scene contrast
-            [theSceneSequence, temporalSupportSeconds] = obj.sceneComputeFunction(obj.sceneParams, sceneContrast);
+            % Call the user-supplied compute function
+            dataOut = obj.sceneComputeFunction(sceneContrast, obj.sceneParams);
+        
+            % Parse dataOut struct
+            theSceneSequence = dataOut.sceneSequence;
+            temporalSupportSeconds = dataOut.temporalSupport;
+            
         end
     end
     
