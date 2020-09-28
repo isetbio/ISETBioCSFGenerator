@@ -25,8 +25,8 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
 %       in response to the passed 'sceneSequence'.
 %
 % Inputs:
-%    neuralEngineOBJ                - the parent @neuralResponseEngine object,
-%                                     calling this function as its computeFunctionHandle
+%    neuralEngineOBJ                - the parent @neuralResponseEngine object that
+%                                     is calling this function as its computeFunctionHandle
 %    neuralResponseParamsStruct     - a struct containing properties of the
 %                                     employed neural chain.
 %    sceneSequence                  - a cell array of scenes defining the frames of a stimulus

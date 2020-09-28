@@ -1,4 +1,4 @@
-function t_testResponseClassifier
+function t_responseClassifier
 % Use the @responseClassifierEngine object to compute NULL/TEST discriminability 
 %
 % Syntax:
@@ -63,7 +63,7 @@ function t_testResponseClassifier
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
     % Generate the TEST stimulus sequence
-    testContrast = 0.7/100;
+    testContrast = 2/100;
     % Compute the TEST stimulus
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
@@ -89,7 +89,7 @@ function t_testResponseClassifier
     
     % Test predictions of the trained classifier on 10 out of sample
     % response instance at a time
-    outOfSampleInstancesNum = 1;
+    outOfSampleInstancesNum = 10;
     outOfSampleInstancesNum = max([outOfSampleInstancesNum theClassifierEngine.classifierParams.taskIntervals]);
     
     % Repeat out-of-sample predictions a total of 100 times
@@ -113,7 +113,12 @@ function t_testResponseClassifier
             outOfSampleTestStimResponses('random'));
 
         % Visualize the classifier performance on the in-sample (training) and 
-        % the out of sample responses
+        % the out of sample responses. Notice that the second component
+        % captures almost variance in the test data. Thats because the principal
+        % components are computed on the training data. In that data set the second
+        % component is capturing the noise. In the second data set, the
+        % second component captures almost zero variance because the noise component
+        % is different.
         debugClassifier = true;
         if (debugClassifier)
              plotClassifierResults(theClassifierEngine.classifierParams, trainingData, predictedData);
