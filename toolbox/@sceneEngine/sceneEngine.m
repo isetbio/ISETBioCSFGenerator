@@ -1,4 +1,36 @@
 classdef sceneEngine < handle
+% Define a sceneEngine class
+%
+% Syntax:
+%   theSceneEngine = sceneEngine(sceneComputeFunctionHandle, sceneParamsStruct)
+%
+% Description:
+%    The sceneEngine provides a unified way of generating scenes which are 
+%    identical in all aspects except for one parameter (contrast for now), 
+%    which is the parameter that we vary in order to obtain a detection
+%    threshold.
+%
+%
+% Inputs:
+%    sceneComputeFunctionHandle     - Function handle to the computeFunction that defines 
+%                                     the spatiotemporal aspects of the generated scene sequence
+%
+%    sceneParamsStruct              - Struct with parameters specific to the computeFunction. 
+%                                     Optional. If not defined, the default params
+%                                     defined in the computeFunction are used
+% Outputs:
+%    The created sceneEngine object.
+%
+% Optional key/value pairs: None
+%
+%
+% See Also:
+%    t_sceneGeneration.m, uniformFIeldTemporalModulation.m
+%
+
+% History:
+%    9/20/2020  NPC Wrote it
+
     %% Public properties
     properties
 

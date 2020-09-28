@@ -22,7 +22,7 @@ function dataOut = uniformFieldTemporalModulation(testContrast,sceneParamsStruct
 % Inputs:
 %    testContrast                - the contrast for the scene to be generated
 %                               
-%    sceneParamsStruct            - a struct containing properties of the scene
+%    sceneParamsStruct           - a struct containing properties of the scene
 %
 %
 % Optional key/value input arguments: none 
