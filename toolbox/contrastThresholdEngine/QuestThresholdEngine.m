@@ -117,6 +117,9 @@ classdef QuestThresholdEngine < ContrastThresholdEngine
         % Implement single trial and multi trial protocol
         function [nextCrst, nextFlag] = singleTrial(this, stim, response)
             
+            % Convert from {0, 1} to {1, 2} response encoding for QUEST procedure            
+            response = response + 1;
+            
             this.estimators{this.estIdx} = qpUpdate(this.estimators{this.estIdx}, stim, response);
             
             this.nTrial = this.nTrial + 1;

@@ -59,7 +59,7 @@ function t_responseClassifier
    
     % Generate the NULL stimulus sequence
     nullContrast = 0.0;
-    % Compute the TEST stimulus
+    % Compute the NULL stimulus
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
     % Generate the TEST stimulus sequence
