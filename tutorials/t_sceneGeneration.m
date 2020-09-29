@@ -79,6 +79,11 @@ function t_sceneGeneration
     % default parameters structure by calling
     % uniformFieldTemporalModulation without any arguments
     defaultSceneParams = uniformFieldTemporalModulation
+    
+    % You can also instantiate a scene generation object with the default
+    % parameters by not providing them:
+    theSceneEngine = sceneEngine(sceneComputeFunction);
+    theSceneEngine.sceneParams
 
 end
 
