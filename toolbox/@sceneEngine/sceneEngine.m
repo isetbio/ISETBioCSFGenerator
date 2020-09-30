@@ -62,15 +62,8 @@ classdef sceneEngine < handle
         end
         
         % Compute method
-        function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast)
-            % Call the user-supplied compute function
-            dataOut = obj.sceneComputeFunction(sceneContrast, obj.sceneParams);
+        [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast);
         
-            % Parse dataOut struct
-            theSceneSequence = dataOut.sceneSequence;
-            temporalSupportSeconds = dataOut.temporalSupport;
-            
-        end
     end
     
     % Private methods

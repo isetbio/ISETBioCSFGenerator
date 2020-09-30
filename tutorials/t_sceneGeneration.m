@@ -65,10 +65,15 @@ function t_sceneGeneration
     
     % Set a different parameters structure and generate a new sequence.
     % Here we lower the background luminance so everything looks darker,
-    % and change the temporal sequence of the modulation.
+    % and change the temporal sequence of the modulation. 
     customSceneParams.meanLuminanceCdPerM2 = 90;
     customSceneParams.stimOnsetFramesIndices = [1 4];
-    theSceneEngine.sceneParams = customSceneParams;
+    
+    % Note that we need to re-instantiate the @sceneEngine object to do this, since the 
+    % convention is that a given @sceneEngine object only generates one scene, perhaps
+    % with a different contrast.
+    theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
+    
     [theSceneSequence1, theSceneTemporalSupportSeconds1] = theSceneEngine.compute(testContrast);
     if (debugSceneGeneration)
         renderSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
