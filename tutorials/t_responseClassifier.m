@@ -63,12 +63,12 @@ function t_responseClassifier
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
     % Generate the TEST stimulus sequence
-    testContrast = 2/100;
+    testContrast = 0.01;
     % Compute the TEST stimulus
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
     % Compute respose instances to the NULL and TEST stimuli for training the classifier
-    trainingInstancesNum = 256;
+    trainingInstancesNum = 512;
     
     [inSampleNullStimResponses, theIsomerizationsTemporalSupportSeconds] = ...
         theNeuralEngine.compute(theNullSceneSequence, ...
@@ -89,7 +89,7 @@ function t_responseClassifier
     
     % Test predictions of the trained classifier on 10 out of sample
     % response instance at a time
-    outOfSampleInstancesNum = 10;
+    outOfSampleInstancesNum = 64;
     outOfSampleInstancesNum = max([outOfSampleInstancesNum theClassifierEngine.classifierParams.taskIntervals]);
     
     % Repeat out-of-sample predictions a total of 100 times
