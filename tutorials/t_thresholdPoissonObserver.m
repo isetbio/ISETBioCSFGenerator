@@ -95,7 +95,7 @@ fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
 logContrast = -3 : 0.05 : -1;
 pCorrect = zeros(1, length(logContrast));
 
-for idx = 1:length(logContrast)
+parfor idx = 1:length(logContrast)
     testContrast = 10 ^ logContrast(idx);
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
