@@ -30,7 +30,13 @@ theSceneEngine = sceneEngine(@uniformFieldTemporalModulation);
 theNeuralEngine = neuralResponseEngine(@photopigmentExcitationsWithNoEyeMovements);
 
 % Instantiate a responseClassifierEngine with poissonTemplateClassifier
-theClassifierEngine = responseClassifierEngine(@poissonTemplateClassifier);
+% (simple template based classifier), Or alternatively, poisson2AFC,
+% which is the ideal observer for 2AFC task. Demonstration that it is
+% rather simple to change components of the pipeline (i.e., observer),
+% without changing other aspects (e.g., stimulus generation).
+
+% theClassifierEngine = responseClassifierEngine(@poissonTemplateClassifier);
+theClassifierEngine = responseClassifierEngine(@poisson2AFC);
 
 % Generate and compute the zero contrast NULL stimulus (sequence)
 nullContrast = 0.0;
@@ -38,7 +44,7 @@ nullContrast = 0.0;
 
 % Construct a QUEST threshold estimator
 % estimate threshold on log contrast
-estDomain  = -3 : 0.02 : -1;
+estDomain  = -4 : 0.02 : -1;
 slopeRange = 1.0 : 1.0 : 100;
 
 % Run QUEST for a total of minTrial trials. For typical usage, this is recommended
@@ -92,22 +98,31 @@ fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
 %% Validation by computing the entire psychometric curve
-logContrast = -3 : 0.05 : -1;
-pCorrect = zeros(1, length(logContrast));
+% Takes a rather long time to run, change runValidation to 'true' if you
+% want to run the validation
 
-parfor idx = 1:length(logContrast)
-    testContrast = 10 ^ logContrast(idx);
-    [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
+runValidation = false;
+
+if (runValidation)
     
-    pCorrect(idx) = mean(computeResponse(...
-        theNullSceneSequence, theTestSceneSequence, ...
-        theSceneTemporalSupportSeconds, 512, ...
-        theNeuralEngine, theClassifierEngine));
+    logContrast = -4 : 0.05 : -1;
+    pCorrect = zeros(1, length(logContrast));
+    
+    parfor idx = 1:length(logContrast)
+        testContrast = 10 ^ logContrast(idx);
+        [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
+        
+        pCorrect(idx) = mean(computeResponse(...
+            theNullSceneSequence, theTestSceneSequence, ...
+            theSceneTemporalSupportSeconds, 512, ...
+            theNeuralEngine, theClassifierEngine));
+    end
+    
+    hold on;
+    plot(logContrast, pCorrect, '-ok', 'LineWidth', 1);
+    ylim([0, 1]);
+    
 end
-
-hold on;
-plot(logContrast, pCorrect, '-ok', 'LineWidth', 1);
-ylim([0, 1]);
 
 %% Helper function
 function response = computeResponse(nullScene, testScene, temporalSupport, nRepeat, theNeuralEngine, theClassifierEngine)

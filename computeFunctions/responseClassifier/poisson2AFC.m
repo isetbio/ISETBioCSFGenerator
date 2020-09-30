@@ -1,4 +1,4 @@
-function dataOut = poissonTemplateClassifier(~, ~, ~, nullResponses, testResponses)
+function dataOut = poisson2AFC (~, ~, ~, nullResponses, testResponses)
 % Compute function for training a binary SVM classifier to predict classes from
 % responses.
 
@@ -24,7 +24,7 @@ function dataOut = poissonTemplateClassifier(~, ~, ~, nullResponses, testRespons
 
 % For consistency with the interface
 if (nargin == 0)
-    dataOut = struct('Classifier', 'Poisson Template Matching');
+    dataOut = struct('Classifier', 'Poisson 2AFC Ideal Observer');
     return;
 end
 
@@ -48,23 +48,20 @@ assert(nTrial == size(testResponses, 1));
 
 % Compute response {0, 1} with log likelihood ratio
 response = zeros(1, nTrial);
-for idx = 1:nTrial
-    ll = logLikelihood(testTemplate, testResponses(idx, :), nullResponses(idx, :));
-    response(idx) = (ll > 0);
+for idx = 1:nTrial    
+    llhd_cr = llhd(nullResponses(idx, :), nullTemplate) + llhd(testResponses(idx, :), testTemplate);
+    llhd_ic = llhd(nullResponses(idx, :), testTemplate) + llhd(testResponses(idx, :), nullTemplate);
+    
+    response(idx) = ((llhd_cr - llhd_ic) > 0);
 end
 
 dataOut.response = response;
 
 end
 
-% Log-likelihood ratio for Poisson R.V.
-function ll = logLikelihood(rate, test, null)
+% % Log-likelihood for Poisson R.V.
+function ll = llhd(sample, rate)
 
-zeroThreshold = 1e-20;
-test = test + zeroThreshold;
-null = null + zeroThreshold;
-
-ll = rate .* log(test ./ null) + null - test;
-ll = sum(ll);
+ll = sum(sample .* log(rate) - rate);
 
 end
