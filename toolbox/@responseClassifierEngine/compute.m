@@ -40,23 +40,24 @@ function dataOut = compute(obj, operationMode, nullResponses, testResponses)
 %    dataOut                        - a struct that depends on the operationMode selected
 %                                     If the operatonMode is set to 'train', dataOut contains the
 %                                     following fields:
-%                                     .features                : the features used for classification
-%                                     .trainedClassifier       : the trained binary SCV classifer
-%                                     .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
-%                                     .pCorrectInSample        : probability of correct classification for the in-sample (training data)
-%                                     .decisionBounday         : if the feature set is 2D, the 2D decision boundary, otherwise []
+%                                       .features                : the features used for classification
+%                                       .trainedClassifier       : the trained binary SCV classifer
+%                                       .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
+%                                       .pCorrectInSample        : probability of correct classification for the in-sample (training data)
+%                                       .decisionBounday         : if the feature set is 2D, the 2D decision boundary, otherwise []
 %
 %                                     If the operatonMode is set to 'predict', dataOut contains the
 %                                     following fields:
-%                                     .features                : the features used for classification
-%                                     .pCorrectOutOfSample     : probability of correct classification for the out-of-sample (testing data)
-%                                     .predictedClassLabels    : the predicted labels for the out-of-sample responses
+%                                       .features                : the features used for classification
+%                                       .pCorrectOutOfSample     : probability of correct classification for the out-of-sample (testing data)
+%                                       .predictedClassLabels    : the predicted labels for the out-of-sample responses
 %
 % See Also:
 %     t_responseClassifier
 
 % History:
 %    9/20/2020  NPC Wrote it
+
     % Validate the operationMode
     assert(ismember(operationMode, obj.validOperationModes), sprintf('The passed responseClassifierEngine.compute() ''%s'' is invalid.', operationMode));
 
