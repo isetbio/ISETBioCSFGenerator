@@ -68,8 +68,8 @@ while (nextFlag)
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
     response = computeResponse(theNullSceneSequence, theTestSceneSequence, ...
-                               theSceneTemporalSupportSeconds, nRepeat, ...
-                               theNeuralEngine, theClassifierEngine);
+        theSceneTemporalSupportSeconds, nRepeat, ...
+        theNeuralEngine, theClassifierEngine);
     
     fprintf('Current test contrast: %.4f, P-correct: %.4f \n', testContrast, mean(response));
     
@@ -91,7 +91,23 @@ figure();
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
-%% Validation by computing the entire curve
+%% Validation by computing the entire psychometric curve
+logContrast = -3 : 0.05 : -1;
+pCorrect = zeros(1, length(logContrast));
+
+for idx = 1:length(logContrast)
+    testContrast = 10 ^ logContrast(idx);
+    [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
+    
+    pCorrect(idx) = mean(computeResponse(...
+        theNullSceneSequence, theTestSceneSequence, ...
+        theSceneTemporalSupportSeconds, 512, ...
+        theNeuralEngine, theClassifierEngine));
+end
+
+hold on;
+plot(logContrast, pCorrect, '-ok', 'LineWidth', 1);
+ylim([0, 1]);
 
 %% Helper function
 function response = computeResponse(nullScene, testScene, temporalSupport, nRepeat, theNeuralEngine, theClassifierEngine)
