@@ -1,4 +1,4 @@
-function dataOut = poissonTemplateClassifier(~, ~, nullResponses, testResponses)
+function dataOut = poissonTemplateClassifier(~, ~, ~, nullResponses, testResponses)
 
 if (nargin == 0)
     dataOut = struct('Classifier', 'Poisson Template Ideal Observer');

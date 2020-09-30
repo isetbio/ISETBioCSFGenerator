@@ -29,6 +29,9 @@ theSceneEngine = sceneEngine(@uniformFieldTemporalModulation);
 % are using the default params specified photopigmentExcitationsWithNoEyeMovements
 theNeuralEngine = neuralResponseEngine(@photopigmentExcitationsWithNoEyeMovements);
 
+% Instantiate a responseClassifierEngine with poissonTemplateClassifier
+theClassifierEngine = responseClassifierEngine(@poissonTemplateClassifier);
+
 % Generate and compute the zero contrast NULL stimulus (sequence)
 nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
@@ -77,10 +80,9 @@ while (nextFlag)
         nRepeat, ...
         'noiseFlags', {'none', 'random'});
     
-    % Train the binary classifier on the above NULL/TEST response set
-    trainingData = theClassifierEngine.compute('train',...
-        inSampleNullStimResponses('random'), ...
-        inSampleTestStimResponses('random'));
+    % run binary classifier on the above NULL/TEST response set (no
+    % training required since it is template based)
+    response = theClassifierEngine.compute('predict', inSampleNullStimResponses, inSampleTestStimResponses);
     
     pCorrect = trainingData.pCorrectInSample;
     
