@@ -82,9 +82,8 @@ while (nextFlag)
     
     % run binary classifier on the above NULL/TEST response set (no
     % training required since it is template based)
-    response = theClassifierEngine.compute('predict', inSampleNullStimResponses, inSampleTestStimResponses);
-    
-    pCorrect = trainingData.pCorrectInSample;
+    dataOut = theClassifierEngine.compute('predict', inSampleNullStimResponses, inSampleTestStimResponses);
+    response = dataOut.response;    
     
     % Translate p-correct into binary response using binomial distribution
     % Not necessary for template-based observer

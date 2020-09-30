@@ -30,6 +30,7 @@ for idx = 1:nTrial
     response(idx) = (ll > 0);
 end
 
+dataOut.response = response;
 
 end
 
