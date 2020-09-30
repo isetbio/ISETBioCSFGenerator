@@ -48,7 +48,7 @@ slopeRange = 1.0 : 1.0 : 200;
 % However, when numEstimator > 1, an adpative procedure is invoked,
 % for which the routine will stop if the S.E. among N parallel quest+ object
 % is below the threshold specified as stopCriterion
-estimator = QuestThresholdEngine('minTrial', 1200, 'maxTrial', 6000, ...
+estimator = QuestThresholdEngine('minTrial', 900, 'maxTrial', 6000, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, ...
     'numEstimator', 3, 'stopCriterion', 0.025);
 
@@ -101,6 +101,7 @@ while (nextFlag)
     [logContrast, nextFlag] = ...
         estimator.multiTrial(logContrast * ones(1, nRepeat), response(randperm(length(response))));
     
+    % Current threshold estimate and its standard error
     [threshold, stderr] = estimator.thresholdEstimate();
     fprintf('Current threshold estimate: %.4f, stderr: %.4f \n', threshold, stderr);
 end
@@ -109,7 +110,7 @@ end
 fprintf('%d trials recorded \n', estimator.nTrial);
 
 % Plot results
-figure(); subplot(1, 2, 1);
+figure();
 [threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 7.5);
 
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
@@ -146,7 +147,8 @@ parfor idx = 1 : length(logContrast)
     pCorrect(idx) = trainingData.pCorrectInSample;
 end
 
-subplot(1, 2, 2);
-plot(logContrast, pCorrect, '-ok', 'LineWidth', 2);
+%% Plot curve
+hold on;
+plot(logContrast, pCorrect, '-ok', 'LineWidth', 1);
 xlim([-3.5, -1]);
 ylim([0, 1]);
