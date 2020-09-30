@@ -22,20 +22,23 @@ function t_sceneGeneration
 % Optional key/value pairs:
 %    None.
 %
-%
 % See Also:
 %   t_neuralResponseCompute
 
 % History:
 %    09/21/2020  NPC  Wrote it.
 
+    % Close figs
+    close all;
+
     % Configure the function handle and the params for the @sceneEngine
-    % User supplied compute function
+    % user supplied compute function
     sceneComputeFunction = @uniformFieldTemporalModulation;
-    % User supplied struct with params appropriate for the @sceneEngine sceneComputeFunction
+    
+    % User supplied struct with params appropriate for the sceneComputeFunction
     customSceneParams = struct(...
         'fovDegs', 0.25, ...                        % 0.25 degs across
-        'meanLuminanceCdPerM2', 100, ...            % 100 cd/m2 mean luminance
+        'meanLuminanceCdPerM2', 200, ...            % 200 cd/m2 mean luminance
         'frameDurationSeconds', 50/1000, ...        % 50 msec frame duration
         'stimDurationFramesNum', 4, ...             % total time: 200 msec
         'stimOnsetFramesIndices', [2 3], ...        % modulate luminance at frames 1 and 2, so between 50 and 150 msec
@@ -43,10 +46,12 @@ function t_sceneGeneration
     );
 
     % Instantiate a sceneEngine with the above sceneComputeFunctionHandle 
-    % and the custom scene params
+    % and the custom scene params.  In the general case, the
+    % customSceneParams structure should what the sceneComputeFunction
+    % expects to be passed.
     theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
     
-    % Specify a pedestal luminance with 70% contrast
+    % Specify a test with 70% contrast
     testContrast = 0.7;
 
     % Compute the scene sequence
@@ -57,19 +62,46 @@ function t_sceneGeneration
     if (debugSceneGeneration)
         renderSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
     end
+    
+    % Set a different parameters structure and generate a new sequence.
+    % Here we lower the background luminance so everything looks darker,
+    % and change the temporal sequence of the modulation. 
+    customSceneParams.meanLuminanceCdPerM2 = 90;
+    customSceneParams.stimOnsetFramesIndices = [1 4];
+    
+    % Note that we need to re-instantiate the @sceneEngine object to do this, since the 
+    % convention is that a given @sceneEngine object only generates one scene, perhaps
+    % with a different contrast.
+    theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
+    
+    [theSceneSequence1, theSceneTemporalSupportSeconds1] = theSceneEngine.compute(testContrast);
+    if (debugSceneGeneration)
+        renderSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
+    end
+    
+    % If you didn't know what fields the parameters struct the
+    % uniformFieldTemporalModulation function expects, you can get a
+    % default parameters structure by calling
+    % uniformFieldTemporalModulation without any arguments
+    defaultSceneParams = uniformFieldTemporalModulation
+    
+    % You can also instantiate a scene generation object with the default
+    % parameters by not providing them:
+    theSceneEngine = sceneEngine(sceneComputeFunction);
+    theSceneEngine.sceneParams
 
 end
 
 function renderSceneSequence(sceneSequence, temporalSupportSeconds)
-    figure(1); clf;
+    figure; clf;
     scenesNum = numel(sceneSequence);
     for frameIndex = 1:numel(sceneSequence)
         subplot(1, scenesNum, frameIndex);
         xyzImage = sceneGet(sceneSequence{frameIndex}, 'xyz');
         luminanceMap = squeeze(xyzImage(:,:,2));
-        imagesc(luminanceMap);
+        image(luminanceMap);
         axis 'image';
-        set(gca, 'CLim', [0 200]);
+        set(gca, 'CLim', [0 500]);
         title(sprintf('frame %d\n(%2.0f msec)', frameIndex,temporalSupportSeconds(frameIndex)*1000));
         colormap(gray);
     end
