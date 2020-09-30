@@ -1,16 +1,16 @@
 function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast)
-% Generic method for the @sceneEngine class.
+% Generic compute method for the @sceneEngine class.
 %
 % Syntax:
 %   [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast)
 %
 % Description:
 %    Generic compute method for the @sceneEngine class. Its purpose is to 
-%    provide a unified command for computing a scene temporal sequence 
-%    independent of scene specifics, at a given contrast. The scene 
-%    generation code and the corresponding scene parameters are specified in 
-%    a computeFunctionHandle and a sceneParamsStruct, respectively, both of 
-%    which are set when instantiating the @sceneEngine object.
+%    provide a unified interface for computing a temporal sequence of scenes
+%    independent of scene specifics, at a given contrast. The code for generating
+%    the scene and the scene parameters are defined in the computeFunctionHandle 
+%    and the sceneParamsStruct, respectively, both of which are set when 
+%    instantiating the @sceneEngine object.
 %
 % Inputs:
 %    obj                      - the parent @sceneEngine object
@@ -21,9 +21,9 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
 % Optional key/value input arguments: none 
 %
 % Outputs:
-%    theSceneSequence        - A cell array of scenes, representing a spatio-temporal stimulus
+%    theSceneSequence        - a cell array of scenes, representing a spatio-temporal stimulus
 %
-%    temporalSupportSeconds  - A vector of time stamps for each frame of the scene sequence 
+%    temporalSupportSeconds  - a vector of time stamps for each frame of the scene sequence 
 %
 %
 % See Also:

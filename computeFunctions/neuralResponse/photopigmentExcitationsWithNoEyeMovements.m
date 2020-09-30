@@ -9,7 +9,7 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
 % Description:
-%    Compute function to be used as a computeFunctionHandle for a @neuralResponseEngine
+%    Function serving as the computeFunctionHandle for a @neuralResponseEngine
 %    object. There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
@@ -60,12 +60,10 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
 %                                   the 'noiseFlags'  optional argument
 %              .temporalSupport : the temporal support of the neural
 %                                   responses, in seconds
-%              .theOptics       : the optics employed in the computation
-%                                   (only returned if the parent @neuralResponseEngine
-%                                   object does not yet have a value for its 'theOptics' property)
-%              .theConeMosaic   : the coneMosaic employed in the computation
-%                                   (only returned if the parent @neuralResponseEngine
-%                                   object does not yet have a value for its 'theConeMosaic' property)
+%              .neuralPipeline  : a struct containing the optics and cone mosaic 
+%                                   employed in the computation (only returned if 
+%                                   the parent @neuralResponseEngine object has 
+%                                   an empty neuralPipeline property)
 %
 %
 %       The computed neural responses can be extracted as:
@@ -141,27 +139,21 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
         theNeuralResponses(noiseFlags{idx}) = [];
     end
     
-    if (isempty(neuralEngineOBJ.theOptics))
+    if (isempty(neuralEngineOBJ.neuralPipeline))
         % Generate the optics
         theOptics = oiCreate(neuralResponseParamsStruct.opticsParams.type, neuralResponseParamsStruct.opticsParams.pupilDiameterMM);  
-        returnTheOptics = true;
-    else
-        % Load the optics from the previous computations
-        theOptics = neuralEngineOBJ.theOptics;
-        returnTheOptics = false;
-    end
-    
-    if (isempty(neuralEngineOBJ.theConeMosaic))
         % Generate the cone mosaic
         theConeMosaic = coneMosaicHex(neuralResponseParamsStruct.coneMosaicParams.upsampleFactor, ...
             'fovDegs', neuralResponseParamsStruct.coneMosaicParams.fovDegs, ...
             'integrationTime', neuralResponseParamsStruct.coneMosaicParams.timeIntegrationSeconds ...
         );
-        returnTheConeMosaic = true;
+        returnTheNeuralPipeline = true;
     else
-        % Load the cone mosaic from the previous computations
-        theConeMosaic = neuralEngineOBJ.theConeMosaic;
-        returnTheConeMosaic = false;
+        % Load the optics from the previously computed neural pipeline
+        theOptics = neuralEngineOBJ.neuralPipeline.optics;
+        % Load the cone mosaic from the previously computed neural pipeline
+        theConeMosaic = neuralEngineOBJ.neuralPipeline.coneMosaic;
+        returnTheNeuralPipeline =  false;
     end
 
     % Compute the sequence of optical images corresponding to the sequence of scenes
@@ -217,17 +209,14 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
     % Temporal support for the neural response
     temporalSupportSeconds = theConeMosaic.timeAxis; 
     
-    % Assemble dataOut struct
+    % Assemble the dataOut struct
     dataOut = struct(...
         'neuralResponses', theNeuralResponses, ...
     	'temporalSupport', temporalSupportSeconds);
-    if (returnTheOptics)
-        dataOut.theOptics = theOptics;
+    if (returnTheNeuralPipeline)
+        dataOut.neuralPipeline.optics = theOptics;
+        dataOut.neuralPipeline.coneMosaic = theConeMosaic;
     end
-    if (returnTheConeMosaic)
-        dataOut.theConeMosaic = theConeMosaic;
-    end
-
 end
 
 function p = generateDefaultParams()
