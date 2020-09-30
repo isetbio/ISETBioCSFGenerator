@@ -70,19 +70,8 @@ classdef responseClassifierEngine < handle
         end
         
         % Compute method
-        function dataOut = compute(obj, operationMode, nullResponses, testResponses)
-            % Validate the operationMode
-            assert(ismember(operationMode, obj.validOperationModes), sprintf('The passed responseClassifierEngine.compute() ''%s'' is invalid.', operationMode));
-            
-            % Call the user-supplied compute function
-            dataOut = obj.classifierComputeFunction(obj, operationMode, obj.classifierParams, nullResponses, testResponses);
-        
-            % Set the trainedClassifier property for future predictions
-            if (isfield(dataOut, 'trainedClassifier'))
-                obj.trainedClassifier = dataOut.trainedClassifier;
-                obj.preProcessingConstants = dataOut.preProcessingConstants;
-            end
-        end
+        dataOut = compute(obj, operationMode, nullResponses, testResponses);
+
     end
     
     % Private methods

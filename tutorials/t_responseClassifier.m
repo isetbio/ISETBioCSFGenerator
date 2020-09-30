@@ -63,12 +63,12 @@ function t_responseClassifier
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
     % Generate the TEST stimulus sequence
-    testContrast = 0.01;
+    testContrast = 0.008;
     % Compute the TEST stimulus
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
     % Compute respose instances to the NULL and TEST stimuli for training the classifier
-    trainingInstancesNum = 512;
+    trainingInstancesNum = 128;
     
     [inSampleNullStimResponses, theIsomerizationsTemporalSupportSeconds] = ...
         theNeuralEngine.compute(theNullSceneSequence, ...
@@ -89,11 +89,12 @@ function t_responseClassifier
     
     % Test predictions of the trained classifier on 10 out of sample
     % response instance at a time
-    outOfSampleInstancesNum = 64;
+    outOfSampleInstancesNum = 50;
     outOfSampleInstancesNum = max([outOfSampleInstancesNum theClassifierEngine.classifierParams.taskIntervals]);
     
-    % Repeat out-of-sample predictions a total of 100 times
-    for trial = 1:100
+    % Repeat out-of-sample predictions a total of N times
+    N = 1;
+    for trial = 1:N
         % Compute new respose instances to the NULL and TEST stimuli
         outOfSampleNullStimResponses = theNeuralEngine.compute(...
             theNullSceneSequence, ...
@@ -129,34 +130,37 @@ function t_responseClassifier
 end
 
 function plotClassifierResults(classifierParams, trainingData, predictedData)
-    figure(1); clf;
-    
-    minFeature = min([min(trainingData.features(:)) min(predictedData.features(:))]);
-    maxFeature = max([max(trainingData.features(:)) max(predictedData.features(:))]);
+    hFig = figure(1); clf;
+    set(hFig, 'Position', [10 10 950 500], 'Color', [1 1 1]);
+    minFeature = min([min(trainingData.features(:))]);
+    maxFeature = max([max(trainingData.features(:))]);
     
     % The training data
     ax = subplot(1,2,1);
     hold(ax, 'on');
-    renderDecisionBoundary(ax,trainingData.decisionBoundary); 
+    renderDecisionBoundary(ax,trainingData.decisionBoundary, true); 
     renderFeatures(ax, trainingData.features, classifierParams.taskIntervals);
     xlabel(ax,'PCA #1 score');
     ylabel(ax,'PCA #2 score');
     title(ax,sprintf('In-sample percent correct: %2.3f', trainingData.pCorrectInSample));
     axis(ax,'square');
-    set(ax, 'XLim', [minFeature maxFeature], 'YLim', [minFeature maxFeature]);
+    set(ax, 'XLim', [minFeature maxFeature], 'YLim', [minFeature maxFeature], 'FontSize', 12);
     colormap(ax,brewermap(1024, 'RdYlGn'));
 
+    
+    minFeature = min([min(predictedData.features(:))]);
+    maxFeature = max([max(predictedData.features(:))]);
     
     % The predicted data
     ax = subplot(1,2,2);
     hold(ax, 'on');
-    renderDecisionBoundary(ax,trainingData.decisionBoundary); 
+    renderDecisionBoundary(ax,trainingData.decisionBoundary, false); 
     renderFeatures(ax, predictedData.features, classifierParams.taskIntervals);
     xlabel(ax,'PCA #1 score');
     ylabel(ax,'PCA #2 score');
     title(ax,sprintf('Out-of-sample percent correct: %2.3f', predictedData.pCorrectOutOfSample));
     axis(ax,'square');
-    set(ax, 'XLim', [minFeature maxFeature], 'YLim', [minFeature maxFeature]);
+    set(ax, 'XLim', [minFeature maxFeature], 'YLim', [minFeature maxFeature],  'FontSize', 12);
     colormap(ax,brewermap(1024, 'RdYlGn'));
     
 end
@@ -187,11 +191,13 @@ function renderFeatures(ax, features, taskIntervals)
 end
 
 
-function renderDecisionBoundary(ax, decisionBoundary)
+function renderDecisionBoundary(ax, decisionBoundary, depictStrength)
     if (~isempty(decisionBoundary))
         N = length(decisionBoundary.x);
+        if (depictStrength)
         % Decision boundary as a density plot
-        imagesc(ax,decisionBoundary.x,decisionBoundary.y,reshape(decisionBoundary.z,[N N]));
+            imagesc(ax,decisionBoundary.x,decisionBoundary.y,reshape(decisionBoundary.z,[N N]));
+        end
         % The decision boundary as a line
         [C,h] = contour(ax,decisionBoundary.x,decisionBoundary.y,reshape(decisionBoundary.z,[N N]), [0 0]);
         h.LineColor = [0 0 0];

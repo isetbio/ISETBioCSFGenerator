@@ -51,7 +51,7 @@ function dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, classi
 %
 %                   .features                : the features used for classification
 %                   .trainedClassifier       : the trained binary SCV classifer
-%                   .preProcessingConstants  : constants used during the dimensionality reduction preprocessing phase
+%                   .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
 %                   .pCorrectInSample        : probability of correct classification for the in-sample (training data)
 %                   .decisionBounday         : if the feature set is 2D, the 2D decision boundary, otherwise []
 %
