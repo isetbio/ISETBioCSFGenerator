@@ -38,66 +38,47 @@ nullContrast = 0.0;
 
 % Construct a QUEST threshold estimator
 % estimate threshold on log contrast
-estDomain  = -3.5 : 0.01 : -1;
-slopeRange = 1.0 : 1.0 : 200;
+estDomain  = -3 : 0.02 : -1;
+slopeRange = 1.0 : 1.0 : 100;
 
 % Run QUEST for a total of minTrial trials. For typical usage, this is recommended
 
 % However, when numEstimator > 1, an adpative procedure is invoked,
 % for which the routine will stop if the S.E. among N parallel quest+ object
 % is below the threshold specified as stopCriterion
-estimator = QuestThresholdEngine('minTrial', 640, 'maxTrial', 640, ...
+estimator = QuestThresholdEngine('minTrial', 1e3, 'maxTrial', 1e4, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, ...
-    'numEstimator', 1, 'stopCriterion', 0.025);
+    'numEstimator', 3, 'stopCriterion', 0.025);
 
 %% Threshold estimation with QUEST+
 
 [logContrast, nextFlag] = estimator.nextStimulus();
 
-% 64 trial for each contrast level
-nRepeat = 64;
+% Repeat N trials for each contrast level
+% A larger N is usually more effective, but depending on the performance
+% bottleneck of your observer, you might consider a smaller N
+nRepeat = 150;
 while (nextFlag)
     
     % log contrast -> contrast
     % Compute the TEST stimulus
     testContrast = 10 ^ logContrast;
+    
+    % Test scene generate
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
-    % Code for observer (classifier or other form)
-    % Compute many respose instances to the NULL and TEST stimuli for training the SVM classifier
+    response = computeResponse(theNullSceneSequence, theTestSceneSequence, ...
+                               theSceneTemporalSupportSeconds, nRepeat, ...
+                               theNeuralEngine, theClassifierEngine);
     
-    % NULL stimulus mean response
-    [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
-        theNullSceneSequence, ...
-        theSceneTemporalSupportSeconds, ...
-        nRepeat, ...
-        'noiseFlags', {'none', 'random'});
-    
-    % TEST stimulus instances
-    [inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
-        theTestSceneSequence, ...
-        theSceneTemporalSupportSeconds, ...
-        nRepeat, ...
-        'noiseFlags', {'none', 'random'});
-    
-    % run binary classifier on the above NULL/TEST response set (no
-    % training required since it is template based)
-    dataOut = theClassifierEngine.compute('predict', inSampleNullStimResponses, inSampleTestStimResponses);
-    response = dataOut.response;    
-    
-    % Translate p-correct into binary response using binomial distribution
-    % Not necessary for template-based observer
-    nCorrect = binornd(nRepeat, pCorrect);
-    response = [zeros(1, nRepeat - nCorrect), ones(1, nCorrect)];
-    
-    fprintf('Current test contrast: %.4f, P-correct: %.4f \n', testContrast, pCorrect);
+    fprintf('Current test contrast: %.4f, P-correct: %.4f \n', testContrast, mean(response));
     
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nRepeat), response(randperm(length(response))));
+        estimator.multiTrial(logContrast * ones(1, nRepeat), response);
     
-    % Current threshold estimate and its standard error
     [threshold, stderr] = estimator.thresholdEstimate();
-    fprintf('Current threshold estimate: %.4f, stderr: %.4f \n', threshold, stderr);
+    fprintf('Current threshold estimate: %.4f, stderr: %.4f \n', 10 ^ threshold, stderr);
+    
 end
 
 %% Show results
@@ -109,3 +90,32 @@ figure();
 
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
+
+%% Validation by computing the entire curve
+
+%% Helper function
+function response = computeResponse(nullScene, testScene, temporalSupport, nRepeat, theNeuralEngine, theClassifierEngine)
+
+% Code for observer (classifier or other form)
+% Compute many respose instances to the NULL and TEST stimuli for training the SVM classifier
+
+% NULL stimulus mean response
+[inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
+    nullScene, ...
+    temporalSupport, ...
+    nRepeat, ...
+    'noiseFlags', {'none', 'random'});
+
+% TEST stimulus instances
+[inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
+    testScene, ...
+    temporalSupport, ...
+    nRepeat, ...
+    'noiseFlags', {'none', 'random'});
+
+% Run a ideal observer binary classifier on the above NULL/TEST response set
+% (no training required since it is template based)
+dataOut = theClassifierEngine.compute('predict', inSampleNullStimResponses, inSampleTestStimResponses);
+response = dataOut.response;
+
+end
