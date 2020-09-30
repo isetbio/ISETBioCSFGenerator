@@ -48,9 +48,9 @@ slopeRange = 1.0 : 1.0 : 200;
 % However, when numEstimator > 1, an adpative procedure is invoked,
 % for which the routine will stop if the S.E. among N parallel quest+ object
 % is below the threshold specified as stopCriterion
-estimator = QuestThresholdEngine('minTrial', 900, 'maxTrial', 6000, ...
+estimator = QuestThresholdEngine('minTrial', 1200, 'maxTrial', 6000, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, ...
-    'numEstimator', 3, 'stopCriterion', 0.05);
+    'numEstimator', 3, 'stopCriterion', 0.025);
 
 %% Threshold estimation with QUEST+
 
