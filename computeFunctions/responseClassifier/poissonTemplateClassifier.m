@@ -5,15 +5,35 @@ if (nargin == 0)
     return;
 end
 
-% no noise response template for null stimulus
+% we simulate the observer with a "detection" protocol
+% no noise response template for test/null stimulus
 nullTemplate = nullResponses('none');
 nullTemplate = nullTemplate(1, :);
 
-% no noise response template for test stimulus
 testTemplate = testResponses('none');
 testTemplate = testTemplate(1, :);
 
-dataOut.null = nullTemplate;
-dataOut.test = testTemplate;
+dataOut.nullTemplate = nullTemplate;
+dataOut.testTemplate = testTemplate;
 
+% trial-by-trial noisy response
+nullResponses = nullResponses('random');
+testResponses = testResponses('random');
+
+nTrial = size(nullResponses, 1);
+assert(nTrial == size(testResponses, 1));
+
+% compute response {0, 1} with log likelihood ratio
+response = zeros(1, nTrial);
+for idx = 1:nTrial
+    ll = logLikelihood(testTemplate, testResponses(idx, :), nullResponses(idx, :));
+    response(idx) = (ll > 0);
+end
+
+
+end
+
+function ll = logLikelihood(rate, test, null)
+ll = rate .* log(test ./ null) + null - test;
+ll = sum(ll);
 end
