@@ -145,8 +145,16 @@ function response = computeResponse(nullScene, testScene, temporalSupport, nRepe
     'noiseFlags', {'none', 'random'});
 
 % Run a ideal observer binary classifier on the above NULL/TEST response set
-% (no training required since it is template based)
-dataOut = theClassifierEngine.compute('predict', inSampleNullStimResponses, inSampleTestStimResponses);
+% 'Training' is basically storing the noise-free template
+theClassifierEngine.compute('train', ...
+    inSampleNullStimResponses('none'), ...
+    inSampleTestStimResponses('none'));
+
+% 'Predict' on noisy responses
+dataOut  = theClassifierEngine.compute('predict', ...
+    inSampleNullStimResponses('random'), ...
+    inSampleTestStimResponses('random'));
+
 response = dataOut.response;
 
 end

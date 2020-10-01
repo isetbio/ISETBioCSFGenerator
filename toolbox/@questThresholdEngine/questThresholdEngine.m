@@ -114,23 +114,26 @@ classdef questThresholdEngine < contrastThresholdEngine
             
         end
         
-        % Running estimate of parameters of the psychometric curve 
-        parameterEstimate(this)
+        % Running estimate of parameters of the psychometric curve
+        estimates = parameterEstimate(this)
         
         % Running estimate of threshold and its standard error
-        thresholdEstimate(this)
+        [threshold, stderr] = thresholdEstimate(this)
         
         % Combine data recorded so far from all QUEST object
-        combineData(this)
+        % Return a list of stimulus - response pair, and a struct of both
+        [stimVec, responseVec, structVec] = combineData(this)
         
         % Record a set of trials of the experiment
-        multiTrial(this, stimVec, responseVec)        
+        % Return next next query contrast, an indicator for new trial
+        [nextCrst, nextFlag] = multiTrial(this, stimVec, responseVec)
         
         % Record one trial of the experiment
-        singleTrial(this, stim, response)
+        % Return next next query contrast, an indicator for new trial
+        [nextCrst, nextFlag] = singleTrial(this, stim, response)
         
-        % Run MLE estimate of psychometric curve parameter on combined data        
-        thresholdMLE(this, varargin);
+        % Run MLE estimate of psychometric curve parameter on combined data
+        [threshold, para] = thresholdMLE(this, varargin);
         
     end
     
