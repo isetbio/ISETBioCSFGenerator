@@ -1,5 +1,5 @@
-classdef ContrastThresholdEngine < handle
-    %ContrastThresholdEstimator  Base class for adaptive contrast threshold estimation procedure.
+classdef contrastThresholdEngine < handle
+    %contrastThresholdEstimator  Base class for adaptive contrast threshold estimation procedure.
     %
     % Usage:
     %   See instance class QuestThresholdEstimator
@@ -55,7 +55,7 @@ classdef ContrastThresholdEngine < handle
     
     methods (Access = public)
         
-        function this = ContrastThresholdEngine(varargin)
+        function this = contrastThresholdEngine(varargin)
             
             p = inputParser;
             p.KeepUnmatched = true;
