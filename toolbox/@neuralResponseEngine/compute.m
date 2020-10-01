@@ -15,7 +15,8 @@ function [neuralResponses, temporalSupportSeconds] = compute(obj, ...
 %    and the parameters of this pipeline (e.g, type of optics, pupil diameter, 
 %    cone mosaic size, etc.) are defined in the computeFunctionHandle and the 
 %    neuralResponseParamsStruct, respectively, both of  which are set when  
-%    instantiating the @neuralResponse objethet.
+%    instantiating the @neuralResponse object.
+%
 %    Apart from providing a unified interface, this method also sets the
 %    neuralPipeline struct of the parent @neuralResponseEngine object.
 %
@@ -40,7 +41,6 @@ function [neuralResponses, temporalSupportSeconds] = compute(obj, ...
 %    neuralResponses                - computed neural responses
 %
 %    temporalSupportSeconds         - a vector of time stamps for each time bin of the computed response 
-%
 %
 % See Also:
 %     t_sceneGeneration
