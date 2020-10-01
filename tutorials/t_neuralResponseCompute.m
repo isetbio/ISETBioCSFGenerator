@@ -24,12 +24,14 @@ function t_neuralResponseCompute
 % Optional key/value pairs:
 %    None.
 %
-%
 % See also: t_sceneGeneration
 %
 
 % History:
 %    09/21/2020  NPC  Wrote it.
+
+    % Close figures
+    close all;
 
     % Configure the function handle and the params for the @sceneGenerationEngine
     % This is a function that the USER has to supply
@@ -67,13 +69,6 @@ function t_neuralResponseCompute
     % Types of noise for thr computed responses
     % This has to be a cell array list with valid entries: {'none', 'random', 'rngSeed_someInt'}
     noiseFlags = {'rNgSeed345', 'rNgSeed345', 'rNgSeed346', 'random', 'none'};
-    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
-            theSceneSequence, ...
-            theSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-    
     [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
             theSceneSequence, ...
             theSceneTemporalSupportSeconds, ...
