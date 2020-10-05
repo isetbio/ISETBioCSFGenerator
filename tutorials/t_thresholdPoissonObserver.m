@@ -26,8 +26,8 @@
 theSceneEngine = sceneEngine(@uniformFieldTemporalModulation);
 
 % Instantiate a neuralResponseEngine. No responseParams passed, so we
-% are using the default params specified photopigmentExcitationsWithNoEyeMovements
-theNeuralEngine = neuralResponseEngine(@photopigmentExcitationsWithNoEyeMovements);
+% are using the default params specified nrePhotopigmentExcitationsWithNoEyeMovements
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
 % Instantiate a responseClassifierEngine with poissonTemplateClassifier
 % (simple template based classifier), Or alternatively, poisson2AFC,

@@ -7,13 +7,12 @@ function t_neuralResponseCompute
 % Description:
 %    Demonstrates how to generate a stimulus sequence using a
 %    @sceneEngine object and a neural compute function. The neural pipeline defined
-%    by the 'photopigmentExcitationsWithNoEyeMovements' compute function represents
+%    by the 'nrePhotopigmentExcitationsWithNoEyeMovements' compute function represents
 %    the cone excitations in the absence of fixational eye movements. Here we are
 %    passing a custom neural response params struct during instantiation of the
 %    @neuralResponseEngine object. If no neural response params struct were passed, 
-%    the default neural response params defined in the 'photopigmentExcitationsWithNoEyeMovements' 
+%    the default neural response params defined in the 'nrePhotopigmentExcitationsWithNoEyeMovements' 
 %    compute function would be used.
-%
 %
 % Inputs:
 %    None.
@@ -41,7 +40,7 @@ function t_neuralResponseCompute
     
     % Configure the function handle and the params for the @neuralResponseEngine
     % This is a function that the USER has to supply
-    neuralComputeFunction = @photopigmentExcitationsWithNoEyeMovements;
+    neuralComputeFunction = @nrePhotopigmentExcitationsWithNoEyeMovements;
     
     % Custom neural response params struct 
     customNeuralResponseParams = struct(...
@@ -68,12 +67,13 @@ function t_neuralResponseCompute
     instancesNum = 8;
     % Types of noise for thr computed responses
     % This has to be a cell array list with valid entries: {'none', 'random', 'rngSeed_someInt'}
-    noiseFlags = {'rNgSeed345', 'rNgSeed345', 'rNgSeed346', 'random', 'none'};
+    noiseFlags = {'random', 'none'};
     [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
             theSceneSequence, ...
             theSceneTemporalSupportSeconds, ...
             instancesNum, ...
-            'noiseFlags', noiseFlags ...
+            'noiseFlags', noiseFlags, ...
+            'rngSeed', 345 ...
             );
         
     % Visualize all responses computes (different figures for different

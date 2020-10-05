@@ -13,9 +13,7 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %    object. There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
-%
 %           dataOut = nrePhotopigmentExcitationsWithNoEyeMovements()
-%
 %       it does not compute anything and simply returns a struct with the 
 %       defaultParams (optics and coneMosaic params) that define the neural 
 %       compute pipeline for this computation.
@@ -30,20 +28,21 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %    neuralResponseParamsStruct     - a struct containing properties of the
 %                                     employed neural chain.
 %    sceneSequence                  - a cell array of scenes defining the frames of a stimulus
-%
 %    sceneSequenceTemporalSupport   - the temporal support for the stimulus frames, in seconds
-%
 %    instancesNum                   - the number of response instances to compute
-%
 %
 % Optional key/value input arguments:
 %    'noiseFlags'                   - Cell array of strings containing labels
 %                                     that encode the type of noise to be included
 %                                     Valid values are: 
-%                                          - 'none' (noise-free responses)
-%                                          - 'random' (random noisy response instances)
-%                                          - 'rngSeed_someInt' (repeatable noisy response
-%                                             instances controlled by the someInt rng seed) 
+%                                        - 'none' (noise-free responses)
+%                                        - 'random' (noisy response instances)
+%                                     Default is {'random'}.  Only one
+%                                     instance is returned when set to
+%                                     'none', independent of how many are
+%                                     asked for.
+%   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
+%                                     seed.(repeatable noisy response
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -52,8 +51,9 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %               the defaultParams (optics and coneMosaic) that define the neural 
 %               compute pipeline for this computation.
 %
-%             - If called from a parent @neuralResponseEngine, the returned
-%               struct is organized as follows:
+%             - If called will full arguments (e.g. from a parent
+%               @neuralResponseEngine), the returned struct is organized as
+%               follows:
 %
 %              .neuralResponses : dictionary of responses indexed with 
 %                                   labels corresponding to the entries of
@@ -65,22 +65,21 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %                                   the parent @neuralResponseEngine object has 
 %                                   an empty neuralPipeline property)
 %
-%
 %       The computed neural responses can be extracted as:
-%
-%           neuralResponses('one of the entries of the noiseFlags input argument') 
-%
+%           neuralResponses('one of the entries of noiseFlags') 
 %       and are arranged in a matrix of:
-%
 %           [instancesNum x mCones x tTimeBins] 
 %
 % See Also:
 %     t_neuralResponseCompute
 
 % History:
-%    09/26/2020  NPC  Wrote it.
-%
-%   Examples:
+%    09/26/2020  npc  Wrote it.
+%    10/05/2020  dhb  Apply ieParamFormat to varargin for all keys.
+%    10/05/2020  dhb  Rename. Work on comments.
+%    10/05/2020  dhb  Rewrite to use 'rngSeed' key/value pair.
+
+% Examples:
 %{
     % Usage case #1. Just return the default neural response params
     defaultParams = nrePhotopigmentExcitationsWithNoEyeMovements()
@@ -99,7 +98,7 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
     
     % Compute 16 response instances for a number of different noise flags
     instancesNum = 16;
-    noiseFlags = {'random', 'none','rNgSeed346', 'rng Seed 100'};
+    noiseFlags = {'random', 'none'};
     [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngineOBJ.compute(...
             theTestSceneSequence, ...
             theTestSceneTemporalSupportSeconds, ...
@@ -109,8 +108,6 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 
     % Retrieve the different computed responses
     noiseFreeResponses = theResponses('none');
-    repeatableNoisyResponseInstances346 = theResponses('rNgSeed346');
-    repeatableNoisyResponseInstances100 = theResponses('rng Seed 100');
     randomNoiseResponseInstances = theResponses('random');
 %}
 
@@ -123,10 +120,13 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
     % Parse the input arguments
     p = inputParser;
     p.addParameter('noiseFlags', {'random'});
+    p.addParameter('rngSeed',[],@(x) (isempty(s) | isnumeric(x)));
+    varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     
     % Retrieve the response noiseFlag labels and validate them.
     noiseFlags = p.Results.noiseFlags;
+    rngSeed = p.Results.rngSeed;
     neuralEngineOBJ.validateNoiseFlags(noiseFlags);
     
     % For each noise flag we generate a corresponing neural response, and all 
@@ -185,9 +185,7 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
             % Restore the original noise flag
             theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
             
-        elseif (contains(ieParamFormat(noiseFlags{idx}), 'rngseed'))
-            % Extract the seed from the noise flag
-            rngSeed = str2double(strrep(ieParamFormat(noiseFlags{idx}), 'rngseed', ''));
+        elseif (~isempty(rngSeed))
             % Compute noisy response instances with a specified random noise seed for repeatability
             theNeuralResponses(noiseFlags{idx}) = theConeMosaic.computeForOISequence(theOIsequence, ...
                 'emPaths', emPaths, ...    % the emPaths

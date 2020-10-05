@@ -77,7 +77,7 @@ function dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, classi
     % @responseClassifierEngine object and the default classifier params
 
     % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@photopigmentExcitationsWithNoEyeMovements);
+    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
     % Instantiate a @sceneEngine object and generate a test scene sequence
     theSceneEngineOBJ = sceneEngine(@uniformFieldTemporalModulation);
