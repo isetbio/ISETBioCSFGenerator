@@ -1,10 +1,10 @@
-function dataOut = photopigmentExcitationsWithNoEyeMovements(...
+function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
     neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
     sceneSequenceTemporalSupport, instancesNum, varargin)
 % Compute function for computation of cone excitations witout eye movements 
 %
 % Syntax:
-%   dataOut = photopigmentExcitationsWithNoEyeMovements(...
+%   dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %    neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
@@ -14,7 +14,7 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
 %
 %       [1] If called directly and with no arguments, 
 %
-%           dataOut = photopigmentExcitationsWithNoEyeMovements()
+%           dataOut = nrePhotopigmentExcitationsWithNoEyeMovements()
 %
 %       it does not compute anything and simply returns a struct with the 
 %       defaultParams (optics and coneMosaic params) that define the neural 
@@ -74,8 +74,6 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
 %
 %           [instancesNum x mCones x tTimeBins] 
 %
-%
-%
 % See Also:
 %     t_neuralResponseCompute
 
@@ -85,13 +83,13 @@ function dataOut = photopigmentExcitationsWithNoEyeMovements(...
 %   Examples:
 %{
     % Usage case #1. Just return the default neural response params
-    defaultParams = photopigmentExcitationsWithNoEyeMovements()
+    defaultParams = nrePhotopigmentExcitationsWithNoEyeMovements()
 
     % Usage case #2. Compute noise free, noisy, and repeatable (seed: 346) noisy response instances
     % using a parent @neuralResponseEngine object and the default neural response params
 
     % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@photopigmentExcitationsWithNoEyeMovements);
+    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
     % Instantiate a @sceneEngine object and generate a test scene
     theSceneEngineOBJ = sceneEngine(@uniformFieldTemporalModulation);
