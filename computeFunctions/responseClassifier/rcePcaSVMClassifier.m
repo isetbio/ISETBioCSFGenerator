@@ -47,6 +47,7 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
 %
 %             - If called from a parent @responseClassifierEngine object, the returned
 %               struct is organized as follows: 
+
 %               In 'train' mode:
 %
 %                   .features                : the features used for classification
