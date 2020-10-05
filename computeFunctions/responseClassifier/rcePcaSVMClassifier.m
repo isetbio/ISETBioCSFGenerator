@@ -1,9 +1,9 @@
-function dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, classifierParamsStruct, nullResponses, testResponses)
+function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, classifierParamsStruct, nullResponses, testResponses)
 % Compute function for training a binary SVM classifier to predict classes from
 % responses.
 %
 % Syntax:
-%   dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, ...
+%   dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, ...
 %             classifierParamsStruct, nullResponses, testResponses)
 %
 % Description:
@@ -12,7 +12,7 @@ function dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, classi
 %
 %       [1] If called directly and with no arguments, 
 %
-%           dataOut = pcaSVMClassifier()
+%           dataOut = rcePcaSVMClassifier()
 %
 %       it does not compute anything and simply returns a struct with the 
 %       defaultParams that define the classifier
@@ -71,7 +71,7 @@ function dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, classi
 %   Examples:
 %{
     % Usage case #1. Just return the default classifier params
-    defaultParams =  pcaSVMClassifier()
+    defaultParams =  rcePcaSVMClassifier()
 
     % Usage case #2. Train a binary SVM classifier on a data set  using a parent 
     % @responseClassifierEngine object and the default classifier params
@@ -105,8 +105,8 @@ function dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, classi
             'noiseFlags', noiseFlags ...
             );
 
-    % Instantiate a responseClassifierEngine with the @pcaSVMClassifier compute function
-    theClassifierEngine = responseClassifierEngine(@pcaSVMClassifier);
+    % Instantiate a responseClassifierEngine with the @rcePcaSVMClassifier compute function
+    theClassifierEngine = responseClassifierEngine(@rcePcaSVMClassifier);
    
     % Train a binary SVM classifier on the in-sample data set
     trainingData = theClassifierEngine.compute('train',...

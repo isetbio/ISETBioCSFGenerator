@@ -1,4 +1,4 @@
-function dataOut = poisson2AFC (obj, operationMode, ~, nullResponses, testResponses)
+function dataOut = rcePoisson2AFCClassifier (obj, operationMode, ~, nullResponses, testResponses)
 % Compute function for training a binary SVM classifier to predict classes from
 % responses.
 

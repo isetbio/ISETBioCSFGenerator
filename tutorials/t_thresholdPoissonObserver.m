@@ -29,14 +29,14 @@ theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation);
 % are using the default params specified nrePhotopigmentExcitationsWithNoEyeMovements
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
-% Instantiate a responseClassifierEngine with poissonTemplateClassifier
-% (simple template based classifier), Or alternatively, poisson2AFC,
+% Instantiate a responseClassifierEngine with rceLogTemplateClassifier
+% (simple template based classifier), Or alternatively, rcePoisson2AFCClassifier,
 % which is the ideal observer for 2AFC task. Demonstration that it is
 % rather simple to change components of the pipeline (i.e., observer),
 % without changing other aspects (e.g., stimulus generation).
 
-% theClassifierEngine = responseClassifierEngine(@poissonTemplateClassifier);
-theClassifierEngine = responseClassifierEngine(@poisson2AFC);
+% theClassifierEngine = responseClassifierEngine(@rceLogTemplateClassifier);
+theClassifierEngine = responseClassifierEngine(@rcePoisson2AFCClassifier);
 
 % Generate and compute the zero contrast NULL stimulus (sequence)
 nullContrast = 0.0;

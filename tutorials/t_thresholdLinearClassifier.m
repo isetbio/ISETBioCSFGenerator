@@ -32,8 +32,8 @@ theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation);
 % are using the default params specified nrePhotopigmentExcitationsWithNoEyeMovements
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
-% Instantiate a responseClassifierEngine with pcaSVMClassifier
-theClassifierEngine = responseClassifierEngine(@pcaSVMClassifier);
+% Instantiate a responseClassifierEngine with rcePcaSVMClassifier
+theClassifierEngine = responseClassifierEngine(@rcePcaSVMClassifier);
 
 % Generate and compute the zero contrast NULL stimulus (sequence)
 nullContrast = 0.0;

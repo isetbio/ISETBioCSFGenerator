@@ -44,7 +44,7 @@ function t_responseClassifier
     theNeuralEngine = neuralResponseEngine(neuralComputeFunction);
     
     % User-supplied computeFunction for the @responseClassifierEngine
-    classifierComputeFunction = @pcaSVMClassifier;
+    classifierComputeFunction = @rcePcaSVMClassifier;
     % User-supplied struct with params appropriate for the @responseClassifierEngine computeFunction
     customClassifierParams = struct(...
         'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction

@@ -1,4 +1,4 @@
-function dataOut = poissonTemplateClassifier(obj, operationMode, ~, nullResponses, testResponses)
+function dataOut = rceLogTemplateClassifier(obj, operationMode, ~, nullResponses, testResponses)
 % Compute function for training a binary SVM classifier to predict classes from
 % responses.
 

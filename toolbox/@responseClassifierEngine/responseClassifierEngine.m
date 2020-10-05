@@ -24,7 +24,7 @@ classdef responseClassifierEngine < handle
 %
 %
 % See Also:
-%    t_responseClassifier.m, pcaSVMClassifier.m
+%    t_responseClassifier.m, rcePcaSVMClassifier.m
 %
 
 % History:
