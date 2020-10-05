@@ -29,7 +29,7 @@ function t_responseClassifier
 %    09/21/2020  NPC  Wrote it.
 
     % Configure the function handle and the params for the @sceneGenerationEngine
-    sceneComputeFunction = @uniformFieldTemporalModulation;
+    sceneComputeFunction = @sceUniformFieldTemporalModulation;
 
     % Instantiate a sceneGenerationEngine with the above sceneComputeFunctionHandle
     % No sceneParams passed, so we are using the default params specified

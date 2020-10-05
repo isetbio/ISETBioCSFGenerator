@@ -1,8 +1,8 @@
-function dataOut = uniformFieldTemporalModulation(testContrast,sceneParamsStruct)
+function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStruct)
 % Compute function for computation of cone excitations witout eye movements 
 %
 % Syntax:
-%   dataOut = uniformFieldTemporalModulation(testContrast,sceneParamsStruct);
+%   dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStruct);
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine
@@ -10,7 +10,7 @@ function dataOut = uniformFieldTemporalModulation(testContrast,sceneParamsStruct
 %
 %       [1] If called directly and with no arguments, 
 %
-%               dataOut = uniformFieldTemporalModulation()
+%               dataOut = sceUniformFieldTemporalModulation()
 %
 %           it does not compute anything and simply returns a struct with the 
 %           defaultParams that define the scene.
@@ -51,13 +51,13 @@ function dataOut = uniformFieldTemporalModulation(testContrast,sceneParamsStruct
 %   Examples:
 %{
     % Usage case #1. Just return the default scene params
-    defaultParams = uniformFieldTemporalModulation()
+    defaultParams = sceUniformFieldTemporalModulation()
 
     % Usage case #2. Compute a stimulus sequence using a parent @sceneEngine 
     % object and the default neural response params
 
     % Instantiate the parent @sceneEngine object
-    theSceneEngineOBJ = sceneEngine(@uniformFieldTemporalModulation);
+    theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
 
     % Generate a test scene
     testContrast = 0.1;

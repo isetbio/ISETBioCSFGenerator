@@ -7,11 +7,11 @@ function t_sceneGeneration
 % Description:
 %    Demonstrates how to generate a stimulus sequence using a
 %    @sceneEngine object and a scene compute function. The scene computed by
-%    the 'uniformFieldTemporalModulation' compute function is a uniform field whose
+%    the 'sceUniformFieldTemporalModulation' compute function is a uniform field whose
 %    luminance is stepped up during some interval. Here we are passing a
 %    custom scene params struct during instantiation of the @sceneEngine object.
 %    If no scene params struct were passed, the default scene params 
-%    defined in the 'uniformFieldTemporalModulation' compute function would be used.
+%    defined in the 'sceUniformFieldTemporalModulation' compute function would be used.
 %
 % Inputs:
 %    None.
@@ -33,7 +33,7 @@ function t_sceneGeneration
 
     % Configure the function handle and the params for the @sceneEngine
     % user supplied compute function
-    sceneComputeFunction = @uniformFieldTemporalModulation;
+    sceneComputeFunction = @sceUniformFieldTemporalModulation;
     
     % User supplied struct with params appropriate for the sceneComputeFunction
     customSceneParams = struct(...
@@ -80,10 +80,10 @@ function t_sceneGeneration
     end
     
     % If you didn't know what fields the parameters struct the
-    % uniformFieldTemporalModulation function expects, you can get a
+    % sceUniformFieldTemporalModulation function expects, you can get a
     % default parameters structure by calling
-    % uniformFieldTemporalModulation without any arguments
-    defaultSceneParams = uniformFieldTemporalModulation
+    % sceUniformFieldTemporalModulation without any arguments
+    defaultSceneParams = sceUniformFieldTemporalModulation
     
     % You can also instantiate a scene generation object with the default
     % parameters by not providing them:

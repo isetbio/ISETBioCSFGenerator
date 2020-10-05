@@ -26,7 +26,7 @@ close all;
 
 % Instantiate a sceneGenerationEngine with
 % function handle that generates uniform field temporal modulation
-theSceneEngine = sceneEngine(@uniformFieldTemporalModulation);
+theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation);
 
 % Instantiate a neuralResponseEngine. No responseParams passed, so we
 % are using the default params specified nrePhotopigmentExcitationsWithNoEyeMovements

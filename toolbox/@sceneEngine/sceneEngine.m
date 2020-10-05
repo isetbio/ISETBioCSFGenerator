@@ -25,7 +25,7 @@ classdef sceneEngine < handle
 %
 %
 % See Also:
-%    t_sceneGeneration.m, uniformFIeldTemporalModulation.m
+%    t_sceneGeneration.m, sceUniformFieldTemporalModulation.m
 %
 
 % History:

@@ -80,7 +80,7 @@ function dataOut = pcaSVMClassifier(responseClassifierOBJ, operationMode, classi
     theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
     % Instantiate a @sceneEngine object and generate a test scene sequence
-    theSceneEngineOBJ = sceneEngine(@uniformFieldTemporalModulation);
+    theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
     testContrast = 0.7/100;
     [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
         theSceneEngineOBJ.compute(testContrast);

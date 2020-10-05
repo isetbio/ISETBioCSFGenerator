@@ -34,7 +34,7 @@ function t_neuralResponseCompute
 
     % Configure the function handle and the params for the @sceneGenerationEngine
     % This is a function that the USER has to supply
-    sceneComputeFunction = @uniformFieldTemporalModulation;
+    sceneComputeFunction = @sceUniformFieldTemporalModulation;
     % Instantiate a sceneGenerationEngine with the above sceneComputeFunctionHandle
     theSceneEngine = sceneEngine(sceneComputeFunction);
     

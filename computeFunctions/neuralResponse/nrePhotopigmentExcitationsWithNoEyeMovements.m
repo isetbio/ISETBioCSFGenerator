@@ -91,7 +91,7 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
     theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
     % Instantiate a @sceneEngine object and generate a test scene
-    theSceneEngineOBJ = sceneEngine(@uniformFieldTemporalModulation);
+    theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
     testContrast = 0.1;
     [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
         theSceneEngineOBJ.compute(testContrast);
