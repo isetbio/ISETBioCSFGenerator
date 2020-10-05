@@ -37,19 +37,21 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovem
 observer_ID = 1;
 
 %% Or use rcePcaSVMTAFC observer
-observer_ID = 2;
+% observer_ID = 2;
 
 %% Initialization, continued
 % A larger nTest is usually more effective, but depending on the performance
-% bottleneck of your observer, you might consider a smaller N
+% bottleneck of your observer, you might consider a smaller nTest
 switch observer_ID
     case 1        
         theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        % noise-free instance for training
         trianFlag = 'none'; testFlag = 'random';
         nTrian = 1; nTest = 120;
         
     case 2        
         theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
+        % noisy instance for training
         trianFlag = 'random'; testFlag = 'random';
         nTrian = 512; nTest = 120;
 end
@@ -138,9 +140,7 @@ end
 %% Helper function
 function response = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trianFlag, testFlag)
 
-% Code for observer (classifier or other form)
-% Compute many respose instances to the NULL and TEST stimuli for training the SVM classifier
-
+% Generate stimulus for training
 % NULL stimulus mean response
 [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
     nullScene, ...
@@ -161,7 +161,7 @@ theClassifierEngine.compute('train', ...
     inSampleNullStimResponses(trianFlag), ...
     inSampleTestStimResponses(trianFlag));
 
-
+% Generate stimulus for testing/prediction
 % 'Predict' on noisy responses
 % NULL stimulus mean response
 [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
