@@ -35,6 +35,14 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
     % Call the user-supplied compute function
     dataOut = obj.sceneComputeFunction(sceneContrast, obj.sceneParams);
 
+    % Retrieve the returned dataOut fields
+    theFieldNames = fieldnames(dataOut);
+    
+    % Validate the dataOut struct
+    for k = 1:numel(obj.requiredFieldsForDataOutStruct)
+        assert(ismember(obj.requiredFieldsForDataOutStruct{k}, theFieldNames), sprintf('dataOut struct does not contain the ''%s'' field', obj.requiredFieldsForDataOutStruct{k}));
+    end
+        
     % Parse dataOut struct
     theSceneSequence = dataOut.sceneSequence;
     temporalSupportSeconds = dataOut.temporalSupport;

@@ -1,5 +1,6 @@
 function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStruct)
-% Compute function for computation of cone excitations witout eye movements 
+% Compute function for generating a sequence of scenes depicting a
+% temporal modulation of a uniform field.
 %
 % Syntax:
 %   dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStruct);
@@ -54,7 +55,7 @@ function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStr
     defaultParams = sceUniformFieldTemporalModulation()
 
     % Usage case #2. Compute a stimulus sequence using a parent @sceneEngine 
-    % object and the default neural response params
+    % object and the default scene params
 
     % Instantiate the parent @sceneEngine object
     theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
