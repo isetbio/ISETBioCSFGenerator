@@ -42,7 +42,7 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %                                     'none', independent of how many are
 %                                     asked for.
 %   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
-%                                     seed.(repeatable noisy response
+%                                     seed.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
