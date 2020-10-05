@@ -22,6 +22,10 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %       it computes 'instancesNum' of cone photopigment excitation sequences 
 %       in response to the passed 'sceneSequence'.
 %
+%    It is not a good idea to try to call this function with arguments
+%    directly - it should be called by the compute method of its parent
+%    @neuralResponseEngine.
+%
 % Inputs:
 %    neuralEngineOBJ                - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
@@ -49,11 +53,12 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %
 %               If called directly with no input arguments, the returned struct contains
 %               the defaultParams (optics and coneMosaic) that define the neural 
-%               compute pipeline for this computation.
+%               compute pipeline for this computation.  This can be useful
+%               for a user interested in knowing what needs to be supplied
+%               to this.
 %
-%             - If called will full arguments (e.g. from a parent
-%               @neuralResponseEngine), the returned struct is organized as
-%               follows:
+%             - If called from a parent @neuralResponseEngine), the returned
+%               struct is organized as follows:
 %
 %              .neuralResponses : dictionary of responses indexed with 
 %                                   labels corresponding to the entries of
