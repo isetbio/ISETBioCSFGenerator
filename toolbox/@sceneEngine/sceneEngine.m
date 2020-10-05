@@ -42,6 +42,9 @@ classdef sceneEngine < handle
         sceneComputeFunction
         % User-passed struct with all scene computation params except contrast
         sceneParams
+        
+        % Required dataOut struct fields returned from the compute function
+        requiredFieldsForDataOutStruct = {'sceneSequence', 'temporalSupport'};
     end
     
     % Public methods
