@@ -120,7 +120,7 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
     % Parse the input arguments
     p = inputParser;
     p.addParameter('noiseFlags', {'random'});
-    p.addParameter('rngSeed',[],@(x) (isempty(s) | isnumeric(x)));
+    p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     
