@@ -36,7 +36,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovem
 % without changing other aspects (e.g., stimulus generation).
 
 % theClassifierEngine = responseClassifierEngine(@rceLogTemplateClassifier);
-theClassifierEngine = responseClassifierEngine(@rcePoisson2AFCClassifier);
+theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
 
 % Generate and compute the zero contrast NULL stimulus (sequence)
 nullContrast = 0.0;
@@ -155,6 +155,6 @@ dataOut  = theClassifierEngine.compute('predict', ...
     inSampleNullStimResponses('random'), ...
     inSampleTestStimResponses('random'));
 
-response = dataOut.response;
+response = dataOut.trialPredictions;
 
 end

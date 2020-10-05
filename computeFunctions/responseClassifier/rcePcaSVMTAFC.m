@@ -1,6 +1,5 @@
-function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, classifierParamsStruct, nullResponses, testResponses)
-% Compute function for training a binary SVM classifier to predict classes from
-% responses.
+function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifierParamsStruct, nullResponses, testResponses)
+% Compute function for training a binary 2AFC SVM classifier to predict response classes from response instances.
 %
 % Syntax:
 %   dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, ...
@@ -8,7 +7,10 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a @responseClassifierEngine
-%    object. There are 2 ways to use this function.
+%    object for training a binary, two-alternative forced choise classifier. The classifier
+%    consists of a PCA-data dimensionality stage coupled with a binary SVM classifier.
+%
+%    There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
 %
@@ -20,7 +22,7 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
 %       [2] If called from a parent @responseClassifierEngine object, 
 %       it either trains a binary SVM classifier or it uses the already
 %       trained classifier (stored in the parent @responseClassifierEngine object)
-%       to predict the classes of a novel set of responses. 
+%       to predict response classes for a novel set of response instances. 
 %
 % Inputs:
 %    responseClassifierOBJ          - the parent @responseClassifierEngine object that
@@ -35,7 +37,8 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
 %    nullResponses                  - an [mTrials x nDims] matrix of responses to the null stimulus
 %
 %    testResponses                  - an [mTrials x nDims] matrix of responses to the test stimulus
-%
+%    
+%    
 %
 % Optional key/value input arguments: none
 %
@@ -53,14 +56,19 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
 %                   .features                : the features used for classification
 %                   .trainedClassifier       : the trained binary SCV classifer
 %                   .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
-%                   .pCorrectInSample        : probability of correct classification for the in-sample (training data)
-%                   .decisionBounday         : if the feature set is 2D, the 2D decision boundary, otherwise []
+%                   .pCorrect                : probability of correct classification for the in-sample trials (training data)
+%                   .nominalClassLabels      : the classifier-assigned response classes
+%                   .predictedClassLabels    : the classifier-predicted response classes
+%                   .decisionBoundary        : if the feature set is 2D, the 2D decision boundary, otherwise []
 %
 %               In 'predict' mode:
 %
 %                   .features                : the features used for classification
-%                   .pCorrectOutOfSample     : probability of correct classification for the out-of-sample (testing data)
-%                   .predictedClassLabels    : the predicted labels for the out-of-sample responses
+%                   .pCorrect                : probability of correct classification for the out-of-sample trials (testing data)
+%                   .trialPredictions        : vector of the trial-by-trial predictions 
+%                                              (0 == incorrectly predicting nominal class, 1 == correctly predicting nominal class)
+%                   .nominalClassLabels      : the classifier-assigned response classes
+%                   .predictedClassLabels    : the classifier-predicted response classes
 %
 %
 % See Also:
@@ -146,7 +154,7 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
     end
     
     % Feature assembly phase
-    [features, classLabels] = computeFeatures(classifierParamsStruct, nullResponses, testResponses);
+    [features, classLabels] = assembleFeatures(nullResponses, testResponses);
 
     % Feature preprocessing analysis
     if (strcmp(operationMode, 'train'))
@@ -170,7 +178,7 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
     % Classify
     if (strcmp(operationMode, 'train'))
         % Train an SVM classifier on the data
-        [trainedSVM, pCorrectInSample, decisionBoundary] = classifierTrain(classifierParamsStruct, features, classLabels);
+        [trainedSVM, predictedClassLabels, pCorrectInSample, decisionBoundary] = classifierTrain(classifierParamsStruct, features, classLabels);
     else
         % Employ the trained classifier to predict classes for the responses in this data set
         [predictedClassLabels, pCorrectOutOfSample] = classifierPredict(responseClassifierOBJ.trainedClassifier, features, classLabels);
@@ -178,6 +186,9 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
     
     % Assemble dataOut struct
     dataOut.features = features;
+    dataOut.nominalClassLabels = classLabels;
+    dataOut.predictedClassLabels = predictedClassLabels;
+    
     if (strcmp(operationMode, 'train'))
         % Return the trained SVM, the preprocessing constants, the
         % in-sample pCorrect and the decision boundary
@@ -185,14 +196,15 @@ function dataOut = rcePcaSVMClassifier(responseClassifierOBJ, operationMode, cla
         dataOut.preProcessingConstants = struct(...
             'centering', m, ...
         	'principalComponents', principalComponents);
-        dataOut.pCorrectInSample = pCorrectInSample;
+        dataOut.pCorrect = pCorrectInSample;
+        dataOut.trialPredictions = (predictedClassLabels == classLabels);
         dataOut.decisionBoundary = decisionBoundary;
      else
-         % Return the out-of-sample pCorrect and the predicted classes
-        dataOut.pCorrectOutOfSample = pCorrectOutOfSample;
-        dataOut.predictedClassLabels = predictedClassLabels;
-     end
-     
+        % Return the out-of-sample pCorrect, and the trial-by-trial vector
+        % of predictions (0 == correct, 1 == correct)
+        dataOut.pCorrect = pCorrectOutOfSample;     
+        dataOut.trialPredictions = (predictedClassLabels == classLabels);
+    end
 end
 
 
@@ -202,7 +214,7 @@ function [predictedClassLabels, pCorrectOutOfSample] = classifierPredict(trained
     pCorrectOutOfSample = sum(predictedClassLabels(:)==actualClassLabels(:))/N;
 end
 
-function [compactSVMModel, pCorrectInSample, decisionBoundary] = classifierTrain(classifierParamsStruct, features, classLabels)
+function [compactSVMModel, predictedClassLabels, pCorrectInSample, decisionBoundary] = classifierTrain(classifierParamsStruct, features, classLabels)
  
      % Train the SVM classifier
      svmModel = fitcsvm(features, classLabels, ...
@@ -219,6 +231,9 @@ function [compactSVMModel, pCorrectInSample, decisionBoundary] = classifierTrain
      % Extract the trained, compact classifier. The compact SVM saves space
      % by not including the train data.
      compactSVMModel = compact(svmModel);
+     
+     % Generated predicted class labels for the training data set
+     predictedClassLabels = predict(compactSVMModel, features);
      
      % Compute the 2D decision boundary
      if (size(features,2) == 2)
@@ -241,7 +256,7 @@ function [compactSVMModel, pCorrectInSample, decisionBoundary] = classifierTrain
      
 end
 
-function [features, classLabels] = computeFeatures(classifierParamsStruct, nullResponses, testResponses)
+function [features, classLabels] = assembleFeatures(nullResponses, testResponses)
     
     % Reshape data to [nTrials x mResponse dimensions]
     nTrials = size(nullResponses,1);
@@ -252,45 +267,47 @@ function [features, classLabels] = computeFeatures(classifierParamsStruct, nullR
     nullResponses = reshape(nullResponses, [nTrials responseSize]);
     testResponses = reshape(testResponses, [nTrials responseSize]);
     
-    % Arange responses according to whether we are simulating a 1- or a 2-interval task
-    if (classifierParamsStruct.taskIntervals == 1)
-        features = zeros(2*nTrials, responseSize);
-        classLabels = zeros(2*nTrials, 1);
-        
-        % Class 0 data are the null response data
-        features(1:nTrials,:) = nullResponses;
-        classLabels(1:nTrials,1) = 0;
-        
-        % Class 0 data are the test response data
-        features(nTrials+(1:nTrials),:) = testResponses;
-        classLabels(nTrials+(1:nTrials),1) = 1;
-    else
-        halfTrials = floor(nTrials/2);
-        if (halfTrials<1)
-            error('For a 2-interval classifier, we need at least 2 trials');
+    % Arange responses simulating a 2-interval task
+    if (nTrials == 1)
+        % If we are given only one trial data, arrange randomly in a 
+        % class 0: NULL-TEST or in a class 1: % TEST-NULL
+        if (rand(1,1) > 0.5)
+            features(1,:) = [nullResponses testResponses];
+            classLabels(1) = 0;
+            fprintf('Arrangle single instance in NULL-TEST (class 0)')
+        else
+            features(1,:) = [testResponses nullResponses];
+            classLabels(1) = 1;
+            fprintf('Arrangle single instance in TEST-NULL (class 1)')
         end
-        features = zeros(2*halfTrials, 2*responseSize);
-        classLabels = zeros(2*halfTrials, 1);
-        
-        % Class 0 data contain the null responses in the 1st interval
-        features(1:halfTrials,:) = cat(2, ...
-            nullResponses(1:halfTrials,:), ...
-            testResponses(1:halfTrials,:));
-        classLabels(1:halfTrials,1) = 0;
-        
-        % Class 1 data contain the null responses in the 2nd interval
-        features(halfTrials+(1:halfTrials),:) = cat(2, ...
-            testResponses(halfTrials+(1:halfTrials),:), ...
-            nullResponses(halfTrials+(1:halfTrials),:));
-        classLabels(halfTrials+(1:halfTrials),1) = 1;
+        return;
     end
+    
+    % More than 1 trial data. Split the first half as NULL-TEST pairs and
+    % the second half as TEST-NULL pairs
+    halfTrials = floor(nTrials/2);
+    features = zeros(2*halfTrials, 2*responseSize);
+    classLabels = zeros(2*halfTrials, 1);
+
+    % Class 0 data contain the null responses in the 1st interval
+    % (NULL-TEST)
+    features(1:halfTrials,:) = cat(2, ...
+        nullResponses(1:halfTrials,:), ...
+        testResponses(1:halfTrials,:));
+    classLabels(1:halfTrials,1) = 0;
+
+    % Class 1 data contain the null responses in the 2nd interval
+    % (TEST-NULL)
+    features(halfTrials+(1:halfTrials),:) = cat(2, ...
+        testResponses(halfTrials+(1:halfTrials),:), ...
+        nullResponses(halfTrials+(1:halfTrials),:));
+    classLabels(halfTrials+(1:halfTrials),1) = 1;
 end
 
 
 function p = generateDefaultParams()
     p = struct(...
         'PCAComponentsNum', 2, ...
-        'taskIntervals', 1, ...
         'classifierType', 'svm', ...
         'kernelFunction', 'linear', ...
         'crossValidationFoldsNum', 10);

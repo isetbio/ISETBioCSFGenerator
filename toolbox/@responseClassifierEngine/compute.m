@@ -43,15 +43,24 @@ function dataOut = compute(obj, operationMode, nullResponses, testResponses)
 %                                       .features                : the features used for classification
 %                                       .trainedClassifier       : the trained binary SCV classifer
 %                                       .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
-%                                       .pCorrectInSample        : probability of correct classification for the in-sample (training data)
-%                                       .decisionBounday         : if the feature set is 2D, the 2D decision boundary, otherwise []
+%                                       .pCorrect                : probability of correct classification for the in-sample trials (training data)
+%                                       .trialPredictions        : vector of the trial-by-trial predictions for the training data set
+%                                                                   (0 == incorrectly predicting nominal class, 1 == correctly predicting nominal class)
+%                            
+%                                       .nominalClassLabels      : the classifier-assigned response classes
+%                                       .predictedClassLabels    : the classifier-predicted response classes
+%                                       .decisionBoundary        : if the feature set is 2D, the 2D decision boundary, otherwise []
 %
 %                                     If the operatonMode is set to 'predict', dataOut contains the
 %                                     following fields:
 %                                       .features                : the features used for classification
-%                                       .pCorrectOutOfSample     : probability of correct classification for the out-of-sample (testing data)
-%                                       .predictedClassLabels    : the predicted labels for the out-of-sample responses
+%                                       .pCorrect                : probability of correct classification for the out-of-sample trials (testing data)
+%                                       .trialPredictions        : vector of the trial-by-trial predictions for the test data set
+%                                                                   (0 == incorrectly predicting nominal class, 1 == correctly predicting nominal class)
+%                                       .nominalClassLabels      : the classifier-assigned response classes
+%                                       .predictedClassLabels    : the classifier-predicted response classes
 %
+
 % See Also:
 %     t_responseClassifier
 
@@ -64,9 +73,23 @@ function dataOut = compute(obj, operationMode, nullResponses, testResponses)
     % Call the user-supplied compute function
     dataOut = obj.classifierComputeFunction(obj, operationMode, obj.classifierParams, nullResponses, testResponses);
 
+    % Retrieve the returned dataOut fields
+    theFieldNames = fieldnames(dataOut);
+
     % Set the trainedClassifier property for future predictions
-    if (isfield(dataOut, 'trainedClassifier'))
+    if (strcmp(operationMode, 'train'))
+        % Validate the dataOut struct
+        for k = 1:numel(obj.requiredFieldsForTrainDataOutStruct)
+            assert(ismember(obj.requiredFieldsForTrainDataOutStruct{k}, theFieldNames), sprintf('dataOut struct does not contain the ''%s'' field', obj.requiredFieldsForTrainDataOutStruct{k}));
+        end
+        % Store the trained classfier
         obj.trainedClassifier = dataOut.trainedClassifier;
+        % Store the pre-processing constants
         obj.preProcessingConstants = dataOut.preProcessingConstants;
+    else
+        % Validate the dataOut struct
+        for k = 1:numel(obj.requiredFieldsForPredictDataOutStruct)
+            assert(ismember(obj.requiredFieldsForPredictDataOutStruct{k}, theFieldNames), sprintf('dataOut struct does not contain the ''%s'' field', obj.requiredFieldsForPredictDataOutStruct{k}));
+        end
     end
 end

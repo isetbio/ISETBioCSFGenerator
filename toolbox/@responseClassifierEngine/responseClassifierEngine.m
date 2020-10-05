@@ -50,6 +50,12 @@ classdef responseClassifierEngine < handle
         
         % Valid modes of operation
         validOperationModes = {'train', 'predict'};
+        
+        % Required dataOut struct fields returned from the compute function during a 'train' operation mode
+        requiredFieldsForTrainDataOutStruct = {'trainedClassifier', 'preProcessingConstants'};
+        
+       % Required dataOut struct fields returned from the compute function during a 'predict' operation mode
+        requiredFieldsForPredictDataOutStruct = {'trialPredictions'};
     end
     
     % Public methods

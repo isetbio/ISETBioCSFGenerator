@@ -1,4 +1,4 @@
-function dataOut = rcePoisson2AFCClassifier (obj, operationMode, ~, nullResponses, testResponses)
+function dataOut = rcePoissonTAFC(obj, operationMode, ~, nullResponses, testResponses)
 % Compute function for training a binary SVM classifier to predict classes from
 % responses.
 
@@ -59,7 +59,7 @@ if (strcmp(operationMode, 'predict'))
         response(idx) = ((llhd_cr - llhd_ic) > 0);
     end
     
-    dataOut.response = response;
+    dataOut.trialPredictions = response;
     dataOut.pCorrect = mean(response);
     
     return;

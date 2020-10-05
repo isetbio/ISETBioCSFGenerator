@@ -33,7 +33,7 @@ theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation);
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
 
 % Instantiate a responseClassifierEngine with rcePcaSVMClassifier
-theClassifierEngine = responseClassifierEngine(@rcePcaSVMClassifier);
+theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
 
 % Generate and compute the zero contrast NULL stimulus (sequence)
 nullContrast = 0.0;
@@ -90,7 +90,7 @@ while (nextFlag)
         inSampleNullStimResponses('random'), ...
         inSampleTestStimResponses('random'));
     
-    pCorrect = trainingData.pCorrectInSample;
+    pCorrect = trainingData.pCorrect;
     
     % Translate p-correct into binary response using binomial distribution
     % Not necessary for template-based observer
@@ -145,7 +145,7 @@ parfor idx = 1 : length(logContrast)
         inSampleNullStimResponses('random'), ...
         inSampleTestStimResponses('random'));
     
-    pCorrect(idx) = trainingData.pCorrectInSample;
+    pCorrect(idx) = trainingData.pCorrect;
 end
 
 %% Plot curve

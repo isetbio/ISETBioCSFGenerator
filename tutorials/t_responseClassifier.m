@@ -44,18 +44,17 @@ function t_responseClassifier
     theNeuralEngine = neuralResponseEngine(neuralComputeFunction);
     
     % User-supplied computeFunction for the @responseClassifierEngine
-    classifierComputeFunction = @rcePcaSVMClassifier;
+    classifierComputeFunction = @rcePcaSVMTAFC;
     % User-supplied struct with params appropriate for the @responseClassifierEngine computeFunction
     customClassifierParams = struct(...
         'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
-        'taskIntervals', 2, ...             % simulate a 2-interval task
         'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
         'kernelFunction', 'linear', ...     % linear
         'classifierType', 'svm' ...         % binary SVM classifier
         );
    
     % Instantiate a responseClassifierEngine with the above classifierComputeFunctionHandle and custom classifierParams
-    theClassifierEngine = responseClassifierEngine(classifierComputeFunction);
+    theClassifierEngine = responseClassifierEngine(classifierComputeFunction, customClassifierParams);
    
     % Generate the NULL stimulus sequence
     nullContrast = 0.0;
@@ -68,7 +67,7 @@ function t_responseClassifier
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
     % Compute respose instances to the NULL and TEST stimuli for training the classifier
-    trainingInstancesNum = 128;
+    trainingInstancesNum = 256;
     
     [inSampleNullStimResponses, theIsomerizationsTemporalSupportSeconds] = ...
         theNeuralEngine.compute(theNullSceneSequence, ...
@@ -89,9 +88,8 @@ function t_responseClassifier
     
     % Test predictions of the trained classifier on 10 out of sample
     % response instance at a time
-    outOfSampleInstancesNum = 50;
-    outOfSampleInstancesNum = max([outOfSampleInstancesNum theClassifierEngine.classifierParams.taskIntervals]);
-    
+    outOfSampleInstancesNum = 100;
+  
     % Repeat out-of-sample predictions a total of N times
     N = 1;
     for trial = 1:N
@@ -115,79 +113,65 @@ function t_responseClassifier
 
         % Visualize the classifier performance on the in-sample (training) and 
         % the out of sample responses. Notice that the second component
-        % captures almost variance in the test data. Thats because the principal
+        % captures almost no variance in the test data. Thats because the principal
         % components are computed on the training data. In that data set the second
         % component is capturing the noise. In the second data set, the
         % second component captures almost zero variance because the noise component
         % is different.
         debugClassifier = true;
         if (debugClassifier)
-             plotClassifierResults(theClassifierEngine.classifierParams, trainingData, predictedData);
+             plotClassifierResults(trainingData, predictedData);
              drawnow;
         end
    end
         
 end
 
-function plotClassifierResults(classifierParams, trainingData, predictedData)
+function plotClassifierResults(trainingData, predictedData)
     hFig = figure(1); clf;
     set(hFig, 'Position', [10 10 950 500], 'Color', [1 1 1]);
-    minFeature = min([min(trainingData.features(:))]);
-    maxFeature = max([max(trainingData.features(:))]);
+    minFeature = min([ min(trainingData.features(:)) min(predictedData.features(:)) ]);
+    maxFeature = max([ max(trainingData.features(:)) max(predictedData.features(:)) ]);
     
     % The training data
     ax = subplot(1,2,1);
     hold(ax, 'on');
     renderDecisionBoundary(ax,trainingData.decisionBoundary, true); 
-    renderFeatures(ax, trainingData.features, classifierParams.taskIntervals);
+    renderFeatures(ax, trainingData.features, trainingData.nominalClassLabels);
     xlabel(ax,'PCA #1 score');
     ylabel(ax,'PCA #2 score');
-    title(ax,sprintf('In-sample percent correct: %2.3f', trainingData.pCorrectInSample));
+    title(ax,sprintf('In-sample percent correct: %2.3f', trainingData.pCorrect));
     axis(ax,'square');
     set(ax, 'XLim', [minFeature maxFeature], 'YLim', [minFeature maxFeature], 'FontSize', 12);
     colormap(ax,brewermap(1024, 'RdYlGn'));
 
-    
-    minFeature = min([min(predictedData.features(:))]);
-    maxFeature = max([max(predictedData.features(:))]);
-    
+
     % The predicted data
     ax = subplot(1,2,2);
     hold(ax, 'on');
     renderDecisionBoundary(ax,trainingData.decisionBoundary, false); 
-    renderFeatures(ax, predictedData.features, classifierParams.taskIntervals);
+    renderFeatures(ax, predictedData.features, predictedData.nominalClassLabels);
     xlabel(ax,'PCA #1 score');
     ylabel(ax,'PCA #2 score');
-    title(ax,sprintf('Out-of-sample percent correct: %2.3f', predictedData.pCorrectOutOfSample));
+    title(ax,sprintf('Out-of-sample percent correct: %2.3f', predictedData.pCorrect));
     axis(ax,'square');
     set(ax, 'XLim', [minFeature maxFeature], 'YLim', [minFeature maxFeature],  'FontSize', 12);
     colormap(ax,brewermap(1024, 'RdYlGn'));
     
 end
 
-function renderFeatures(ax, features, taskIntervals)
+function renderFeatures(ax, features, nominalLabels)
 
-    N = max([1 floor(size(features,1)/2)]);
+    idx = find(nominalLabels == 0);
+    scatter(ax,features(idx,1), features(idx,2), 64, ...
+        'MarkerFaceColor', [0.8 0.8 0.8], ...
+        'MarkerEdgeColor', [0.2 0.2 0.2]); 
+    hold('on')
+    idx = find(nominalLabels == 1);
+    scatter(ax,features(idx,1), features(idx,2), 64, ...
+        'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerEdgeColor', [0.9 0.9 0.9]);
 
-    if (taskIntervals == 2)
-            scatter(ax,features(1:N,1), features(1:N,2), 64, ...
-                'MarkerFaceColor', [0.8 0.8 0.8], ...
-                'MarkerEdgeColor', [0.2 0.2 0.2]); 
-            hold('on')
-            if (size(features,1)<=2*N)
-                scatter(ax,features(N+(1:N),1), features(N+(1:N),2), 64, ...
-                'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerEdgeColor', [0.9 0.9 0.9]);
-            end
-    else
-        
-        scatter(ax,features(1:N,1), features(1:N,2), 64, ...
-            'MarkerFaceColor', [0.8 0.8 0.8], ...
-            'MarkerEdgeColor', [0.2 0.2 0.2]); 
-        hold('on')
-        scatter(ax,features(N+(1:N),1), features(N+(1:N),2), 64, ...
-            'MarkerFaceColor', [0.4 0.4 0.4], 'MarkerEdgeColor', [0.9 0.9 0.9]);
-    end
-
+    legend({'decision boundary', 'nominal class 0', 'nomimal class 1'})
 end
 
 
