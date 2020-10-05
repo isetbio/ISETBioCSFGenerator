@@ -32,19 +32,27 @@ theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
 % Choices are:
 %   'ncePhotopigmentExcitationsWithNoEyeMovements'
 %   'nceScenePhotonNoise'
-whichSceneEngine = 'nceScenePhotonNoise';
+whichSceneEngine = 'ncePhotopigmentExcitationsWithNoEyeMovements';
 switch (whichSceneEngine)
     case 'ncePhotopigmentExcitationsWithNoEyeMovements'
-        % No responseParams passed, so we are using the default params
-        % specified nrePhotopigmentExcitationsWithNoEyeMovements
-        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
+        neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
+        neuralParams.coneMosaicParams.fovDegs = 0.1;
+        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements,neuralParams);
         logThreshLimitLow = 4;
         logThreshLimitHigh = 1;
+        logThreshLimitDelta = 0.02;
+        slopeRangeLow = 1;
+        slopeRangeHigh = 100;
+        slopeDelta = 1;
         
     case 'nceScenePhotonNoise'
         theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);
         logThreshLimitLow = 8;
         logThreshLimitHigh = 4;
+        logThreshLimitDelta = 0.02;
+        slopeRangeLow = 1000;
+        slopeRangeHigh = 10000;
+        slopeDelta = 100;
         
     otherwise
         error('Unknown neural engine specified');
@@ -58,7 +66,7 @@ whichObserver = 'rcePoissonTAFC';
 
 % A larger nTest is usually more effective, but depending on the performance
 % bottleneck of your observer, you might consider a smaller nTest
-switch observer
+switch whichObserver
     case 'rcePoissonTAFC' 
         % The ideal observer for a TAFC task limited by Poisson noise
         theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
@@ -85,8 +93,8 @@ nullContrast = 0.0;
 
 % Construct a QUEST threshold estimator
 % estimate threshold on log contrast
-estDomain  = -logThreshLimitLow : 0.02 : -logThreshLimitHigh;
-slopeRange = 1.0 : 1.0 : 100;
+estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
+slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
 % Run QUEST for a total of minTrial trials. For typical usage, this is recommended
 
@@ -98,7 +106,6 @@ estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e4, ...
     'numEstimator', 3, 'stopCriterion', 0.025);
 
 %% Threshold estimation with QUEST+
-
 [logContrast, nextFlag] = estimator.nextStimulus();
 while (nextFlag)
     
