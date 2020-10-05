@@ -56,7 +56,13 @@ if (strcmp(operationMode, 'predict'))
         llhd_cr = llhd(nullResponses(idx, :), nullTemplate) + llhd(testResponses(idx, :), testTemplate);
         llhd_ic = llhd(nullResponses(idx, :), testTemplate) + llhd(testResponses(idx, :), nullTemplate);
         
-        response(idx) = ((llhd_cr - llhd_ic) > 0);
+        % for likelihood ratio extremely close to 1, do a coin flip
+        threshold = 1e-10;
+        if (abs(llhd_cr - llhd_ic) <= threshold)
+            response(idx) = (rand() > 0.5);
+        else
+            response(idx) = ((llhd_cr - llhd_ic) > 0);
+        end
     end
     
     dataOut.trialPredictions = response;

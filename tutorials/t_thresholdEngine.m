@@ -32,7 +32,7 @@ theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
 % Choices are:
 %   'ncePhotopigmentExcitationsWithNoEyeMovements'
 %   'nceScenePhotonNoise'
-whichNeuralEngine = 'ncePhotopigmentExcitationsWithNoEyeMovements';
+whichNeuralEngine = 'nceScenePhotonNoise';
 switch (whichNeuralEngine)
     case 'ncePhotopigmentExcitationsWithNoEyeMovements'
         neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
