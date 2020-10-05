@@ -20,40 +20,63 @@
 %   t_thresholdClassifier
 
 %% Initialization
+clear; close all;
 
-% Instantiate a sceneGenerationEngine with
+%% Instantiate a sceneGenerationEngine with
 % function handle that generates uniform field temporal modulation
-theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation);
+sceneParams = sceUniformFieldTemporalModulation;
+sceneParams.sizePixels = 5;
+theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
 
-% Instantiate a neuralResponseEngine. No responseParams passed, so we
-% are using the default params specified nrePhotopigmentExcitationsWithNoEyeMovements
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
+%% Instantiate a neuralResponseEngine.
+% Choices are:
+%   'ncePhotopigmentExcitationsWithNoEyeMovements'
+%   'nceScenePhotonNoise'
+whichSceneEngine = 'nceScenePhotonNoise';
+switch (whichSceneEngine)
+    case 'ncePhotopigmentExcitationsWithNoEyeMovements'
+        % No responseParams passed, so we are using the default params
+        % specified nrePhotopigmentExcitationsWithNoEyeMovements
+        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
+        logThreshLimitLow = 4;
+        logThreshLimitHigh = 1;
+        
+    case 'nceScenePhotonNoise'
+        theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);
+        logThreshLimitLow = 8;
+        logThreshLimitHigh = 4;
+        
+    otherwise
+        error('Unknown neural engine specified');
+end
 
-% Instantiate a responseClassifierEngine with rcePoissonTAFC which is the ideal observer for 2AFC task.
-% It is rather simple to change components of the pipeline (i.e., observer), without changing other aspects of
-% code (e.g., stimulus generation). Here, we can also choose to use rcePcaSVMTAFC which is a SVM based observer
+%% Instantiate a responseClassifierEngine
+% Choices are:
+%   'rcePoissonTAFC'
+%   'rcePcaSVMTAFC'
+whichObserver = 'rcePoissonTAFC';
 
-%% Use rcePoissonTAFC (the ideal observer of the task)
-observer_ID = 1;
-
-%% Or use rcePcaSVMTAFC observer
-% observer_ID = 2;
-
-%% Initialization, continued
 % A larger nTest is usually more effective, but depending on the performance
 % bottleneck of your observer, you might consider a smaller nTest
-switch observer_ID
-    case 1        
+switch observer
+    case 'rcePoissonTAFC' 
+        % The ideal observer for a TAFC task limited by Poisson noise
         theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
-        % noise-free instance for training
-        trianFlag = 'none'; testFlag = 'random';
-        nTrian = 1; nTest = 120;
         
-    case 2        
+        % Noise-free instance for training, random for test
+        trainFlag = 'none'; testFlag = 'random';
+        nTrain = 1; nTest = 120;
+        
+    case 'rcePcaSVMTAFC'  
+        % SVM classifier wit PCA pre-processing
         theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
-        % noisy instance for training
-        trianFlag = 'random'; testFlag = 'random';
-        nTrian = 512; nTest = 120;
+        
+        % Noisy instances for training and testing
+        trainFlag = 'random'; testFlag = 'random';
+        nTrain = 512; nTest = 120;
+        
+    otherwise
+        error('Unknown observer specified');
 end
 
 % Generate and compute the zero contrast NULL stimulus (sequence)
@@ -62,7 +85,7 @@ nullContrast = 0.0;
 
 % Construct a QUEST threshold estimator
 % estimate threshold on log contrast
-estDomain  = -4 : 0.02 : -1;
+estDomain  = -logThreshLimitLow : 0.02 : -logThreshLimitHigh;
 slopeRange = 1.0 : 1.0 : 100;
 
 % Run QUEST for a total of minTrial trials. For typical usage, this is recommended
@@ -87,16 +110,16 @@ while (nextFlag)
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
     response = computeResponse(theNullSceneSequence, theTestSceneSequence, ...
-        theSceneTemporalSupportSeconds, nTrian, nTest, ...
-        theNeuralEngine, theClassifierEngine, trianFlag, testFlag);
+        theSceneTemporalSupportSeconds, nTrain, nTest, ...
+        theNeuralEngine, theClassifierEngine, trainFlag, testFlag);
     
-    fprintf('Current test contrast: %.4f, P-correct: %.4f \n', testContrast, mean(response));
+    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(response));
     
     [logContrast, nextFlag] = ...
         estimator.multiTrial(logContrast * ones(1, nTest), response);
     
     [threshold, stderr] = estimator.thresholdEstimate();
-    fprintf('Current threshold estimate: %.4f, stderr: %.4f \n', 10 ^ threshold, stderr);
+    fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
     
 end
 
@@ -128,7 +151,7 @@ if (runValidation)
         pCorrect(idx) = mean(computeResponse(...
             theNullSceneSequence, theTestSceneSequence, ...
             theSceneTemporalSupportSeconds, 512, 512, ...
-            theNeuralEngine, theClassifierEngine), trianFlag, testFlag);
+            theNeuralEngine, theClassifierEngine), trainFlag, testFlag);
     end
     
     hold on;
