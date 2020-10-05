@@ -22,6 +22,7 @@
 %   t_sceneGeneration
 
 %% Initialization
+close all;
 
 % Instantiate a sceneGenerationEngine with
 % function handle that generates uniform field temporal modulation
