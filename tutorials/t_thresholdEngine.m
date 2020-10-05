@@ -32,8 +32,8 @@ theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
 % Choices are:
 %   'ncePhotopigmentExcitationsWithNoEyeMovements'
 %   'nceScenePhotonNoise'
-whichSceneEngine = 'ncePhotopigmentExcitationsWithNoEyeMovements';
-switch (whichSceneEngine)
+whichNeuralEngine = 'ncePhotopigmentExcitationsWithNoEyeMovements';
+switch (whichNeuralEngine)
     case 'ncePhotopigmentExcitationsWithNoEyeMovements'
         neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
         neuralParams.coneMosaicParams.fovDegs = 0.1;
