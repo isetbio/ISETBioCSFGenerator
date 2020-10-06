@@ -222,7 +222,7 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     contrastPattern = cosd(360*(fx*X + fy*Y) + frameSpatialPhaseDegs);
     
     % Harmonic or Square qave
-    if (strcmp(gratingParams.spatialModulation, 'rect'))
+    if (strcmp(gratingParams.spatialModulation, 'square'))
         contrastPattern = sign(contrastPattern);
     end
 
@@ -282,13 +282,12 @@ function p = generateDefaultParams()
         'minPixelsNumPerCycle', 10, ...                 % spatial: min number of pixels per grating spatial period (to minimize aliasing effects)
         'pixelsNum', 256, ...                           % spatial: desired size of stimulus in pixels - this could be larger depending on the minPixelsNumPerCycle, the SF, and the FOV
         'spatialFrequencyCyclesPerDeg', 5, ...          % spatial: grating spatial freequency, in cycles/deg
-        'orientationDegs', 20, ...                      % spatial: grating orientation, in degrees
+        'orientationDegs', 0, ...                       % spatial: grating orientation, in degrees
         'spatialPhaseDegs', 90, ...                     % spatial: grating spatial phase, in degrees
-        'spatialPositionDegs', [0.1 -0.1], ...          % spatial: center of grating, in degrees
-        'spatialModulation', 'harmonic', ...            % spatial: contrast modulation - choose between {'harmonic', 'rect'} for sinusoidal/square spatial modulation 
+        'spatialPositionDegs', [0.0 0.0], ...          % spatial: center of grating, in degrees
+        'spatialModulation', 'harmonic', ...            % spatial: contrast modulation - choose between {'harmonic', 'square'} for sinusoidal/square spatial modulation 
         'spatialEnvelope', 'Gaussian', ...              % spatial: envelope - choose between {'disk', 'square', 'Gaussian'}
-        'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs
-        'temporalEnvelopeSigmaSeconds', 0, ...          % temporal: sigma of the Gaussian temporal envelope, in seconds       
+        'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs      
         'temporalModulationParams', struct(...          % temporal: modulation params struct
             'mode', 'flashed', ...                      %   temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
             'stimOnFrameIndices', [2 3], ...            %   params relevant to the temporalModulationMode
