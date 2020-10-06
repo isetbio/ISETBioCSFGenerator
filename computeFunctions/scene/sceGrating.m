@@ -94,6 +94,59 @@ end
 
 function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
 
+    switch (gratingParams.temporalModulationParams.mode)
+        case 'flashed'
+            for frameIndex = 1:gratingParams.temporalModulationParams.stimDurationFramesNum
+                % Spatial phase is kept constant throughout all frames
+                frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
+                
+                % Contrast is modulated during the flash frames
+                frameContrastSequence(frameIndex) = testContrast;
+                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
+                    frameContrastSequence(frameIndex) = 0;
+                end
+            end
+            
+        case 'drifted'
+            stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
+            stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
+            deltaSpatialPhaseDegs = 360/stimDurationOneCycleFrames;
+            stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
+            
+            for frameIndex = 1:stimDurationFramesNum
+                % Contrast is kept constant throughout all frames
+                frameContrastSequence(frameIndex) = testContrast;
+                frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs;
+            end
+    
+    
+        case 'counter phase modulated'
+            stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
+            stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
+            deltaTemporalPhaseDegs = 360/stimDurationOneCycleFrames;
+            stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
+            
+            for frameIndex = 1:stimDurationFramesNum
+                % Contrast is kept constant throughout all frames
+                frameContrastSequence(frameIndex) = testContrast * sin(360*(frameIndex-1)*deltaTemporalPhaseDegs);
+                frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
+            end
+    end
+
+    % Generate all scene frames
+    for frameIndex = 1:numel(frameContrastSequence)
+        hProgressBar.Value = frameIndex/ numel(frameContrastSequence);
+        hProgressBar.Message = sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence));
+        theSceneFrame = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
+            frameContrastSequence(frameIndex), frameSpatialPhaseSequence(frameIndex));
+        theSceneSequence{frameIndex} = theSceneFrame;
+        temporalSupportSeconds(frameIndex) = (frameIndex-1)*gratingParams.frameDurationSeconds;
+    end
+
+end
+
+
+function theSceneFrame = generateGratingSequenceFrame(presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
     % Compute the color transformation matrices for this display
     displayLinearRGBToLMS = displayGet(presentationDisplay, 'rgb2lms');
     displayLMSToLinearRGB = inv(displayLinearRGBToLMS);
@@ -113,8 +166,8 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
     backgroundLMS = imageLinearTransform(backgroundRGB, displayLinearRGBToLMS);
     
     % Compute the spatial contrast modulation pattern
-    contrastPattern = testContrast * generateSpatialModulationPattern(gratingParams);
-
+    contrastPattern = frameContrast * generateSpatialModulationPattern(gratingParams, frameSpatialPhaseDegs);
+    
     % Compute the LMS-cone contrast spatial pattern
     LMScontrastImage = zeros(size(contrastPattern,1), size(contrastPattern,2), 3);
     for coneIndex = 1:3
@@ -143,12 +196,9 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
         
     % Set the desired FOV
     theSceneFrame = sceneSet(theScene, 'h fov', gratingParams.fovDegs);
-        
-    theSceneSequence{1} = theSceneFrame;
-    temporalSupportSeconds(1) = 0.0;
 end
 
-function contrastPattern = generateSpatialModulationPattern(gratingParams)
+function contrastPattern = generateSpatialModulationPattern(gratingParams, frameSpatialPhaseDegs)
 
     % Compute pixelsNum
     cyclesWithinFOV = gratingParams.spatialFrequencyCyclesPerDeg * gratingParams.fovDegs;
@@ -169,7 +219,7 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams)
     Y = Y - gratingParams.spatialPositionDegs(2);
     fx = gratingParams.spatialFrequencyCyclesPerDeg * cosd(gratingParams.orientationDegs);
     fy = gratingParams.spatialFrequencyCyclesPerDeg * sind(gratingParams.orientationDegs);
-    contrastPattern = cosd(360*(fx*X + fy*Y) + gratingParams.spatialPhaseDegs);
+    contrastPattern = cosd(360*(fx*X + fy*Y) + frameSpatialPhaseDegs);
     
     % Harmonic or Square qave
     if (strcmp(gratingParams.spatialModulation, 'rect'))
@@ -227,21 +277,23 @@ function p = generateDefaultParams()
         'spectralSupport', 400:10:750, ...              % display: spectral support of the primary SPDs, in nanometers
         'meanLuminanceCdPerM2', 40, ...                 % background: mean luminance, in candellas per meter squared
         'meanChromaticityXY', [0.3 0.32], ...           % background: neutral mean chromaticity
-        'coneContrastModulation', [0.1 -0.1 0.0], ...   % chromatic direction: LMS cone contrasts
+        'coneContrastModulation', [0.09 -0.09 0.0], ...   % chromatic direction: LMS cone contrasts
         'fovDegs', 1.0, ...                             % spatial: field of view, in degrees
         'minPixelsNumPerCycle', 10, ...                 % spatial: min number of pixels per grating spatial period (to minimize aliasing effects)
-        'pixelsNum', 1024, ...                          % spatial: desired size of stimulus in pixels - this could be larger depending on the minPixelsNumPerCycle, the SF, and the FOV
+        'pixelsNum', 256, ...                           % spatial: desired size of stimulus in pixels - this could be larger depending on the minPixelsNumPerCycle, the SF, and the FOV
         'spatialFrequencyCyclesPerDeg', 5, ...          % spatial: grating spatial freequency, in cycles/deg
         'orientationDegs', 20, ...                      % spatial: grating orientation, in degrees
         'spatialPhaseDegs', 90, ...                     % spatial: grating spatial phase, in degrees
-        'spatialPositionDegs', [0.2 -0.2], ...          % spatial: center of grating, in degrees
+        'spatialPositionDegs', [0.1 -0.1], ...          % spatial: center of grating, in degrees
         'spatialModulation', 'harmonic', ...            % spatial: contrast modulation - choose between {'harmonic', 'rect'} for sinusoidal/square spatial modulation 
         'spatialEnvelope', 'Gaussian', ...              % spatial: envelope - choose between {'disk', 'square', 'Gaussian'}
         'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs
-        'temporalEnvelopeSigmaSeconds', 0, ...          % temporal: sigma of the Gaussian temporal envelope, in seconds
-        'temporalModulation', 'flashed', ...            % temporal: modulation method - choose between {'flashed', 'drifted', 'counter phase modulated'}
-        'frameDurationSeconds', 50/1000, ...            % temporal: frame duration, in seconds
-        'stimDurationFramesNum', 4, ...                 % temporal: total duration, in frames
-        'stimOnsetFramesIndices', [2 3] ...             % temporal: on during frames 2 and 3, so between 50 and 150 msec
+        'temporalEnvelopeSigmaSeconds', 0, ...          % temporal: sigma of the Gaussian temporal envelope, in seconds       
+        'temporalModulationParams', struct(...          % temporal: modulation params struct
+            'mode', 'flashed', ...                      %   temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
+            'stimOnFrameIndices', [2 3], ...            %   params relevant to the temporalModulationMode
+            'stimDurationFramesNum', 4), ...            %   params relevant to the temporalModulationMode
+        'frameDurationSeconds', 20/1000 ...            % temporal: frame duration, in seconds
     );
+
 end

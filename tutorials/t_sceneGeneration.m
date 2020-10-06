@@ -1,5 +1,5 @@
 function t_sceneGeneration
-% How the @sceneEngine object to generate a simple scene sequence
+% Demonstrates how to use the @sceneEngine object to generate a simple scene sequence
 %
 % Syntax:
 %    t_sceneGeneration
@@ -60,7 +60,7 @@ function t_sceneGeneration
     % Visualize the generated scene sequence
     debugSceneGeneration = true;
     if (debugSceneGeneration)
-        sceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
+        theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
     end
     
     % Set a different parameters structure and generate a new sequence.
@@ -76,7 +76,7 @@ function t_sceneGeneration
     
     [theSceneSequence1, theSceneTemporalSupportSeconds1] = theSceneEngine.compute(testContrast);
     if (debugSceneGeneration)
-        sceneEngine.visualizeSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
+        theSceneEngine.visualizeSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
     end
     
     % If you didn't know what fields the parameters struct the

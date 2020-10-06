@@ -10,30 +10,32 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
         rowsNum = ceil(scenesNum/colsNum);
     end
     
+    if (isempty(obj.presentationDisplay))
+       % Generate generic display
+       presentationDisplay = displayCreate('LCD-Apple');
+    else
+       % Use employed display
+       presentationDisplay = obj.presentationDisplay;
+    end
+    % Compute the RGB settings for the display
+    displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
+    displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
+    
+        
     for frameIndex = 1:scenesNum
-        subplot(rowsNum, colsNum, frameIndex);
         % Extract the XYZ image representation
         xyzImage = sceneGet(sceneSequence{frameIndex}, 'xyz');
-        
-        if (isempty(obj.presentationDisplay))
-            % Generate generic display
-            presentationDisplay = displayCreate('LCD-Apple');
-        else
-            % Use employed display
-            presentationDisplay = obj.presentationDisplay;
-        end
-        
-        % Compute the RGB settings for the display
-        displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
-        displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
+        % Linear RGB image
         displayLinearRGBimage = imageLinearTransform(xyzImage, displayXYZToLinearRGB);
+        % Settings RGB image
         displaySettingsImage = (ieLUTLinear(displayLinearRGBimage, displayGet(presentationDisplay, 'inverse gamma'))) / displayGet(presentationDisplay, 'nLevels');
- 
+
         % Display
         image(displaySettingsImage);
         axis 'image';
         title(sprintf('frame %d\n(%2.0f msec)', frameIndex,temporalSupportSeconds(frameIndex)*1000));
-        colormap(gray);
+        set(gca, 'XTick', [], 'YTick', []);
+        drawnow;
     end
     
 end
