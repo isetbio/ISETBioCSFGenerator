@@ -94,20 +94,25 @@ classdef questThresholdEngine < contrastThresholdEngine
             p.KeepUnmatched = true;
             
             p.addParameter('numEstimator', 1, @(x)(isnumeric(x) && numel(x) == 1));
-            p.addParameter('stopCriterion', @(threshold, se) (se / abs(threshold)) < 0.05, ...
-                @(x) isa(x, 'function_handle'));
-            
+            p.addParameter('stopCriterion', 0.05, @(x) (isa(x, 'function_handle') || isnumeric(x)));            
             p.addParameter('slopeRange', 0.1 : 0.5 : 50);
             p.addParameter('guessRate', 0.5);
             p.addParameter('lapseRate', 0.0);
-            
-            
+                        
             parse(p, varargin{:});
             this.numEstimator  = p.Results.numEstimator;
-            this.stopCriterion = p.Results.stopCriterion;
             this.slopeRange = p.Results.slopeRange;
             this.guessRate = p.Results.guessRate;
             this.lapseRate = p.Results.lapseRate;
+            
+            stopCriterion = p.Results.stopCriterion;
+            if isnumeric(stopCriterion)
+                this.stopCriterion = @(threshold, se) se <= stopCriterion;
+            elseif isa(stopCriterion, 'function_handle')
+                this.stopCriterion = stopCriterion;
+            else
+                error('Input argument stopCriterion is an invalid type')
+            end
             
             % Initialize QUEST+ objects specified by 'numEstimator'
             this.estimators = cell(this.numEstimator, 1);

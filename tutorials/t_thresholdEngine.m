@@ -147,14 +147,16 @@ switch questMode
         % AND the 'stopCriterion'(threshold, SE) is TRUE, 
         % OR 2) when total numberof trials >= 'maxTrial'.
         
-        % 'stopCriterion' should be a function that takes the current
-        % estimate of threshold and its SE as input, and returns a boolean.
+        % 'stopCriterion' could be one of two options:
         
-        % Example 1: SE / log_threshold_contrast < 0.01
-        stopCriterion = @(threshold, SE) SE / abs(threshold) < 0.01;
+        % 1) A single number. In this case, the criterion will simply be
+        % SE < 'stopCriterion'.
+        stopCriterion = 0.025;
         
-        % Example 2: SE < 0.02
-        % stopCriterion = @(threshold, SE) SE < 0.02;
+        % 2) A function handle that takes the current estimate of threshold
+        % and SE estimates as input arguments, and returns a boolean variable.
+        % For example: we can use a relative criterion w.r.t. the magnitude of threshold        
+        stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
         
         estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...

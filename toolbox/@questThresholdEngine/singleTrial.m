@@ -20,6 +20,8 @@ end
 % Stop only if stderr drop below criterion and we have at least minTrial # of trials
 if ((this.stopCriterion(threshold, stderr)) && this.nTrial >= this.minTrial)
     this.nextFlag = false;
+else
+    this.nextFlag = true;
 end
 
 % Set next stimulus to ask for
