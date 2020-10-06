@@ -17,9 +17,9 @@ function dataOut = rcePoissonTAFC(obj, operationMode, ~, nullResponses, testResp
 %    'nullResponses' and 'testResponses', each contain the noise-free
 %     template and noisy trial-by-trial instances.
 %
-%    nullResponses                  - an [mTrials x nDims] matrix of responses to the null stimulus
+%    nullResponses                  - an [mInstances x nDims x tTimePoints] matrix of responses to the null stimulus
 %
-%    testResponses                  - an [mTrials x nDims] matrix of responses to the test stimulus
+%    testResponses                  - an [mInstances x nDims x tTimePoints] matrix of responses to the test stimulus
 
 
 % For consistency with the interface
@@ -33,8 +33,8 @@ if (strcmp(operationMode, 'train'))
     % We simulate the observer with a "detection" protocol
     % No noise response template for test/null stimulus
     
-    nullTemplate = nullResponses(1, :);
-    testTemplate = testResponses(1, :);
+    nullTemplate = mean(nullResponses(:, :), 1);
+    testTemplate = mean(testResponses(:, :), 1);
     
     dataOut.trainedClassifier = 'N/A';
     dataOut.preProcessingConstants = struct('nullTemplate', nullTemplate, 'testTemplate', testTemplate);

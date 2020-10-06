@@ -150,13 +150,13 @@ switch questMode
         % 'stopCriterion' should be a function that takes the current
         % estimate of threshold and its SE as input, and returns a boolean.
         
-        % Example 1: SE / linera_threshold_contrast < 0.05
-        stopCriterion = @(threshold, SE) SE / exp(threshold) < 0.05;
+        % Example 1: SE / log_threshold_contrast < 0.01
+        stopCriterion = @(threshold, SE) SE / abs(threshold) < 0.01;
         
-        % Example 2: SE < 0.01
+        % Example 2: SE < 0.02
         % stopCriterion = @(threshold, SE) SE < 0.02;
         
-        estimator = questThresholdEngine('minTrial', 1e2, 'maxTrial', 1e4, ...
+        estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
             'numEstimator', 4, 'stopCriterion', stopCriterion);
         
