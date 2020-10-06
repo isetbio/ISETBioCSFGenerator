@@ -71,13 +71,13 @@ switch (whichNeuralEngine)
         
     case 'nceScenePhotonNoise'
         % Add Poisson noise to the photon counts.
-        theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);        
+        theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);
         logThreshLimitLow = 7;
         logThreshLimitHigh = 5;
         logThreshLimitDelta = 0.005;
         slopeRangeLow = 100;
-        slopeRangeHigh = 1000;        
-        slopeDelta = 10;
+        slopeRangeHigh = 10000;
+        slopeDelta = 100;
         
     otherwise
         error('Unknown neural engine specified');
@@ -120,19 +120,34 @@ end
 nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
-% Construct a QUEST threshold estimator estimate threshold on log contrast
+%% Construct a QUEST threshold estimator estimate threshold on log contrast
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
-% Run QUEST for a total of minTrial trials. For typical usage, this is recommended
-%
-% However, when numEstimator > 1, an adpative procedure is invoked, for
-% which the routine will stop if the SE among nEstimator parallel quest+
-% objects is below the threshold specified as stopCriterion.  The procedure
-% will also stop when the passed maxTrial is reached.
-estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e4, ...
-    'estDomain', estDomain, 'slopeRange', slopeRange, ...
-    'numEstimator', 3, 'stopCriterion', 0.025);
+% There are two recommended ways to setup the QUEST+ threshold engine
+% I. Run 1 QUEST object ('numEstimator' = 1), and 'minTrial' number of trials
+questMode = 'fixedNumer';
+
+% II. Run 'numEstimator' interleaved QUEST object. In this case, the threshold engine
+% calculate the running standard error (SE) among those N objects. 
+% The stopping criterion is triggered if:
+% 1. When total number of trials >= 'minTrial' AND the SE/Threshold < 'stopCriterion'
+% 2. Or when total number of trials >= 'maxTrial'
+questMode = 'adaptiveMode';
+
+switch questMode
+    case 'fixedNumer'
+        estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e3, ...
+            'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
+        
+    case 'adaptiveMode'
+        estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e4, ...
+            'estDomain', estDomain, 'slopeRange', slopeRange, ...
+            'numEstimator', 4, 'stopCriterion', 0.025);
+        
+    otherwise
+        error('Unknown threshold engine mode specified');
+end
 
 %% Threshold estimation with QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
