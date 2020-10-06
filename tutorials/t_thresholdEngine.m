@@ -47,11 +47,11 @@ switch (whichNeuralEngine)
         
     case 'nceScenePhotonNoise'
         theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);
-        logThreshLimitLow = 8;
-        logThreshLimitHigh = 4;
-        logThreshLimitDelta = 0.02;
-        slopeRangeLow = 1000;
-        slopeRangeHigh = 10000;
+        logThreshLimitLow = 7;
+        logThreshLimitHigh = 5;
+        logThreshLimitDelta = 0.005;
+        slopeRangeLow = 100;
+        slopeRangeHigh = 1000;
         slopeDelta = 100;
         
     otherwise
