@@ -46,4 +46,8 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
     % Parse dataOut struct
     theSceneSequence = dataOut.sceneSequence;
     temporalSupportSeconds = dataOut.temporalSupport;
+    
+    if (isfield(dataOut, 'presentationDisplay'))
+        obj.presentationDisplay = dataOut.presentationDisplay;
+    end
 end

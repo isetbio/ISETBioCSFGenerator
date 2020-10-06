@@ -62,9 +62,12 @@ function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStr
 
     % Generate a test scene
     testContrast = 0.1;
-    [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
+    [theTestSceneSequence, temporalSupportSeconds] = ...
         theSceneEngineOBJ.compute(testContrast);
     
+    % Visualize the generated scene frames
+    theSceneEngineOBJ.visualizeSceneSequence(theTestSceneSequence, temporalSupportSeconds);
+   
 %}
 
     % Check input arguments. If called with zero input arguments, just return the default params struct

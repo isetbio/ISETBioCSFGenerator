@@ -60,7 +60,7 @@ function t_sceneGeneration
     % Visualize the generated scene sequence
     debugSceneGeneration = true;
     if (debugSceneGeneration)
-        renderSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
+        sceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
     end
     
     % Set a different parameters structure and generate a new sequence.
@@ -76,7 +76,7 @@ function t_sceneGeneration
     
     [theSceneSequence1, theSceneTemporalSupportSeconds1] = theSceneEngine.compute(testContrast);
     if (debugSceneGeneration)
-        renderSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
+        sceneEngine.visualizeSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
     end
     
     % If you didn't know what fields the parameters struct the
@@ -92,19 +92,4 @@ function t_sceneGeneration
 
 end
 
-function renderSceneSequence(sceneSequence, temporalSupportSeconds)
-    figure; clf;
-    scenesNum = numel(sceneSequence);
-    for frameIndex = 1:numel(sceneSequence)
-        subplot(1, scenesNum, frameIndex);
-        xyzImage = sceneGet(sceneSequence{frameIndex}, 'xyz');
-        luminanceMap = squeeze(xyzImage(:,:,2));
-        image(luminanceMap);
-        axis 'image';
-        set(gca, 'CLim', [0 500]);
-        title(sprintf('frame %d\n(%2.0f msec)', frameIndex,temporalSupportSeconds(frameIndex)*1000));
-        colormap(gray);
-    end
-    
-end
 

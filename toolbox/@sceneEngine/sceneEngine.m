@@ -45,6 +45,9 @@ classdef sceneEngine < handle
         
         % Required dataOut struct fields returned from the compute function
         requiredFieldsForDataOutStruct = {'sceneSequence', 'temporalSupport'};
+        
+        % The presentation display
+        presentationDisplay = [];
     end
     
     % Public methods
@@ -67,6 +70,8 @@ classdef sceneEngine < handle
         % Compute method
         [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast);
         
+        % Visualization method
+        visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds);
     end
     
     % Private methods
@@ -75,6 +80,10 @@ classdef sceneEngine < handle
         validateAndSetComputeFunctionHandle(obj,sceneComputeFunctionHandle);
         % % Method to validate and set the scene params struct
         validateAndSetParamsStruct(obj,sceneParamsStruct);
+    end
+    
+    % Class methods (static)
+    methods (Static)
     end
     
 end
