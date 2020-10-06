@@ -2,10 +2,10 @@ classdef contrastThresholdEngine < handle
     %contrastThresholdEstimator  Base class for adaptive contrast threshold estimation procedure.
     %
     % Usage:
-    %   See instance class QuestThresholdEstimator
+    %   See instance class questThresholdEngine
     %
     %
-    % ContrastThresholdEstimator Properties:
+    % contrastThresholdEngine Properties:
     %   minTrial       - The minimal number of trials to run
     %   maxTrial       - The maximum number of trials to run
     %   estDomain      - The domain for which contrast is being estimated
@@ -13,7 +13,7 @@ classdef contrastThresholdEngine < handle
     %   testCrst       - Next test contrast value
     %   nextFlag       - Indicate if new trials are still needed
     %
-    % ContrastThresholdEstimator Methods:
+    % contrastThresholdEngine Methods:
     %   nextStimulus         - What contrast should be the next trial and
     %                          if new trials are still required
     %
@@ -27,7 +27,7 @@ classdef contrastThresholdEngine < handle
     %   None.
     %
     % Outputs:
-    %   ContrastThresholdEstimator Object.
+    %   contrastThresholdEngine Object.
     %
     % Optional key/value pairs:
     %   'minTrial'        - Int. The minimal number of trials to run

@@ -140,14 +140,25 @@ switch questMode
             'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
         
     case 'adaptiveMode'
-        % Run 'numEstimator' interleaved Quest+ object. In this case, the
+        % Run 'numEstimator > 1' interleaved Quest+ objects. In this case, the
         % threshold engine calculates the running standard error (SE) among
-        % those objects. The stopping criterion is triggered when 1) total number of trials >=
-        % 'minTrial' AND the SE/Threshold < 'stopCriterion', OR 2) when total number
-        % of trials >= 'maxTrial'
+        % those objects. The stopping criterion is triggered when 
+        % 1) total number of trials >= 'minTrial' 
+        % AND the 'stopCriterion'(threshold, SE) is TRUE, 
+        % OR 2) when total numberof trials >= 'maxTrial'.
+        
+        % 'stopCriterion' should be a function that takes the current
+        % estimate of threshold and its SE as input, and returns a boolean.
+        
+        % Example 1: SE / linera_threshold_contrast < 0.05
+        stopCriterion = @(threshold, SE) SE / exp(threshold) < 0.05;
+        
+        % Example 2: SE < 0.01
+        % stopCriterion = @(threshold, SE) SE < 0.02;
+        
         estimator = questThresholdEngine('minTrial', 1e2, 'maxTrial', 1e4, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
-            'numEstimator', 4, 'stopCriterion', 0.025);
+            'numEstimator', 4, 'stopCriterion', stopCriterion);
         
     otherwise
         error('Unknown threshold engine mode specified');

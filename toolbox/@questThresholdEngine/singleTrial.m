@@ -17,8 +17,8 @@ end
 % Running estimate of threshold and its standard error
 [threshold, stderr] = thresholdEstimate(this);
 
-% Stop only if  stderr drop below criterion and we have at least minTrial # of trials
-if ((stderr / abs(threshold)) < this.stopCriterion) && this.nTrial >= this.minTrial
+% Stop only if stderr drop below criterion and we have at least minTrial # of trials
+if ((this.stopCriterion(threshold, stderr)) && this.nTrial >= this.minTrial)
     this.nextFlag = false;
 end
 

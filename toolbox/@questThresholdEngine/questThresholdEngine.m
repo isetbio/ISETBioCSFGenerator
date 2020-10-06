@@ -1,5 +1,5 @@
 classdef questThresholdEngine < contrastThresholdEngine
-    %QuestThresholdEstimator  Adaptive contrast threshold estimation procedure
+    %questThresholdEngine  Adaptive contrast threshold estimation procedure
     % based on the QUEST+ routine. The class maintain an array of questData
     % ojbect and loop through them sequentially. A stop criterion can be
     % triggered if the standard error among the set of questData object
@@ -7,11 +7,11 @@ classdef questThresholdEngine < contrastThresholdEngine
     % trials, or maximum number of trials is reached.
     %
     % Usage:
-    %   See t_questAdaptiveEstimator.m
+    %   See t_thresholdEngine.m
     %   Also see base class QuestThresholdEstimator
     %
     %
-    % ContrastThresholdEstimator Properties:
+    % questThresholdEngine Properties:
     %   estimators     - The array of questData object.
     %   numEstimator   - The number questData object to maintain
     %   stopCriterion  - Stop criterion for deciding if we have enough trials
@@ -22,7 +22,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %
     %   Also see base class QuestThresholdEstimator
     %
-    % QuestThresholdEstimator Methods:
+    % questThresholdEngine Methods:
     %   thresholdEstimate    - Current running estimate of threshold and
     %                          its standard error across questData object
     %   combineData          - Return all stimulus - response data we have
@@ -37,14 +37,24 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   None.
     %
     % Outputs:
-    %   QuestThresholdEstimator Object.
+    %   questThresholdEngine Object.
     %
     % Optional key/value pairs:
+    %   'minTrial'        - Int. The minimal number of trials to run
+    %
+    %   'maxTrial'        - Int. The maximum number of trials to run
+    %
+    %   'estDomain'       - Array. The domain (range) for which contrast is
+    %                       being estimated. For examples, linear contrast
+    %                       [0:0.01:1] or log contrast [-10:0.1:0]. User
+    %                       should handle the conversion externally
+    %
     %   'numEstimator'    - Int. Number of questData object to run
     %
-    %   'stopCriterion'   - Double. Should be between [0, 1]. Stop the
-    %                       procedure if the standard error drops below
-    %                       stopCriterion * thresholdEstimate
+    %   'stopCriterion'   - A function handler that takes two arguments,
+    %                       the current threshold estimate, and the S.E. of
+    %                       the estimate among N quest objects, and return
+    %                       a boolean variable if more trials are required
     %
     %   'slopeRange'       - Array. An array of all possible slope for the
     %                        psychometric curve
@@ -55,7 +65,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   'lapseRate'        - Array. An array of all possible lapse rate for
     %                        the psychometric curve
     %
-    %    Also see base class QuestThresholdEstimator
+    %    Also see base class contrastThresholdEngine
     
     
     % Class properties
@@ -84,7 +94,9 @@ classdef questThresholdEngine < contrastThresholdEngine
             p.KeepUnmatched = true;
             
             p.addParameter('numEstimator', 1, @(x)(isnumeric(x) && numel(x) == 1));
-            p.addParameter('stopCriterion', 0.05, @(x)(isnumeric(x) && numel(x) == 1));
+            p.addParameter('stopCriterion', @(threshold, se) (se / abs(threshold)) < 0.05, ...
+                @(x) isa(x, 'function_handle'));
+            
             p.addParameter('slopeRange', 0.1 : 0.5 : 50);
             p.addParameter('guessRate', 0.5);
             p.addParameter('lapseRate', 0.0);
