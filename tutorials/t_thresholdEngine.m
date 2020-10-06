@@ -19,40 +19,65 @@
 % See Also:
 %   t_thresholdClassifier
 
+% History:
+%   10/05/20  dhb   Add logic to cache trained classifiers so we don't
+%                   train them again.
+
 %% Initialization
 clear; close all;
 
-%% Instantiate a sceneGenerationEngine with
-% function handle that generates uniform field temporal modulation
-sceneParams = sceUniformFieldTemporalModulation;
-sceneParams.sizePixels = 5;
-theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
+%% Instantiate a sceneGenerationEngine
+% Choices are:
+%   'sceUniformFieldModulation
+whichSceneEngine = 'sceUniformFieldModulation';
+switch (whichSceneEngine)
+    case 'sceUniformFieldModulation'
+        % Spatially uniform field temporal modulation
+        %
+        % Note use of call without arguments to get default parameters
+        % struct, and adjustment of size to make it small.  This speeds
+        % things up for this demo.
+        sceneParams = sceUniformFieldTemporalModulation;
+        sceneParams.sizePixels = 5;
+        theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
+        
+    otherwise
+        error('Unknown scene engine specified');
+end
 
 %% Instantiate a neuralResponseEngine.
 % Choices are:
 %   'ncePhotopigmentExcitationsWithNoEyeMovements'
 %   'nceScenePhotonNoise'
+%
+% The actual threshold varies enough with the different engines that we
+% need to adjust the contrast range that Quest+ searches over, as well as
+% the range of psychometric function slopes.
 whichNeuralEngine = 'ncePhotopigmentExcitationsWithNoEyeMovements';
 switch (whichNeuralEngine)
     case 'ncePhotopigmentExcitationsWithNoEyeMovements'
+        % Basic retinal image formation and sampling by the cone mosaic.
+        % Note use of neural engine to get its own default parameters and
+        % adjust them.  Smaller field of view speeds things up.
         neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
         neuralParams.coneMosaicParams.fovDegs = 0.1;
         theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements,neuralParams);
         logThreshLimitLow = 4;
         logThreshLimitHigh = 1;
-        logThreshLimitDelta = 0.02;
+        logThreshLimitDelta = 0.05;
         slopeRangeLow = 1;
         slopeRangeHigh = 100;
         slopeDelta = 1;
         
     case 'nceScenePhotonNoise'
-        theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);
+        % Add Poisson noise to the photon counts.
+        theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);        
         logThreshLimitLow = 7;
         logThreshLimitHigh = 5;
         logThreshLimitDelta = 0.005;
         slopeRangeLow = 100;
-        slopeRangeHigh = 1000;
-        slopeDelta = 100;
+        slopeRangeHigh = 1000;        
+        slopeDelta = 10;
         
     otherwise
         error('Unknown neural engine specified');
@@ -65,19 +90,23 @@ end
 whichObserver = 'rcePoissonTAFC';
 
 % A larger nTest is usually more effective, but depending on the performance
-% bottleneck of your observer, you might consider a smaller nTest
+% bottleneck of your observer, you might consider a smaller nTest.  If it
+% is fast to compute the classifier for a given contrast and slow to make
+% predictions for a trial, then small nTest will be better.  If
+% it's slow to build a classifier for a given contrast and fast to make
+% predictions, then large nTest will be better.
 switch whichObserver
-    case 'rcePoissonTAFC' 
+    case 'rcePoissonTAFC'
         % The ideal observer for a TAFC task limited by Poisson noise
-        theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        theRawClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
         
         % Noise-free instance for training, random for test
         trainFlag = 'none'; testFlag = 'random';
         nTrain = 1; nTest = 120;
         
-    case 'rcePcaSVMTAFC'  
+    case 'rcePcaSVMTAFC'
         % SVM classifier wit PCA pre-processing
-        theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
+        theRawClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
         
         % Noisy instances for training and testing
         trainFlag = 'random'; testFlag = 'random';
@@ -87,70 +116,88 @@ switch whichObserver
         error('Unknown observer specified');
 end
 
-% Generate and compute the zero contrast NULL stimulus (sequence)
+% Generate and compute the zero contrast NULL stimulus sequence
 nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
-% Construct a QUEST threshold estimator
-% estimate threshold on log contrast
+% Construct a QUEST threshold estimator estimate threshold on log contrast
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
 % Run QUEST for a total of minTrial trials. For typical usage, this is recommended
-
-% However, when numEstimator > 1, an adpative procedure is invoked,
-% for which the routine will stop if the S.E. among N parallel quest+ object
-% is below the threshold specified as stopCriterion
+%
+% However, when numEstimator > 1, an adpative procedure is invoked, for
+% which the routine will stop if the SE among nEstimator parallel quest+
+% objects is below the threshold specified as stopCriterion.  The procedure
+% will also stop when the passed maxTrial is reached.
 estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e4, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, ...
     'numEstimator', 3, 'stopCriterion', 0.025);
 
 %% Threshold estimation with QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
+testedContrasts = [];
 while (nextFlag)
     
     % log contrast -> contrast
     % Compute the TEST stimulus
     testContrast = 10 ^ logContrast;
     
-    % Test scene generate
-    [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
+    % Have we already built the classifier for this contrast?
+    testedIndex = find(testContrast == testedContrasts);
+    if (isempty(testedIndex))
+        % No.  Save contrast in list
+        testedContrasts = [testedContrasts testContrast];
+        testedIndex = find(testContrast == testedContrasts);
+        
+        % Generate the TEST scene sequence for the given contrast
+        [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
+        
+        % Train classifier for this TEST contrast and get predicted
+        % responses
+        [response, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
+            theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
+            theSceneTemporalSupportSeconds, nTrain, nTest, ...
+            theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag);
+        
+    else
+        % Classifier is already trained, just get responses
+        response = computeResponse(...
+            theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
+            theSceneTemporalSupportSeconds, nTrain, nTest, ...
+            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
+    end
     
-    response = computeResponse(theNullSceneSequence, theTestSceneSequence, ...
-        theSceneTemporalSupportSeconds, nTrain, nTest, ...
-        theNeuralEngine, theClassifierEngine, trainFlag, testFlag);
-    
+    % Report what happened
     fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(response));
     
+    % Get next stimulus contrast
     [logContrast, nextFlag] = ...
         estimator.multiTrial(logContrast * ones(1, nTest), response);
     
+    % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);
-    
 end
 
 %% Show results
 fprintf('%d trials recorded \n', estimator.nTrial);
 
-% Plot results
+% Estimate threshold and plot/report results
 figure();
 [threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 7.5);
-
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
 %% Validation by computing the entire psychometric curve
+%
 % Takes a rather long time to run, change runValidation to 'true' if you
 % want to run the validation
-
 runValidation = false;
-
 if (runValidation)
     
-    logContrast = -4 : 0.05 : -1;
+    logContrast = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
     pCorrect = zeros(1, length(logContrast));
-    
     parfor idx = 1:length(logContrast)
         testContrast = 10 ^ logContrast(idx);
         [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
@@ -158,7 +205,7 @@ if (runValidation)
         pCorrect(idx) = mean(computeResponse(...
             theNullSceneSequence, theTestSceneSequence, ...
             theSceneTemporalSupportSeconds, 512, 512, ...
-            theNeuralEngine, theClassifierEngine), trainFlag, testFlag);
+            theNeuralEngine, theRawClassifierEngine), trainFlag, testFlag);
     end
     
     hold on;
@@ -168,49 +215,49 @@ if (runValidation)
 end
 
 %% Helper function
-function response = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trianFlag, testFlag)
+function [response,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
-% Generate stimulus for training
-% NULL stimulus mean response
-[inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
-    nullScene, ...
-    temporalSupport, ...
-    nTrain, ...
-    'noiseFlags', {trianFlag});
+if (~isempty(trainFlag))
+    % Generate stimulus for training, NULL stimulus
+    [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
+        nullScene, ...
+        temporalSupport, ...
+        nTrain, ...
+        'noiseFlags', {trainFlag});
+    
+    % Generate stimulus for training, TEST stimulus
+    [inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
+        testScene, ...
+        temporalSupport, ...
+        nTrain, ...
+        'noiseFlags', {trainFlag});
+    
+    % Train the classifier
+    theClassifierEngine.compute('train', ...
+        inSampleNullStimResponses(trainFlag), ...
+        inSampleTestStimResponses(trainFlag));
+end
 
-% TEST stimulus instances
-[inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
-    testScene, ...
-    temporalSupport, ...
-    nTrain, ...
-    'noiseFlags', {trianFlag});
-
-% Run a ideal observer binary classifier on the above NULL/TEST response set
-% 'Training' is basically storing the noise-free template
-theClassifierEngine.compute('train', ...
-    inSampleNullStimResponses(trianFlag), ...
-    inSampleTestStimResponses(trianFlag));
-
-% Generate stimulus for testing/prediction
-% 'Predict' on noisy responses
-% NULL stimulus mean response
+% Generate stimulus for prediction, NULL stimulus
 [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
     nullScene, ...
     temporalSupport, ...
     nTest, ...
     'noiseFlags', {testFlag});
 
-% TEST stimulus instances
+% Generate stimuli for prediction, TEST stimulus
 [inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
     testScene, ...
     temporalSupport, ...
     nTest, ...
     'noiseFlags', {testFlag});
 
+% Do the prediction
 dataOut = theClassifierEngine.compute('predict', ...
     inSampleNullStimResponses(testFlag), ...
     inSampleTestStimResponses(testFlag));
 
+% Set return variable.  For each trial 0 means wrong and 1 means right.
 response = dataOut.trialPredictions;
 
 end
