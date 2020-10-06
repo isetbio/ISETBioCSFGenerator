@@ -124,24 +124,28 @@ nullContrast = 0.0;
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
-% There are two recommended ways to setup the QUEST+ threshold engine
-% I. Run 1 QUEST object ('numEstimator' = 1), and 'minTrial' number of trials
-questMode = 'fixedNumer';
-
-% II. Run 'numEstimator' interleaved QUEST object. In this case, the threshold engine
-% calculate the running standard error (SE) among those N objects. 
-% The stopping criterion is triggered if:
-% 1. When total number of trials >= 'minTrial' AND the SE/Threshold < 'stopCriterion'
-% 2. Or when total number of trials >= 'maxTrial'
+% There are two recommended ways to setup the QUEST+ threshold engine.
+%   'fixedNumber'    - run a fixed number of trials
+%   'adaptiveMode'   - run until estimate reaches specified precision.
+% See below for more.
 questMode = 'adaptiveMode';
 
+
 switch questMode
-    case 'fixedNumer'
+    case 'fixedNumber'
+        % Run fixed number of trials.  This is done by setting 'minTrial' and
+        % maxTrial values to be the same and running a single Quest+
+        % object.
         estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e3, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
         
     case 'adaptiveMode'
-        estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e4, ...
+        % Run 'numEstimator' interleaved Quest+ object. In this case, the
+        % threshold engine calculates the running standard error (SE) among
+        % those objects. The stopping criterion is triggered when 1) total number of trials >=
+        % 'minTrial' AND the SE/Threshold < 'stopCriterion', OR 2) when total number
+        % of trials >= 'maxTrial'
+        estimator = questThresholdEngine('minTrial', 1e2, 'maxTrial', 1e4, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
             'numEstimator', 4, 'stopCriterion', 0.025);
         
@@ -232,6 +236,12 @@ end
 %% Helper function
 function [response,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
+% Train the classifier.
+%
+% If trainFlag is empty, then the passed classifier has already been trained
+% and training is skipped.  Otherwise trainFlag is passed to the stimulus
+% generation routine to indicate what type of noise (typically 'none' or
+% 'random') should be used in the training.
 if (~isempty(trainFlag))
     % Generate stimulus for training, NULL stimulus
     [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
@@ -253,7 +263,11 @@ if (~isempty(trainFlag))
         inSampleTestStimResponses(trainFlag));
 end
 
-% Generate stimulus for prediction, NULL stimulus
+% Predict using trained classifier.
+%
+% Generate stimulus for prediction, NULL stimulus.  The variable testFlag
+% indicates what type of noise is used to generate the stimuli used for
+% prediction.  Typically 'random'.
 [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
     nullScene, ...
     temporalSupport, ...
@@ -273,6 +287,7 @@ dataOut = theClassifierEngine.compute('predict', ...
     inSampleTestStimResponses(testFlag));
 
 % Set return variable.  For each trial 0 means wrong and 1 means right.
+% Taking mean(response) gives fraction correct.
 response = dataOut.trialPredictions;
 
 end
