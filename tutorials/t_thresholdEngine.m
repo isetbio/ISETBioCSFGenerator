@@ -53,6 +53,11 @@ clear; close all;
 % find threshold. The canonical usage is to vary contrast, but nothing in
 % the code actually cares about the semantics.
 %
+% See t_sceneGeneration and t_modulatedGratingSceneGeneration for tutorials
+% that focus on how to use the sceneEngine.  See the functions
+% sceUniformFieldTemporalModulation and sceGrating for example
+% implementations of compute functions to use with the sceneEngine object.
+%
 % Choices of passed functions that can be used in this tutorial are:
 %   'sceUniformFieldModulation'
 whichSceneEngine = 'sceUniformFieldModulation';
