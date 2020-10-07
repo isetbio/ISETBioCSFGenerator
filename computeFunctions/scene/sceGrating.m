@@ -77,6 +77,9 @@ function dataOut = sceGrating(testContrast, gratingParams)
         return;
     end
     
+    % Validate the passed grating params
+    validateParams(gratingParams);
+    
     % Generate the display on which the gratings are rendered
     presentationDisplay = generatePresentationDisplay(gratingParams);
     
@@ -94,7 +97,7 @@ end
 
 function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
 
-    switch (gratingParams.temporalModulationParams.mode)
+    switch (gratingParams.temporalModulation)
         case 'flashed'
             for frameIndex = 1:gratingParams.temporalModulationParams.stimDurationFramesNum
                 % Spatial phase is kept constant throughout all frames
@@ -116,6 +119,7 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is kept constant throughout all frames
                 frameContrastSequence(frameIndex) = testContrast;
+                % Spatial phase is advanced
                 frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs;
             end
     
@@ -127,22 +131,37 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
             stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
             
             for frameIndex = 1:stimDurationFramesNum
-                % Contrast is kept constant throughout all frames
+                % Contrast is modulated sinusoidally
                 frameContrastSequence(frameIndex) = testContrast * sin(360*(frameIndex-1)*deltaTemporalPhaseDegs);
+                % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
             end
+            
+        otherwise
+            error('Unknown temporal modulation: ''%s''.\n', gratingParams.temporalModulation);
     end
 
-    % Generate all scene frames
+    % Open progress bar
+    hProgressBar = waitbar(0,'Generating scene sequence...');
+
+    % Generate each frame
     for frameIndex = 1:numel(frameContrastSequence)
-        hProgressBar.Value = frameIndex/ numel(frameContrastSequence);
-        hProgressBar.Message = sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence));
+        % Update progress bar
+        waitbar(frameIndex/numel(frameContrastSequence),hProgressBar,...
+            sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence)));
+        
+        % Generate the scene frame
         theSceneFrame = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
             frameContrastSequence(frameIndex), frameSpatialPhaseSequence(frameIndex));
+        
+        % Store the scene frame
         theSceneSequence{frameIndex} = theSceneFrame;
+        % Store the timestamp of the scene frame
         temporalSupportSeconds(frameIndex) = (frameIndex-1)*gratingParams.frameDurationSeconds;
     end
-
+    
+    % Close progress bar
+    close(hProgressBar);
 end
 
 
@@ -219,12 +238,29 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     Y = Y - gratingParams.spatialPositionDegs(2);
     Xp =  X * cosd(gratingParams.orientationDegs) + Y * sind(gratingParams.orientationDegs);
     Yp = -X * sind(gratingParams.orientationDegs) + Y * cosd(gratingParams.orientationDegs);
-    contrastPattern = cosd(360*gratingParams.spatialFrequencyCyclesPerDeg*Yp + frameSpatialPhaseDegs);
+    
+    switch (gratingParams.spatialModulationDomain)
+        case 'cartesian'
+            contrastPattern = cosd(360*gratingParams.spatialFrequencyCyclesPerDeg*Yp + frameSpatialPhaseDegs);
+        case 'polar'
+            R = sqrt(Xp.^2+Yp.^2);
+            contrastPattern = cosd(360*gratingParams.spatialFrequencyCyclesPerDeg*R + frameSpatialPhaseDegs);
+        otherwise
+            error('Unknown spatial modulationDomain: ''%s''.\n', gratingParams.spatialModulationDomain)
+    end
+    
+    
     
     % Harmonic or Square qave
-    if (strcmp(gratingParams.spatialModulation, 'square'))
-        contrastPattern = sign(contrastPattern);
+    switch (gratingParams.spatialModulation)
+        case 'square'
+            contrastPattern = sign(contrastPattern);
+        case 'harmonic'
+            ; % do nothing
+        otherwise
+            error('Unknown spatial modulation: ''%s''.\n', gratingParams.spatialModulation)
     end
+
 
     % Envelope
     switch (gratingParams.spatialEnvelope)
@@ -270,6 +306,42 @@ function presentationDisplay = generatePresentationDisplay(gratingParams)
     presentationDisplay = displaySet(presentationDisplay, 'gTable', gTable);
 end
 
+function validateParams(gratingParamsStruct)
+    defaultParamsStruct = generateDefaultParams();
+    defaultFieldNames = fieldnames(defaultParamsStruct);
+    % Assert that each of the field names of the gratingParamsStruct match
+    % one field of the defaultParamsStruct
+    
+    inputFieldNames = fieldnames(gratingParamsStruct);
+    for k = 1:numel(inputFieldNames)
+        assert(ismember(inputFieldNames{k}, defaultFieldNames), ...
+            sprintf('>> Can not deal with grating parameter name ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for all available parameter names.', ...
+            inputFieldNames{k}, mfilename()));
+    end
+    
+    % Further validations
+    % spatialEnvelope
+    if (isfield(gratingParamsStruct, 'spatialEnvelope'))
+        assert(ismember(gratingParamsStruct.spatialEnvelope, {'disk', 'square', 'Gaussian'}), ...
+            sprintf('>> Invalid value for spatialModulation: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
+            gratingParamsStruct.spatialModulation, mfilename()));
+    end
+    
+    % spatialModulation
+    if (isfield(gratingParamsStruct, 'spatialModulation'))
+        assert(ismember(gratingParamsStruct.spatialModulation, {'harmonic', 'square'}), ...
+            sprintf('>> Invalid value for spatialModulation: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
+            gratingParamsStruct.spatialModulation, mfilename()));
+    end
+    
+    % temporalModulationParams
+    if (isfield(gratingParamsStruct, 'temporalModulation'))
+        assert(ismember(gratingParamsStruct.temporalModulation, {'flashed', 'drifted', 'counter phase modulated'}), ...
+            sprintf('>> Invalid value for temporalModulation: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
+            gratingParamsStruct.temporalModulation, mfilename()));
+    end
+end
+
 function p = generateDefaultParams()
 
     p = struct(...
@@ -286,12 +358,13 @@ function p = generateDefaultParams()
         'spatialFrequencyCyclesPerDeg', 5, ...          % spatial: grating spatial freequency, in cycles/deg
         'orientationDegs', 0, ...                       % spatial: grating orientation, in degrees
         'spatialPhaseDegs', 90, ...                     % spatial: grating spatial phase, in degrees
-        'spatialPositionDegs', [0.0 0.0], ...          % spatial: center of grating, in degrees
+        'spatialPositionDegs', [0.0 0.0], ...           % spatial: center of grating, in degrees
         'spatialModulation', 'harmonic', ...            % spatial: contrast modulation - choose between {'harmonic', 'square'} for sinusoidal/square spatial modulation 
+        'spatialModulationDomain', 'cartesian', ...     % spatial: domain of spatial modulation - choose between {'cartesian', 'polar'}
         'spatialEnvelope', 'Gaussian', ...              % spatial: envelope - choose between {'disk', 'square', 'Gaussian'}
-        'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs      
+        'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs    
+        'temporalModulation', 'flashed', ...            %   temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
         'temporalModulationParams', struct(...          % temporal: modulation params struct
-            'mode', 'flashed', ...                      %   temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
             'stimOnFrameIndices', [2 3], ...            %   params relevant to the temporalModulationMode
             'stimDurationFramesNum', 4), ...            %   params relevant to the temporalModulationMode
         'frameDurationSeconds', 20/1000 ...            % temporal: frame duration, in seconds

@@ -35,6 +35,9 @@ function t_modulatedGratingsSceneGeneration
     % Retrieve the default params for the grating stimulus
     defaultGratingParams = sceGrating();
 
+    % Specify a test with 100% of the achievable contrast
+    testContrast = 1.0;
+    
     % STIMULUS #1
     % A flashed grating sequence in which the grating is flashed ON
     % 3 times during the stimulus duration, each time for a 10 frames, with
@@ -61,8 +64,8 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.frameDurationSeconds = 10/1000;
     
     % Configure temporal modulation
-    customGratingParams.temporalModulationParams =  struct(... 
-            'mode', 'flashed', ...                      
+    customGratingParams.temporalModulation = 'flashed';
+    customGratingParams.temporalModulationParams =  struct(...                      
             'stimOnFrameIndices', 1+[0:9 30:39 60:69], ...          
             'stimDurationFramesNum', 70);
             
@@ -70,8 +73,6 @@ function t_modulatedGratingsSceneGeneration
     % and the custom grating params.
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
     
-    % Specify a test with 100% contrast
-    testContrast = 1.0;
 
     % Compute the scene sequence
     [theSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(testContrast);
@@ -87,8 +88,8 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams = defaultGratingParams;
     customGratingParams.coneContrastModulation = [0.6 0.6 0.0];
     customGratingParams.orientationDegs = 60;
-    customGratingParams.temporalModulationParams =  struct(... 
-            'mode', 'drifted', ...                       
+    customGratingParams.temporalModulation = 'drifted';
+    customGratingParams.temporalModulationParams =  struct(...                        
             'temporalFrequencyHz', 4, ...           
             'stimDurationTemporalCycles', 5);
         
@@ -105,7 +106,7 @@ function t_modulatedGratingsSceneGeneration
     
     
     % STIMULUS #3 
-    % An achromatic square-wave grating with an orientation of 30 deg,
+    % An achromatic grating with an orientation of 30 deg,
     % square aperture and a spatial phase of 0 degs, positioned at an 
     % off-center location, counterphased at 8 Hz
     %
@@ -114,12 +115,12 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.spatialPositionDegs =  [0.08 -0.07];
     customGratingParams.orientationDegs = 30;
     customGratingParams.spatialEnvelope = 'square';
-    customGratingParams.spatialModulation =  'square';
+    customGratingParams.spatialModulation =  'harmonic';
     customGratingParams.minPixelsNumPerCycle = 100;
     customGratingParams.spatialPhaseDegs = 0;
     customGratingParams.spatialEnvelopeRadiusDegs = 0.3;
-    customGratingParams.temporalModulationParams =  struct(... 
-            'mode', 'counter phase modulated', ...                       
+    customGratingParams.temporalModulation = 'counter phase modulated';
+    customGratingParams.temporalModulationParams =  struct(...                 
             'temporalFrequencyHz', 8, ...           
             'stimDurationTemporalCycles', 10);
         
@@ -145,10 +146,34 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.minPixelsNumPerCycle = 50;
     customGratingParams.spatialPhaseDegs = 0;
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
-    customGratingParams.temporalModulationParams =  struct(... 
-            'mode', 'counter phase modulated', ...                       
+    customGratingParams.temporalModulation = 'counter phase modulated';
+    customGratingParams.temporalModulationParams =  struct(...                        
             'temporalFrequencyHz', 4, ...           
             'stimDurationTemporalCycles', 10);
+        
+    % Re-instantiate the sceneEngine with the customGratingParams
+    theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
+    
+    % Compute the scene sequence
+    [theSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(testContrast);
+    
+    % Visualize the generated scene sequence
+    theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
+    
+    % STIMULUS #5 
+    % A L+M isolating polar sinusoid grating, drifting at 2 Hz
+    %
+    customGratingParams = defaultGratingParams;
+    customGratingParams.coneContrastModulation = [0.8 0.8 0.0];
+    customGratingParams.spatialFrequencyCyclesPerDeg = 4;
+    customGratingParams.spatialPositionDegs =  [00.1 -0.05];
+    customGratingParams.spatialEnvelope = 'Gaussian';
+    customGratingParams.spatialModulationDomain = 'polar';
+    customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
+    customGratingParams.temporalModulation = 'drifted';
+    customGratingParams.temporalModulationParams =  struct(...                        
+            'temporalFrequencyHz', 2, ...           
+            'stimDurationTemporalCycles', 4);
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
