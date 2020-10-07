@@ -205,8 +205,8 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     pixelsNumPerCycle = round(gratingParams.pixelsNum /cyclesWithinFOV); 
     if (pixelsNumPerCycle < gratingParams.minPixelsNumPerCycle)
         requiredPixelsNum = round(cyclesWithinFOV * gratingParams.minPixelsNumPerCycle);
-        fprintf('Requested %d pixel stim width, but to satisfy the minPixelsNumPerCycle we need %d pixels\n', ...
-            gratingParams.pixelsNum, requiredPixelsNum);
+        %fprintf('Requested %d pixel stim width, but to satisfy the minPixelsNumPerCycle we need %d pixels\n', ...
+        %    gratingParams.pixelsNum, requiredPixelsNum);
         gratingParams.pixelsNum = requiredPixelsNum;
     end
     
@@ -217,9 +217,9 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     % Spatial pattern
     X = X - gratingParams.spatialPositionDegs(1);
     Y = Y - gratingParams.spatialPositionDegs(2);
-    fx = gratingParams.spatialFrequencyCyclesPerDeg * cosd(gratingParams.orientationDegs);
-    fy = gratingParams.spatialFrequencyCyclesPerDeg * sind(gratingParams.orientationDegs);
-    contrastPattern = cosd(360*(fx*X + fy*Y) + frameSpatialPhaseDegs);
+    Xp =  X * cosd(gratingParams.orientationDegs) + Y * sind(gratingParams.orientationDegs);
+    Yp = -X * sind(gratingParams.orientationDegs) + Y * cosd(gratingParams.orientationDegs);
+    contrastPattern = cosd(360*gratingParams.spatialFrequencyCyclesPerDeg*Yp + frameSpatialPhaseDegs);
     
     % Harmonic or Square qave
     if (strcmp(gratingParams.spatialModulation, 'square'))
@@ -229,15 +229,17 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     % Envelope
     switch (gratingParams.spatialEnvelope)
         case 'disk'
-            idx = find(sqrt(X.^2 + Y.^2) < gratingParams.spatialEnvelopeRadiusDegs);
+            idx = find(sqrt(Xp.^2 + Yp.^2) < gratingParams.spatialEnvelopeRadiusDegs);
             envelope = X * 0;
             envelope(idx) = 1;
         case 'Gaussian'
-            envelope = exp(-(0.5*(X/gratingParams.spatialEnvelopeRadiusDegs).^2)) .* ...
-                       exp(-(0.5*(Y/gratingParams.spatialEnvelopeRadiusDegs).^2));
+            envelope = exp(-(0.5*(Xp/gratingParams.spatialEnvelopeRadiusDegs).^2)) .* ...
+                       exp(-(0.5*(Yp/gratingParams.spatialEnvelopeRadiusDegs).^2));
         case 'square'
-            idx = find((abs(X) < gratingParams.spatialEnvelopeRadiusDegs) & (abs(Y) < gratingParams.spatialEnvelopeRadiusDegs));
-            envelope = X * 0;
+            idx = find(...
+                (abs(Xp) < gratingParams.spatialEnvelopeRadiusDegs) & ...
+                (abs(Yp) < gratingParams.spatialEnvelopeRadiusDegs));
+            envelope = Xp * 0;
             envelope(idx) = 1;
         otherwise
             error('Unknown spatial envelope: ''%s''.\n', gratingParams.spatialEnvelope)
