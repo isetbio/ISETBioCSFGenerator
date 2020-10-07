@@ -154,7 +154,7 @@ switch whichObserver
         % predict trial-by-trial responses.  Because that routine is
         % general, we define some parameters for it here.
         %
-        % We'll illustrate a signal know exactly classifier, using the trainFlag value
+        % We'll illustrate a signal known exactly classifier, using the trainFlag value
         % of 'none' to indicate that the classifier should be trained with a noise free
         % version of the stimuli.  We'll test with noisy values, however.
         %
@@ -229,7 +229,7 @@ end
 
 %% Generate the NULL scene 
 %
-% Threshold will be measured a a perturbation from this scene.  Typically
+% Threshold will be measured as a perturbation from this scene.  Typically
 % it will correspond to zero contrast, but it doesn't have to.
 %
 % This call illustrates the compute method of the sceneEngine class.  We
