@@ -217,7 +217,7 @@ switch questMode
         % 2) A function handle that takes the current estimate of threshold
         % and SE estimates as input arguments, and returns a boolean variable.
         % For example: we can use a relative criterion w.r.t. the magnitude of threshold        
-        stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
+        % stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
         
         estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
@@ -261,25 +261,25 @@ while (nextFlag)
         
         % Train classifier for this TEST contrast and get predicted
         % responses
-        [response, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
+        [choiceResponse, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag);
         
     else
         % Classifier is already trained, just get responses
-        response = computeResponse(...
+        choiceResponse = computePerformance(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
     end
     
     % Report what happened
-    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(response));
+    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(choiceResponse));
     
     % Get next stimulus contrast
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), response);
+        estimator.multiTrial(logContrast * ones(1, nTest), choiceResponse);
     
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
@@ -308,7 +308,7 @@ if (runValidation)
         testContrast = 10 ^ logContrast(idx);
         [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
         
-        pCorrect(idx) = mean(computeResponse(...
+        pCorrect(idx) = mean(computePerformance(...
             theNullSceneSequence, theTestSceneSequence, ...
             theSceneTemporalSupportSeconds, 512, 512, ...
             theNeuralEngine, theRawClassifierEngine), trainFlag, testFlag);
@@ -321,7 +321,7 @@ if (runValidation)
 end
 
 %% Helper function
-function [response,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
+function [choiceResponse, theClassifierEngine] = computePerformance(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
 % Train the classifier.
 %
@@ -375,6 +375,6 @@ dataOut = theClassifierEngine.compute('predict', ...
 
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
-response = dataOut.trialPredictions;
+choiceResponse = dataOut.trialPredictions;
 
 end

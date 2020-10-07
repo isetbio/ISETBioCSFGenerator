@@ -82,6 +82,9 @@ classdef contrastThresholdEngine < handle
     
     methods (Abstract)
         
+        % Generic interface for threshold estimation
+        % Record one or multiple trials in the form of {stim, response} pair
+        % and return the next stim contrast and new trial flag
         [nextCrst, nextFlag] = singleTrial(this, stim, response)
         
         [nextCrst, nextFlag] = multiTrial(this, stimVec, responseVec)
