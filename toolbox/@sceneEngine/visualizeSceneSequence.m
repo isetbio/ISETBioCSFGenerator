@@ -1,5 +1,5 @@
 function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
-    figure; clf;
+   
     scenesNum = numel(sceneSequence);
     maxColsNum = 8;
     if (scenesNum <= maxColsNum)
@@ -21,7 +21,10 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
     displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
      
+    hFig = figure(); clf;
+    set(hFig, 'Position', [400 400 800 800], 'Color', [1 1 1]); 
     for frameIndex = 1:scenesNum
+        subplot('Position', [0.01 0.02 0.98 0.95]);
         % Extract the XYZ image representation
         xyzImage = sceneGet(sceneSequence{frameIndex}, 'xyz');
         if (frameIndex == 1)
@@ -45,8 +48,8 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
         plot([0 0], max(abs(y))*[-1 1], 'k-');
         plot(max(abs(x))*[-1 1], [0 0],'k-');
         axis 'image';
-        title(sprintf('frame %d\n(%2.0f msec)', frameIndex,temporalSupportSeconds(frameIndex)*1000));
-        set(gca, 'XTick', [], 'YTick', []);
+        set(gca, 'FontSize', 16,  'XTick', [], 'YTick', []);
+        title(sprintf('frame %d (%2.0f msec)', frameIndex,temporalSupportSeconds(frameIndex)*1000));
         drawnow;
     end
     

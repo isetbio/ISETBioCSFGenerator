@@ -143,7 +143,7 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.spatialPositionDegs =  [-0.1 0.05];
     customGratingParams.spatialEnvelope = 'disk';
     customGratingParams.spatialModulation =  'square';
-    customGratingParams.minPixelsNumPerCycle = 50;
+    customGratingParams.minPixelsNumPerCycle = 20;
     customGratingParams.spatialPhaseDegs = 0;
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
     customGratingParams.temporalModulation = 'counter phase modulated';
