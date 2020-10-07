@@ -48,17 +48,18 @@ function t_modulatedGratingsSceneGeneration
     % Start with the default params
     customGratingParams = defaultGratingParams;
     
-    % Configure an L-only grating
-    customGratingParams.coneContrastModulation = [0.1 0.0 0.0];
+    % Configure an L-M grating
+    customGratingParams.coneContrastModulation = [0.09 -0.09 0.0];
     
-    % Configure a 4 c/deg grating, with a 90 deg orientation, and a cosine spatial phase
+    % Configure a 3 c/deg grating, with a 90 deg orientation, and a cosine spatial phase
     customGratingParams.spatialPhaseDegs = 0;
-    customGratingParams.spatialFrequencyCyclesPerDeg = 4.0;
+    customGratingParams.spatialFrequencyCyclesPerDeg = 3.0;
     customGratingParams.orientationDegs = 90;
     
     % Configure a disk spatial envelope
     customGratingParams.spatialEnvelope = 'disk';
-    customGratingParams.spatialEnvelopeRadiusDegs = 0.3;
+    customGratingParams.minPixelsNumPerCycle = 30;
+    customGratingParams.spatialEnvelopeRadiusDegs = 0.4;
     
     % Configure a 100 msec frame duration
     customGratingParams.frameDurationSeconds = 10/1000;
@@ -108,7 +109,7 @@ function t_modulatedGratingsSceneGeneration
     % STIMULUS #3 
     % An achromatic grating with an orientation of 30 deg,
     % square aperture and a spatial phase of 0 degs, positioned at an 
-    % off-center location, counterphased at 8 Hz
+    % off-center location, counterphased at 2 Hz
     %
     customGratingParams = defaultGratingParams;
     customGratingParams.coneContrastModulation = [0.6 0.6 0.6];
@@ -118,11 +119,11 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.spatialModulation =  'harmonic';
     customGratingParams.minPixelsNumPerCycle = 100;
     customGratingParams.spatialPhaseDegs = 0;
-    customGratingParams.spatialEnvelopeRadiusDegs = 0.3;
+    customGratingParams.spatialEnvelopeRadiusDegs = 0.25;
     customGratingParams.temporalModulation = 'counter phase modulated';
     customGratingParams.temporalModulationParams =  struct(...                 
-            'temporalFrequencyHz', 8, ...           
-            'stimDurationTemporalCycles', 10);
+            'temporalFrequencyHz', 2, ...           
+            'stimDurationTemporalCycles', 4);
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
@@ -135,21 +136,21 @@ function t_modulatedGratingsSceneGeneration
     
     
     % STIMULUS #4 
-    % A S-cone isolating disk, pulsing at 4 Hz
+    % A M-cone isolating disk, pulsing at 4 Hz
     %
     customGratingParams = defaultGratingParams;
-    customGratingParams.coneContrastModulation = [0.0 0.0 0.8];
+    customGratingParams.coneContrastModulation = [0.0 0.1 0.0];
     customGratingParams.spatialFrequencyCyclesPerDeg = 0;
     customGratingParams.spatialPositionDegs =  [-0.1 0.05];
     customGratingParams.spatialEnvelope = 'disk';
     customGratingParams.spatialModulation =  'square';
-    customGratingParams.minPixelsNumPerCycle = 20;
+    customGratingParams.minPixelsNumPerCycle = 30;
     customGratingParams.spatialPhaseDegs = 0;
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
     customGratingParams.temporalModulation = 'counter phase modulated';
     customGratingParams.temporalModulationParams =  struct(...                        
             'temporalFrequencyHz', 4, ...           
-            'stimDurationTemporalCycles', 10);
+            'stimDurationTemporalCycles', 5);
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
@@ -161,14 +162,15 @@ function t_modulatedGratingsSceneGeneration
     theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
     
     % STIMULUS #5 
-    % A L+M isolating polar sinusoid grating, drifting at 2 Hz
+    % A L+M-S isolating polar sinusoid grating, drifting at 2 Hz
     %
     customGratingParams = defaultGratingParams;
-    customGratingParams.coneContrastModulation = [0.8 0.8 0.0];
+    customGratingParams.coneContrastModulation = [0.7 0.7 -0.7];
     customGratingParams.spatialFrequencyCyclesPerDeg = 4;
     customGratingParams.spatialPositionDegs =  [00.1 -0.05];
     customGratingParams.spatialEnvelope = 'Gaussian';
     customGratingParams.spatialModulationDomain = 'polar';
+    customGratingParams.spatialModulation =  'square';
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
     customGratingParams.temporalModulation = 'drifted';
     customGratingParams.temporalModulationParams =  struct(...                        
