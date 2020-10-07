@@ -1,11 +1,15 @@
-% Combine everything we have to compute threshold of a simple temporal modulation
+% Combine everything we have to compute threshold of a temporal modulation
 %
 % Syntax:
-%    t_temporalThreshold
+%    t_thresholdEngine
 %
 % Description:
 %    Demonstrates how to compute threshold using our framework (i.e.,
 %    scene, neural, classifier, and threshold engine).
+%
+%    In addition to demonstrating usage, this illustrates how various
+%    components of the pipeline can be interchanged without affecting the
+%    rest of them.
 %
 % Inputs:
 %    None.
@@ -17,8 +21,9 @@
 %    None.
 %
 % See Also:
-%   t_thresholdClassifier
-
+%   t_sceneGeneration, t_modulatedGratingsSceneGeneration,
+%   t_neuralResponseCompute, t_responseClassifier
+%
 % History:
 %   10/05/20  dhb   Add logic to cache trained classifiers so we don't
 %                   train them again.
@@ -27,8 +32,29 @@
 clear; close all;
 
 %% Instantiate a sceneGenerationEngine
-% Choices are:
-%   'sceUniformFieldModulation
+%
+% The first step is to define the spatial and temporal parameters of a
+% scene.  We do this by instantiating a sceneEngine object, passing it a
+% function that is responsible for defining the scene as well as a struct
+% of parameters that that function accepts.
+%
+% The name of passed function should by convention begin with the prefix
+% 'sce'.
+%
+% Also by convention, the passed function called with no arguments returns
+% a struct of default parameters, making it easy to see what can be
+% controlled.
+%
+% Once the sceneEngine has been instantiated, its compute method may be
+% called with a standard set of arguments and return a standard set of
+% values, so that the details of what it does are transparent to other
+% steps in the pipeline.  See examples below for this usage.  The compute
+% method needs to know how to vary the parameter that is being varied to
+% find threshold. The canonical usage is to vary contrast, but nothing in
+% the code actually cares about the semantics.
+%
+% Choices of passed functions that can be used in this tutorial are:
+%   'sceUniformFieldModulation'
 whichSceneEngine = 'sceUniformFieldModulation';
 switch (whichSceneEngine)
     case 'sceUniformFieldModulation'
@@ -39,6 +65,8 @@ switch (whichSceneEngine)
         % things up for this demo.
         sceneParams = sceUniformFieldTemporalModulation;
         sceneParams.sizePixels = 5;
+        
+        % Instantiate the sceneEngine object
         theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
         
     otherwise
@@ -84,41 +112,71 @@ switch (whichNeuralEngine)
 end
 
 %% Instantiate a responseClassifierEngine
-% Choices are:
-%   'rcePoissonTAFC'
-%   'rcePcaSVMTAFC'
-whichObserver = 'rcePoissonTAFC';
-
+%
+% responseClassifierEngines are responsible for simulating observer
+% performance on a psychophysical task, given noisy samples of the output of the
+% neuralResponseEngine.  As with our other objects, they are instantiated
+% with a function that does this work.  This function must be able to train
+% the classifier given samples of the neural responses, and then predict
+% on a simulated trial-by-trial basis whether that trial was correct or
+% incorrect.  
+%
+% For the most part, we simulate two-alternative forced-choice trials, but
+% we think the framework will work for at least some other psychophysical
+% tasks.
+%
+% The same general conventions apply to responseClassifierEngines as to our
+% other objects. Usage is illustrated below.
+%
 % A larger nTest is usually more effective, but depending on the performance
 % bottleneck of your observer, you might consider a smaller nTest.  If it
 % is fast to compute the classifier for a given contrast and slow to make
 % predictions for a trial, then small nTest will be better.  If
 % it's slow to build a classifier for a given contrast and fast to make
 % predictions, then large nTest will be better.
+%
+% Choices are:
+%   'rcePoissonTAFC'
+%   'rcePcaSVMTAFC'
+whichObserver = 'rcePoissonTAFC';
 switch whichObserver
     case 'rcePoissonTAFC'
-        % The ideal observer for a TAFC task limited by Poisson noise
+        % The ideal observer for a TAFC task limited by Poisson noise.
+        % This classifier doesn't take any parameters.
         theRawClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
         
-        % Noise-free instance for training, random for test
+        % Below we use a wrapper routine to train the classifier and to
+        % predict trial-by-trial responses.  Because that routine is
+        % general, we define some parameters for it here.
+        %
+        % We'll illustrate a signal know exactly classifier, using the trainFlag value
+        % of 'none' to indicate that the classifier should be trained with a noise free
+        % version of the stimuli.  We'll test with noisy values, however.
+        %
+        % Similarly, since this is a template type of classifer, we can just pass one
+        % noise free examplar of the NULL and TEST stimuli.  We choose here to predict
+        % performance on 120 stimuli for each contrast tested.  This is because classification
+        % of individual stimuli is pretty fast for this classifier, and we might as well
+        % get a good estimate of performance for each contrast tested.
         trainFlag = 'none'; testFlag = 'random';
         nTrain = 1; nTest = 120;
         
     case 'rcePcaSVMTAFC'
-        % SVM classifier wit PCA pre-processing
-        theRawClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
+        % SVM linear classifier with PCA pre-processing.  The usage here obtains
+        % the default parameters and then passes them in. You could adjust
+        % the parameters if you wanted to, for example changing the number
+        % of PCA components retained for the SVM processing stage.
+        rcePcaSVMTAFCParams = rcePcaSVMTAFC;
+        theRawClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC,rcePcaSVMTAFCParams);
         
-        % Noisy instances for training and testing
+        % Here we use noisy exemplars to train the SVM classifier, and
+        % again predict in batches of 120 trials.
         trainFlag = 'random'; testFlag = 'random';
         nTrain = 512; nTest = 120;
         
     otherwise
         error('Unknown observer specified');
 end
-
-% Generate and compute the zero contrast NULL stimulus sequence
-nullContrast = 0.0;
-[theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
 %% Construct a QUEST threshold estimator estimate threshold on log contrast
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
@@ -129,8 +187,6 @@ slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 %   'adaptiveMode'   - run until estimate reaches specified precision.
 % See below for more.
 questMode = 'adaptiveMode';
-
-
 switch questMode
     case 'fixedNumber'
         % Run fixed number of trials.  This is done by setting 'minTrial' and
@@ -165,6 +221,19 @@ switch questMode
     otherwise
         error('Unknown threshold engine mode specified');
 end
+
+%% Generate the NULL scene 
+%
+% Threshold will be measured a a perturbation from this scene.  Typically
+% it will correspond to zero contrast, but it doesn't have to.
+%
+% This call illustrates the compute method of the sceneEngine class.  We
+% pass the desired contrast, and back comes a cell array as the first
+% returned value, with one ISETBio scene for each time point.  The
+% corresponding times are in the second returned value, an array.  Times
+% are in seconds.
+nullContrast = 0.0;
+[theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
 %% Threshold estimation with QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();

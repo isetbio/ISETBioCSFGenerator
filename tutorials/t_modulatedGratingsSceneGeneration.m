@@ -2,7 +2,7 @@ function t_modulatedGratingsSceneGeneration
 % Demonstrates how to use the @sceneEngine object with the @sceGrating compute function to generate a variety of grating stimuli
 %
 % Syntax:
-%    t_sceneGeneration
+%    t_modulatedGratingsSceneGeneration
 %
 % Description:
 %   Demonstrates how to use the @sceneEngine object with the @sceGrating scene compute function 
