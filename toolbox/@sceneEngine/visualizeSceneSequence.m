@@ -22,7 +22,7 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
      
     hFig = figure(); clf;
-    set(hFig, 'Position', [100 400 800 800], 'Color', [1 1 1]); 
+    set(hFig, 'Position', [100 400 600 640], 'Color', [1 1 1]); 
     for frameIndex = 1:scenesNum
         subplot('Position', [0.01 0.02 0.98 0.95]);
         % Extract the XYZ image representation

@@ -170,7 +170,6 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.spatialPositionDegs =  [00.1 -0.05];
     customGratingParams.spatialEnvelope = 'Gaussian';
     customGratingParams.spatialModulationDomain = 'polar';
-    customGratingParams.spatialModulation =  'square';
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
     customGratingParams.temporalModulation = 'drifted';
     customGratingParams.temporalModulationParams =  struct(...                        
