@@ -79,22 +79,59 @@ switch (whichSceneEngine)
 end
 
 %% Instantiate a neuralResponseEngine.
-% Choices are:
-%   'ncePhotopigmentExcitationsWithNoEyeMovements'
-%   'nceScenePhotonNoise'
 %
-% The actual threshold varies enough with the different engines that we
-% need to adjust the contrast range that Quest+ searches over, as well as
-% the range of psychometric function slopes.
-whichNeuralEngine = 'ncePhotopigmentExcitationsWithNoEyeMovements';
+% The neural response engine is our model of visual processing, code that
+% takes a scene sequence as input and produces the neural representation as
+% output.  The scene sequence is produced by the sceneEngine object, and
+% the neural responses are provided to a classifier object for making
+% perceptual decisions.
+%
+% The structure of the neural response engine is conceptually similar to
+% that of the scene engine.  The user provides a function that does the
+% computations, and instantiates the neural response engine with this
+% function.  The function takes a struct of parameters, which may be
+% included with the instantiation.  By convention, the function will return
+% a struct of its default arguments if called with no inputs.
+%
+% The way we have set up the neuralResponseEngine, the passed function
+% takes two important key/value pairs.
+%    'noiseFlags'                   - Cell array of strings containing labels
+%                                     that encode the type of noise to be included
+%                                     Valid values are: 
+%                                        - 'none' (noise-free responses)
+%                                        - 'random' (noisy response instances)
+%                                     Default is {'random'}.  Only one
+%                                     instance is returned when set to
+%                                     'none', independent of how many are
+%                                     asked for.
+%   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
+%                                     seed.
+%
+% You can pass more than one noise flag in the cell array of strings.  The
+% response engine computes for each of these, and returns the responses for
+% each noise flag in a Matlab container. Containers are very convenient but
+% take a little getting used to.  We provide some usage comments where the
+% neural response engine is called a bit further down.  We also explain
+% there the format of the returned responses.
+%
+% The use of two example neural response engines is illustrated below.
+%
+% Choices are:
+%   'nrePhotopigmentExcitationsWithNoEyeMovements'
+%   'nreScenePhotonNoise'
+whichNeuralEngine = 'nrePhotopigmentExcitationsWithNoEyeMovements';
 switch (whichNeuralEngine)
-    case 'ncePhotopigmentExcitationsWithNoEyeMovements'
+    case 'nrePhotopigmentExcitationsWithNoEyeMovements'
         % Basic retinal image formation and sampling by the cone mosaic.
         % Note use of neural engine to get its own default parameters and
         % adjust them.  Smaller field of view speeds things up.
         neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
         neuralParams.coneMosaicParams.fovDegs = 0.1;
         theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements,neuralParams);
+        
+        % The actual threshold varies enough with the different engines that we
+        % need to adjust the contrast range that Quest+ searches over, as well as
+        % the range of psychometric function slopes.
         logThreshLimitLow = 4;
         logThreshLimitHigh = 1;
         logThreshLimitDelta = 0.05;
@@ -102,9 +139,16 @@ switch (whichNeuralEngine)
         slopeRangeHigh = 100;
         slopeDelta = 1;
         
-    case 'nceScenePhotonNoise'
-        % Add Poisson noise to the photon counts.
+    case 'nreScenePhotonNoise'
+        % Add Poisson noise to the photon counts.  This doesn't take any
+        % parameters to speak of. In the early literature on ideal
+        % observers, there was interest in comparing how well the human
+        % visual system performed against what was imposed by physical
+        % limits and no consideration of the visual system.  This 'neural'
+        % engine instantiates calculations of this sort.
         theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);
+        
+        % Again, custom ranges for the code that finds threshold
         logThreshLimitLow = 7;
         logThreshLimitHigh = 5;
         logThreshLimitDelta = 0.005;
@@ -184,10 +228,39 @@ switch whichObserver
 end
 
 %% Construct a QUEST threshold estimator estimate threshold on log contrast
+%
+% We have found that computing out psychometric functions takes a long time
+% if you use the method of constant stimuli.  Thus we use an adaptive
+% psychophysical procedure, QUEST+, to make the computations efficient.
+% You can learn more about QUEST+ at the gitHub site that has our QUEST+
+% Matlab implementation: https://github.com/BrainardLab/mQUESTPlus.
+%
+% A features of QUEST+ is that you need to specify a discrete list of
+% contrast values that will be tested, which in the wrapper here is also
+% taken as the set of possible thresholds as QUEST+ chooses stimulus values.
+% We also discretize the possible slopes of the underlying Weibull
+% psychometric function.  As noted above, appropriate choices for these
+% depend on the neural engine (and possibly the quality of the response
+% classifier) and need to be set on the basis of experience.  There is also
+% a little art to choosing the spacing of the discrete values.  Too many
+% and QUEST+ will run slowly; too few and it may not be able to put stimuli
+% in the right places.
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
-% There are two recommended ways to setup the QUEST+ threshold engine.
+% There are two recommended ways to setup the QUEST+ threshold engine,
+% which vary in terms of how clever they try to be about how many trials to
+% run before stopping.
+%
+% The fixed number option runs a fixed number of trials.  This is fine if
+% you have a good idea of how many trials you need to obtain the accuracy
+% you want.
+%
+% In adaptive mode, we set up multiple QUEST+ instances and run them
+% interleaved. We stop when the standard error of estimates across them
+% becomes small enough.  See below for more.
+%
+% Choices:
 %   'fixedNumber'    - run a fixed number of trials
 %   'adaptiveMode'   - run until estimate reaches specified precision.
 % See below for more.
@@ -201,24 +274,38 @@ switch questMode
             'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
         
     case 'adaptiveMode'
-        % Run 'numEstimator > 1' interleaved Quest+ objects. In this case, the
-        % threshold engine calculates the running standard error (SE) among
-        % those objects. The stopping criterion is triggered when 
-        % 1) total number of trials >= 'minTrial' 
-        % AND the 'stopCriterion'(threshold, SE) is TRUE, 
-        % OR 2) when total numberof trials >= 'maxTrial'.
-        
-        % 'stopCriterion' could be one of two options:
-        
-        % 1) A single number. In this case, the criterion will simply be
-        % SE < 'stopCriterion'.
-        stopCriterion = 0.025;
-        
-        % 2) A function handle that takes the current estimate of threshold
-        % and SE estimates as input arguments, and returns a boolean variable.
-        % For example: we can use a relative criterion w.r.t. the magnitude of threshold        
+        % Run 'numEstimator > 1' interleaved QUEST+ objects. In this case,
+        % the threshold engine calculates the running standard error (SE)
+        % among those objects. Essentially, this is an internal estimate of
+        % the precision of the current threshold estimate.  Given this, the
+        % stopping criterion is triggered when either of the following is
+        % true
+        %   1) total number of trials >= 'minTrial' AND the 'stopCrition'
+        %   is true.
+        %   2) when total number of trials >= 'maxTrial'.
+        % The total number of trials includes all the trials across the
+        % multiple QUEST+ objects.
+        %
+        % The 'stopCriterion' itself can be defined in two ways.  
+        %   1) A single number. In this case, the criterion will be
+        %      true when the SE is less than the specified number.
+        %   2) A function handle that takes the current estimate of threshold
+        %      and SE estimates as input arguments, and returns a boolean variable.
+        %      For example: we can use a relative criterion w.r.t. the magnitude of threshold  
+        %
+        % Comment in either of the lines below to chose which you do. As
+        % with the contrast range, there is some art to choosing the
+        % specific values for the stop criterion, as well as the min and
+        % max number of trials.  For example, the relative stopping
+        % criterion in the function handle below can terminate too early if
+        % initial threshold values are large.  This can be avoided by
+        % appropriate choice of minimum number of trials.
+        %
+        % Choices (comment in one):
+        %stopCriterion = 0.025;
         stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
         
+        % Set up the estimate object.
         estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
             'numEstimator', 4, 'stopCriterion', stopCriterion);
@@ -241,12 +328,20 @@ nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
 %% Threshold estimation with QUEST+
+%
+% There is some logic here to cache scenes and classifiers for each
+% contrast tested, so that things will run faster if a contrast is repeated
+% a second time.  This can use up space, so for real problems you may need
+% to think about space-time tradeoffs, caching things to disk, etc.
+
+% Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
+
+% Loop over trials.
 testedContrasts = [];
 while (nextFlag)
     
-    % log contrast -> contrast
-    % Compute the TEST stimulus
+    % Convert log contrast -> contrast
     testContrast = 10 ^ logContrast;
     
     % Have we already built the classifier for this contrast?
@@ -261,25 +356,25 @@ while (nextFlag)
         
         % Train classifier for this TEST contrast and get predicted
         % responses
-        [response, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
+        [predictions, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag);
         
     else
         % Classifier is already trained, just get responses
-        response = computeResponse(...
+        predictions = computeResponse(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
     end
     
     % Report what happened
-    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(response));
+    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));
     
     % Get next stimulus contrast
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), response);
+        estimator.multiTrial(logContrast * ones(1, nTest), predictions);
     
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
@@ -321,7 +416,7 @@ if (runValidation)
 end
 
 %% Helper function
-function [response,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
+function [predictions,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
 % Train the classifier.
 %
@@ -375,6 +470,6 @@ dataOut = theClassifierEngine.compute('predict', ...
 
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
-response = dataOut.trialPredictions;
+predictions = dataOut.trialPredictions;
 
 end
