@@ -356,25 +356,25 @@ while (nextFlag)
         
         % Train classifier for this TEST contrast and get predicted
         % responses
-        [predictions, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
+        [response, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag);
         
     else
         % Classifier is already trained, just get responses
-        predictions = computeResponse(...
+        response = computeResponse(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
     end
     
     % Report what happened
-    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));
+    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(response));
     
     % Get next stimulus contrast
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), predictions);
+        estimator.multiTrial(logContrast * ones(1, nTest), response);
     
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
@@ -416,7 +416,7 @@ if (runValidation)
 end
 
 %% Helper function
-function [predictions,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
+function [response,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
 % Train the classifier.
 %
@@ -470,6 +470,6 @@ dataOut = theClassifierEngine.compute('predict', ...
 
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
-predictions = dataOut.trialPredictions;
+response = dataOut.trialPredictions;
 
 end
