@@ -274,6 +274,7 @@ switch questMode
             'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
         
     case 'adaptiveMode'
+<<<<<<< HEAD
         % Run 'numEstimator > 1' interleaved QUEST+ objects. In this case,
         % the threshold engine calculates the running standard error (SE)
         % among those objects. Essentially, this is an internal estimate of
@@ -304,6 +305,25 @@ switch questMode
         % Choices (comment in one):
         %stopCriterion = 0.025;
         stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
+=======
+        % Run 'numEstimator > 1' interleaved Quest+ objects. In this case, the
+        % threshold engine calculates the running standard error (SE) among
+        % those objects. The stopping criterion is triggered when 
+        % 1) total number of trials >= 'minTrial' 
+        % AND the 'stopCriterion'(threshold, SE) is TRUE, 
+        % OR 2) when total numberof trials >= 'maxTrial'.
+        
+        % 'stopCriterion' could be one of two options:
+        
+        % 1) A single number. In this case, the criterion will simply be
+        % SE < 'stopCriterion'.
+        stopCriterion = 0.025;
+        
+        % 2) A function handle that takes the current estimate of threshold
+        % and SE estimates as input arguments, and returns a boolean variable.
+        % For example: we can use a relative criterion w.r.t. the magnitude of threshold        
+        % stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
+>>>>>>> f25d95a96ecf557869d29d8e627c41d8c17d8e69
         
         % Set up the estimate object.
         estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
@@ -356,25 +376,25 @@ while (nextFlag)
         
         % Train classifier for this TEST contrast and get predicted
         % responses
-        [response, theTrainedClassifierEngines{testedIndex}] = computeResponse(...
+        [choiceResponse, theTrainedClassifierEngines{testedIndex}] = computePerformance(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag);
         
     else
         % Classifier is already trained, just get responses
-        response = computeResponse(...
+        choiceResponse = computePerformance(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
     end
     
     % Report what happened
-    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(response));
+    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(choiceResponse));
     
     % Get next stimulus contrast
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), response);
+        estimator.multiTrial(logContrast * ones(1, nTest), choiceResponse);
     
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
@@ -403,7 +423,7 @@ if (runValidation)
         testContrast = 10 ^ logContrast(idx);
         [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
         
-        pCorrect(idx) = mean(computeResponse(...
+        pCorrect(idx) = mean(computePerformance(...
             theNullSceneSequence, theTestSceneSequence, ...
             theSceneTemporalSupportSeconds, 512, 512, ...
             theNeuralEngine, theRawClassifierEngine), trainFlag, testFlag);
@@ -416,7 +436,7 @@ if (runValidation)
 end
 
 %% Helper function
-function [response,theClassifierEngine] = computeResponse(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
+function [choiceResponse, theClassifierEngine] = computePerformance(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
 % Train the classifier.
 %
@@ -470,6 +490,6 @@ dataOut = theClassifierEngine.compute('predict', ...
 
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
-response = dataOut.trialPredictions;
+choiceResponse = dataOut.trialPredictions;
 
 end
