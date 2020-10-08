@@ -274,7 +274,6 @@ switch questMode
             'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
         
     case 'adaptiveMode'
-<<<<<<< HEAD
         % Run 'numEstimator > 1' interleaved QUEST+ objects. In this case,
         % the threshold engine calculates the running standard error (SE)
         % among those objects. Essentially, this is an internal estimate of
@@ -305,25 +304,6 @@ switch questMode
         % Choices (comment in one):
         %stopCriterion = 0.025;
         stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
-=======
-        % Run 'numEstimator > 1' interleaved Quest+ objects. In this case, the
-        % threshold engine calculates the running standard error (SE) among
-        % those objects. The stopping criterion is triggered when 
-        % 1) total number of trials >= 'minTrial' 
-        % AND the 'stopCriterion'(threshold, SE) is TRUE, 
-        % OR 2) when total numberof trials >= 'maxTrial'.
-        
-        % 'stopCriterion' could be one of two options:
-        
-        % 1) A single number. In this case, the criterion will simply be
-        % SE < 'stopCriterion'.
-        stopCriterion = 0.025;
-        
-        % 2) A function handle that takes the current estimate of threshold
-        % and SE estimates as input arguments, and returns a boolean variable.
-        % For example: we can use a relative criterion w.r.t. the magnitude of threshold        
-        % stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
->>>>>>> f25d95a96ecf557869d29d8e627c41d8c17d8e69
         
         % Set up the estimate object.
         estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
@@ -375,26 +355,28 @@ while (nextFlag)
         [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
         
         % Train classifier for this TEST contrast and get predicted
-        % responses
-        [choiceResponse, theTrainedClassifierEngines{testedIndex}] = computePerformance(...
+        % correct/incorrect predictions.  This function also computes the
+        % neural responses needed to train and predict.
+        [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformance(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag);
         
     else
-        % Classifier is already trained, just get responses
-        choiceResponse = computePerformance(...
+        % Classifier is already trained, just get predictions
+        predictions = computePerformance(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
     end
     
     % Report what happened
-    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(choiceResponse));
+    fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));
     
-    % Get next stimulus contrast
+    % Tell QUEST+ what we ran (how many trials at the given contrast) and
+    % get next stimulus contrast to run.
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), choiceResponse);
+        estimator.multiTrial(logContrast * ones(1, nTest), predictions);
     
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
@@ -404,7 +386,9 @@ end
 %% Show results
 fprintf('%d trials recorded \n', estimator.nTrial);
 
-% Estimate threshold and plot/report results
+% Estimate threshold and plot/report results.  This
+% does a maximumu likelihood based on the trials run, and is not subject to
+% the discretization used by QUEST+.
 figure();
 [threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 7.5);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
@@ -436,7 +420,7 @@ if (runValidation)
 end
 
 %% Helper function
-function [choiceResponse, theClassifierEngine] = computePerformance(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
+function [predictions, theClassifierEngine] = computePerformance(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
 % Train the classifier.
 %
@@ -459,7 +443,17 @@ if (~isempty(trainFlag))
         nTrain, ...
         'noiseFlags', {trainFlag});
     
-    % Train the classifier
+    % Train the classifier. This shows the usage to extact information
+    % from the container retrned as the first return value from the neural
+    % response engine - we index the responses by the string contained in
+    % the variable trainFlag (which was itself passed to the neural
+    % repsonse engine above.)
+    %
+    % Once extracted from the container, the responses are a 3 dimensional
+    % matrix, with the dimensions indexing [instancesNum x mNeuralDim x tTimeBins].
+    %   instancesNum   - number of response instances
+    %   mNeuralDim     - dimension of neural response at one timepoint
+    %   tTimeBins      - number of time points in stimulus sequence.
     theClassifierEngine.compute('train', ...
         inSampleNullStimResponses(trainFlag), ...
         inSampleTestStimResponses(trainFlag));
@@ -490,6 +484,6 @@ dataOut = theClassifierEngine.compute('predict', ...
 
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
-choiceResponse = dataOut.trialPredictions;
+predictions = dataOut.trialPredictions;
 
 end
