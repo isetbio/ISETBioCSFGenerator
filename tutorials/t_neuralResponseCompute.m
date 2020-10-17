@@ -23,7 +23,7 @@ function t_neuralResponseCompute
 % Optional key/value pairs:
 %    None.
 %
-% See also: t_sceneGeneration
+% See also: t_thresholdEngine, t_sceneGeneration, t_responseClassifier
 %
 
 % History:
@@ -32,17 +32,21 @@ function t_neuralResponseCompute
     % Close figures
     close all;
 
-    % Configure the function handle and the params for the @sceneGenerationEngine
-    % This is a function that the USER has to supply
+    % Instantiate the scene engine with a compute function.
+    % This is a function that the USER has to supply.
     sceneComputeFunction = @sceUniformFieldTemporalModulation;
-    % Instantiate a sceneGenerationEngine with the above sceneComputeFunctionHandle
     theSceneEngine = sceneEngine(sceneComputeFunction);
     
     % Configure the function handle and the params for the @neuralResponseEngine
     % This is a function that the USER has to supply
     neuralComputeFunction = @nrePhotopigmentExcitationsWithNoEyeMovements;
     
-    % Custom neural response params struct 
+    % Custom neural response params struct. The form of this structure is
+    % defined by and is specific to the
+    % nrePhotopigmentExcitationsWithNoEyeMovements compute function.  You
+    % can write your own compute function for the model visual system you
+    % are interested in, and it can take parameters defined by a structure
+    % that you set up as part of writing that function.
     customNeuralResponseParams = struct(...
         'opticsParams',  struct(...
             'type', 'wvf human', ...
@@ -54,7 +58,7 @@ function t_neuralResponseCompute
             'timeIntegrationSeconds', 5/1000) ...
     );
 
-    % Instantiate a neuralResponseEngine with custom neural response params
+    % Instantiate a neuralResponseEngine with the custom neural response params
     theNeuralEngine = neuralResponseEngine(neuralComputeFunction, customNeuralResponseParams);
     
     % Specify a pedestal luminance with 70% contrast
@@ -63,18 +67,43 @@ function t_neuralResponseCompute
     % Compute the scene sequence
     [theSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(testContrast);
 
-    % Compute 8 instances of neural responses to the input scene sequence
+    % Compute instances of neural responses to the input scene sequence.
+    %
+    % We specify the types of noise to be applied to the computed responses.
+    % This has to be a cell array.  All nre compute functions need to understand 
+    % 'none' and 'random'. Specific nre compute functions are allowed understand additional options
+    % as appropriate to the specific model.
+    %
+    % It is possible to freeze the noise by specifying a seed for the
+    % randome number generator through the 'rngSeed' key/value pair.  The
+    % compute function should restore the rng to its current state if this
+    % is passed, but not otherwise.
     instancesNum = 8;
-    % Types of noise for thr computed responses
-    % This has to be a cell array list with valid entries: {'none', 'random', 'rngSeed_someInt'}
     noiseFlags = {'random', 'none'};
     [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
             theSceneSequence, ...
             theSceneTemporalSupportSeconds, ...
             instancesNum, ...
             'noiseFlags', noiseFlags, ...
-            'rngSeed', 345 ...
+            'rngSeed', [] ...
             );
+        
+    % The responses come back as a Matlab container, with one container
+    % entry per noise flag passed.  Extract the response matrix from the
+    % container by indexing it with the noise flag.   These are arranged as
+    % an instancesNum x nDim x nTimepoints matrix, where nDim is the
+    % dimension of the neural response at a single time point and
+    % nTimespoints is the number of time points in the sequence.
+    noiseFreeResponses = theResponses('none');
+    
+    % The noisy ('random') responses instances also comeback in the
+    % container.  These are arranged as an instancesNum x nDim x nTimepoints
+    % matrix, where nDim is the dimension of the neural response at a
+    % single time point and nTimespoints is the number of time points in
+    % the sequence.
+    noisyInstances = theReponses('random');
+    assert(size(noisyInstances,1) == instancesNum);
+    assert(size(noisyInstances,3) == length(theResponseTemporalSupportSeconds));
         
     % Visualize all responses computes (different figures for different
     % noise flags)

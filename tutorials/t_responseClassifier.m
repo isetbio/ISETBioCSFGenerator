@@ -22,8 +22,8 @@ function t_responseClassifier
 %    None.
 %
 % See Also:
-%   t_neuralResponseCompute
-%   t_sceneGeneration
+%   t_thresholdEngine, t_sceneGeneration, t_neuralResponseCompute
+%
 
 % History:
 %    09/21/2020  NPC  Wrote it.
@@ -45,6 +45,7 @@ function t_responseClassifier
     
     % User-supplied computeFunction for the @responseClassifierEngine
     classifierComputeFunction = @rcePcaSVMTAFC;
+    
     % User-supplied struct with params appropriate for the @responseClassifierEngine computeFunction
     customClassifierParams = struct(...
         'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
@@ -58,12 +59,10 @@ function t_responseClassifier
    
     % Generate the NULL stimulus sequence
     nullContrast = 0.0;
-    % Compute the NULL stimulus
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
     % Generate the TEST stimulus sequence
     testContrast = 0.008;
-    % Compute the TEST stimulus
     [theTestSceneSequence, ~] = theSceneEngine.compute(testContrast);
     
     % Compute respose instances to the NULL and TEST stimuli for training the classifier
@@ -86,8 +85,9 @@ function t_responseClassifier
         inSampleNullStimResponses('random'), ...
         inSampleTestStimResponses('random'));
     
-    % Test predictions of the trained classifier on 10 out of sample
-    % response instance at a time
+    % Test predictions of the trained classifier on out of sample
+    % response instances.  This parameter tells us how many out of sample 
+    % stimulus instances to use.
     outOfSampleInstancesNum = 100;
   
     % Repeat out-of-sample predictions a total of N times

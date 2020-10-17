@@ -59,13 +59,12 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %
 %             - If called from a parent @neuralResponseEngine), the returned
 %               struct is organized as follows:
-%
-%              .neuralResponses : dictionary of responses indexed with 
+%                .neuralResponses : dictionary of responses indexed with 
 %                                   labels corresponding to the entries of
 %                                   the 'noiseFlags'  optional argument
-%              .temporalSupport : the temporal support of the neural
+%                .temporalSupport : the temporal support of the neural
 %                                   responses, in seconds
-%              .neuralPipeline  : a struct containing the optics and cone mosaic 
+%                .neuralPipeline  : a struct containing the optics and cone mosaic 
 %                                   employed in the computation (only returned if 
 %                                   the parent @neuralResponseEngine object has 
 %                                   an empty neuralPipeline property)
@@ -180,13 +179,16 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
             % Compute the noise-free response
             % To do so, first save the current mosaic noiseFlag
             lastConeMosaicNoiseFlag = theConeMosaic.noiseFlag;
+            
             % Set the coneMosaic.noiseFlag to 'none';
             theConeMosaic.noiseFlag = 'none';
+            
             % Compute noise-free response instances
             theNeuralResponses(noiseFlags{idx}) = theConeMosaic.computeForOISequence(theOIsequence, ...
                 'emPaths', emPaths, ...   % the emPaths
                 'currentFlag', false ...  % no photocurrent
             );
+        
             % Restore the original noise flag
             theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
             
