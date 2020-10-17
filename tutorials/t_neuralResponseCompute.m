@@ -101,7 +101,7 @@ function t_neuralResponseCompute
     % matrix, where nDim is the dimension of the neural response at a
     % single time point and nTimespoints is the number of time points in
     % the sequence.
-    noisyInstances = theReponses('random');
+    noisyInstances = theResponses('random');
     assert(size(noisyInstances,1) == instancesNum);
     assert(size(noisyInstances,3) == length(theResponseTemporalSupportSeconds));
         

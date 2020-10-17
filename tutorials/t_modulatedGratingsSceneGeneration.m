@@ -25,6 +25,7 @@ function t_modulatedGratingsSceneGeneration
 
 % History:
 %    10/06/2020  NPC  Wrote it.
+%    10/17/2020  dhb  Remove pause commands so we can autotest with this.
 
     % Close figs
     close all;
@@ -80,10 +81,7 @@ function t_modulatedGratingsSceneGeneration
     
     % Visualize the generated scene sequence
     theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
-    disp('Hit enter to continue');
-    pause
-
-    
+ 
     % STIMULUS #2 
     % An L+M Gabor grating with a 60 deg orientation drifting at 8 Hz
     customGratingParams = defaultGratingParams;
@@ -102,10 +100,7 @@ function t_modulatedGratingsSceneGeneration
     
     % Visualize the generated scene sequence
     theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
-    disp('Hit enter to continue');
-    pause
-    
-    
+       
     % STIMULUS #3 
     % An achromatic grating with an orientation of 30 deg,
     % square aperture and a spatial phase of 0 degs, positioned at an 
