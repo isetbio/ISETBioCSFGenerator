@@ -109,8 +109,8 @@ if (strcmp(operationMode, 'predict'))
     % Get template we tucked away at training time.
     nullTemplate = obj.preProcessingConstants.nullTemplate;
     testTemplate = obj.preProcessingConstants.testTemplate;
-    nullTestTemplate = [nullTemplate testTemplate];
-    testNullTempalte = [testTemplate nullTemplate];
+    nullTestTemplate = [nullTemplate ; testTemplate];
+    testNullTemplate = [testTemplate ; nullTemplate];
     
     % Make sure number of null and test instances matches.
     nTrials = size(nullResponses, 1);

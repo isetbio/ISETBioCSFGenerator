@@ -186,6 +186,7 @@ end
 %
 % Choices are:
 %   'rcePoissonTAFC'
+%   'rceTemplateTAFC'
 %   'rcePcaSVMTAFC'
 whichObserver = 'rcePoissonTAFC';
 switch whichObserver
@@ -193,6 +194,26 @@ switch whichObserver
         % The ideal observer for a TAFC task limited by Poisson noise.
         % This classifier doesn't take any parameters.
         theRawClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        
+        % Below we use a wrapper routine to train the classifier and to
+        % predict trial-by-trial responses.  Because that routine is
+        % general, we define some parameters for it here.
+        %
+        % We'll illustrate a signal known exactly classifier, using the trainFlag value
+        % of 'none' to indicate that the classifier should be trained with a noise free
+        % version of the stimuli.  We'll test with noisy values, however.
+        %
+        % Similarly, since this is a template type of classifer, we can just pass one
+        % noise free examplar of the NULL and TEST stimuli.  We choose here to predict
+        % performance on 120 stimuli for each contrast tested.  This is because classification
+        % of individual stimuli is pretty fast for this classifier, and we might as well
+        % get a good estimate of performance for each contrast tested.
+        trainFlag = 'none'; testFlag = 'random';
+        nTrain = 1; nTest = 120;
+    
+    case 'rceTemplateTAFC'
+        % Template matching (nearest neighbor) classifier for TAFC
+        theRawClassifierEngine = responseClassifierEngine(@rceTemplateTAFC);
         
         % Below we use a wrapper routine to train the classifier and to
         % predict trial-by-trial responses.  Because that routine is
