@@ -137,7 +137,7 @@ switch (whichNeuralEngine)
         logThreshLimitDelta = 0.05;
         slopeRangeLow = 1;
         slopeRangeHigh = 100;
-        slopeDelta = 1;
+        slopeDelta = 5;
         
     case 'nreScenePhotonNoise'
         % Add Poisson noise to the photon counts.  This doesn't take any
