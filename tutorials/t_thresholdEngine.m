@@ -278,8 +278,8 @@ slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 % you want.
 %
 % In adaptive mode, we set up multiple QUEST+ instances and run them
-% interleaved. We stop when the standard error of estimates across them
-% becomes small enough.  See below for more.
+% interleaved. We stop when the standard error of the threshold estimates
+% across them becomes small enough.  See below for more.
 %
 % Choices:
 %   'fixedNumber'    - run a fixed number of trials
@@ -335,7 +335,7 @@ switch questMode
         error('Unknown threshold engine mode specified');
 end
 
-%% Generate the NULL scene 
+%% Generate the NULL scene sequence
 %
 % Threshold will be measured as a perturbation from this scene.  Typically
 % it will correspond to zero contrast, but it doesn't have to.
