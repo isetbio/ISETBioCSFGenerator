@@ -2,22 +2,31 @@ classdef sceneEngine < handle
 % Define a sceneEngine class
 %
 % Syntax:
-%   theSceneEngine = sceneEngine(sceneComputeFunctionHandle, sceneParamsStruct)
+%   theSceneEngine = sceneEngine(sceneComputeFunctionHandle,
+%   sceneParamsStruct)
 %
 % Description:
-%    The sceneEngine provides a unified way of generating scenes which are 
-%    identical in all aspects except for one parameter (contrast for now), 
+%    The sceneEngine provides a unified way of generating scenes which are
+%    identical in all aspects except for one parameter (contrast for now),
 %    which is the parameter that we vary in order to obtain a detection
 %    threshold.
 %
 %
 % Inputs:
-%    sceneComputeFunctionHandle     - Function handle to the computeFunction that defines 
-%                                     the spatiotemporal aspects of the generated scene sequence
-%
-%    sceneParamsStruct              - Struct with parameters specific to the computeFunction. 
-%                                     Optional. If not defined, the default params
-%                                     defined in the computeFunction are used
+%    sceneComputeFunctionHandle     - Function handle to the
+%                                     computeFunction that defines the
+%                                     spatiotemporal aspects of the
+%                                     generated scene sequence.  See the
+%                                     example compute function
+%                                     sceUniformTemporalModulation provided
+%                                     with this toolbox for a description
+%                                     of the full API for the compute
+%                                     function.
+%    sceneParamsStruct              - Struct with parameters specific to
+%                                     the computeFunction. Optional. If not
+%                                     defined or passed as empty, the default
+%                                     params defined in the computeFunction
+%                                     are used.
 % Outputs:
 %    The created sceneEngine object.
 %
@@ -29,7 +38,8 @@ classdef sceneEngine < handle
 %
 
 % History:
-%    9/20/2020  NPC Wrote it
+%    09/20/2020  NPC Wrote it
+%    10/17/2020  dhb Comments.
 
     %% Public properties
     properties
@@ -40,6 +50,7 @@ classdef sceneEngine < handle
     properties (SetAccess=private)
         % User-passed function handle to the scene computation routine
         sceneComputeFunction
+        
         % User-passed struct with all scene computation params except contrast
         sceneParams
         
@@ -59,7 +70,7 @@ classdef sceneEngine < handle
             
             % If we dont receice a paramsStruct as the second argument use
             % the default params returned by the sceneComputeFunctionHandle
-            if (nargin == 1)
+            if (nargin == 1 || isempty(sceneParamsStruct))
                 sceneParamsStruct = obj.sceneComputeFunction();
             end
             

@@ -23,7 +23,9 @@ function t_sceneGeneration
 %    None.
 %
 % See Also:
-%   t_neuralResponseCompute
+%   t_neuralResponseCompute, t_thresholdEngine, t_neuralResponseCompute,
+%   t_responseClassifier.
+%
 
 % History:
 %    09/21/2020  NPC  Wrote it.
@@ -32,10 +34,17 @@ function t_sceneGeneration
     close all;
 
     % Configure the function handle and the params for the @sceneEngine
-    % user supplied compute function
+    % user supplied compute function.  This example function is provided with 
+    % the toolbox.  See its help text for a description of the API for the
+    % compute function.
     sceneComputeFunction = @sceUniformFieldTemporalModulation;
     
-    % User supplied struct with params appropriate for the sceneComputeFunction
+    % User supplied struct with params appropriate for the
+    % sceneComputeFunction.  If you didn't know what fields were there,
+    % you could execute the compute function with no input arguments. This will
+    % return the default parameter struct for this function. That is,
+    % enter:
+    %   sceUniformFieldTemporalModulation
     customSceneParams = struct(...
         'fovDegs', 0.25, ...                        % 0.25 degs across
         'meanLuminanceCdPerM2', 200, ...            % 200 cd/m2 mean luminance
@@ -47,8 +56,9 @@ function t_sceneGeneration
 
     % Instantiate a sceneEngine with the above sceneComputeFunctionHandle 
     % and the custom scene params.  In the general case, the
-    % customSceneParams structure should what the sceneComputeFunction
-    % expects to be passed.
+    % customSceneParams structure should bewhat the sceneComputeFunction
+    % expects to be passed.  If you instantiate without a parameters
+    % structure, the default parameter structure is used.
     theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
     
     % Specify a test with 70% contrast
@@ -69,27 +79,25 @@ function t_sceneGeneration
     customSceneParams.meanLuminanceCdPerM2 = 90;
     customSceneParams.stimOnsetFramesIndices = [1 4];
     
-    % Note that we need to re-instantiate the @sceneEngine object to do this, since the 
-    % convention is that a given @sceneEngine object only generates one scene, perhaps
-    % with a different contrast.
+    % Note that we need to re-instantiate the @sceneEngine object to do
+    % this, since the convention is that a given @sceneEngine object only
+    % generates one scene, perhaps with a different contrast.
     theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
-    
     [theSceneSequence1, theSceneTemporalSupportSeconds1] = theSceneEngine.compute(testContrast);
     if (debugSceneGeneration)
         theSceneEngine.visualizeSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
     end
     
-    % If you didn't know what fields the parameters struct the
-    % sceUniformFieldTemporalModulation function expects, you can get a
+    % As noted above, if you didn't know what fields the parameters struct
+    % the sceUniformFieldTemporalModulation function expects, you can get a
     % default parameters structure by calling
     % sceUniformFieldTemporalModulation without any arguments
     defaultSceneParams = sceUniformFieldTemporalModulation
     
-    % You can also instantiate a scene generation object with the default
+    % Also as noted above, you can instantiate a scene generation object with the default
     % parameters by not providing them:
     theSceneEngine = sceneEngine(sceneComputeFunction);
     theSceneEngine.sceneParams
-
 end
 
 

@@ -10,23 +10,27 @@ function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStr
 %    object. There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
-%
-%               dataOut = sceUniformFieldTemporalModulation()
-%
+%               dataOut = sceUniformFieldTemporalModulation();
 %           it does not compute anything and simply returns a struct with the 
 %           defaultParams that define the scene.
 %
-%       [2] If called from a parent @sceneEngine object, it computes a cell array 
-%           of scenes defining the frames of a stimulus and the temporal
-%           support of the frames
+%       [2] If called with arguments, as it is from a parent @sceneEngine object,
+%           it computes a cell array of scenes defining the frames of a
+%           stimulus and the temporal support of the frames. These are
+%           returned as named fields of the returned dataOut struct.
+%
+%    All scene functions used with the sceneEngine class must conform to
+%    this API.
 %
 % Inputs:
-%    testContrast                - the contrast for the scene to be generated
-%                               
-%    sceneParamsStruct           - a struct containing properties of the scene
-%
-%
-% Optional key/value input arguments: none 
+%    testContrast                - Scalar providing the contrast for the
+%                                  scene to be generated.                           
+%    sceneParamsStruct           - Struct containing properties of the
+%                                  scene understood by this function.
+%                                  As noted above, execute
+%                                  sceUniformFieldTemporalModulation at the
+%                                  command line to see the structure's
+%                                  fields and default values.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -36,15 +40,17 @@ function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStr
 %
 %             - If called from a parent @sceneEngine, the returned
 %               struct is organized as follows:
+%                 .sceneSequence : a cell array of scenes defining the frames of the generated grating scene sequence                            
+%                 .temporalSupport : the temporal support of the frames of the generated grating scene sequence, in seconds                   
 %
-%              .sceneSequence : a cell array of scenes defining the frames of the generated scene sequence
-%                               
-%              .temporalSupport : the temporal support of the frames of the generated scene sequence, in seconds            
+% Optional key/value input arguments:
+%    None.
 %
-%
+% Examples:
+%    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration
+%     t_sceneGeneration, t_thresholdEngine
 
 % History:
 %    09/26/2020  NPC  Wrote it.

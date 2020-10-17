@@ -13,18 +13,14 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
 %    instantiating the @sceneEngine object.
 %
 % Inputs:
-%    obj                      - the parent @sceneEngine object
-%                               
+%    obj                      - the parent @sceneEngine object                              
 %    sceneContrast            - the contrast of the scene to be generated
-%
 %
 % Optional key/value input arguments: none 
 %
 % Outputs:
 %    theSceneSequence        - a cell array of scenes, representing a spatio-temporal stimulus
-%
 %    temporalSupportSeconds  - a vector of time stamps for each frame of the scene sequence 
-%
 %
 % See Also:
 %     t_sceneGeneration

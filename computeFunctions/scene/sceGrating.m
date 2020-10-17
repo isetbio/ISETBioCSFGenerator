@@ -9,25 +9,25 @@ function dataOut = sceGrating(testContrast, gratingParams)
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine
 %    object. There are 2 ways to use this function.
 %
-%       [1] If called directly and with no arguments, 
-%
-%               dataOut = sceGrating()
-%
 %           it does not compute anything and simply returns a struct with the 
 %           defaultParams that define the scene.
 %
-%       [2] If called from a parent @sceneEngine object, it computes a cell array 
-%           of scenes defining the frames of a grating stimulus and the temporal
-%           support of the frames
+%       [2] If called with arguments, as it is from a parent @sceneEngine object,
+%           it computes a cell array of scenes defining the frames of a
+%           stimulus and the temporal support of the frames. These are
+%           returned as named fields of the returned dataOut struct.
+%
+%    All scene functions used with the sceneEngine class must conform to
+%    this API.
 %
 % Inputs:
-%    testContrast                - the contrast for the scene to be generated
-%                               
-%    sceneParamsStruct           - a struct containing spatio-temporo-chromatic 
-%                                  properties of the grating
-%
-%
-% Optional key/value input arguments: none 
+%    testContrast                - Scalar providing the contrast for the
+%                                  scene to be generated.                           
+%    sceneParamsStruct           - Struct containing properties of the
+%                                  scene understood by this function.
+%                                  As noted above, execute sceGrating at
+%                                  the command line to see the structure's
+%                                  fields and default values.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -37,19 +37,21 @@ function dataOut = sceGrating(testContrast, gratingParams)
 %
 %             - If called from a parent @sceneEngine, the returned
 %               struct is organized as follows:
+%                 .sceneSequence : a cell array of scenes defining the frames of the generated grating scene sequence                            
+%                 .temporalSupport : the temporal support of the frames of the generated grating scene sequence, in seconds            
 %
-%              .sceneSequence : a cell array of scenes defining the frames of the generated grating scene sequence
-%                               
-%              .temporalSupport : the temporal support of the frames of the generated grating scene sequence, in seconds            
+% Optional key/value input arguments:
+%     None.
 %
-%
+% Examples:
+%    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration
+%     t_sceneGeneration, t_thresholdEngine
 
 % History:
 %    10/05/2020  NPC  Wrote it.
-%
+
 %   Examples:
 %{
     % Usage case #1. Just return the default scene params
@@ -67,8 +69,7 @@ function dataOut = sceGrating(testContrast, gratingParams)
         theSceneEngineOBJ.compute(testContrast);
 
     % Visualize the generated scene frames
-    theSceneEngineOBJ.visualizeSceneSequence(theTestSceneSequence, temporalSupportSeconds);
-    
+    theSceneEngineOBJ.visualizeSceneSequence(theTestSceneSequence, temporalSupportSeconds);    
 %}
 
     % Check input arguments. If called with zero input arguments, just return the default params struct
@@ -93,7 +94,6 @@ function dataOut = sceGrating(testContrast, gratingParams)
     % Add optional fields
     dataOut.presentationDisplay = presentationDisplay;
 end
-
 
 function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
 
@@ -163,7 +163,6 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
     % Close progress bar
     close(hProgressBar);
 end
-
 
 function theSceneFrame = generateGratingSequenceFrame(presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
     % Compute the color transformation matrices for this display
@@ -249,18 +248,15 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
             error('Unknown spatial modulationDomain: ''%s''.\n', gratingParams.spatialModulationDomain)
     end
     
-    
-    
     % Harmonic or Square qave
     switch (gratingParams.spatialModulation)
         case 'square'
             contrastPattern = sign(contrastPattern);
         case 'harmonic'
-            ; % do nothing
+            % do nothing
         otherwise
             error('Unknown spatial modulation: ''%s''.\n', gratingParams.spatialModulation)
     end
-
 
     % Envelope
     switch (gratingParams.spatialEnvelope)
@@ -284,7 +280,6 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     % Mask with envelope
     contrastPattern = contrastPattern .* envelope;
 end
-
 
 function presentationDisplay = generatePresentationDisplay(gratingParams)
     % Generic LCD display
