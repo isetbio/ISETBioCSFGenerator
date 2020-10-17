@@ -151,8 +151,8 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
     end
     
     % Check operation mode
-    if (~strcmp(operationMode,'train') || strcmp(operationMode,'predict'))
-        error('Unknown operation mode passed.  Must be ''train'' or ''predict'');
+    if (~strcmp(operationMode,'train') && ~strcmp(operationMode,'predict'))
+        error('Unknown operation mode passed.  Must be ''train'' or ''predict''');
     end
     
     % Feature assembly phase

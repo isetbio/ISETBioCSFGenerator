@@ -13,14 +13,13 @@ function dataOut = rcePoissonTAFC(obj, operationMode, classifierParamsStruct, nu
 %    routine, so a struct with an unintersting field is returned just to
 %    keep the calling machinery happy.
 %
-%    When called from a parent @responseClassifierEngine object, it
-%    computes the Poission log-likehood ratio (LL) of test stimulus, using
-%    the noise-free response as a template. These are set up the function
-%    is called by the parent @responseClassifierEngine object with
-%    operationMode set to 'train'.
+%    When called from a parent @responseClassifierEngine object with operationMode set to 'predict', it
+%    sets up the Poission log-likehood ratio (LL) of test stimulus, using
+%    the mean of the passed null and test responses as a template.  Pass
+%    noise free responses to get the signal known exactly version.
 %
 %    When this is called from a parent @responseClassifierEngine object
-%    with operationMode set to 'train', it makes correct/incorrect
+%    with operationMode set to 'predict', it makes correct/incorrect
 %    predictions for the passed instances. The predictions are made using a
 %    maximum likelihood classifier for TAFC and Poisson noise.
 %
@@ -93,8 +92,8 @@ if (nargin == 0)
 end
 
 % Check operation mode
-if (~strcmp(operationMode,'train') || strcmp(operationMode,'predict'))
-    error('Unknown operation mode passed.  Must be ''train'' or ''predict'');
+if (~strcmp(operationMode,'train') && ~strcmp(operationMode,'predict'))
+    error('Unknown operation mode passed.  Must be ''train'' or ''predict''');
 end
     
 if (strcmp(operationMode, 'train'))  
@@ -109,20 +108,26 @@ if (strcmp(operationMode, 'train'))
 end
 
 if (strcmp(operationMode, 'predict'))
-    
+    % Get template we tucked away at training time.
     nullTemplate = obj.preProcessingConstants.nullTemplate;
     testTemplate = obj.preProcessingConstants.testTemplate;
     
-    nTrial = size(nullResponses, 1);
-    assert(nTrial == size(testResponses, 1));
+    % Make sure number of null and test instances matches.
+    nTrials = size(nullResponses, 1);
+    assert(nTrials == size(testResponses, 1));
     
-    % Compute response {0, 1} with log likelihood ratio
-    response = zeros(1, nTrial);
-    for idx = 1:nTrial
+    % Compute response {0, 1} with log likelihood ratio.  Assume alternative order on
+    % each trial is null/test, compute likelihood of each order, and call
+    % it correct if likelihood for null/test order is higher.  Because each
+    % entry of the response vectors is an indendent Poisson observation, we
+    % can just sum the log likelihood of the null and test components of
+    % the TAFC response.
+    response = zeros(1, nTrials);
+    for idx = 1:nTrials
         llhd_cr = llhd(nullResponses(idx, :), nullTemplate) + llhd(testResponses(idx, :), testTemplate);
         llhd_ic = llhd(nullResponses(idx, :), testTemplate) + llhd(testResponses(idx, :), nullTemplate);
         
-        % for likelihood ratio extremely close to 1, do a coin flip
+        % For likelihood ratio extremely close to 1, do a coin flip
         threshold = 1e-10;
         if (abs(llhd_cr - llhd_ic) <= threshold)
             response(idx) = (rand() > 0.5);
@@ -131,6 +136,7 @@ if (strcmp(operationMode, 'predict'))
         end
     end
     
+    % Set up return
     dataOut.trialPredictions = response;
     dataOut.pCorrect = mean(response);
     
@@ -139,7 +145,27 @@ end
 
 end
 
-% % Log-likelihood for Poisson R.V.
-function ll = llhd(sample, rate)
-ll = sum(sample .* log(rate) - rate);
+% Log-likelihood for Poisson response vectors 
+%
+% Syntax:
+%    ll = llhd(response, template)
+%
+% Description:
+%    Compute log likelihood of a vector of independent
+%    Poisson observations, given Poisson mean for each.
+%    See for example:
+%      https://online.stat.psu.edu/stat504/node/28/
+%
+% Inputs:
+%    response  -   Vector of observed responses.
+%    template  -   Poisson mean for each entry of response.
+%
+% Outputs:
+%    ll        -   Log likelihood.
+
+% History:
+%    10/17/20  dhb  Added comments.
+
+function ll = llhd(response, template)
+    ll = sum(response .* log(template) - template);
 end
