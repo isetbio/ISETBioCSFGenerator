@@ -55,7 +55,7 @@ classdef responseClassifierEngine < handle
         requiredFieldsForTrainDataOutStruct = {'trainedClassifier', 'preProcessingConstants'};
         
         % Required dataOut struct fields returned from the compute function during a 'predict' operation mode
-        requiredFieldsForPredictDataOutStruct = {'trialPredictions'};
+        requiredFieldsForPredictDataOutStruct = {'trialPredictions', 'pCorrect'};
     end
     
     % Public methods

@@ -24,23 +24,18 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
 %       trained classifier (stored in the parent @responseClassifierEngine object)
 %       to predict response classes for a novel set of response instances. 
 %
+%    This function models a TAFC task, so that each trial is considered to
+%    be either null/test across the two alternatives, or test/null.
+%
 % Inputs:
 %    responseClassifierOBJ          - the parent @responseClassifierEngine object that
 %                                     is calling this function as its computeFunctionHandle
-%
 %    operationMode                  - a string in {'train', 'predict'},defining whether we should 
 %                                     train a classifier or use a trained classifier to predict classes
-%
 %    classifierParamsStruct         - a struct containing properties of the
 %                                     employed response classifier.
-%
-%    nullResponses                  - an [mTrials x nDims] matrix of responses to the null stimulus
-%
-%    testResponses                  - an [mTrials x nDims] matrix of responses to the test stimulus
-%    
-%    
-%
-% Optional key/value input arguments: none
+%    nullResponses                  - an [mTrials x nDims x nTimePoints] matrix of responses to the null stimulus
+%    testResponses                  - an [mTrials x nDims x nTimePoints] matrix of responses to the test stimulus
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -50,26 +45,28 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
 %
 %             - If called from a parent @responseClassifierEngine object, the returned
 %               struct is organized as follows: 
-
-%               In 'train' mode:
 %
-%                   .features                : the features used for classification
+%               In 'train' mode (the first two are required by the @responseClassifierEngine object,
+%               the rest are specific to this function):
 %                   .trainedClassifier       : the trained binary SCV classifer
 %                   .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
+%                   .features                : the features used for classification
 %                   .pCorrect                : probability of correct classification for the in-sample trials (training data)
 %                   .nominalClassLabels      : the classifier-assigned response classes
 %                   .predictedClassLabels    : the classifier-predicted response classes
 %                   .decisionBoundary        : if the feature set is 2D, the 2D decision boundary, otherwise []
 %
-%               In 'predict' mode:
-%
-%                   .features                : the features used for classification
+%               In 'predict' mode (the first two are required by the @responseClassifierEngine object,
+%               the rest are specific to this function):
 %                   .pCorrect                : probability of correct classification for the out-of-sample trials (testing data)
 %                   .trialPredictions        : vector of the trial-by-trial predictions 
 %                                              (0 == incorrectly predicting nominal class, 1 == correctly predicting nominal class)
+%                   .features                : the features used for classification
 %                   .nominalClassLabels      : the classifier-assigned response classes
 %                   .predictedClassLabels    : the classifier-predicted response classes
-%
+%   
+% Optional key/value input arguments:
+%    None.
 %
 % See Also:
 %     t_responseClassifier
@@ -153,6 +150,11 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
         return;
     end
     
+    % Check operation mode
+    if (~strcmp(operationMode,'train') || strcmp(operationMode,'predict'))
+        error('Unknown operation mode passed.  Must be ''train'' or ''predict'');
+    end
+    
     % Feature assembly phase
     [features, classLabels] = assembleFeatures(nullResponses, testResponses);
 
@@ -190,20 +192,22 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
     dataOut.predictedClassLabels = predictedClassLabels;
     
     if (strcmp(operationMode, 'train'))
-        % Return the trained SVM, the preprocessing constants, the
-        % in-sample pCorrect and the decision boundary
+        % Return the trained SVM and the preprocessing constants.
+        % These fields are required by the calling object.
         dataOut.trainedClassifier = trainedSVM;
         dataOut.preProcessingConstants = struct(...
             'centering', m, ...
         	'principalComponents', principalComponents);
+        
+        % These are optional and specific to this compute function.
         dataOut.pCorrect = pCorrectInSample;
         dataOut.trialPredictions = (predictedClassLabels == classLabels);
         dataOut.decisionBoundary = decisionBoundary;
      else
         % Return the out-of-sample pCorrect, and the trial-by-trial vector
         % of predictions (0 == correct, 1 == correct)
-        dataOut.pCorrect = pCorrectOutOfSample;     
         dataOut.trialPredictions = (predictedClassLabels == classLabels);
+        dataOut.pCorrect = pCorrectOutOfSample;     
     end
 end
 
