@@ -23,10 +23,14 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
 %    temporalSupportSeconds  - a vector of time stamps for each frame of the scene sequence 
 %
 % See Also:
-%     t_sceneGeneration
+%     t_sceneGeneration, t_modulatedGratingsSceneGeneration,
+%     sceUniformFieldModulation, sceGrating
 
 % History:
-%    9/20/2020  NPC Wrote it
+%    09/20/2020  NPC Wrote it
+%    10/18/2020  dhb Pass obj to scene compute function, just in case we
+%                    ever need to give the function access to object
+%                    properties.
 
     % Call the user-supplied compute function
     dataOut = obj.sceneComputeFunction(obj, sceneContrast, obj.sceneParams);
