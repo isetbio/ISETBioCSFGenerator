@@ -82,6 +82,11 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %    10/05/2020  dhb  Apply ieParamFormat to varargin for all keys.
 %    10/05/2020  dhb  Rename. Work on comments.
 %    10/05/2020  dhb  Rewrite to use 'rngSeed' key/value pair.
+%    10/17/2020  dhb  Use randomly chosen seed for mosaic compute operation
+%                     if rngSeed is set to [].  Save/restore rng state when
+%                     an explicit seed is passed.
+%                dhb  Just return one response instance in the no noise
+%                     case.
 
 % Examples:
 %{
@@ -172,9 +177,16 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
     eyeMovementsNum = theOIsequence.maxEyeMovementsNumGivenIntegrationTime(theConeMosaic.integrationTime);
     emPaths = zeros(instancesNum, eyeMovementsNum, 2);
     
+    % Set rng seed if one was passed. Not clear we need to do this because
+    % all the randomness is in the @coneMosaic compute object, but it
+    % doesn't hurt to do so, if we ever choose a random number at this
+    % level.
+    if (~isempty(rngSeed))
+        oldSeed = rng(rngSeed);
+    end
+    
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
-        
         if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
             % Compute the noise-free response
             % To do so, first save the current mosaic noiseFlag
@@ -184,10 +196,14 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
             theConeMosaic.noiseFlag = 'none';
             
             % Compute noise-free response instances
-            theNeuralResponses(noiseFlags{idx}) = theConeMosaic.computeForOISequence(theOIsequence, ...
+            tempResponses = theConeMosaic.computeForOISequence(theOIsequence, ...
                 'emPaths', emPaths, ...   % the emPaths
                 'currentFlag', false ...  % no photocurrent
             );
+        
+            % Save just the first instance of the multiple ones that are
+            % returned, because they are all the same in the no noise case.
+            theNeuralResponses(noiseFlags{idx}) = tempResponses(1,:,:);
         
             % Restore the original noise flag
             theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
@@ -201,12 +217,23 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
             );
         
         elseif (contains(ieParamFormat(noiseFlags{idx}), 'random'))
+            % Because computeForOISequence freezes noise, if we want
+            % unfrozen noise (which is the case if we are here), 
+            % we have to pass it a randomly chosen seed.
+            useSeed = randi(32000,1,1);
+            
             % Compute noisy response instances
             theNeuralResponses(noiseFlags{idx}) = theConeMosaic.computeForOISequence(theOIsequence, ...
                 'emPaths', emPaths, ...   % the emPaths
-                'currentFlag', false ...  % no photocurrent
+                'currentFlag', false, ...  % no photocurrent
+                'seed', useSeed ...        % random seed
             );
         end
+    end
+    
+    % Restore rng seed if we set it
+    if (~isempty(rngSeed))
+        rng(oldSeed);
     end
     
     % Temporal support for the neural response
