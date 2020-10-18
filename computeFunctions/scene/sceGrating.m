@@ -1,9 +1,9 @@
-function dataOut = sceGrating(testContrast, gratingParams)
+function dataOut = sceGrating(obj, testContrast, gratingParams)
 % Compute function for generating a sequence of scenes depicting a
 % a grating that is either drifting, counter-phase modulated, or flashed.
 %
 % Syntax:
-%   dataOut = sceGrating(testContrast, gratingParams);
+%   dataOut = sceGrating(obj, testContrast, gratingParams);
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine
@@ -21,6 +21,11 @@ function dataOut = sceGrating(testContrast, gratingParams)
 %    this API.
 %
 % Inputs:
+%    obj                         - Calling @sceneEngine object.  This is
+%                                  currently used, but passing it allows us
+%                                  flexibility in the future and matches
+%                                  conventions for the other classes in
+%                                  this toolbox.
 %    testContrast                - Scalar providing the contrast for the
 %                                  scene to be generated.                           
 %    sceneParamsStruct           - Struct containing properties of the

@@ -1,9 +1,9 @@
-function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStruct)
+function dataOut = sceUniformFieldTemporalModulation(obj,testContrast,sceneParamsStruct)
 % Compute function for generating a sequence of scenes depicting a
 % temporal modulation of a uniform field.
 %
 % Syntax:
-%   dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStruct);
+%   dataOut = sceUniformFieldTemporalModulation(obj,testContrast,sceneParamsStruct);
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine
@@ -23,6 +23,11 @@ function dataOut = sceUniformFieldTemporalModulation(testContrast,sceneParamsStr
 %    this API.
 %
 % Inputs:
+%    obj                         - Calling @sceneEngine object.  This is
+%                                  currently used, but passing it allows us
+%                                  flexibility in the future and matches
+%                                  conventions for the other classes in
+%                                  this toolbox.
 %    testContrast                - Scalar providing the contrast for the
 %                                  scene to be generated.                           
 %    sceneParamsStruct           - Struct containing properties of the

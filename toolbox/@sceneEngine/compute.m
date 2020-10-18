@@ -29,7 +29,7 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
 %    9/20/2020  NPC Wrote it
 
     % Call the user-supplied compute function
-    dataOut = obj.sceneComputeFunction(sceneContrast, obj.sceneParams);
+    dataOut = obj.sceneComputeFunction(obj, sceneContrast, obj.sceneParams);
 
     % Retrieve the returned dataOut fields
     theFieldNames = fieldnames(dataOut);
