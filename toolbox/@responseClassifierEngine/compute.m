@@ -43,7 +43,7 @@ function dataOut = compute(obj, operationMode, nullResponses, testResponses)
 %                   .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
 %
 %               In 'predict' mode, the struct must have the following two
-%               fields.  It can additional fields that are classifier
+%               fields.  It can have additional fields that are classifier
 %               dependent.
 %                   .pCorrect                : probability of correct classification for the out-of-sample trials (testing data)
 %                   .trialPredictions        : vector of the trial-by-trial predictions 
