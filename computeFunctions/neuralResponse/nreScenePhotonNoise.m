@@ -167,7 +167,10 @@ function dataOut = nreScenePhotonNoise(...
                 % Compute the noise-free response
                 theResponses = zeros(1,responseDim,framesNum);
                 for jj = 1:framesNum
-                    theResponses(1,:,jj) = sceneSequence{jj}.data.photons(:);
+                    scenePhotonsNoNoise = sceneSequence{jj}.data.photons(:);
+                    for ii = 1:instancesNum
+                        theResponses(ii,:,:) = scenePhotonsNoNoise;
+                    end
                 end
                 
             case 'random'

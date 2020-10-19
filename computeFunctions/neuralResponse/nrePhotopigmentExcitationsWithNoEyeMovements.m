@@ -196,14 +196,10 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
             theConeMosaic.noiseFlag = 'none';
             
             % Compute noise-free response instances
-            tempResponses = theConeMosaic.computeForOISequence(theOIsequence, ...
+            theNeuralResponses(noiseFlags{idx}) = theConeMosaic.computeForOISequence(theOIsequence, ...
                 'emPaths', emPaths, ...   % the emPaths
                 'currentFlag', false ...  % no photocurrent
             );
-        
-            % Save just the first instance of the multiple ones that are
-            % returned, because they are all the same in the no noise case.
-            theNeuralResponses(noiseFlags{idx}) = tempResponses(1,:,:);
         
             % Restore the original noise flag
             theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
