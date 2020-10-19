@@ -44,10 +44,7 @@ function dataOut = nreScenePhotonNoise(...
 %                                     Valid values are: 
 %                                        - 'none' (noise-free responses)
 %                                        - 'random' (noisy response instances)
-%                                     Default is {'random'}.  Only one
-%                                     instance is returned when set to
-%                                     'none', independent of how many are
-%                                     asked for.
+%                                     Default is {'random'}.
 %   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
 %                                     seed.
 %
@@ -83,6 +80,8 @@ function dataOut = nreScenePhotonNoise(...
 
 % History:
 %    09/26/2020  dhb  Wrote it.
+%    10/19/2020  dhb  Fix comment to reflect fact that we now return
+%                     instancesNum instances in noise free case.
 
 % Examples:
 %{

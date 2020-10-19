@@ -41,10 +41,7 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %                                     Valid values are: 
 %                                        - 'none' (noise-free responses)
 %                                        - 'random' (noisy response instances)
-%                                     Default is {'random'}.  Only one
-%                                     instance is returned when set to
-%                                     'none', independent of how many are
-%                                     asked for.
+%                                     Default is {'random'}.
 %   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
 %                                     seed.
 %
@@ -87,6 +84,8 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %                     an explicit seed is passed.
 %                dhb  Just return one response instance in the no noise
 %                     case.
+%    10/19/2020  dhb  Fix comment to reflect fact that we now return
+%                     instancesNum instances in noise free case.
 
 % Examples:
 %{
