@@ -165,11 +165,10 @@ function dataOut = nreScenePhotonNoise(...
         switch (ieParamFormat(noiseFlags{idx}))
             case 'none'
                 % Compute the noise-free response
-                theResponses = zeros(1,responseDim,framesNum);
+                theResponses = zeros(instancesNum,responseDim,framesNum);
                 for jj = 1:framesNum
-                    scenePhotonsNoNoise = sceneSequence{jj}.data.photons(:);
                     for ii = 1:instancesNum
-                        theResponses(ii,:,:) = scenePhotonsNoNoise;
+                        theResponses(ii,:,jj) = sceneSequence{jj}.data.photons(:);
                     end
                 end
                 
