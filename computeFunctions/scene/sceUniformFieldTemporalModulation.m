@@ -1,4 +1,4 @@
-function dataOut = sceUniformFieldTemporalModulation(obj,testContrast,sceneParamsStruct)
+function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast,sceneParamsStruct)
 % Compute function for generating a sequence of scenes depicting a
 % temporal modulation of a uniform field.
 %
@@ -23,7 +23,7 @@ function dataOut = sceUniformFieldTemporalModulation(obj,testContrast,sceneParam
 %    this API.
 %
 % Inputs:
-%    obj                         - Calling @sceneEngine object.  This is
+%    sceneEngineOBJ             - Calling @sceneEngine object.  This is
 %                                  currently used, but passing it allows us
 %                                  flexibility in the future and matches
 %                                  conventions for the other classes in
