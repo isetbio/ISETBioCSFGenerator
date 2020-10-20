@@ -5,7 +5,7 @@
 
 %% CSF Calculation
 % Range for testing spatial frequency
-spatialFreq = [0.25, 0.5, 1, 2, 4, 8, 12, 16, 20];
+spatialFreq = [0.5, 1, 2, 4, 8, 12, 16, 25];
 threshold = zeros(1, length(spatialFreq));
 
 % Choose stimulus type
@@ -14,7 +14,7 @@ switch (stimType)
     case 'luminance'
         chromaDir = [1.0, 1.0, 1.0];        
     case 'red-green'
-        chromaDir = [1.0, 1.0, 0.0];
+        chromaDir = [1.0, -1.0, 0.0];
     case 'L-isolating'
          chromaDir = [1.0, 0.0, 0.0];
 end
@@ -81,21 +81,21 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovem
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes.
-logThreshLimitLow = 4; logThreshLimitHigh = 0; logThreshLimitDelta = 0.025;
-slopeRangeLow = 10; slopeRangeHigh = 100; slopeDelta = 5;
+logThreshLimitLow = 3; logThreshLimitHigh = 0; logThreshLimitDelta = 0.025;
+slopeRangeLow = 1; slopeRangeHigh = 100; slopeDelta = 2.5;
 
 % Instantiate the PoissonTAFC responseClassifierEngine
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
 trainFlag = 'none'; testFlag = 'random';
-nTrain = 1;  nTest = 64;
+nTrain = 1;  nTest = 128;
 
 % Construct a QUEST threshold estimator estimate threshold on log contrast
-% Run a fixed number of trials (i.e., 20 contrast level, 1280 trials in total)
+% Run a fixed number of trials (i.e., 20 contrast level, 2560 trials in total)
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
-estimator = questThresholdEngine('minTrial', 1280, 'maxTrial', 1280, ...
+estimator = questThresholdEngine('minTrial', 2560, 'maxTrial', 2560, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
 
 % Generate the NULL stimulus (zero contrast)
@@ -149,7 +149,7 @@ while (nextFlag)
 end
 
 figure(1);
-subplot(3, 6, index * 2 - 1);
+subplot(4, 4, index * 2 - 1);
 % Compute the scene sequence
 % Visualize the generated scene sequence
 visualizationContrast = 0.25;
@@ -159,7 +159,7 @@ theSceneEngine.visualizeStaticFrame(theSceneSequence);
 % Estimate threshold and plot/report results.  This
 % does a maximumu likelihood based on the trials run, and is not subject to
 % the discretization used by QUEST+.
-subplot(3, 6, index * 2);
+subplot(4, 4, index * 2);
 [threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 2.5);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
