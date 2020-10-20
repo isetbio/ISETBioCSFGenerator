@@ -20,7 +20,7 @@ switch (stimType)
 end
 
 % Control the RMS cone contrast of the stimulus
-rmsCrst = 0.1;
+rmsCrst = 0.2;
 chromaDir = chromaDir / norm(chromaDir) * rmsCrst;
 assert(abs(norm(chromaDir) - rmsCrst) <= 1e-10);
 
@@ -152,7 +152,7 @@ figure(1);
 subplot(3, 6, index * 2 - 1);
 % Compute the scene sequence
 % Visualize the generated scene sequence
-visualizationContrast = 0.75;
+visualizationContrast = 0.25;
 [theSceneSequence] = theSceneEngine.compute(visualizationContrast);
 theSceneEngine.visualizeStaticFrame(theSceneSequence);
 
