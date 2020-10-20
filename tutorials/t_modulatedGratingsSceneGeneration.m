@@ -63,7 +63,7 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.spatialEnvelopeRadiusDegs = 0.4;
     
     % Configure a 100 msec frame duration
-    customGratingParams.frameDurationSeconds = 10/1000;
+    customGratingParams.frameDurationSeconds = 100/1000;
     
     % Configure temporal modulation
     customGratingParams.temporalModulation = 'flashed';
@@ -75,7 +75,6 @@ function t_modulatedGratingsSceneGeneration
     % and the custom grating params.
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
     
-
     % Compute the scene sequence
     [theSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(testContrast);
     
