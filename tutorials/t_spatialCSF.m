@@ -95,7 +95,7 @@ nTrain = 1;  nTest = 128;
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
-estimator = questThresholdEngine('minTrial', 2560, 'maxTrial', 2560, ...
+estimator = questThresholdEngine('minTrial', 1280, 'maxTrial', 1280, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
 
 % Generate the NULL stimulus (zero contrast)
