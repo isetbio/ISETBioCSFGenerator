@@ -2,14 +2,34 @@
 %  the threshold a static gabor stimulus of  multiple spatial frequencies
 % to get the Contrast Sensitivity Function (CSF) for a Poisson 2AFC ideal observer.
 
+spatialFreq = [1, 2, 4, 6, 8, 12, 16, 20, 30];
+threshold = zeros(1, length(spatialFreq));
 
+stimType = 'luminance';
+switch (stimType)
+    case 'luminance'
+        chromaDir = [0.5, 0.5, 0.5];
+    case 'red-green'
+        chromaDir = [0.08, -0.08, 0.0];
+    case 'L-isolating'
+         chromaDir = [0.1, -0.08, 0.0];
+end
 
-% luminance stimulus
-computeThreshold([0.5, 0.5, 0.5],  5);
+for idx = 1:length(spatialFreq)
+    threshold(idx) = computeThreshold(chromaDir,  spatialFreq(idx), idx);
+end
 
-% Compute threshold for a particular chromatic direction and spatial frequency 
-% Chromatic direction is specified 
-function [threshold] = computeThreshold(chromaDir, spatialFreq)
+% log threshold to linear threshold
+threshold = 10 .^ threshold;
+
+% Contrast Sensitivity Function
+figure();
+plot(spatialFreq, 1 ./ threshold, '-ok', 'LineWidth', 2);
+
+% Compute threshold for a particular chromatic direction and spatial frequency
+% Chromatic direction is a 1-by-3 vector specifying contrast on the L, M and S Cone, respectively
+% Spatial frequency is a number in the unit of cycles per degree
+function [threshold] = computeThreshold(chromaDir, spatialFreq, index)
 
 % Compute function handle for grating stimuli
 sceneComputeFunction = @sceGrating;
@@ -40,14 +60,101 @@ gratingParams.temporalModulationParams =  struct(...
 theSceneEngine = sceneEngine(sceneComputeFunction, gratingParams);
 
 % Compute the scene sequence
-visualizationContrast = 1.0;
-[theSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(visualizationContrast);
-
 % Visualize the generated scene sequence
-theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
+if (index == 1)
+    visualizationContrast = 1.0;
+    [theSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(visualizationContrast);
+    theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
+    title('Example Stimulus');
+end
+
+% Instantiate a neuralResponseEngine
+neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
+neuralParams.coneMosaicParams.fovDegs = 0.25;
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements, neuralParams);
+
+% The actual threshold varies enough with the different engines that we
+% need to adjust the contrast range that Quest+ searches over, as well as
+% the range of psychometric function slopes.
+logThreshLimitLow = 3; logThreshLimitHigh = 0; logThreshLimitDelta = 0.05;
+slopeRangeLow = 1; slopeRangeHigh = 100; slopeDelta = 5;
+
+% Instantiate the PoissonTAFC responseClassifierEngine
+% PoissonTAFC makes decision by performing the Poisson likelihood ratio test
+classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+trainFlag = 'none'; testFlag = 'random';
+nTrain = 1;  nTest = 16;
+
+% Construct a QUEST threshold estimator estimate threshold on log contrast
+% Run a fixed number of trials (i.e., 10 contrast level, 160 trials in total)
+estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
+slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
+
+estimator = questThresholdEngine('minTrial', 160, 'maxTrial', 160, ...
+    'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
+
+% Generate the NULL stimulus (zero contrast)
+nullContrast = 0.0;
+[theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
+
+% Threshold estimation with QUEST+
+% Get the initial stimulus contrast from QUEST+
+[logContrast, nextFlag] = estimator.nextStimulus();
+
+% Loop over trials.
+testedContrasts = [];
+while (nextFlag)
+    
+    % Convert log contrast -> contrast
+    testContrast = 10 ^ logContrast;
+    
+    % Have we already built the classifier for this contrast?
+    testedIndex = find(testContrast == testedContrasts);
+    if (isempty(testedIndex))
+        % No.  Save contrast in list
+        testedContrasts = [testedContrasts testContrast];
+        testedIndex = find(testContrast == testedContrasts);
+        
+        % Generate the TEST scene sequence for the given contrast
+        [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
+        
+        % Train classifier for this TEST contrast and get predicted
+        % correct/incorrect predictions.  This function also computes the
+        % neural responses needed to train and predict.
+        [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformance(...
+            theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
+            theSceneTemporalSupportSeconds, nTrain, nTest, ...
+            theNeuralEngine, classifierEngine, trainFlag, testFlag);
+        
+    else
+        % Classifier is already trained, just get predictions
+        predictions = computePerformance(...
+            theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
+            theSceneTemporalSupportSeconds, nTrain, nTest, ...
+            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
+    end
+    
+    % Tell QUEST+ what we ran (how many trials at the given contrast) and
+    % get next stimulus contrast to run.
+    [logContrast, nextFlag] = ...
+        estimator.multiTrial(logContrast * ones(1, nTest), predictions);
+    
+    % Report what happened
+    % fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));    
+end
+
+% Estimate threshold and plot/report results.  This
+% does a maximumu likelihood based on the trials run, and is not subject to
+% the discretization used by QUEST+.
+figure(2);
+subplot(3, 3, index);
+[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 4);
+fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
+    para(1), para(2), para(3), para(4));
 
 end
 
+% Compute performance for the classifier
 function [predictions, theClassifierEngine] = computePerformance(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
 
 % Train the classifier.
