@@ -91,7 +91,7 @@ trainFlag = 'none'; testFlag = 'random';
 nTrain = 1;  nTest = 128;
 
 % Construct a QUEST threshold estimator estimate threshold on log contrast
-% Run a fixed number of trials (i.e., 20 contrast level, 2560 trials in total)
+% Run a fixed number of trials (i.e., 10 contrast level, 1280 trials in total)
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
@@ -152,7 +152,7 @@ figure(1);
 subplot(4, 4, index * 2 - 1);
 % Compute the scene sequence
 % Visualize the generated scene sequence
-visualizationContrast = 0.25;
+visualizationContrast = 0.5;
 [theSceneSequence] = theSceneEngine.compute(visualizationContrast);
 theSceneEngine.visualizeStaticFrame(theSceneSequence);
 
