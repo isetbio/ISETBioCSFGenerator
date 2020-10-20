@@ -8,7 +8,8 @@
 spatialFreq = [0.5, 1, 2, 4, 8, 12, 16, 25];
 threshold = zeros(1, length(spatialFreq));
 
-% Choose stimulus type
+% Choose stimulus type specified as a 1-by-3 vector
+% of L, M, S cone contrast
 stimType = 'luminance';
 switch (stimType)
     case 'luminance'
@@ -20,23 +21,28 @@ switch (stimType)
 end
 
 % Control the RMS cone contrast of the stimulus
-rmsCrst = 0.2;
+% RMS contrast higher than 0.09 might not be achievable by typical
+% monitor settings
+rmsCrst = 0.08;
 chromaDir = chromaDir / norm(chromaDir) * rmsCrst;
 assert(abs(norm(chromaDir) - rmsCrst) <= 1e-10);
 
 % Compute threshold for each spatial frequency
+figure(1);
 for idx = 1:length(spatialFreq)
     threshold(idx) = computeThreshold(chromaDir,  spatialFreq(idx), idx);
 end
+set(gcf, 'Position',  [0, 0, 800, 800]);
 
 % log threshold to linear threshold
 threshold = 10 .^ threshold;
 
 % plot Contrast Sensitivity Function
-figure();
+figure(2);
 loglog(spatialFreq, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
+set(gcf, 'Position',  [0, 0, 600, 800]);
 
 %% Helper functions for calculating threshold and classifier performance
 
@@ -81,7 +87,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovem
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes.
-logThreshLimitLow = 3; logThreshLimitHigh = 0; logThreshLimitDelta = 0.025;
+logThreshLimitLow = 2.5; logThreshLimitHigh = 0; logThreshLimitDelta = 0.02;
 slopeRangeLow = 1; slopeRangeHigh = 100; slopeDelta = 2.5;
 
 % Instantiate the PoissonTAFC responseClassifierEngine
@@ -152,7 +158,7 @@ figure(1);
 subplot(4, 4, index * 2 - 1);
 % Compute the scene sequence
 % Visualize the generated scene sequence
-visualizationContrast = 0.5;
+visualizationContrast = 1.0;
 [theSceneSequence] = theSceneEngine.compute(visualizationContrast);
 theSceneEngine.visualizeStaticFrame(theSceneSequence);
 
