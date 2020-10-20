@@ -1,7 +1,7 @@
 % Build on the threshold engine tutorial (t_thresholdEngine), here we compute
 %  the threshold a static gabor stimulus of  multiple spatial frequencies
-%  (using the Garting Scene Engine)
-% to get the Contrast Sensitivity Function (CSF) for a Poisson 2AFC ideal observer.
+%  using the Garting Scene Engine to get the
+% Contrast Sensitivity Function (CSF) for a Poisson 2AFC ideal observer.
 
 %% CSF Calculation
 % Range for testing spatial frequency
@@ -12,12 +12,17 @@ threshold = zeros(1, length(spatialFreq));
 stimType = 'luminance';
 switch (stimType)
     case 'luminance'
-        chromaDir = [0.5, 0.5, 0.5];
+        chromaDir = [1.0, 1.0, 1.0];        
     case 'red-green'
-        chromaDir = [0.08, -0.08, 0.0];
+        chromaDir = [1.0, 1.0, 0.0];
     case 'L-isolating'
-         chromaDir = [0.08, 0.0, 0.0];
+         chromaDir = [1.0, 0.0, 0.0];
 end
+
+% Control the RMS cone contrast of the stimulus
+rmsCrst = 0.1;
+chromaDir = chromaDir / norm(chromaDir) * rmsCrst;
+assert(abs(norm(chromaDir) - rmsCrst) <= 1e-10);
 
 % Compute threshold for each spatial frequency
 for idx = 1:length(spatialFreq)
@@ -76,7 +81,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovem
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes.
-logThreshLimitLow = 4; logThreshLimitHigh = 0; logThreshLimitDelta = 0.04;
+logThreshLimitLow = 4; logThreshLimitHigh = 0; logThreshLimitDelta = 0.025;
 slopeRangeLow = 10; slopeRangeHigh = 100; slopeDelta = 5;
 
 % Instantiate the PoissonTAFC responseClassifierEngine
@@ -86,11 +91,11 @@ trainFlag = 'none'; testFlag = 'random';
 nTrain = 1;  nTest = 64;
 
 % Construct a QUEST threshold estimator estimate threshold on log contrast
-% Run a fixed number of trials (i.e., 10 contrast level, 640 trials in total)
+% Run a fixed number of trials (i.e., 20 contrast level, 1280 trials in total)
 estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
 slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 
-estimator = questThresholdEngine('minTrial', 640, 'maxTrial', 640, ...
+estimator = questThresholdEngine('minTrial', 1280, 'maxTrial', 1280, ...
     'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
 
 % Generate the NULL stimulus (zero contrast)
@@ -147,7 +152,7 @@ figure(1);
 subplot(3, 6, index * 2 - 1);
 % Compute the scene sequence
 % Visualize the generated scene sequence
-visualizationContrast = 1.0;
+visualizationContrast = 0.75;
 [theSceneSequence] = theSceneEngine.compute(visualizationContrast);
 theSceneEngine.visualizeStaticFrame(theSceneSequence);
 
