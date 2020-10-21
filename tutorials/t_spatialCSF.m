@@ -18,7 +18,7 @@
 spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
 
 % Allocate space for thresholds
-threshold = zeros(1, length(spatialFreqs));
+logThreshold = zeros(1, length(spatialFreqs));
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
