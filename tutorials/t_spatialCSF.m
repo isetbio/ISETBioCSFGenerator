@@ -1,15 +1,28 @@
-% Build on the threshold engine tutorial (t_thresholdEngine), here we compute
-%  the threshold a static gabor stimulus of  multiple spatial frequencies
-%  using the Garting Scene Engine to get the
-% Contrast Sensitivity Function (CSF) for a Poisson 2AFC ideal observer.
+% Compute spatial CSF in different color directions
+%
+% Description:
+%    Use ISETBioCSFGenerator to run out CSFs in different color directions.
+%    This example uses an ideal Poisson TAFC observer and circularly
+%    windowed gratings of constant size.
+%
+% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration
+%
+
+% History:
+%   10/20/20  lz   Wrote it.
+%   10/21/20  dhb  More commments.
 
 %% CSF Calculation
-% Range for testing spatial frequency
-spatialFreq = [0.5, 1, 2, 4, 8, 12, 16, 25];
-threshold = zeros(1, length(spatialFreq));
+%
+% List of spatial frequencies to be tested.
+spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
 
-% Choose stimulus type specified as a 1-by-3 vector
-% of L, M, S cone contrast
+% Allocate space for thresholds
+threshold = zeros(1, length(spatialFreqs));
+
+% Choose stimulus chromatic direction specified as a 1-by-3 vector
+% of L, M, S cone contrast.  These vectors get normalized below, so only
+% their direction matters in the specification.
 stimType = 'luminance';
 switch (stimType)
     case 'luminance'
@@ -20,26 +33,30 @@ switch (stimType)
          chromaDir = [1.0, 0.0, 0.0];
 end
 
-% Control the RMS cone contrast of the stimulus
-% RMS contrast higher than 0.09 might not be achievable by typical
-% monitor settings
-rmsCrst = 0.08;
-chromaDir = chromaDir / norm(chromaDir) * rmsCrst;
-assert(abs(norm(chromaDir) - rmsCrst) <= 1e-10);
+% Set the RMS cone contrast of the stimulus. Things may go badly if you
+% exceed the gamut of the monitor, so we are conservative and set this at a
+% value that is within gamut of typical monitors and don't worry about it
+% further for this tutorial.  A vector length contrast of 0.08 should be
+% OK.
+rmsContrast = 0.08;
+chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
+assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
-% Compute threshold for each spatial frequency
-figure(1);
-for idx = 1:length(spatialFreq)
-    threshold(idx) = computeThreshold(chromaDir,  spatialFreq(idx), idx);
+%% Compute threshold for each spatial frequency
+%
+% Function computeThreshold is below.
+thePsychometricFcnFig = figure;
+for idx = 1:length(spatialFreqs)
+    logThreshold(idx) = computeThreshold(chromaDir,  spatialFreqs(idx), idx, thePsychometricFcnFig);
 end
 set(gcf, 'Position',  [0, 0, 800, 800]);
 
-% log threshold to linear threshold
-threshold = 10 .^ threshold;
+% Convert returned log threshold to linear threshold
+threshold = 10 .^ logThreshold;
 
-% plot Contrast Sensitivity Function
-figure(2);
-loglog(spatialFreq, 1 ./ threshold, '-ok', 'LineWidth', 2);
+%% Plot Contrast Sensitivity Function
+theCsfFig = figure;
+loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(gcf, 'Position',  [0, 0, 600, 800]);
@@ -49,7 +66,7 @@ set(gcf, 'Position',  [0, 0, 600, 800]);
 % Compute threshold for a particular chromatic direction and spatial frequency
 % Chromatic direction is a 1-by-3 vector specifying contrast on the L, M and S Cone, respectively
 % Spatial frequency is a number in the unit of cycles per degree
-function [threshold] = computeThreshold(chromaDir, spatialFreq, index)
+function [logThreshold] = computeThreshold(chromaDir, spatialFreqs, index, theFig)
 
 % Compute function handle for grating stimuli
 sceneComputeFunction = @sceGrating;
@@ -60,7 +77,7 @@ gratingParams = sceGrating();
 % Configure chromatic direction and and spatial frequency of the grating
 % with a 90 deg orientation, and a cosine spatial phase
 gratingParams.coneContrastModulation = chromaDir;
-gratingParams.spatialFrequencyCyclesPerDeg = spatialFreq;
+gratingParams.spatialFrequencyCyclesPerDeg = spatialFreqs;
 gratingParams.spatialPhaseDegs = 0;
 gratingParams.orientationDegs = 90;
 
@@ -154,8 +171,10 @@ while (nextFlag)
     % fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));    
 end
 
-figure(1);
+% Add info to correct panel of the figure
+figure(theFig);
 subplot(4, 4, index * 2 - 1);
+
 % Compute the scene sequence
 % Visualize the generated scene sequence
 visualizationContrast = 1.0;
@@ -166,7 +185,7 @@ theSceneEngine.visualizeStaticFrame(theSceneSequence);
 % does a maximumu likelihood based on the trials run, and is not subject to
 % the discretization used by QUEST+.
 subplot(4, 4, index * 2);
-[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 2.5);
+[logThreshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 2.5);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
