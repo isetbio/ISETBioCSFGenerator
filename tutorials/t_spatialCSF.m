@@ -92,11 +92,11 @@ for idx = 1:length(spatialFreqs)
     [theSceneSequence] = gratingScene.compute(visualizationContrast);
     gratingScene.visualizeStaticFrame(theSceneSequence);
     
-    %  and data and psychometric curve with a marker size of 2.5
+    % And data and psychometric curve with a marker size of 2.5
     subplot(4, 4, idx * 2);
     questObj.plotMLE(2.5);
 end
-set(gcf, 'Position',  [0, 0, 800, 800]);
+set(dataFig, 'Position',  [0, 0, 800, 800]);
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
@@ -106,7 +106,7 @@ theCsfFig = figure();
 loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
-set(gcf, 'Position',  [0, 0, 600, 800]);
+set(theCsfFig, 'Position',  [0, 0, 600, 800]);
 
 %% Helper functions for calculating threshold and classifier performance
 
