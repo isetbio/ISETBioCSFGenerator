@@ -1,13 +1,10 @@
-
-% Create a static grating scene with specific chromatic direction,
-% spatial frequency, and duration
-
 function [gratingScene] = createGratingScene(varargin)
-%createGratingScene  Create a static grating scene
+%createGratingScene  Create a static grating scene using sceGrating
 %
 % Usage:
 %   createGratingScene('chromaDir', chromaDir, 'spatialFreq', spatialFreq);
 %   See t_spatialCSF.m
+%   Also see t_modulatedGratingsSceneGeneration.m
 %
 % Inputs:
 %   None.
