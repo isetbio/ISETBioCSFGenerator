@@ -42,18 +42,59 @@ rmsContrast = 0.08;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
-%% Create neural
+%% Create neural engine
+% Instantiate a neuralResponseEngine
+neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
+neuralParams.coneMosaicParams.fovDegs = 0.25;
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements, neuralParams);
 
+%% Instantiate the PoissonTAFC responseClassifierEngine
+% PoissonTAFC makes decision by performing the Poisson likelihood ratio test
+classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+
+% Parameter associated with this classifier
+classifierPara.trainFlag = 'none'; classifierPara.testFlag = 'random';
+classifierPara.nTrain = 1; classifierPara.nTest = 128;
+
+%% Parameter for threshold estimation/quest engine
+% The actual threshold varies enough with the different engines that we
+% need to adjust the contrast range that Quest+ searches over, as well as
+% the range of psychometric function slopes.
+thresholdPara.logThreshLimitLow = 2.5;
+thresholdPara.logThreshLimitHigh = 0;
+thresholdPara.logThreshLimitDelta = 0.02;
+
+thresholdPara.slopeRangeLow = 1;
+thresholdPara.slopeRangeHigh = 100;
+thresholdPara.slopeDelta = 2.5;
+
+questEnginePara.minTrial = 1280;
+questEnginePara.maxTrial = 1280;
+questEnginePara.numEstimator = 1;
 
 %% Compute threshold for each spatial frequency
-%
-% Function computeThreshold is below.
-thePsychometricFcnFig = figure;
+% See toolbox/helpers for the definitin of
+% function 'createGratingScene' and
+% function 'computeThreshold'
+
+dataFig = figure();
 for idx = 1:length(spatialFreqs)
     % create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
     gratingScene = createGratingScene('chromaDir', chromaDir, 'spatialFreq', spatialFreqs(idx));
-    logThreshold(idx) = computeThreshold(gratingScene, idx, thePsychometricFcnFig);
+    [logThreshold(idx), questObj] = computeThreshold(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
+    
+    % Plot stimulus
+    figure(dataFig);
+    subplot(4, 4, idx * 2 - 1);
+    
+    visualizationContrast = 1.0;
+    [theSceneSequence] = gratingScene.compute(visualizationContrast);
+    gratingScene.visualizeStaticFrame(theSceneSequence);
+    
+    %  and data and psychometric curve with a marker size of 2.5
+    subplot(4, 4, idx * 2);
+    questObj.plotMLE(2.5);
 end
 set(gcf, 'Position',  [0, 0, 800, 800]);
 
@@ -61,7 +102,7 @@ set(gcf, 'Position',  [0, 0, 800, 800]);
 threshold = 10 .^ logThreshold;
 
 %% Plot Contrast Sensitivity Function
-theCsfFig = figure;
+theCsfFig = figure();
 loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
@@ -72,32 +113,15 @@ set(gcf, 'Position',  [0, 0, 600, 800]);
 % Compute threshold for a particular chromatic direction and spatial frequency
 % Chromatic direction is a 1-by-3 vector specifying contrast on the L, M and S Cone, respectively
 % Spatial frequency is a number in the unit of cycles per degree
-function [logThreshold] = computeThreshold(theSceneEngine, index, theFig)
-
-% Instantiate a neuralResponseEngine
-neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
-neuralParams.coneMosaicParams.fovDegs = 0.25;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements, neuralParams);
-
-% The actual threshold varies enough with the different engines that we
-% need to adjust the contrast range that Quest+ searches over, as well as
-% the range of psychometric function slopes.
-logThreshLimitLow = 2.5; logThreshLimitHigh = 0; logThreshLimitDelta = 0.02;
-slopeRangeLow = 1; slopeRangeHigh = 100; slopeDelta = 2.5;
-
-% Instantiate the PoissonTAFC responseClassifierEngine
-% PoissonTAFC makes decision by performing the Poisson likelihood ratio test
-classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
-trainFlag = 'none'; testFlag = 'random';
-nTrain = 1;  nTest = 128;
+function [logThreshold, questObj] = computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)
 
 % Construct a QUEST threshold estimator estimate threshold on log contrast
-% Run a fixed number of trials (i.e., 10 contrast level, 1280 trials in total)
-estDomain  = -logThreshLimitLow : logThreshLimitDelta : -logThreshLimitHigh;
-slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
+% Run a fixed number of trials (e.g., 10 contrast level, 1280 trials in total)
+estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
+slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
-estimator = questThresholdEngine('minTrial', 1280, 'maxTrial', 1280, ...
-    'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
+estimator = questThresholdEngine('minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
+    'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', questEnginePara.numEstimator);
 
 % Generate the NULL stimulus (zero contrast)
 nullContrast = 0.0;
@@ -129,43 +153,31 @@ while (nextFlag)
         % neural responses needed to train and predict.
         [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformance(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
-            theSceneTemporalSupportSeconds, nTrain, nTest, ...
-            theNeuralEngine, classifierEngine, trainFlag, testFlag);
+            theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
+            theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag);
         
     else
         % Classifier is already trained, just get predictions
         predictions = computePerformance(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
-            theSceneTemporalSupportSeconds, nTrain, nTest, ...
-            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
+            theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
+            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag);
     end
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
     [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), predictions);
+        estimator.multiTrial(logContrast * ones(1, classifierPara.nTest), predictions);
     
     % Report what happened
     % fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));
 end
 
-% Add info to correct panel of the figure
-figure(theFig);
-subplot(4, 4, index * 2 - 1);
-
-% Compute the scene sequence
-% Visualize the generated scene sequence
-visualizationContrast = 1.0;
-[theSceneSequence] = theSceneEngine.compute(visualizationContrast);
-theSceneEngine.visualizeStaticFrame(theSceneSequence);
-
-% Estimate threshold and plot/report results.  This
-% does a maximumu likelihood based on the trials run, and is not subject to
-% the discretization used by QUEST+.
-subplot(4, 4, index * 2);
-[logThreshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 2.5);
+[logThreshold, para] = estimator.thresholdMLE('showPlot', false);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
+
+questObj = estimator;
 
 end
 

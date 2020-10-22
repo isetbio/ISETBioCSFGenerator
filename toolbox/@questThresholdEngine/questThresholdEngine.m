@@ -152,6 +152,10 @@ classdef questThresholdEngine < contrastThresholdEngine
         % Run MLE estimate of psychometric curve parameter on combined data
         [threshold, para] = thresholdMLE(this, varargin);
         
+        % Plot data and MLE fit
+        function plotMLE(this, markerSize)
+            this.thresholdMLE('showPlot', true, 'newFigure', false, 'pointSize', markerSize);
+        end
     end
     
 end
