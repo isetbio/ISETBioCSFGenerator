@@ -1,4 +1,8 @@
 function [predictions, theClassifierEngine] = computePerformance(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
+%computePerformance  Compute the performance of a classifier given a null
+%and test scene, a neural engine, and a classifier engine.
+% See computeThreshold.m as an example usage
+
 
 % Train the classifier.
 %
