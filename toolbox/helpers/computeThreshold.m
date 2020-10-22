@@ -15,7 +15,10 @@ function [threshold, questObj] = computeThreshold(theSceneEngine, theNeuralEngin
 %   thresholdPara           - Parameter associated with threshold estimation
 %   questEnginePara      - Parameter for running the questThresholdEngine
 %
-%   Also see t_thresholdEngine.m and t_spatialCSF.m
+%   See t_spatialCSF.m for an example of the proper structure for the
+%   parameter fields
+%  
+%   Also see see t_thresholdEngine.m
 %
 % Outputs:
 %   threshold                    - Estimated threshold value
@@ -27,8 +30,10 @@ function [threshold, questObj] = computeThreshold(theSceneEngine, theNeuralEngin
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
-estimator = questThresholdEngine('minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
-    'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', questEnginePara.numEstimator);
+estimator = ...
+    questThresholdEngine('minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
+                                                 'estDomain', estDomain, 'slopeRange', slopeRange, ...
+                                                 'numEstimator', questEnginePara.numEstimator, 'stopCriterion', questEnginePara.stopCriterion);
 
 % Generate the NULL stimulus (zero contrast)
 nullContrast = 0.0;

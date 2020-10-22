@@ -54,27 +54,26 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovem
 classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
 
 % Parameter associated with this classifier
-classifierPara.trainFlag = 'none'; classifierPara.testFlag = 'random';
-classifierPara.nTrain = 1; classifierPara.nTest = 128;
+classifierPara = struct('trainFlag', 'none', ...
+                                           'testFlag', 'random', ...
+                                            'nTrain', 1, 'nTest', 128);
 
 %% Parameter for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes.
-thresholdPara.logThreshLimitLow = 2.5;
-thresholdPara.logThreshLimitHigh = 0;
-thresholdPara.logThreshLimitDelta = 0.02;
-
-thresholdPara.slopeRangeLow = 1;
-thresholdPara.slopeRangeHigh = 100;
-thresholdPara.slopeDelta = 2.5;
+thresholdPara = struct('logThreshLimitLow', 2.4, ...
+                                            'logThreshLimitHigh', 0.0, ...
+                                            'logThreshLimitDelta', 0.02, ...
+                                            'slopeRangeLow', 1, ...
+                                            'slopeRangeHigh', 50, ...
+                                            'slopeDelta', 2.5);
 
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara.minTrial = 1280;
-questEnginePara.maxTrial = 1280;
-questEnginePara.numEstimator = 1;
+questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
+                                                 'numEstimator', 1, 'stopCriterion', 0.05);
 
 %% Compute threshold for each spatial frequency
 % See toolbox/helpers for the definitin of
@@ -86,7 +85,11 @@ for idx = 1:length(spatialFreqs)
     % create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
     gratingScene = createGratingScene('chromaDir', chromaDir, 'spatialFreq', spatialFreqs(idx));
-    [logThreshold(idx), questObj] = computeThreshold(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
+    
+    % compute the threshold for our garting scene with the previously
+    % defined neural and classifier engine
+    [logThreshold(idx), questObj] = ...
+        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
     
     % Plot stimulus
     figure(dataFig);
