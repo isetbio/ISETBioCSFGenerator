@@ -9,8 +9,9 @@
 %
 
 % History:
-%   10/20/20  lz   Wrote it.
+%   10/20/20  lqz   Wrote it.
 %   10/21/20  dhb  More commments.
+%   10/22/20  lqz   Restructure the code
 
 %% CSF Calculation
 %
