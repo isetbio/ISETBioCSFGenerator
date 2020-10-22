@@ -110,4 +110,4 @@ theCsfFig = figure();
 loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
-set(theCsfFig, 'Position',  [0, 0, 600, 800]);
+set(theCsfFig, 'Position',  [800, 0, 600, 800]);

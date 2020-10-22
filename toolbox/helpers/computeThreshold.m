@@ -1,7 +1,29 @@
-function [logThreshold, questObj] = computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)
+function [threshold, questObj] = computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)
+%computeThreshold  Compute contrast threshold for a given scene (i.e.,
+%stimulus), neural response engine, and classifier engine
+%
+% Usage:
+%  computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
+%   See t_spatialCSF.m for example usage
+%   
+%
+% Inputs:
+%   theSceneEngine        - sceneEngine object for stimulus generation
+%   theNeuralEngine       - neuralResponseEngine object
+%   classifierEngine         - responseClassifierEngine
+%   classifierPara             - Parameter associated with the classifier engine
+%   thresholdPara           - Parameter associated with threshold estimation
+%   questEnginePara      - Parameter for running the questThresholdEngine
+%
+%   Also see t_thresholdEngine.m and t_spatialCSF.m
+%
+% Outputs:
+%   threshold                    - Estimated threshold value
+%   questObj                     - questThresholdEngine object, which
+%                                           contains reference to all the simulated 
+%                                           stimulus - response data
 
-% Construct a QUEST threshold estimator estimate threshold on log contrast
-% Run a fixed number of trials (e.g., 10 contrast level, 1280 trials in total)
+% Construct a QUEST threshold estimator estimate threshold
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
@@ -57,7 +79,7 @@ while (nextFlag)
 end
 
 % Return threshold value
-[logThreshold, para] = estimator.thresholdMLE('showPlot', false);
+[threshold, para] = estimator.thresholdMLE('showPlot', false);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
