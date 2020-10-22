@@ -68,6 +68,9 @@ thresholdPara.slopeRangeLow = 1;
 thresholdPara.slopeRangeHigh = 100;
 thresholdPara.slopeDelta = 2.5;
 
+% Parameter for running the QUEST+
+% See t_thresholdEngine.m for options of the two different mode of
+% operation (fixed numer of trials vs. adaptive)
 questEnginePara.minTrial = 1280;
 questEnginePara.maxTrial = 1280;
 questEnginePara.numEstimator = 1;
@@ -92,7 +95,8 @@ for idx = 1:length(spatialFreqs)
     [theSceneSequence] = gratingScene.compute(visualizationContrast);
     gratingScene.visualizeStaticFrame(theSceneSequence);
     
-    % And data and psychometric curve with a marker size of 2.5
+    % Plot data and psychometric curve 
+    % with a marker size of 2.5
     subplot(4, 4, idx * 2);
     questObj.plotMLE(2.5);
 end
@@ -107,145 +111,3 @@ loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [0, 0, 600, 800]);
-
-%% Helper functions for calculating threshold and classifier performance
-
-% Compute threshold for a particular chromatic direction and spatial frequency
-% Chromatic direction is a 1-by-3 vector specifying contrast on the L, M and S Cone, respectively
-% Spatial frequency is a number in the unit of cycles per degree
-function [logThreshold, questObj] = computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)
-
-% Construct a QUEST threshold estimator estimate threshold on log contrast
-% Run a fixed number of trials (e.g., 10 contrast level, 1280 trials in total)
-estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
-slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
-
-estimator = questThresholdEngine('minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
-    'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', questEnginePara.numEstimator);
-
-% Generate the NULL stimulus (zero contrast)
-nullContrast = 0.0;
-[theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
-
-% Threshold estimation with QUEST+
-% Get the initial stimulus contrast from QUEST+
-[logContrast, nextFlag] = estimator.nextStimulus();
-
-% Loop over trials.
-testedContrasts = [];
-while (nextFlag)
-    
-    % Convert log contrast -> contrast
-    testContrast = 10 ^ logContrast;
-    
-    % Have we already built the classifier for this contrast?
-    testedIndex = find(testContrast == testedContrasts);
-    if (isempty(testedIndex))
-        % No.  Save contrast in list
-        testedContrasts = [testedContrasts testContrast];
-        testedIndex = find(testContrast == testedContrasts);
-        
-        % Generate the TEST scene sequence for the given contrast
-        [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
-        
-        % Train classifier for this TEST contrast and get predicted
-        % correct/incorrect predictions.  This function also computes the
-        % neural responses needed to train and predict.
-        [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformance(...
-            theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
-            theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
-            theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag);
-        
-    else
-        % Classifier is already trained, just get predictions
-        predictions = computePerformance(...
-            theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
-            theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
-            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag);
-    end
-    
-    % Tell QUEST+ what we ran (how many trials at the given contrast) and
-    % get next stimulus contrast to run.
-    [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, classifierPara.nTest), predictions);
-    
-    % Report what happened
-    % fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));
-end
-
-[logThreshold, para] = estimator.thresholdMLE('showPlot', false);
-fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
-    para(1), para(2), para(3), para(4));
-
-questObj = estimator;
-
-end
-
-%% Compute performance for the classifier
-function [predictions, theClassifierEngine] = computePerformance(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainFlag, testFlag)
-
-% Train the classifier.
-%
-% If trainFlag is empty, then the passed classifier has already been trained
-% and training is skipped.  Otherwise trainFlag is passed to the stimulus
-% generation routine to indicate what type of noise (typically 'none' or
-% 'random') should be used in the training.
-if (~isempty(trainFlag))
-    % Generate stimulus for training, NULL stimulus
-    [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
-        nullScene, ...
-        temporalSupport, ...
-        nTrain, ...
-        'noiseFlags', {trainFlag});
-    
-    % Generate stimulus for training, TEST stimulus
-    [inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
-        testScene, ...
-        temporalSupport, ...
-        nTrain, ...
-        'noiseFlags', {trainFlag});
-    
-    % Train the classifier. This shows the usage to extact information
-    % from the container retrned as the first return value from the neural
-    % response engine - we index the responses by the string contained in
-    % the variable trainFlag (which was itself passed to the neural
-    % repsonse engine above.)
-    %
-    % Once extracted from the container, the responses are a 3 dimensional
-    % matrix, with the dimensions indexing [instancesNum x mNeuralDim x tTimeBins].
-    %   instancesNum   - number of response instances
-    %   mNeuralDim     - dimension of neural response at one timepoint
-    %   tTimeBins      - number of time points in stimulus sequence.
-    theClassifierEngine.compute('train', ...
-        inSampleNullStimResponses(trainFlag), ...
-        inSampleTestStimResponses(trainFlag));
-end
-
-% Predict using trained classifier.
-%
-% Generate stimulus for prediction, NULL stimulus.  The variable testFlag
-% indicates what type of noise is used to generate the stimuli used for
-% prediction.  Typically 'random'.
-[inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
-    nullScene, ...
-    temporalSupport, ...
-    nTest, ...
-    'noiseFlags', {testFlag});
-
-% Generate stimuli for prediction, TEST stimulus
-[inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
-    testScene, ...
-    temporalSupport, ...
-    nTest, ...
-    'noiseFlags', {testFlag});
-
-% Do the prediction
-dataOut = theClassifierEngine.compute('predict', ...
-    inSampleNullStimResponses(testFlag), ...
-    inSampleTestStimResponses(testFlag));
-
-% Set return variable.  For each trial 0 means wrong and 1 means right.
-% Taking mean(response) gives fraction correct.
-predictions = dataOut.trialPredictions;
-
-end
