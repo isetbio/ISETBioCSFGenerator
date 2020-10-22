@@ -26,11 +26,11 @@ logThreshold = zeros(1, length(spatialFreqs));
 stimType = 'luminance';
 switch (stimType)
     case 'luminance'
-        chromaDir = [1.0, 1.0, 1.0];        
+        chromaDir = [1.0, 1.0, 1.0];
     case 'red-green'
         chromaDir = [1.0, -1.0, 0.0];
     case 'L-isolating'
-         chromaDir = [1.0, 0.0, 0.0];
+        chromaDir = [1.0, 0.0, 0.0];
 end
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
@@ -42,12 +42,18 @@ rmsContrast = 0.08;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
+%% Create neural
+
+
 %% Compute threshold for each spatial frequency
 %
 % Function computeThreshold is below.
 thePsychometricFcnFig = figure;
 for idx = 1:length(spatialFreqs)
-    logThreshold(idx) = computeThreshold(chromaDir,  spatialFreqs(idx), idx, thePsychometricFcnFig);
+    % create a static grating scene with a particular chromatic direction,
+    % spatial frequency, and temporal duration
+    gratingScene = createGratingScene('chromaDir', chromaDir, 'spatialFreq', spatialFreqs(idx));
+    logThreshold(idx) = computeThreshold(gratingScene, idx, thePsychometricFcnFig);
 end
 set(gcf, 'Position',  [0, 0, 800, 800]);
 
@@ -66,35 +72,7 @@ set(gcf, 'Position',  [0, 0, 600, 800]);
 % Compute threshold for a particular chromatic direction and spatial frequency
 % Chromatic direction is a 1-by-3 vector specifying contrast on the L, M and S Cone, respectively
 % Spatial frequency is a number in the unit of cycles per degree
-function [logThreshold] = computeThreshold(chromaDir, spatialFreqs, index, theFig)
-
-% Compute function handle for grating stimuli
-sceneComputeFunction = @sceGrating;
-
-% Retrieve the default params for the grating stimulus
-gratingParams = sceGrating();
-
-% Configure chromatic direction and and spatial frequency of the grating
-% with a 90 deg orientation, and a cosine spatial phase
-gratingParams.coneContrastModulation = chromaDir;
-gratingParams.spatialFrequencyCyclesPerDeg = spatialFreqs;
-gratingParams.spatialPhaseDegs = 0;
-gratingParams.orientationDegs = 90;
-
-% Configure a disk spatial envelope
-gratingParams.spatialEnvelope = 'disk';
-gratingParams.minPixelsNumPerCycle = 30;
-gratingParams.spatialEnvelopeRadiusDegs = 0.4;
-
-% Configure temporal modulation: 100 ms duration for only 1 frame
-gratingParams.frameDurationSeconds = 100/1000;
-gratingParams.temporalModulation = 'flashed';
-gratingParams.temporalModulationParams =  struct(...
-    'stimOnFrameIndices', 1, 'stimDurationFramesNum', 1);
-
-% Instantiate a sceneEngine with the above sceneComputeFunctionHandle
-% and the custom grating params.
-theSceneEngine = sceneEngine(sceneComputeFunction, gratingParams);
+function [logThreshold] = computeThreshold(theSceneEngine, index, theFig)
 
 % Instantiate a neuralResponseEngine
 neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
@@ -168,7 +146,7 @@ while (nextFlag)
         estimator.multiTrial(logContrast * ones(1, nTest), predictions);
     
     % Report what happened
-    % fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));    
+    % fprintf('Current test contrast: %g, P-correct: %g \n', testContrast, mean(predictions));
 end
 
 % Add info to correct panel of the figure
