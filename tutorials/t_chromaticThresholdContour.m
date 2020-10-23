@@ -110,5 +110,6 @@ plot(threshold.*theDirs(1,:), threshold.*theDirs(2,:), '-ok', 'MarkerSize',12, '
 xlabel('L Cone Contrast');
 ylabel('M Cone Contrsast');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+xlim([-0.04 0.04]); ylim([-0.04 0.04]);
 axis('square');
-xlim([-0.04 0.04]); yxlim([-0.04 0.04]);
+
