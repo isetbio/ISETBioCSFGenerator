@@ -15,6 +15,9 @@
 %   10/22/20  lqz   Restructure the code
 %   10/23/20  dhb   More commments.
 
+% Clear and close
+clear; close all;
+
 % List of spatial frequencies to be tested.
 spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
 

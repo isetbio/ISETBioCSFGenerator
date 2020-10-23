@@ -28,6 +28,9 @@ function t_responseClassifier
 % History:
 %    09/21/2020  NPC  Wrote it.
 
+    % Close all figs
+    close all;
+
     % Configure the function handle and the params for the @sceneGenerationEngine
     sceneComputeFunction = @sceUniformFieldTemporalModulation;
 
