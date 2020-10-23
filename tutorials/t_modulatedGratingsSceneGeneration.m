@@ -48,6 +48,7 @@ function t_modulatedGratingsSceneGeneration
     
     % Start with the default params
     customGratingParams = defaultGratingParams;
+    customGrantingParams.pixelNum = 64;
     
     % Configure an L-M grating
     customGratingParams.coneContrastModulation = [0.09 -0.09 0.0];
