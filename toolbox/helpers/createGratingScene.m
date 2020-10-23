@@ -1,37 +1,40 @@
-function [gratingScene] = createGratingScene(varargin)
-%createGratingScene  Create a static grating scene using sceGrating
+function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, varargin)
+% Create a grating scene using sceGrating
 %
-% Usage:
-%   createGratingScene('chromaDir', chromaDir, 'spatialFreq', spatialFreq);
-%   See t_spatialCSF.m
-%   Also see t_modulatedGratingsSceneGeneration.m
+% Syntax:
+%   [gratingScene] = createGratingScene(chromaticDir, spatialFreqency)
+%
+% Description:
+%    Create a @sceneEngine object representing a chromatic grating scene.  Key/value pairs
+%    control parameters.
 %
 % Inputs:
-%   None.
+%   chromaticDir      - Three dimensional vector giving L, M, and S
+%                       contrasts for the grating at 100% contrast.
+%   spatialFrequency  - Grating spatial frequency.
 %
 % Outputs:
-%   sceneEngine Object.
+%   gratingScene      - Created sceneEngine
 %
 % Optional key/value pairs:
-%   'chromaDir'       - 1-by-3 vector specifying the chromatic direction
-%                     of the stimulus as L, M, S cone contrast
+%   'spatialPhase'    - The spatial phase of the stimulus, in degrees
+%                       Default 0.
+%   'orientation'     - The orientation of the stimulus, in degrees.
+%                       Default 90 (vertical grating).
+%   'duration'        - The duration of the stimulus, in seconds.  Default
+%                       0.1.
 %
-%   'spatialFreq'     - The spatial frequency of the stimulus, in cyc/deg
+% See also: t_modulatedGratingsSceneGenerateion, t_spatialCSF
 %
-%   'spatialPhase'    - The spatial phase of the stimulus, in degree
-%
-%   'orientation'     - The orientation of the stimulus, in degree
-%
-%   'duration'        - The duration of the stimulus, in second
 
+% History:
+%   10/23/20  dhb  Added comments.
+
+% Set up parameters with defaults
 p = inputParser;
-
-p.addParameter('chromaDir', [0.1, 0.1, 0.1], @(x)(isnumeric(x) && numel(x) == 3));
-p.addParameter('spatialFreq', 1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
-
 parse(p, varargin{:});
 
 % Compute function handle for grating stimuli
@@ -40,10 +43,11 @@ sceneComputeFunction = @sceGrating;
 % Retrieve the default params for the grating stimulus
 gratingParams = sceGrating();
 
-% Configure chromatic direction and and spatial frequency of the grating
+% Configure those parameters that we adjust through key/value pairs.
+% chromatic direction and and spatial frequency of the grating
 % with a 90 deg orientation, and a cosine spatial phase
-gratingParams.coneContrastModulation = p.Results.chromaDir;
-gratingParams.spatialFrequencyCyclesPerDeg = p.Results.spatialFreq;
+gratingParams.coneContrastModulation = chromaticDir;
+gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.orientationDegs = p.Results.orientation;
 
