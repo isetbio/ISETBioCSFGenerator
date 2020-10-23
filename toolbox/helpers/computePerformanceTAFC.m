@@ -1,9 +1,9 @@
-function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, testScene, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag)
+function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag)
 % Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
 %
 % Syntax:
 %    [predictions, theClassifierEngine] = ...
-%        computePerformanceTAFC(nullScene, testScene, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag)
+%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag)
 %
 % Description:
 %     Train a classifier on a discrimination and report back a vector of
@@ -19,6 +19,8 @@ function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, 
 %                             scene for the discrimination.
 %     testScene             - @sceneEngine object that generates the test
 %                             scene for the discrimination.
+%    temporalSupport        - Temporal support vector (in seconds) passed
+%                             to neural response engine.
 %     nTrain                - Number of null and test response instances
 %                             used in classifer training.  The two types of
 %                             instances are paired and a nTrain TAFC task is
