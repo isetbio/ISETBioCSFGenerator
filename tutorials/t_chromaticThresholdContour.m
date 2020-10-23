@@ -1,47 +1,39 @@
-% Compute spatial CSF in different color directions
+% Compute isothreshold contour in different color directions
 %
 % Description:
-%    Use ISETBioCSFGenerator to run out CSFs in different color directions.
-%    This example uses an ideal Poisson TAFC observer and circularly
-%    windowed gratings of constant size.
+%    Use ISETBioCSFGenerator to run out an isothreshold contour in the LM
+%    contrast plane. This example uses an ideal Poisson TAFC observer and circularly
+%    windowed gratings of constant size and one spatial frequency.
 %
-% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
+% See also: t_spatialCSF, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+%           computeThresholdTAFC, computePerformanceTAFC
 %
 
 % History:
-%   10/20/20  lqz   Wrote it.
-%   10/21/20  dhb   More commments.
-%   10/22/20  lqz   Restructure the code
-%   10/23/20  dhb   More commments.
+%   10/23/20  dhb   Wrote it from t_spatialCSF
 
 % Clear and close
 clear; close all;
 
-% List of spatial frequencies to be tested.
-spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
+% Spatial frequencies to be tested.
+spatialFreq = 2;
 
-% Choose stimulus chromatic direction specified as a 1-by-3 vector
-% of L, M, S cone contrast.  These vectors get normalized below, so only
-% their direction matters in the specification.
-stimType = 'luminance';
-switch (stimType)
-    case 'luminance'
-        chromaDir = [1.0, 1.0, 1.0];
-    case 'red-green'
-        chromaDir = [1.0, -1.0, 0.0];
-    case 'L-isolating'
-        chromaDir = [1.0, 0.0, 0.0];
-end
-
-% Set the RMS cone contrast of the stimulus. Things may go badly if you
-% exceed the gamut of the monitor, so we are conservative and set this at a
-% value that is within gamut of typical monitors and don't worry about it
-% further for this tutorial.  A vector length contrast of 0.08 should be
-% OK.
+% Set up a set of chromatic directions. Passing elevation = 90 puts these
+% in the LM contrast plan.  These are at constant rms (vector length)
+% contrast.
+%
+% Things may go badly if you exceed the gamut of the monitor, so we are
+% conservative and set this at a value that is within gamut of typical
+% monitors and don't worry about it further for this tutorial.  A vector
+% length contrast of 0.08 should be OK.
 rmsContrast = 0.08;
-chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
-assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
+nDirs = 10;
+for ii = 1:nDirs
+    theta = (ii-1)/nDirs*2*pi;
+    theDirs(:,ii) = [cos(theta) sin(theta) 0]';
+    theDirs(:,ii) = theDirs(:,ii) / norm(theDirs(:,ii)) * rmsContrast;
+    assert(abs(norm(theDirs(:,ii)) - rmsContrast) <= 1e-10);
+end
 
 %% Create neural response engine
 %
@@ -77,26 +69,26 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
-%% Compute threshold for each spatial frequency
+%% Compute threshold for each spatial direction
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 dataFig = figure();
-logThreshold = zeros(1, length(spatialFreqs));
-for idx = 1:length(spatialFreqs)
+logThreshold = zeros(1, nDirs);
+for ii = 1:nDirs
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx));
+    gratingScene = createGratingScene(theDirs(:,ii), spatialFreq);
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceTAFC.
-    [logThreshold(idx), questObj] = ...
+    [logThreshold(ii), questObj] = ...
         computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
     
     % Plot stimulus
     figure(dataFig);
-    subplot(4, 4, idx * 2 - 1);
+    subplot(ceil(nDirs/2), 4, ii * 2 - 1);
     
     visualizationContrast = 1.0;
     [theSceneSequence] = gratingScene.compute(visualizationContrast);
@@ -104,7 +96,7 @@ for idx = 1:length(spatialFreqs)
     
     % Plot data and psychometric curve 
     % with a marker size of 2.5
-    subplot(4, 4, idx * 2);
+    subplot(ceil(nDirs/2), 4, ii * 2);
     questObj.plotMLE(2.5);
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
@@ -114,7 +106,9 @@ threshold = 10 .^ logThreshold;
 
 %% Plot Contrast Sensitivity Function
 theCsfFig = figure();
-loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
-xlabel('Spatial Frequency (cyc/deg)');
-ylabel('Sensitivity');
+plot(threshold.*theDirs(1,:), threshold.*theDirs(2,:), '-ok', 'MarkerSize',12, 'LineWidth', 2);
+xlabel('L Cone Contrast');
+ylabel('M Cone Contrsast');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+axis('square');
+xlim([-0.04 0.04]); yxlim([-0.04 0.04]);
