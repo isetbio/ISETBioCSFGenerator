@@ -15,12 +15,10 @@ function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, 
 %     these scenes, and the classifer.
 %
 % Inputs:
-%     nullScene             - @sceneEngine object that generates the null
-%                             scene for the discrimination.
-%     testScene             - @sceneEngine object that generates the test
-%                             scene for the discrimination.
-%    temporalSupport        - Temporal support vector (in seconds) passed
-%                             to neural response engine.
+%     nullScene             - Null scene sequence.
+%     testScene             - Test scene sequence.
+%     temporalSupport       - Temporal support vector (in seconds) for
+%                             scene sequences.
 %     nTrain                - Number of null and test response instances
 %                             used in classifer training.  The two types of
 %                             instances are paired and a nTrain TAFC task is
