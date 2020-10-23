@@ -8,11 +8,14 @@ function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralE
 %    Uses Quest+ and the ISETBioCSFGenerator objects to obtain
 %    computational observer contrast threshold for a given scene structure.
 %
-%    There is some art to using this function, in that you need to control thrings 
-%    such as how many trianing and test instances to use with the classifier, 
-%    how densely to tell Quest+ to sample the stimulus space and over what range,
-%    etc.  The the three passed parameter structs provide this control.  See 
-%    t_spatialCSF for what they control and some advice on how to set them.
+%    There is some art to using this function, in that you need to control
+%    thrings such as how many trianing and test instances to use with the
+%    classifier, how densely to tell Quest+ to sample the stimulus space
+%    and over what range, etc.  The the three passed parameter structs
+%    provide this control.  See t_thresholdEngine and t_spatialCSF for what
+%    they control and some advice on how to set them. Indeed, understanding
+%    those two tutorials should allow you to make effective use of this
+%    function.
 %
 % Inputs:
 %   theSceneEngine        - sceneEngine object for stimulus generation

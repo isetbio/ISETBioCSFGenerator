@@ -1,4 +1,4 @@
-% Combine everything we have to compute threshold of a temporal modulation
+% Combine everything we have to compute threshold for a modulation
 %
 % Syntax:
 %    t_thresholdEngine

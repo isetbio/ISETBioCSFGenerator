@@ -5,21 +5,18 @@
 %    This example uses an ideal Poisson TAFC observer and circularly
 %    windowed gratings of constant size.
 %
-% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration
+% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+%           computeThresholdTAFC, computePerformanceTAFC
 %
 
 % History:
 %   10/20/20  lqz   Wrote it.
-%   10/21/20  dhb  More commments.
+%   10/21/20  dhb   More commments.
 %   10/22/20  lqz   Restructure the code
+%   10/23/20  dhb   More commments.
 
-%% CSF Calculation
-%
 % List of spatial frequencies to be tested.
 spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
-
-% Allocate space for thresholds
-logThreshold = zeros(1, length(spatialFreqs));
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -43,53 +40,56 @@ rmsContrast = 0.08;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
-%% Create neural engine
-% Instantiate a neuralResponseEngine
+%% Create neural response engine
+%
+% This calculations isomerizations in a patch of cone mosaic with Poisson
+% noise, and includes optical blur.
 neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
+%
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
+% Also set up parameters associated with use of this classifier.
 classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
-
-% Parameter associated with this classifier
 classifierPara = struct('trainFlag', 'none', ...
-                                           'testFlag', 'random', ...
-                                            'nTrain', 1, 'nTest', 128);
+                        'testFlag', 'random', ...
+                        'nTrain', 1, 'nTest', 128);
 
-%% Parameter for threshold estimation/quest engine
+%% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes.
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
-                                            'logThreshLimitHigh', 0.0, ...
-                                            'logThreshLimitDelta', 0.02, ...
-                                            'slopeRangeLow', 1, ...
-                                            'slopeRangeHigh', 50, ...
-                                            'slopeDelta', 2.5);
+                       'logThreshLimitHigh', 0.0, ...
+                       'logThreshLimitDelta', 0.02, ...
+                       'slopeRangeLow', 1, ...
+                       'slopeRangeHigh', 50, ...
+                       'slopeDelta', 2.5);
 
 % Parameter for running the QUEST+
-% See t_thresholdEngine.m for options of the two different mode of
+% See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
-                                                 'numEstimator', 1, 'stopCriterion', 0.05);
+                         'numEstimator', 1, 'stopCriterion', 0.05);
 
 %% Compute threshold for each spatial frequency
-% See toolbox/helpers for the definitin of
-% function 'createGratingScene' and
-% function 'computeThreshold'
-
+% 
+% See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 dataFig = figure();
+logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
-    % create a static grating scene with a particular chromatic direction,
+    % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    gratingScene = createGratingScene('chromaDir', chromaDir, 'spatialFreq', spatialFreqs(idx));
+    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx));
     
-    % compute the threshold for our garting scene with the previously
-    % defined neural and classifier engine
+    % Compute the threshold for our grating scene with the previously
+    % defined neural and classifier engine.  This function does a lot of
+    % work, see t_tresholdEngine and the function itself, as well as
+    % function computePerformanceTAFC.
     [logThreshold(idx), questObj] = ...
-        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
+        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
     
     % Plot stimulus
     figure(dataFig);
