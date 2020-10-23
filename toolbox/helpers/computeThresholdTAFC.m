@@ -1,35 +1,43 @@
-function [threshold, questObj] = computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)
-%computeThreshold  Compute contrast threshold for a given scene (i.e.,
-%stimulus), neural response engine, and classifier engine
+function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)
+% Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
-% Usage:
-%  computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
-%   See t_spatialCSF.m for example usage
-%   
+% Syntax:
+%    [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)  
+%
+% Description:
+%    Uses Quest+ and the ISETBioCSFGenerator objects to obtain
+%    computational observer contrast threshold for a given scene structure.
+%
+%    There is some art to using this function, in that you need to control thrings 
+%    such as how many trianing and test instances to use with the classifier, 
+%    how densely to tell Quest+ to sample the stimulus space and over what range,
+%    etc.  The the three passed parameter structs provide this control.  See 
+%    t_spatialCSF for what they control and some advice on how to set them.
 %
 % Inputs:
 %   theSceneEngine        - sceneEngine object for stimulus generation
 %   theNeuralEngine       - neuralResponseEngine object
-%   classifierEngine         - responseClassifierEngine
-%   classifierPara             - Parameter associated with the classifier engine
-%   thresholdPara           - Parameter associated with threshold estimation
-%   questEnginePara      - Parameter for running the questThresholdEngine
-%
-%   See t_spatialCSF.m for an example of the proper structure for the
-%   parameter fields
-%  
-%   Also see see t_thresholdEngine.m
+%   classifierEngine      - responseClassifierEngine
+%   classifierPara        - Parameter struct associated with the classifier engine
+%   thresholdPara         - Parameter struct associated with threshold estimation
+%   questEnginePara       - Parameter struct for running the questThresholdEngine
 %
 % Outputs:
-%   threshold                    - Estimated threshold value
-%   questObj                     - questThresholdEngine object, which
-%                                           contains reference to all the simulated 
-%                                           stimulus - response data
+%   threshold             - Estimated threshold value
+%   questObj              - questThresholdEngine object, which
+%                           contains information about all the trials run.
+% Optional key/value pairs:
+%
+% See also:
+%    t_spatialCSF, t_thresholdEngine, computePerformanceTAFC
+%  
+
+% History: 
+%  10/23/20  dhb  Added commments.
 
 % Construct a QUEST threshold estimator estimate threshold
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
-
 estimator = ...
     questThresholdEngine('minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
                                                  'estDomain', estDomain, 'slopeRange', slopeRange, ...
@@ -63,14 +71,14 @@ while (nextFlag)
         % Train classifier for this TEST contrast and get predicted
         % correct/incorrect predictions.  This function also computes the
         % neural responses needed to train and predict.
-        [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformance(...
+        [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag);
         
     else
         % Classifier is already trained, just get predictions
-        predictions = computePerformance(...
+        predictions = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag);
@@ -88,8 +96,7 @@ end
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
-% Return the quest+ object wrapper
-% for plotting and/or access to data
+% Return the quest+ object wrapper for plotting and/or access to data
 questObj = estimator;
 
 end
