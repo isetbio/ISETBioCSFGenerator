@@ -14,6 +14,8 @@
 %   10/21/20  dhb   More commments.
 %   10/22/20  lqz   Restructure the code
 %   10/23/20  dhb   More commments.
+%   10/25/20  dhb   Change contrast vectors to column vectors.  This is PTB
+%                   convention, and also the convention of my brain.
 
 % Clear and close
 clear; close all;
@@ -27,11 +29,11 @@ spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
 stimType = 'luminance';
 switch (stimType)
     case 'luminance'
-        chromaDir = [1.0, 1.0, 1.0];
+        chromaDir = [1.0, 1.0, 1.0]';
     case 'red-green'
-        chromaDir = [1.0, -1.0, 0.0];
+        chromaDir = [1.0, -1.0, 0.0]';
     case 'L-isolating'
-        chromaDir = [1.0, 0.0, 0.0];
+        chromaDir = [1.0, 0.0, 0.0]';
 end
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
