@@ -27,7 +27,7 @@ spatialFreq = 2;
 % monitors and don't worry about it further for this tutorial.  A vector
 % length contrast of 0.08 should be OK.
 rmsContrast = 0.08;
-nDirs = 10;
+nDirs = 16;
 for ii = 1:nDirs
     theta = (ii-1)/nDirs*2*pi;
     theDirs(:,ii) = [cos(theta) sin(theta) 0]';
@@ -104,12 +104,33 @@ set(dataFig, 'Position',  [0, 0, 800, 800]);
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
 
-%% Plot Contrast Sensitivity Function
-theCsfFig = figure();
-plot(threshold.*theDirs(1,:), threshold.*theDirs(2,:), '-ok', 'MarkerSize',12, 'LineWidth', 2);
+% Threshold cone contrasts
+thresholdConeContrasts = [threshold.*theDirs(1,:) ; threshold.*theDirs(2,:) ; threshold.*theDirs(3,:)];
+
+% Fit an ellipse to the data.  See EllipseTest and EllipsoidFit.
+%
+% The use of scaleFactor to scale up the data and scale down the fit by the
+% same amount is fmincon black magic.  Doing this puts the objective
+% function into a better range for the default size of search steps.
+scaleFactor = 10;
+fitCenter = zeros(3,1);
+[fitA,fitAinv,fitQ,fitEllParams] = EllipsoidFit(scaleFactor*thresholdConeContrasts,[],false,true);
+nThetaEllipse = 200;
+circleIn2D = UnitCircleGenerate(nThetaEllipse);
+circleInLMPlane = [circleIn2D(1,:) ; circleIn2D(2,:) ; zeros(size(circleIn2D(1,:)))];
+fitEllipse = PointsOnEllipsoidFind(fitQ,circleInLMPlane,fitCenter)/scaleFactor;
+
+% Plot
+contrastLim = 0.04;
+figure; clf; hold on
+theContourFig = figure; clf; hold on
+plot(thresholdConeContrasts(1,:), thresholdConeContrasts(2,:), 'ok', 'MarkerFaceColor','k', 'MarkerSize',12);
+plot(fitEllipse(1,:),fitEllipse(2,:),'r','LineWidth',3);
+plot([-contrastLim contrastLim],[0 0],'k:','LineWidth',1);
+plot([0 0],[-contrastLim contrastLim],'k:','LineWidth',1);
 xlabel('L Cone Contrast');
 ylabel('M Cone Contrsast');
-set(theCsfFig, 'Position',  [800, 0, 600, 800]);
-xlim([-0.04 0.04]); ylim([-0.04 0.04]);
+set(theContourFig, 'Position',  [800, 0, 600, 800]);
+xlim([-contrastLim contrastLim]); ylim([-contrastLim contrastLim]);
 axis('square');
 
