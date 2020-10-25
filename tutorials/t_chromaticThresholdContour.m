@@ -6,7 +6,8 @@
 %    windowed gratings of constant size and one spatial frequency.
 %
 % See also: t_spatialCSF, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           computeThresholdTAFC, computePerformanceTAFC
+%           computeThresholdTAFC, computePerformanceTAFC,
+%           createGratingScene.
 %
 
 % History:
@@ -15,8 +16,15 @@
 % Clear and close
 clear; close all;
 
-% Spatial frequencies to be tested.
+% Spatial frequencies to be tested, and other parameters.
+% Beyond spatial frequency, these override default parameters
+% in createGratingScene via key/value pair.
+%
+% Using 90 degree (sine phase) makes the stimulus symmetric in terms of
+% balanced incremental and decremental components, so that the isothreshold
+% contour is also symmetric.
 spatialFreq = 2;
+gratingPhaseDeg = 90;
 
 % Set up a set of chromatic directions. Passing elevation = 90 puts these
 % in the LM contrast plan.  These are at constant rms (vector length)
@@ -77,7 +85,7 @@ logThreshold = zeros(1, nDirs);
 for ii = 1:nDirs
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    gratingScene = createGratingScene(theDirs(:,ii), spatialFreq);
+    gratingScene = createGratingScene(theDirs(:,ii), spatialFreq, 'spatialPhase', gratingPhaseDeg);
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
