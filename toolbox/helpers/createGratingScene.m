@@ -35,6 +35,7 @@ p = inputParser;
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('pixelsNum', 0, @(x)(isnumeric(x) && numel(x) == 1));
 parse(p, varargin{:});
 
 % Compute function handle for grating stimuli
@@ -50,6 +51,12 @@ gratingParams.coneContrastModulation = chromaticDir;
 gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.orientationDegs = p.Results.orientation;
+
+% Set pixel size
+pixelsNum = p.Results.pixelsNum;
+if(pixelsNum >= 1)
+    gratingParams.pixelsNum = pixelsNum;
+end
 
 % Configure a disk spatial envelope
 gratingParams.spatialEnvelope = 'disk';
