@@ -167,5 +167,7 @@ end
 %    10/17/20  dhb  Added comments.
 
 function ll = llhd(response, template)
+    response = double(response);
+    template = double(template);
     ll = sum(response .* log(template) - template);
 end
