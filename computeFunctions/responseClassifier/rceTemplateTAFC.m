@@ -137,8 +137,3 @@ if (strcmp(operationMode, 'predict'))
 end
 
 end
-
-% % Log-likelihood for Poisson R.V.
-function ll = llhd(sample, rate)
-ll = sum(sample .* log(rate) - rate);
-end
