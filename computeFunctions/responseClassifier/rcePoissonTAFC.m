@@ -124,15 +124,15 @@ if (strcmp(operationMode, 'predict'))
     % the TAFC response.
     response = zeros(1, nTrials);
     for idx = 1:nTrials
-        llhd_cr = llhd(nullResponses(idx, :), nullTemplate) + llhd(testResponses(idx, :), testTemplate);
-        llhd_ic = llhd(nullResponses(idx, :), testTemplate) + llhd(testResponses(idx, :), nullTemplate);
+        llhdCr = llhd(nullResponses(idx, :), nullTemplate) + llhd(testResponses(idx, :), testTemplate);
+        llhdIc = llhd(nullResponses(idx, :), testTemplate) + llhd(testResponses(idx, :), nullTemplate);
         
         % For likelihood ratio extremely close to 1, do a coin flip
         threshold = 1e-10;
-        if (abs(llhd_cr - llhd_ic) <= threshold)
+        if (abs(llhdCr - llhdIc) <= threshold)
             response(idx) = (rand() > 0.5);
         else
-            response(idx) = ((llhd_cr - llhd_ic) > 0);
+            response(idx) = ((llhdCr - llhdIc) > 0);
         end
     end
     

@@ -53,12 +53,12 @@ function dataOut = rceTemplateTAFC(obj, operationMode, ~, nullResponses, testRes
 %    dataOut                  - If function called with no input arguments,
 %                               this is the default parameter structure for
 %                               this funciton.
-%                              
+%
 %                               If function is called from a @responseClassifierEngine
 %                               object, what this contains depends on
 %                               whether operationMode is 'train' or
 %                               'predict'.
-% 
+%
 %                               For 'train', the struct has two fields as
 %                               required by responseClassifierEngine
 %                               objects.
@@ -66,7 +66,7 @@ function dataOut = rceTemplateTAFC(obj, operationMode, ~, nullResponses, testRes
 %                                 .preProcessingConstants: Structure with
 %                                   templates to be used by classifier to
 %                                   predict.
-%             
+%
 %                              For 'predict', the struct has two fields as
 %                               required by responseClassifierEngine
 %                               objects.
@@ -116,17 +116,27 @@ if (strcmp(operationMode, 'predict'))
     nTrials = size(nullResponses, 1);
     assert(nTrials == size(testResponses, 1));
     
-    % Compute response {0, 1} with nearest neighbor classification. 
-    % Evaluate on assumption that stimulus order is null-test.  
+    % Compute response {0, 1} with nearest neighbor classification.
+    % Evaluate on assumption that stimulus order is null-test.
     response = zeros(1, nTrials);
     for idx = 1:nTrials
         nullTestResponse = [nullResponses(idx, :) ; testResponses(idx, :)];
-        distance_cr = norm(nullTestResponse - nullTestTemplate);
-        distance_ic = norm(nullTestResponse - testNullTemplate);
+        distanceCr = norm(nullTestResponse - nullTestTemplate);
+        distanceIc = norm(nullTestResponse - testNullTemplate);
         
         % Correct if distance of null-test response to null-test template
         % is less than distance to test-null template.
-        response(idx) = ((distance_cr - distance_ic) < 0);     
+        
+        % sometime for low contrast stimulus, we get a decision variable
+        % of exactly 0. Using < or <= as decision rule will cause above or
+        % below chance performance in those condition
+        threshold = 1e-10;
+        decisionVar = distanceCr - distanceIc;
+        if (abs(decisionVar) <= threshold)
+            response(idx) = (rand() > 0.5);
+        else
+            response(idx) = (decisionVar < 0);
+        end
     end
     
     % Set up return
