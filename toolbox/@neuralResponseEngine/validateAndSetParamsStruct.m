@@ -17,17 +17,17 @@ function validateAndSetParamsStruct(obj, paramsStruct)
     assert((isfield(paramsStruct, 'opticsParams'))&&(isstruct(paramsStruct.opticsParams)), ...
         'Expected an ''opticsParams'' substruct during neuralResponseEngine instantiation.');
     
-    % Obligatory sub-struct: 'coneMosaicParams'
-    % Assert that we have a sub-struct named 'coneMosaicParams'
-    assert((isfield(paramsStruct, 'coneMosaicParams'))&&(isstruct(paramsStruct.coneMosaicParams)), ...
-        'Expected a ''coneMosaicParams'' substruct during neuralResponseEngine instantiation.');
-    
-    % Optional sub-struct: 'rgcMosaicParams'
-    % Assert that we have a sub-struct named 'coneMosaicParams'
-    if (isfield(paramsStruct, 'rgcMosaicParams'))
-        assert((isstruct(paramsStruct.rgcMosaicParams)), ...
-            'Optional ''rgcMosaicParams''passed during neuralResponseEngine instantiation is not a struct.');
-    end
+%     % Obligatory sub-struct: 'coneMosaicParams'
+%     % Assert that we have a sub-struct named 'coneMosaicParams'
+%     assert((isfield(paramsStruct, 'coneMosaicParams'))&&(isstruct(paramsStruct.coneMosaicParams)), ...
+%         'Expected a ''coneMosaicParams'' substruct during neuralResponseEngine instantiation.');
+%     
+%     % Optional sub-struct: 'rgcMosaicParams'
+%     % Assert that we have a sub-struct named 'coneMosaicParams'
+%     if (isfield(paramsStruct, 'rgcMosaicParams'))
+%         assert((isstruct(paramsStruct.rgcMosaicParams)), ...
+%             'Optional ''rgcMosaicParams''passed during neuralResponseEngine instantiation is not a struct.');
+ %   end
     
     % Set the neural params
     obj.neuralParams = paramsStruct;
