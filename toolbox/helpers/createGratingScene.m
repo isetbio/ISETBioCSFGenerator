@@ -33,6 +33,7 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 % Set up parameters with defaults
 p = inputParser;
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'square', 'Gaussian'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('pixelsNum', 0, @(x)(isnumeric(x) && numel(x) == 1));
@@ -61,7 +62,7 @@ if(pixelsNum >= 1)
 end
 
 % Configure a disk spatial envelope
-gratingParams.spatialEnvelope = 'disk';
+gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
 gratingParams.minPixelsNumPerCycle = 30;
 gratingParams.spatialEnvelopeRadiusDegs = 0.4;
 

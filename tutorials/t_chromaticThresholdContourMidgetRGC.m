@@ -23,7 +23,7 @@ clear; close all;
 % Using 90 degree (sine phase) makes the stimulus symmetric in terms of
 % balanced incremental and decremental components, so that the isothreshold
 % contour is also symmetric.
-spatialFreq = 0.5;
+spatialFreq = 2.0;
 gratingPhaseDeg = 90;
 
 % Set up a set of chromatic directions. Passing elevation = 90 puts these
@@ -47,12 +47,20 @@ end
 %
 % Obtain default neural response engine params
 neuralParams = nreMidgetRGC;
+
 % Modify mRGC mosaic eccentricity and size
 neuralParams.mRGCmosaicParams.eccDegs = [1 0];
-neuralParams.mRGCmosaicParams.sizeDegs = 0.2*[1 1];
+neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
+
+% Set the mRGC mosaic post-summation noise flag. If set to 'none',
+% the only noise is that of the coneMosaic. If set to 'random',
+% Gaussian noise is added at the post-summation stage
+neuralParams.mRGCmosaicParams.noiseFlag = 'random';
+
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
 neuralParams.coneMosaicParams.integrationTime = 100/1000;
+
 % Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 
@@ -91,10 +99,15 @@ logThreshold = zeros(1, nDirs);
 
 for ii = 1:nDirs
     % Create a static grating scene with a particular chromatic direction,
-    % spatial frequency, and temporal duration
+    % spatial frequency, and temporal duration. Make it twice as large as
+    % the mRGC mosaic so that it extends over cone inputs to  the surround
+    % subregions of the RGC cells, which are quite large (~7 times the RF
+    % center)
     gratingScene = createGratingScene(theDirs(:,ii), spatialFreq, ...
         'spatialPhase', gratingPhaseDeg, ...
-        'duration', neuralParams.coneMosaicParams.integrationTime);
+        'duration', neuralParams.coneMosaicParams.integrationTime, ...
+        'fovDegs', max(neuralParams.mRGCmosaicParams.sizeDegs)*2, ...
+        'spatialEnvelope', 'square');
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
