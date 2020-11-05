@@ -52,10 +52,11 @@ neuralParams = nreMidgetRGC;
 neuralParams.mRGCmosaicParams.eccDegs = [1 0];
 neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 
-% Set the mRGC mosaic post-summation noise flag. If set to 'none',
-% the only noise is that of the coneMosaic. If set to 'random',
-% Gaussian noise is added at the post-summation stage
-neuralParams.mRGCmosaicParams.noiseFlag = 'random';
+% *** POST-CONE SUMMATION NOISE ***
+% Set the mRGC mosaic (post-cone summation) noise flag. If set to 'none',
+% the only noise in the computation is that of the coneMosaic. 
+% If set to 'random', Gaussian noise is added at the final mRGC response.
+neuralParams.mRGCmosaicParams.noiseFlag = 'none';
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
