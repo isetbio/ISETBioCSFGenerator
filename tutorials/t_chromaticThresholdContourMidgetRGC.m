@@ -45,11 +45,17 @@ end
 
 %% Create neural response engine
 %
-% Computes response of patch of midget RGCs.
+% Obtain default neural response engine params
 neuralParams = nreMidgetRGC;
-neuralParams.mRGCmosaicParams.eccDegs = [10 0];
-neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
+% Modify mRGC mosaic eccentricity and size
+neuralParams.mRGCmosaicParams.eccDegs = [1 0];
+neuralParams.mRGCmosaicParams.sizeDegs = 0.2*[1 1];
+% Modify some cone mosaic params
+neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
+neuralParams.coneMosaicParams.integrationTime = 100/1000;
+% Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
+
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
@@ -82,10 +88,13 @@ questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 dataFig = figure();
 logThreshold = zeros(1, nDirs);
+
 for ii = 1:nDirs
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    gratingScene = createGratingScene(theDirs(:,ii), spatialFreq, 'spatialPhase', gratingPhaseDeg, 'duration', 100/1000);
+    gratingScene = createGratingScene(theDirs(:,ii), spatialFreq, ...
+        'spatialPhase', gratingPhaseDeg, ...
+        'duration', neuralParams.coneMosaicParams.integrationTime);
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
@@ -107,6 +116,7 @@ for ii = 1:nDirs
     subplot(ceil(nDirs/2), 4, ii * 2);
     questObj.plotMLE(2.5);
 end
+
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 
 % Convert returned log threshold to linear threshold
