@@ -55,8 +55,11 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 % *** POST-CONE SUMMATION NOISE ***
 % Set the mRGC mosaic (post-cone summation) noise flag. If set to 'none',
 % the only noise in the computation is that of the coneMosaic. 
+%
 % If set to 'random', Gaussian noise is added at the final mRGC response.
-neuralParams.mRGCmosaicParams.noiseFlag = 'none';
+% The noise sd is noiseFactor*maxResponse
+neuralParams.mRGCmosaicParams.noiseFlag = 'random';
+neuralParams.mRGCmosaicParams.noiseFactor = 1.5;
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
@@ -65,12 +68,11 @@ neuralParams.coneMosaicParams.integrationTime = 100/1000;
 % Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 
-
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+classifierEngine = responseClassifierEngine(@rceTemplateTAFC);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
@@ -153,7 +155,7 @@ circleInLMPlane = [circleIn2D(1,:) ; circleIn2D(2,:) ; zeros(size(circleIn2D(1,:
 fitEllipse = PointsOnEllipsoidFind(fitQ,circleInLMPlane,fitCenter)/scaleFactor;
 
 % Plot
-contrastLim = 0.04;
+contrastLim = 0.08;
 figure; clf; hold on
 theContourFig = figure; clf; hold on
 plot(thresholdConeContrasts(1,:), thresholdConeContrasts(2,:), 'ok', 'MarkerFaceColor','k', 'MarkerSize',12);
