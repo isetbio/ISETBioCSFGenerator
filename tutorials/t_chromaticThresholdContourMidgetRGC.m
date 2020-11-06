@@ -59,7 +59,7 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 % If set to 'random', Gaussian noise is added at the final mRGC response.
 % The noise sd is noiseFactor*maxResponse
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
-neuralParams.mRGCmosaicParams.noiseFactor = 1.5;
+neuralParams.mRGCmosaicParams.noiseFactor = 0.5;
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
@@ -72,7 +72,7 @@ theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 %
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rceTemplateTAFC);
+classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
