@@ -44,7 +44,7 @@ spatialFreq = 1.0;
 % monitors and don't worry about it further for this tutorial.  A vector
 % length contrast of 0.08 should be OK.
 rmsContrast = 0.08;
-nDirs = 16;
+nDirs = 8;
 for ii = 1:nDirs
     theta = (ii-1)/nDirs*2*pi;
     theDirs(:,ii) = [cos(theta) sin(theta) 0]';
@@ -67,8 +67,9 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 %
 % If set to 'random', Gaussian noise is added at the final mRGC response.
 % The noise sd is noiseFactor*maxResponse
+neuralParams.coneMosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
-neuralParams.mRGCmosaicParams.noiseFactor = 0.5;
+neuralParams.mRGCmosaicParams.noiseFactor = 0.25;
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
@@ -80,9 +81,10 @@ theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 
 %% Instantiate the PoissonTAFC or the PcaSVMTAFC responseClassifierEngine
 %
-%classifierChoice = 'idealObserver';
-classifierChoice = 'computationalObserver';
-
+% Options:
+%   'idealObserver' - ideal TAFC observer for Poisson limited signals
+%   'computationalObsever' - SVM based learned classifier
+classifierChoice = 'idealObserver';
 switch (classifierChoice) 
     case 'idealObserver'
         % PoissonTAFC makes decision by performing the Poisson likelihood ratio test

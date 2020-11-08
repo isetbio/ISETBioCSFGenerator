@@ -17,6 +17,9 @@ clear; close all;
 % List of spatial frequencies to be tested.
 spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
 
+% Options for presentationMode are {'sampled motion', 'flashed'}
+presentationMode = 'sampled motion';
+
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
@@ -54,8 +57,9 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 %
 % If set to 'random', Gaussian noise is added at the final mRGC response.
 % The noise sd is noiseFactor*maxResponse
+neuralParams.coneMosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
-neuralParams.mRGCmosaicParams.noiseFactor = 0.5;
+neuralParams.mRGCmosaicParams.noiseFactor = 0.25;
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
@@ -64,14 +68,41 @@ neuralParams.coneMosaicParams.integrationTime = 100/1000;
 % Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 
-%% Instantiate the PoissonTAFC responseClassifierEngine
+%% Instantiate the PoissonTAFC or the PcaSVMTAFC responseClassifierEngine
 %
-% PoissonTAFC makes decision by performing the Poisson likelihood ratio test
-% Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
-classifierPara = struct('trainFlag', 'none', ...
-                        'testFlag', 'random', ...
-                        'nTrain', 1, 'nTest', 128);
+% Options:
+%   'idealObserver' - ideal TAFC observer for Poisson limited signals
+%   'computationalObsever' - SVM based learned classifier
+classifierChoice = 'idealObserver';
+switch (classifierChoice) 
+    case 'idealObserver'
+        % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
+        % Also set up parameters associated with use of this classifier.
+        classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        % Train classifier using 1 noise-free instance, 
+        % Test performance using a set of 128 noisy instances
+        classifierPara = struct('trainFlag', 'none', ...
+                                'testFlag', 'random', ...
+                                'nTrain', 1, 'nTest', 128);
+    case 'computationalObserver'
+        % Instantiate a computational observer consisting of a linear SVM 
+        % coupled with a PCA operating on 2 components
+        classifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
+            struct(...
+                'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
+                'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
+                'kernelFunction', 'linear', ...     % linear
+                'classifierType', 'svm' ...         % binary SVM classifier
+            ));
+        % Train classifier using a set of 256 noisy instances, 
+        % Test performance using a set of 128 noisy instances
+        classifierPara = struct('trainFlag', 'random', ...
+                                'testFlag', 'random', ...
+                                'nTrain', 256, 'nTest', 128);
+                        
+    otherwise
+        error('Unknown classifier: ''%s''.', classifierChoice);
+end
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -97,8 +128,19 @@ dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
-    % spatial frequency, and temporal duration
-    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx));
+    % spatial frequency, and temporal duration. Make it twice as large as
+    % the mRGC mosaic so that it extends over cone inputs to  the surround
+    % subregions of the RGC cells, which are quite large (~7 times the RF
+    % center).
+    % Options for presentationMode are {'sampled motion', 'flashed'}
+    % For 'flashed' we make the duration equal to the
+    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx), ...
+        'spatialPhase', gratingPhaseDeg, ...
+        'duration', stimulusDurationSeconds, ...
+        'fovDegs', max(neuralParams.mRGCmosaicParams.sizeDegs)*2, ...
+        'spatialEnvelope', 'square', ...
+        'presentationMode', presentationMode ...
+        );
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
