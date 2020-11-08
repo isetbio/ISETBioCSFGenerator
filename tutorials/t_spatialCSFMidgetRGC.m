@@ -15,10 +15,19 @@
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
+spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16];
+
+% 100 msec stimulus duration
+stimulusDurationSeconds = 100/1000;
 
 % Options for presentationMode are {'sampled motion', 'flashed'}
 presentationMode = 'sampled motion';
+
+% For 'flashed' presentation mode, present the grating at 90 spatial phase 
+% (odd symmetry).  Using 90 degree (sine phase) makes the stimulus symmetric 
+% in terms of balanced incremental and decremental components, so that the 
+% isothreshold contour is also symmetric.
+gratingPhaseDeg = 90;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
