@@ -67,7 +67,7 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 %
 % If set to 'random', Gaussian noise is added at the final mRGC response.
 % The noise sd is noiseFactor*maxResponse
-neuralParams.mRGCmosaicParams.noiseFlag = 'none'; %'random';
+neuralParams.mRGCmosaicParams.noiseFlag = 'random';
 neuralParams.mRGCmosaicParams.noiseFactor = 0.5;
 
 % Modify some cone mosaic params
@@ -78,9 +78,9 @@ neuralParams.coneMosaicParams.integrationTime = 25/1000;
 % Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 
-%% Instantiate the PoissonTAFC responseClassifierEngine
+%% Instantiate the PoissonTAFC or the PcaSVMTAFC responseClassifierEngine
 %
-classifierChoice = 'idealObserver';
+%classifierChoice = 'idealObserver';
 classifierChoice = 'computationalObserver';
 
 switch (classifierChoice) 
@@ -96,8 +96,7 @@ switch (classifierChoice)
     case 'computationalObserver'
         % Instantiate a computational observer consisting of a linear SVM 
         % coupled with a PCA operating on 2 components
-        classifierEngine = responseClassifierEngine(...
-            @rcePcaSVMTAFC, ...
+        classifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
             struct(...
                 'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
                 'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
