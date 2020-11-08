@@ -20,14 +20,23 @@ clear; close all;
 % Beyond spatial frequency, these override default parameters
 % in createGratingScene via key/value pair.
 %
-% Using 90 degree (sine phase) makes the stimulus symmetric in terms of
-% balanced incremental and decremental components, so that the isothreshold
-% contour is also symmetric.
-spatialFreq = 2.0;
+
+% 100 msec stimulus duration
+stimulusDurationSeconds = 100/1000;
+
+% Options for presentationMode are {'sampled motion', 'flashed'}
+presentationMode = 'sampled motion';
+    
+% For 'flashed' presentation mode, present the grating at 90 spatial phase 
+% (odd symmetry).  Using 90 degree (sine phase) makes the stimulus symmetric 
+% in terms of balanced incremental and decremental components, so that the 
+% isothreshold contour is also symmetric.
 gratingPhaseDeg = 90;
 
-% Set up a set of chromatic directions. Passing elevation = 90 puts these
-% in the LM contrast plan.  These are at constant rms (vector length)
+% Grating spatial frequency in c/deg
+spatialFreq = 1.0;
+
+% Set up a set of chromatic directions. These are at constant rms (vector length)
 % contrast.
 %
 % Things may go badly if you exceed the gamut of the monitor, so we are
@@ -58,24 +67,53 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 %
 % If set to 'random', Gaussian noise is added at the final mRGC response.
 % The noise sd is noiseFactor*maxResponse
-neuralParams.mRGCmosaicParams.noiseFlag = 'random';
+neuralParams.mRGCmosaicParams.noiseFlag = 'none'; %'random';
 neuralParams.mRGCmosaicParams.noiseFactor = 0.5;
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
-neuralParams.coneMosaicParams.integrationTime = 100/1000;
+% 25 msec integration time to speed up computation
+neuralParams.coneMosaicParams.integrationTime = 25/1000;
 
 % Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
-% PoissonTAFC makes decision by performing the Poisson likelihood ratio test
-% Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
-classifierPara = struct('trainFlag', 'none', ...
-                        'testFlag', 'random', ...
-                        'nTrain', 1, 'nTest', 128);
+classifierChoice = 'idealObserver';
+classifierChoice = 'computationalObserver';
+
+switch (classifierChoice) 
+    case 'idealObserver'
+        % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
+        % Also set up parameters associated with use of this classifier.
+        classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        % Train classifier using 1 noise-free instance, 
+        % Test performance using a set of 128 noisy instances
+        classifierPara = struct('trainFlag', 'none', ...
+                                'testFlag', 'random', ...
+                                'nTrain', 1, 'nTest', 128);
+    case 'computationalObserver'
+        % Instantiate a computational observer consisting of a linear SVM 
+        % coupled with a PCA operating on 2 components
+        classifierEngine = responseClassifierEngine(...
+            @rcePcaSVMTAFC, ...
+            struct(...
+                'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
+                'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
+                'kernelFunction', 'linear', ...     % linear
+                'classifierType', 'svm' ...         % binary SVM classifier
+            ));
+        % Train classifier using a set of 256 noisy instances, 
+        % Test performance using a set of 128 noisy instances
+        classifierPara = struct('trainFlag', 'random', ...
+                                'testFlag', 'random', ...
+                                'nTrain', 256, 'nTest', 128);
+                        
+    otherwise
+        error('Unknown classifier: ''%s''.', classifierChoice);
+end
+
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -105,12 +143,16 @@ for ii = 1:nDirs
     % spatial frequency, and temporal duration. Make it twice as large as
     % the mRGC mosaic so that it extends over cone inputs to  the surround
     % subregions of the RGC cells, which are quite large (~7 times the RF
-    % center)
+    % center).
+    % Options for presentationMode are {'sampled motion', 'flashed'}
+    % For 'flashed' we make the duration equal to the
     gratingScene = createGratingScene(theDirs(:,ii), spatialFreq, ...
         'spatialPhase', gratingPhaseDeg, ...
-        'duration', neuralParams.coneMosaicParams.integrationTime, ...
+        'duration', stimulusDurationSeconds, ...
         'fovDegs', max(neuralParams.mRGCmosaicParams.sizeDegs)*2, ...
-        'spatialEnvelope', 'square');
+        'spatialEnvelope', 'square', ...
+        'presentationMode', presentationMode ...
+        );
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of

@@ -17,18 +17,22 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 %   gratingScene      - Created sceneEngine
 %
 % Optional key/value pairs:
-%   'spatialPhase'    - The spatial phase of the stimulus, in degrees
-%                       Default 0.
-%   'orientation'     - The orientation of the stimulus, in degrees.
-%                       Default 90 (vertical grating).
-%   'duration'        - The duration of the stimulus, in seconds.  Default
-%                       0.1.
+%   'spatialPhase'      - The spatial phase of the stimulus, in degrees
+%                         Default 0.
+%   'orientation'       - The orientation of the stimulus, in degrees.
+%                         Default 90 (vertical grating).
+%   'duration'          - The duration of the stimulus, in seconds.
+%                         Default: 0.1.
+%   'presentationMode'  - Presentation mode, for now either 'flashed' (1
+%                         frame), or 'sampled motion', (4 frames, with
+%                         spatial phase advancing by 90 degs in each frame)
 %
 % See also: t_modulatedGratingsSceneGenerateion, t_spatialCSF
 %
 
 % History:
 %   10/23/20  dhb  Added comments.
+%   11/07/20  npc  Added 'presentationMode' key/value pair   
 
 % Set up parameters with defaults
 p = inputParser;
@@ -36,6 +40,7 @@ p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'square', 'Gaussian'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'sampled motion'})));
 p.addParameter('pixelsNum', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 parse(p, varargin{:});
@@ -66,11 +71,29 @@ gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
 gratingParams.minPixelsNumPerCycle = 30;
 gratingParams.spatialEnvelopeRadiusDegs = 0.4;
 
-% Configure temporal modulation: 100 ms duration for only 1 frame
-gratingParams.frameDurationSeconds = p.Results.duration;
-gratingParams.temporalModulation = 'flashed';
-gratingParams.temporalModulationParams =  struct(...
-    'stimOnFrameIndices', 1, 'stimDurationFramesNum', 1);
+% Configure temporal modulation:
+switch (p.Results.presentationMode)
+    case 'flashed'
+        % Single frame presentation
+        gratingParams.frameDurationSeconds = p.Results.duration;
+        gratingParams.temporalModulation = 'flashed';
+        gratingParams.temporalModulationParams =  struct(...
+            'stimOnFrameIndices', 1, 'stimDurationFramesNum', 1);
+    case 'sampled motion'
+        % N-frame presentation, each frame advancing spatial phase by 360/N degs
+        % with the N-frames lasting for p.Results.duration. Here N = 4, so
+        % each frame is advancing spatial phase by 90 degs.
+        spatialPhaseSamplesNum = 4;
+        temporalFrequencyHz = 1.0/p.Results.duration;
+        gratingParams.frameDurationSeconds = p.Results.duration/spatialPhaseSamplesNum;
+        gratingParams.temporalModulation = 'drifted';
+        gratingParams.temporalModulationParams =  struct(...
+            'temporalFrequencyHz', temporalFrequencyHz, ...
+            'stimDurationTemporalCycles', 1);
+    otherwise
+        error('Unknown presentationMode: ''%s''.', p.Results.presentationMode);
+        
+end
 
 % Instantiate a sceneEngine with the above sceneComputeFunctionHandle
 % and the custom grating params.

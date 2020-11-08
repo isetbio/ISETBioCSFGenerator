@@ -83,7 +83,7 @@ function t_modulatedGratingsSceneGeneration
     theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
  
     % STIMULUS #2 
-    % An L+M Gabor grating with a 60 deg orientation drifting at 8 Hz
+    % An L+M Gabor grating with a 60 deg orientation drifting at 4 Hz
     customGratingParams = defaultGratingParams;
     customGratingParams.coneContrastModulation = [0.6 0.6 0.0];
     customGratingParams.orientationDegs = 60;
