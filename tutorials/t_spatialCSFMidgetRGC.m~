@@ -16,11 +16,9 @@ clear; close all;
 
 % List of spatial frequencies to be tested.
 spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 32];
-gratingPhaseDeg = 90;
 
 % Options for presentationMode are {'sampled motion', 'flashed'}
 presentationMode = 'sampled motion';
-stimulusDurationSeconds = 0.5;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -40,7 +38,7 @@ end
 % value that is within gamut of typical monitors and don't worry about it
 % further for this tutorial.  A vector length contrast of 0.08 should be
 % OK.
-rmsContrast = 0.2;
+rmsContrast = 0.08;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
@@ -51,7 +49,7 @@ neuralParams = nreMidgetRGC;
 
 % Modify mRGC mosaic eccentricity and size
 neuralParams.mRGCmosaicParams.eccDegs = [1 0];
-neuralParams.mRGCmosaicParams.sizeDegs = 0.4*[1 1];
+neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 
 % *** POST-CONE SUMMATION NOISE ***
 % Set the mRGC mosaic (post-cone summation) noise flag. If set to 'none',
@@ -61,11 +59,11 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.4*[1 1];
 % The noise sd is noiseFactor*maxResponse
 neuralParams.coneMosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
-neuralParams.mRGCmosaicParams.noiseFactor = 0.2;
+neuralParams.mRGCmosaicParams.noiseFactor = 0.25;
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
-neuralParams.coneMosaicParams.integrationTime = 40/1000;
+neuralParams.coneMosaicParams.integrationTime = 25/1000;
 
 % Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
@@ -75,7 +73,7 @@ theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
 % Options:
 %   'idealObserver' - ideal TAFC observer for Poisson limited signals
 %   'computationalObsever' - SVM based learned classifier
-classifierChoice = 'computationalObserver';
+classifierChoice = 'idealObserver';
 switch (classifierChoice) 
     case 'idealObserver'
         % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
@@ -100,7 +98,7 @@ switch (classifierChoice)
         % Test performance using a set of 128 noisy instances
         classifierPara = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
-                                'nTrain', 300, 'nTest', 100);
+                                'nTrain', 256, 'nTest', 128);
                         
     otherwise
         error('Unknown classifier: ''%s''.', classifierChoice);

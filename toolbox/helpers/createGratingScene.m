@@ -83,7 +83,7 @@ switch (p.Results.presentationMode)
         % N-frame presentation, each frame advancing spatial phase by 360/N degs
         % with the N-frames lasting for p.Results.duration. Here N = 4, so
         % each frame is advancing spatial phase by 90 degs.
-        spatialPhaseSamplesNum = 4;
+        spatialPhaseSamplesNum = 10;
         temporalFrequencyHz = 1.0/p.Results.duration;
         gratingParams.frameDurationSeconds = p.Results.duration/spatialPhaseSamplesNum;
         gratingParams.temporalModulation = 'drifted';
