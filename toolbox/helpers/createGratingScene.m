@@ -40,7 +40,9 @@ p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'square', 'Gaussian'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
-p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'sampled motion'})));
+p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted'})));
 p.addParameter('pixelsNum', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 parse(p, varargin{:});
@@ -79,17 +81,13 @@ switch (p.Results.presentationMode)
         gratingParams.temporalModulation = 'flashed';
         gratingParams.temporalModulationParams =  struct(...
             'stimOnFrameIndices', 1, 'stimDurationFramesNum', 1);
-    case 'sampled motion'
-        % N-frame presentation, each frame advancing spatial phase by 360/N degs
-        % with the N-frames lasting for p.Results.duration. Here N = 4, so
-        % each frame is advancing spatial phase by 90 degs.
-        spatialPhaseSamplesNum = 10;
-        temporalFrequencyHz = 1.0/p.Results.duration;
-        gratingParams.frameDurationSeconds = p.Results.duration/spatialPhaseSamplesNum;
+        
+    case 'drifted'
         gratingParams.temporalModulation = 'drifted';
+        gratingParams.frameDurationSeconds = 1.0/(p.Results.temporalFrequencyHz*360/p.Results.spatialPhaseAdvanceDegs);
         gratingParams.temporalModulationParams =  struct(...
-            'temporalFrequencyHz', temporalFrequencyHz, ...
-            'stimDurationTemporalCycles', 1);
+            'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
+            'stimDurationTemporalCycles', p.Results.duration * p.Results.temporalFrequencyHz);
     otherwise
         error('Unknown presentationMode: ''%s''.', p.Results.presentationMode);
         

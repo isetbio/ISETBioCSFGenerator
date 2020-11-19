@@ -2,7 +2,7 @@
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.
-%    This example uses circularly windowed gratings of constant size.
+%    This example uses full screen gratings of constant size.
 %
 % See also: t_chromaticThresholdContourMidgetRGC, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
@@ -15,12 +15,22 @@
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 32];
-gratingPhaseDeg = 90;
+spatialFreqs = logspace(log10(0.3), log10(30), 16);
 
-% Options for presentationMode are {'sampled motion', 'flashed'}
-presentationMode = 'sampled motion';
+% Options for presentationMode are {'drifted', 'flashed'}
+presentationMode = 'drifted';
+
+% How motion is sampled, 45 degs = 8 spatial phases/period
+spatialPhaseAdvanceDegs = 45;  
+
+% Temporal frequency in Hz
+temporalFrequencyHz = 5;    
+
+% Stimulus duration in seconds
 stimulusDurationSeconds = 0.5;
+
+% Compute the duration of each stimulus frame
+stimFrameDurationSeconds = 1.0/(360/spatialPhaseAdvanceDegs*temporalFrequencyHz);
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -62,10 +72,11 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.4*[1 1];
 neuralParams.coneMosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
 neuralParams.mRGCmosaicParams.noiseFactor = 0.2;
+neuralParams.mRGCmosaicParams.coneSpecificityLevel = 100;
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
-neuralParams.coneMosaicParams.integrationTime = 40/1000;
+neuralParams.coneMosaicParams.integrationTime = stimFrameDurationSeconds;
 
 % Instantiate the neural response engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
@@ -123,22 +134,34 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
+                     
+% Visualization params
+visualizationPara.visualizeStimulus = true;
+
+% Data saving params
+datasavePara.destDir = '~/Desktop/tmpDir';
+datasavePara.saveMRGCResponses = true;
+
 %% Compute threshold for each spatial frequency
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
+    
+    % Update condition examined label
+    datasavePara.condExamined = sprintf('SpatialFrequency_%2.2fCPD', spatialFreqs(idx));
+    
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration. Make it twice as large as
     % the mRGC mosaic so that it extends over cone inputs to  the surround
     % subregions of the RGC cells, which are quite large (~7 times the RF
     % center).
-    % Options for presentationMode are {'sampled motion', 'flashed'}
-    % For 'flashed' we make the duration equal to the
+    % Options for presentationMode are {'drifted', 'flashed'}
     gratingScene = createGratingScene(chromaDir, spatialFreqs(idx), ...
-        'spatialPhase', gratingPhaseDeg, ...
         'duration', stimulusDurationSeconds, ...
+        'temporalFrequencyHz', temporalFrequencyHz, ...
+        'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs, ...
         'fovDegs', max(neuralParams.mRGCmosaicParams.sizeDegs)*2, ...
         'spatialEnvelope', 'square', ...
         'presentationMode', presentationMode ...
@@ -149,11 +172,13 @@ for idx = 1:length(spatialFreqs)
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceTAFC.
     [logThreshold(idx), questObj] = ...
-        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
+        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, visualizationPara, ...
+        datasavePara);
     
     % Plot stimulus
     figure(dataFig);
-    subplot(4, 4, idx * 2 - 1);
+    subplot(8, 4, idx * 2 - 1);
     
     visualizationContrast = 1.0;
     [theSceneSequence] = gratingScene.compute(visualizationContrast);
@@ -161,7 +186,7 @@ for idx = 1:length(spatialFreqs)
     
     % Plot data and psychometric curve 
     % with a marker size of 2.5
-    subplot(4, 4, idx * 2);
+    subplot(8, 4, idx * 2);
     questObj.plotMLE(2.5);
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
