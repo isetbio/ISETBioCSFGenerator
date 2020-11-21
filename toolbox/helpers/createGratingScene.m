@@ -45,6 +45,7 @@ p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted'})));
 p.addParameter('pixelsNum', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 parse(p, varargin{:});
 
 % Compute function handle for grating stimuli
@@ -61,6 +62,7 @@ gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.orientationDegs = p.Results.orientation;
 gratingParams.fovDegs = p.Results.fovDegs;
+gratingParams.spatialEnvelopeRadiusDegs = p.Results.spatialEnvelopeRadiusDegs;
 
 % Set pixel size
 pixelsNum = p.Results.pixelsNum;
@@ -71,7 +73,6 @@ end
 % Configure a disk spatial envelope
 gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
 gratingParams.minPixelsNumPerCycle = 30;
-gratingParams.spatialEnvelopeRadiusDegs = 0.4;
 
 % Configure temporal modulation:
 switch (p.Results.presentationMode)
