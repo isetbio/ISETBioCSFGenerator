@@ -20,8 +20,14 @@ spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16];
 % 100 msec stimulus duration
 stimulusDurationSeconds = 100/1000;
 
-% Options for presentationMode are {'sampled motion', 'flashed'}
-presentationMode = 'sampled motion';
+% Options for presentationMode are {'drifted', 'flashed'}
+presentationMode = 'drifted';
+
+% How motion is sampled, 45 degs = 8 spatial phases/period
+spatialPhaseAdvanceDegs = 45;  
+
+% Temporal frequency in Hz
+temporalFrequencyHz = 5;    
 
 % For 'flashed' presentation mode, present the grating at 90 spatial phase 
 % (odd symmetry).  Using 90 degree (sine phase) makes the stimulus symmetric 
@@ -130,6 +136,14 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
+% Visualization params
+visualizationPara.visualizeStimulus = ~true;
+
+% Data saving params
+datasavePara.destDir = '~/Desktop/tmpDir';
+datasavePara.saveMRGCResponses = ~true;
+
+
 %% Compute threshold for each spatial frequency
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
@@ -137,16 +151,24 @@ dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
-    % spatial frequency, and temporal duration. Make it twice as large as
+    % spatial frequency, and temporal duration. Make it larger than
     % the mRGC mosaic so that it extends over cone inputs to  the surround
     % subregions of the RGC cells, which are quite large (~7 times the RF
     % center).
+    maxEccDegs = max(neuralParams.mRGCmosaicParams.eccDegs) + max(0.5*neuralParams.mRGCmosaicParams.sizeDegs);
+    extraDegsForRGCSurround = 2.0 * ...
+        RGCmodels.CronerKaplan.constants.surroundCharacteristicRadiusFromFitToPandMcells(maxEccDegs);
+    stimFOVdegs = max(neuralParams.mRGCmosaicParams.sizeDegs) + extraDegsForRGCSurround;
+    
+    
     % Options for presentationMode are {'sampled motion', 'flashed'}
     % For 'flashed' we make the duration equal to the
     gratingScene = createGratingScene(chromaDir, spatialFreqs(idx), ...
         'spatialPhase', gratingPhaseDeg, ...
         'duration', stimulusDurationSeconds, ...
-        'fovDegs', max(neuralParams.mRGCmosaicParams.sizeDegs)*2, ...
+        'temporalFrequencyHz', temporalFrequencyHz, ...
+        'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs, ...
+        'fovDegs', stimFOVdegs, ...
         'spatialEnvelope', 'square', ...
         'presentationMode', presentationMode ...
         );
@@ -156,7 +178,8 @@ for idx = 1:length(spatialFreqs)
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceTAFC.
     [logThreshold(idx), questObj] = ...
-        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
+        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, classifierPara, ...
+        thresholdPara, questEnginePara, visualizationPara, datasavePara);
     
     % Plot stimulus
     figure(dataFig);
