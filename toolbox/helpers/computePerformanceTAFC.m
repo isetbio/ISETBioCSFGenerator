@@ -1,9 +1,9 @@
-function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag)
+function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses)
 % Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
 %
 % Syntax:
-%    [predictions, theClassifierEngine] = ...
-%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag)
+%    [predictions, theClassifierEngine, responses] = ...
+%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses)
 %
 % Description:
 %     Train a classifier on a discrimination and report back a vector of
@@ -46,6 +46,8 @@ function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, 
 %                             evaluating performance. This flag are passed to
 %                             theNeuralEngine to generate the test
 %                             response instances. Typically 'random'.
+%     saveResponses         - Logical. Whether to return the computed
+%                             response instances
 %
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
@@ -53,6 +55,8 @@ function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, 
 %                              tested classifier in the TAFC task.
 %                              Contains nTest entries.
 %     theClassifierEngine    - Trained version of passed classifier object.
+%
+%     responses              - Neural responses computed
 %
 % Optional key/value pairs:
 %     None.
@@ -64,6 +68,8 @@ function [predictions, theClassifierEngine] = computePerformanceTAFC(nullScene, 
 % History:
 %   10/23/20  dhb  Comments.
 
+% Empty responses
+responses = [];
 
 % Train the classifier.
 %
@@ -100,6 +106,13 @@ if (~isempty(trainNoiseFlag))
     theClassifierEngine.compute('train', ...
         inSampleNullStimResponses(trainNoiseFlag), ...
         inSampleTestStimResponses(trainNoiseFlag));
+    
+    % Save computed response instances
+    if (saveResponses)
+        responses.inSampleNullStimResponses = inSampleNullStimResponses;
+        responses.inSampleTestStimResponses = inSampleTestStimResponses;
+    end
+    
 end
 
 % Predict using trained classifier.
@@ -107,14 +120,14 @@ end
 % Generate stimulus for prediction, NULL stimulus.  The variable testFlag
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
-[inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
+[outOfSampleNullStimResponses, ~] = theNeuralEngine.compute(...
     nullScene, ...
     temporalSupport, ...
     nTest, ...
     'noiseFlags', {testNoiseFlag});
 
 % Generate stimuli for prediction, TEST stimulus
-[inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
+[outOfSampleTestStimResponses, ~] = theNeuralEngine.compute(...
     testScene, ...
     temporalSupport, ...
     nTest, ...
@@ -122,9 +135,15 @@ end
 
 % Do the prediction
 dataOut = theClassifierEngine.compute('predict', ...
-    inSampleNullStimResponses(testNoiseFlag), ...
-    inSampleTestStimResponses(testNoiseFlag));
+    outOfSampleNullStimResponses(testNoiseFlag), ...
+    outOfSampleTestStimResponses(testNoiseFlag));
 
+% Save computed response instances
+if (saveResponses)
+    responses.outOfSampleNullStimResponses = outOfSampleNullStimResponses;
+    responses.outOfSampleTestStimResponses = outOfSampleTestStimResponses;
+end
+    
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
 predictions = dataOut.trialPredictions;

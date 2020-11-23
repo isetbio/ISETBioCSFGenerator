@@ -1,4 +1,5 @@
-function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)
+function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, ...
+    classifierPara, thresholdPara, questEnginePara, visualizationPara, datasavePara)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
 % Syntax:
@@ -24,6 +25,8 @@ function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralE
 %   classifierPara        - Parameter struct associated with the classifier engine
 %   thresholdPara         - Parameter struct associated with threshold estimation
 %   questEnginePara       - Parameter struct for running the questThresholdEngine
+%   visualizationPara     - Parameter struct for visualizing different components
+%   datasavePara          - Parameter struct for saving intermediate results
 %
 % Outputs:
 %   threshold             - Estimated threshold value
@@ -56,6 +59,11 @@ nullContrast = 0.0;
 
 % Loop over trials.
 testedContrasts = [];
+
+if (datasavePara.saveMRGCResponses)
+    neuralEngineSaved = false;
+end
+
 while (nextFlag)
     
     % Convert log contrast -> contrast
@@ -71,21 +79,53 @@ while (nextFlag)
         % Generate the TEST scene sequence for the given contrast
         [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
         
+        % Visualize the drifting sequence
+        if (visualizationPara.visualizeStimulus)
+            theSceneEngine.visualizeSceneSequence(theTestSceneSequences{testedIndex}, theSceneTemporalSupportSeconds);
+        end
+        
         % Train classifier for this TEST contrast and get predicted
         % correct/incorrect predictions.  This function also computes the
         % neural responses needed to train and predict.
-        [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformanceTAFC(...
+        [predictions, theTrainedClassifierEngines{testedIndex}, responses] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
-            theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag);
+            theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
+            datasavePara.saveMRGCResponses);
         
+        % Save computed responses only the first time we test this contrast
+        if (datasavePara.saveMRGCResponses)
+            theMRGCmosaic = theNeuralEngine.neuralPipeline.mRGCmosaic;
+            
+            % Save neural engine
+            if (neuralEngineSaved == false)
+                if (~exist(datasavePara.destDir, 'dir'))
+                    fprintf('Creating destination directory: ''%s''\n.',datasavePara.destDir);
+                    mkdir(datasavePara.destDir);
+                end
+                mosaicFileName = fullfile(datasavePara.destDir,'mRGCmosaic.mat');
+                fprintf('Saving mRGC mosaic to %s.\n', mosaicFileName);
+                save(mosaicFileName, 'theMRGCmosaic', '-v7.3');
+                neuralEngineSaved = true;
+            end
+            
+            % Save responses
+            responseFileName = fullfile(datasavePara.destDir, ...
+                sprintf('responses_%s_ContrastLevel_%2.2f.mat', datasavePara.condExamined, testContrast*100));
+            fprintf('Saving computed responses to %s.\n', responseFileName);
+            save(responseFileName, 'responses',  '-v7.3');
+        end
     else
         % Classifier is already trained, just get predictions
-        predictions = computePerformanceTAFC(...
+        [predictions, ~, responses] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
-            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag);
+            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
+            false);
     end
+    
+    
+    
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
