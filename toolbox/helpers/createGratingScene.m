@@ -45,7 +45,8 @@ p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted'})));
 p.addParameter('pixelsNum', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
-p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isscalar(x)));
+p.addParameter('minPixelsNumPerCycle', 10, @(x)(isscalar(x)));
 parse(p, varargin{:});
 
 % Compute function handle for grating stimuli
@@ -63,6 +64,7 @@ gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.orientationDegs = p.Results.orientation;
 gratingParams.fovDegs = p.Results.fovDegs;
 gratingParams.spatialEnvelopeRadiusDegs = p.Results.spatialEnvelopeRadiusDegs;
+gratingParams.minPixelsNumPerCycle = p.Results.minPixelsNumPerCycle;
 
 % Set pixel size
 pixelsNum = p.Results.pixelsNum;

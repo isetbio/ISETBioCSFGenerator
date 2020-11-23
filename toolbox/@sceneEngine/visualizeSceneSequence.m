@@ -3,15 +3,6 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
     scenesNum = numel(sceneSequence);
     RGBgunTrace = zeros(scenesNum,3);
     
-    maxColsNum = 8;
-    if (scenesNum <= maxColsNum)
-        rowsNum = 1;
-        colsNum = scenesNum;
-    else
-        colsNum = maxColsNum;
-        rowsNum = ceil(scenesNum/colsNum);
-    end
-    
     if (isempty(obj.presentationDisplay))
        % Generate generic display
        presentationDisplay = displayCreate('LCD-Apple');
@@ -36,8 +27,8 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
             y = 1:yPixels;
             x = x-mean(x);
             y = y-mean(y);
-            no = round(xPixels)/2;
-            mo = round(yPixels)/2;
+            no = round(xPixels/2);
+            mo = round(yPixels/2);
         end
         
         % Linear RGB image

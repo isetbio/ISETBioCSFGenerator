@@ -60,8 +60,8 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 neuralParams = nreMidgetRGC;
 
 % Modify mRGC mosaic eccentricity and size
-neuralParams.mRGCmosaicParams.eccDegs = [1 0];
-neuralParams.mRGCmosaicParams.sizeDegs = 0.4*[1 1];
+neuralParams.mRGCmosaicParams.eccDegs = [2 0];
+neuralParams.mRGCmosaicParams.sizeDegs = 1*[1 1];
 
 % *** POST-CONE SUMMATION NOISE ***
 % Set the mRGC mosaic (post-cone summation) noise flag. If set to 'none',
@@ -153,16 +153,22 @@ for idx = 1:length(spatialFreqs)
     datasavePara.condExamined = sprintf('SpatialFrequency_%2.2fCPD', spatialFreqs(idx));
     
     % Create a static grating scene with a particular chromatic direction,
-    % spatial frequency, and temporal duration. Make it twice as large as
+    % spatial frequency, and temporal duration. Make it larger than
     % the mRGC mosaic so that it extends over cone inputs to  the surround
     % subregions of the RGC cells, which are quite large (~7 times the RF
     % center).
-    % Options for presentationMode are {'drifted', 'flashed'}
+
+    maxEccDegs = max(neuralParams.mRGCmosaicParams.eccDegs) + max(0.5*neuralParams.mRGCmosaicParams.sizeDegs);
+    extraDegsForRGCSurround = 2.0 * ...
+        RGCmodels.CronerKaplan.constants.surroundCharacteristicRadiusFromFitToPandMcells(maxEccDegs);
+    stimFOVdegs = max(neuralParams.mRGCmosaicParams.sizeDegs + extraDegsForRGCSurround;
+    
     gratingScene = createGratingScene(chromaDir, spatialFreqs(idx), ...
         'duration', stimulusDurationSeconds, ...
         'temporalFrequencyHz', temporalFrequencyHz, ...
         'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs, ...
-        'fovDegs', max(neuralParams.mRGCmosaicParams.sizeDegs)*2, ...
+        'fovDegs', stimFOVdegs, ...
+        'spatialEnvelopeRadiusDegs', stimFOVdegs, ...
         'spatialEnvelope', 'square', ...
         'presentationMode', presentationMode ...
         );
