@@ -193,22 +193,15 @@ threshold = 10 .^ logThreshold;
 % Threshold cone contrasts
 thresholdConeContrasts = [threshold.*theDirs(1,:) ; threshold.*theDirs(2,:) ; threshold.*theDirs(3,:)];
 
-% Fit an ellipse to the data.  See EllipseTest and EllipsoidFit.
-%
-% The use of scaleFactor to scale up the data and scale down the fit by the
-% same amount is fmincon black magic.  Doing this puts the objective
-% function into a better range for the default size of search steps.
-scaleFactor = 10;
-fitCenter = zeros(3,1);
-[fitA,fitAinv,fitQ,fitEllParams] = EllipsoidFit(scaleFactor*thresholdConeContrasts,[],false,true);
+% Fit an ellipse to the data.
+scaleFactor = 100;
+[fitEllParams,fitA,fitAinv,fitQ] = FitEllipseQ(scaleFactor*thresholdConeContrasts(1:2,:));
 nThetaEllipse = 200;
 circleIn2D = UnitCircleGenerate(nThetaEllipse);
-circleInLMPlane = [circleIn2D(1,:) ; circleIn2D(2,:) ; zeros(size(circleIn2D(1,:)))];
-fitEllipse = PointsOnEllipsoidFind(fitQ,circleInLMPlane,fitCenter)/scaleFactor;
+fitEllipse = PointsOnEllipseQ(fitQ,circleIn2D)/scaleFactor;
 
 % Plot
 contrastLim = 0.08;
-figure; clf; hold on
 theContourFig = figure; clf; hold on
 plot(thresholdConeContrasts(1,:), thresholdConeContrasts(2,:), 'ok', 'MarkerFaceColor','k', 'MarkerSize',12);
 plot(fitEllipse(1,:),fitEllipse(2,:),'r','LineWidth',3);
