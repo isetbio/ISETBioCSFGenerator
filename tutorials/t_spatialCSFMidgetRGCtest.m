@@ -111,7 +111,7 @@ switch (classifierChoice)
         % Test performance using a set of 128 noisy instances
         classifierPara = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
-                                'nTrain', 300, 'nTest', 100);
+                                'nTrain', 1024, 'nTest', 512);
                         
     otherwise
         error('Unknown classifier: ''%s''.', classifierChoice);
