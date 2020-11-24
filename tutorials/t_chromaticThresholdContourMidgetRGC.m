@@ -25,7 +25,7 @@ clear; close all;
 stimulusDurationSeconds = 100/1000;
 
 % Options for presentationMode are {'sampled motion', 'flashed'}
-presentationMode = 'sampled motion';
+presentationMode = 'flashed';
     
 % For 'flashed' presentation mode, present the grating at 90 spatial phase 
 % (odd symmetry).  Using 90 degree (sine phase) makes the stimulus symmetric 
@@ -133,6 +133,13 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
+% Visualization params
+visualizationPara.visualizeStimulus = true;
+
+% Data saving params
+datasavePara.destDir = '~/Desktop/tmpDir';
+datasavePara.saveMRGCResponses = true;
+
 %% Compute threshold for each spatial direction
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
@@ -160,7 +167,9 @@ for ii = 1:nDirs
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceTAFC.
     [logThreshold(ii), questObj] = ...
-        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara);
+        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, visualizationPara, ...
+        datasavePara);
     
     % Plot stimulus
     figure(dataFig);

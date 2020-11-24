@@ -54,7 +54,7 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
         plot(temporalSupportSeconds(1:frameIndex), RGBgunTrace(1:frameIndex,2), 'go-', 'MarkerSize', 12, 'MarkerFaceColor', [0 1 0.5], 'LineWidth', 1.5);
         plot(temporalSupportSeconds(1:frameIndex), RGBgunTrace(1:frameIndex,3), 'bo-', 'MarkerSize', 12, 'MarkerFaceColor', [0.5 0.5 1], 'LineWidth', 1.5);
         hold off;
-        set(gca, 'FontSize', 16, 'YLim', [0 1], 'XLim', [temporalSupportSeconds(1) temporalSupportSeconds(end)]);
+        set(gca, 'FontSize', 16, 'YLim', [0 1], 'XLim', [temporalSupportSeconds(1) temporalSupportSeconds(end)+eps]);
         xlabel('time (seconds)');
         title('gun modulation at center of stimulus');
         drawnow;
