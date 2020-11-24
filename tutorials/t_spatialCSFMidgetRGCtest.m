@@ -9,7 +9,7 @@
 %
 
 % History:
-%   11/07/20  dhb   Wrote by combining t_spatialCSF and t_chromaticThresholdContourMidgetRGC
+%   11/23/20  npc   Wrote it.
 
 % Clear and close
 clear; close all;
@@ -131,7 +131,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
+questEnginePara = struct('minTrial', 2048, 'maxTrial', 2048, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
                      
