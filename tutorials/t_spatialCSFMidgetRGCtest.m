@@ -15,7 +15,7 @@
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = logspace(log10(0.3), log10(30), 16);
+spatialFreqs = logspace(log10(0.1), log10(50), 16);
 
 % Options for presentationMode are {'drifted', 'flashed'}
 presentationMode = 'drifted';
@@ -131,16 +131,16 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 2048, 'maxTrial', 2048, ...
+questEnginePara = struct('minTrial', 512*5, 'maxTrial', 512*5, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
                      
 % Visualization params
-visualizationPara.visualizeStimulus = true;
+visualizationPara.visualizeStimulus = ~true;
 
 % Data saving params
 datasavePara.destDir = '~/Desktop/tmpDir';
-datasavePara.saveMRGCResponses = true;
+datasavePara.saveMRGCResponses = ~true;
 
 %% Compute threshold for each spatial frequency
 % 
