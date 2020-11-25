@@ -124,13 +124,16 @@ threshold = 10 .^ logThreshold;
 % Threshold cone contrasts
 thresholdConeContrasts = [threshold.*theDirs(1,:) ; threshold.*theDirs(2,:) ; threshold.*theDirs(3,:)];
 
-% Fit an ellipse to the data.  See EllipseTest and EllipsoidFit.
+% Fit an ellipse to the data.  See EllipseTest and FitEllipseQ.
 %
 % The use of scaleFactor to scale up the data and scale down the fit by the
 % same amount is fmincon black magic.  Doing this puts the objective
 % function into a better range for the default size of search steps.
-% Fit an ellipse to the data.
-scaleFactor = 100;
+% Here it seems OK at 1. 
+%
+% We constrain the ellipse to line up with the x and y axes.  Change flag
+% below to relax this.  Doesn't make very much difference inthis case.
+scaleFactor = 1;
 [fitEllParams,fitA,fitAinv,fitQ] = FitEllipseQ(scaleFactor*thresholdConeContrasts(1:2,:),'lockAngleAt0',true);
 nThetaEllipse = 200;
 circleIn2D = UnitCircleGenerate(nThetaEllipse);
