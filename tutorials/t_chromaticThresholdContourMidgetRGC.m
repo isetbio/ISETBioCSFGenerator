@@ -185,6 +185,8 @@ for ii = 1:nDirs
     questObj.plotMLE(2.5);
 end
 
+
+
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 
 % Convert returned log threshold to linear threshold
