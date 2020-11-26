@@ -111,7 +111,7 @@ switch (classifierChoice)
         % Test performance using a set of 128 noisy instances
         classifierPara = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
-                                'nTrain', 1024, 'nTest', 512);
+                                'nTrain', 512, 'nTest', 256);
                         
     otherwise
         error('Unknown classifier: ''%s''.', classifierChoice);
@@ -131,7 +131,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 512*5, 'maxTrial', 512*5, ...
+questEnginePara = struct('minTrial', 256*8, 'maxTrial', 256*8, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
                      

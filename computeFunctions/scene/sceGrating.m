@@ -292,6 +292,7 @@ function presentationDisplay = generatePresentationDisplay(gratingParams)
         'viewing distance', gratingParams.viewingDistanceMeters, ...
         'wave', gratingParams.spectralSupport ...        % Custom spectral support
         );
+
     % Custom LUT and bit depth
     if (gratingParams.gammaTableExponent == 1)
         % Linear LUT
@@ -346,7 +347,7 @@ function p = generateDefaultParams()
 
     p = struct(...
         'viewingDistanceMeters', 0.57, ...              % display: viewing distance
-        'bitDepth', 8, ...                              % display: length of LUT
+        'bitDepth', 14, ...                             % display: length of LUT
         'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear
         'spectralSupport', 400:10:750, ...              % display: spectral support of the primary SPDs, in nanometers
         'meanLuminanceCdPerM2', 40, ...                 % background: mean luminance, in candellas per meter squared
