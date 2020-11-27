@@ -23,8 +23,8 @@ clear; close all;
 % Using 90 degree (sine phase) makes the stimulus symmetric in terms of
 % balanced incremental and decremental components, so that the isothreshold
 % contour is also symmetric.
-spatialFreq = 2;
-gratingPhaseDeg = 90;
+spatialFreq = 0;
+gratingPhaseDeg = 0;
 
 % Set up a set of chromatic directions. Passing elevation = 90 puts these
 % in the LM contrast plan.  These are at constant rms (vector length)
@@ -133,7 +133,7 @@ thresholdConeContrasts = [threshold.*theDirs(1,:) ; threshold.*theDirs(2,:) ; th
 %
 % We constrain the ellipse to line up with the x and y axes.  Change flag
 % below to relax this.  Doesn't make very much difference inthis case.
-scaleFactor = 1;
+scaleFactor = 100;
 [fitEllParams,fitA,fitAinv,fitQ] = FitEllipseQ(scaleFactor*thresholdConeContrasts(1:2,:),'lockAngleAt0',true);
 nThetaEllipse = 200;
 circleIn2D = UnitCircleGenerate(nThetaEllipse);
