@@ -201,14 +201,14 @@ thresholdConeContrasts = [threshold.*theDirs(1,:) ; threshold.*theDirs(2,:) ; th
 % same amount is fmincon black magic.  Doing this puts the objective
 % function into a better range for the default size of search steps.
 % Fit an ellipse to the data.
-scaleFactor = 100;
+scaleFactor = 1/(max(abs(thresholdConeContrasts(:))));
 [fitEllParams,fitA,fitAinv,fitQ] = FitEllipseQ(scaleFactor*thresholdConeContrasts(1:2,:));
 nThetaEllipse = 200;
 circleIn2D = UnitCircleGenerate(nThetaEllipse);
 fitEllipse = PointsOnEllipseQ(fitQ,circleIn2D)/scaleFactor;
 
 % Plot
-contrastLim = 0.08;
+contrastLim = 0.02;
 theContourFig = figure; clf; hold on
 plot(thresholdConeContrasts(1,:), thresholdConeContrasts(2,:), 'ok', 'MarkerFaceColor','k', 'MarkerSize',12);
 plot(fitEllipse(1,:),fitEllipse(2,:),'r','LineWidth',3);
