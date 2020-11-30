@@ -31,10 +31,10 @@ presentationMode = 'flashed';
 % (odd symmetry).  Using 90 degree (sine phase) makes the stimulus symmetric 
 % in terms of balanced incremental and decremental components, so that the 
 % isothreshold contour is also symmetric.
-gratingPhaseDeg = 90;
+gratingPhaseDeg = 0;
 
 % Grating spatial frequency in c/deg
-spatialFreq = 1.0;
+spatialFreq = 0;
 
 % Set up a set of chromatic directions. These are at constant rms (vector length)
 % contrast.
@@ -58,7 +58,7 @@ end
 neuralParams = nreMidgetRGC;
 
 % Modify mRGC mosaic eccentricity and size
-neuralParams.mRGCmosaicParams.eccDegs = [1 0];
+neuralParams.mRGCmosaicParams.eccDegs = [0 0];
 neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 
 % *** POST-CONE SUMMATION NOISE ***
@@ -67,8 +67,8 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 %
 % If set to 'random', Gaussian noise is added at the final mRGC response.
 % The noise sd is noiseFactor*maxResponse
-neuralParams.coneMosaicParams.noiseFlag = 'none';
-neuralParams.mRGCmosaicParams.noiseFlag = 'random';
+neuralParams.coneMosaicParams.noiseFlag = 'random';
+neuralParams.mRGCmosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFactor = 0.25;
 
 % Modify some cone mosaic params
@@ -109,7 +109,7 @@ switch (classifierChoice)
         % Test performance using a set of 128 noisy instances
         classifierPara = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
-                                'nTrain', 256, 'nTest', 128);
+                                'nTrain', 512, 'nTest', 256);
                         
     otherwise
         error('Unknown classifier: ''%s''.', classifierChoice);
@@ -130,11 +130,11 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
+questEnginePara = struct('minTrial', 256*8, 'maxTrial', 256*8, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
 % Visualization params
-visualizationPara.visualizeStimulus = true;
+visualizationPara.visualizeStimulus = ~true;
 
 % Data saving params
 datasavePara.destDir = '~/Desktop/tmpDir';
@@ -148,16 +148,24 @@ logThreshold = zeros(1, nDirs);
 
 for ii = 1:nDirs
     % Create a static grating scene with a particular chromatic direction,
-    % spatial frequency, and temporal duration. Make it twice as large as
+    % spatial frequency, and temporal duration. Make it larger than
     % the mRGC mosaic so that it extends over cone inputs to  the surround
     % subregions of the RGC cells, which are quite large (~7 times the RF
     % center).
+
+    maxEccDegs = max(neuralParams.mRGCmosaicParams.eccDegs) + max(0.5*neuralParams.mRGCmosaicParams.sizeDegs);
+    extraDegsForRGCSurround = 2.0 * ...
+        RGCmodels.CronerKaplan.constants.surroundCharacteristicRadiusFromFitToPandMcells(maxEccDegs);
+    stimFOVdegs = max(neuralParams.mRGCmosaicParams.sizeDegs) + extraDegsForRGCSurround;
+    
+    
     % Options for presentationMode are {'sampled motion', 'flashed'}
     % For 'flashed' we make the duration equal to the
     gratingScene = createGratingScene(theDirs(:,ii), spatialFreq, ...
         'spatialPhase', gratingPhaseDeg, ...
         'duration', stimulusDurationSeconds, ...
-        'fovDegs', max(neuralParams.mRGCmosaicParams.sizeDegs)*2, ...
+        'fovDegs', stimFOVdegs, ...
+        'spatialEnvelopeRadiusDegs', stimFOVdegs, ...
         'spatialEnvelope', 'square', ...
         'presentationMode', presentationMode ...
         );
