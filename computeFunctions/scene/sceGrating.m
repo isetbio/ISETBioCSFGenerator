@@ -203,6 +203,14 @@ function theSceneFrame = generateGratingSequenceFrame(presentationDisplay, grati
     % Compute the linear RGB primaries image
     RGBimage = imageLinearTransform(LMSexcitationImage, displayLMSToLinearRGB);
 
+    % Flag on whether to debug the LUT inversion visually
+    debugLUT = ~true;
+    if (debugLUT)
+        figure(256)
+        subplot(1,2,1)
+        imagesc(squeeze(sum(RGBimage,3)))
+        colormap(gray(1024))
+    end
     % Make sure we are in gamut (no subpixels with primary values outside of [0 1]
     outOfGamutPixels = numel(find((RGBimage(:)<0)|(RGBimage(:)>1)));
     assert(outOfGamutPixels==0, ...
@@ -210,7 +218,15 @@ function theSceneFrame = generateGratingSequenceFrame(presentationDisplay, grati
             numel(find(RGBimage>1)), numel(find(RGBimage<0))));
         
     % Generate a gamma corrected RGB image (RGBsettings) that we can pop in the isetbio scene straightforward
-    RGBsettingsImage = (ieLUTLinear(RGBimage, displayGet(presentationDisplay, 'inverse gamma'))) / displayGet(presentationDisplay, 'nLevels');
+    lutLevels = displayGet(presentationDisplay, 'nLevels');
+    RGBsettingsImage = (ieLUTLinear(RGBimage, ieLUTInvert(displayGet(presentationDisplay, 'gamma'), lutLevels))) / lutLevels;
+    
+    if (debugLUT)
+        subplot(1,2,2)
+        imagesc(squeeze(sum(RGBsettingsImage,3)))
+        colormap(gray)
+        pause
+    end
     
     % Generate scene corresponding to the test stimulus on the presentation display
     format = 'rgb';
@@ -225,13 +241,15 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
 
     % Compute pixelsNum
     cyclesWithinFOV = gratingParams.spatialFrequencyCyclesPerDeg * gratingParams.fovDegs;
-    pixelsNumPerCycle = round(gratingParams.pixelsNum /cyclesWithinFOV); 
+    pixelsNumPerCycle = round(gratingParams.pixelsNum /cyclesWithinFOV);
+   
     if (pixelsNumPerCycle < gratingParams.minPixelsNumPerCycle)
         requiredPixelsNum = round(cyclesWithinFOV * gratingParams.minPixelsNumPerCycle);
         %fprintf('Requested %d pixel stim width, but to satisfy the minPixelsNumPerCycle we need %d pixels\n', ...
         %    gratingParams.pixelsNum, requiredPixelsNum);
         gratingParams.pixelsNum = requiredPixelsNum;
     end
+
     
     % Spatial support
     x = linspace(-gratingParams.fovDegs/2, gratingParams.fovDegs/2, gratingParams.pixelsNum);
@@ -347,7 +365,7 @@ function p = generateDefaultParams()
 
     p = struct(...
         'viewingDistanceMeters', 0.57, ...              % display: viewing distance
-        'bitDepth', 14, ...                             % display: length of LUT
+        'bitDepth', 20, ...                             % display: length of LUT
         'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear
         'spectralSupport', 400:10:750, ...              % display: spectral support of the primary SPDs, in nanometers
         'meanLuminanceCdPerM2', 40, ...                 % background: mean luminance, in candellas per meter squared
