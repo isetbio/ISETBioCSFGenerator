@@ -17,12 +17,6 @@ clear; close all;
 % List of spatial frequencies to be tested.
 spatialFreqs = logspace(log10(0.1), log10(50), 16);
 
-% Partition task
-spatialFreqs = spatialFreqs(1:8);
-spatialFreqs = spatialFreqs(9:16);
-loadExistingNeuralEngineFromDisk = true;
-
-
 % Options for presentationMode are {'drifted', 'flashed'}
 presentationMode = 'drifted';
 
@@ -66,8 +60,11 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 neuralParams = nreMidgetRGC;
 
 % Modify mRGC mosaic eccentricity and size
-neuralParams.mRGCmosaicParams.eccDegs = [2 0];
-neuralParams.mRGCmosaicParams.sizeDegs = 0.1*[1 1];
+neuralParams.mRGCmosaicParams.eccDegs = [1.5 0];
+neuralParams.mRGCmosaicParams.sizeDegs = 1*[1 1];
+
+% MRGC cone specificity level
+neuralParams.mRGCmosaicParams.coneSpecificityLevel = 100;
 
 % *** POST-CONE SUMMATION NOISE ***
 % Set the mRGC mosaic (post-cone summation) noise flag. If set to 'none',
@@ -78,21 +75,15 @@ neuralParams.mRGCmosaicParams.sizeDegs = 0.1*[1 1];
 neuralParams.coneMosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
 neuralParams.mRGCmosaicParams.noiseFactor = 0.1;
-neuralParams.mRGCmosaicParams.coneSpecificityLevel = 100;
+
 
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
 neuralParams.coneMosaicParams.integrationTime = stimFrameDurationSeconds;
 
-% Instantiate or Loadf the neural response engine
-if (loadExistingNeuralEngineFromDisk)
-    load('TheNeuralEngine.mat', 'theNeuralEngine', '-v7.3');
-    fprintf('Loaded neural engine from disk.\n');
-else
-    theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
-    save('TheNeuralEngine.mat', 'theNeuralEngine', '-v7.3');
-    fprintf('Neural engine saved to disk.\n');
-end
+% Instantiate the neural respone engine
+theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
+
 
 
 %% Instantiate the PoissonTAFC or the PcaSVMTAFC responseClassifierEngine
@@ -145,7 +136,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 256*8, 'maxTrial', 256*8, ...
+questEnginePara = struct('minTrial', 256*6, 'maxTrial', 256*6, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
                      
