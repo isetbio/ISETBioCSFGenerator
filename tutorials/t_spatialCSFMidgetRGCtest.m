@@ -16,6 +16,7 @@ clear; close all;
 
 % List of spatial frequencies to be tested.
 spatialFreqs = logspace(log10(0.1), log10(50), 16);
+spatialFreqs =spatialFreqs(9:16);
 
 % Options for presentationMode are {'drifted', 'flashed'}
 presentationMode = 'drifted';
@@ -71,7 +72,7 @@ neuralParams.mRGCmosaicParams.sizeDegs = 1*[1 1];
 % The noise sd is noiseFactor*maxResponse
 neuralParams.coneMosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
-neuralParams.mRGCmosaicParams.noiseFactor = 0.2;
+neuralParams.mRGCmosaicParams.noiseFactor = 0.1;
 neuralParams.mRGCmosaicParams.coneSpecificityLevel = 100;
 
 % Modify some cone mosaic params
@@ -111,7 +112,7 @@ switch (classifierChoice)
         % Test performance using a set of 128 noisy instances
         classifierPara = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
-                                'nTrain', 512, 'nTest', 256);
+                                'nTrain', 1024, 'nTest', 512);
                         
     otherwise
         error('Unknown classifier: ''%s''.', classifierChoice);
@@ -131,7 +132,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 256*8, 'maxTrial', 256*8, ...
+questEnginePara = struct('minTrial', 512*8, 'maxTrial', 512*8, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
                      
