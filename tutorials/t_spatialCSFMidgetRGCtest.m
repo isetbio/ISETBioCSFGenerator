@@ -61,7 +61,7 @@ neuralParams = nreMidgetRGC;
 
 % Modify mRGC mosaic eccentricity and size
 neuralParams.mRGCmosaicParams.eccDegs = [1.5 0];
-neuralParams.mRGCmosaicParams.sizeDegs = 1*[1 1];
+neuralParams.mRGCmosaicParams.sizeDegs = 0.5*[1 1];
 
 % MRGC cone specificity level
 neuralParams.mRGCmosaicParams.coneSpecificityLevel = 100;
@@ -142,6 +142,7 @@ questEnginePara = struct('minTrial', 256*6, 'maxTrial', 256*6, ...
                      
 % Visualization params
 visualizationPara.visualizeStimulus = ~true;
+visualizationPara.visualizeAllComponents = ~true;
 
 % Data saving params
 datasavePara.destDir = '~/Desktop/tmpDir';
@@ -162,11 +163,10 @@ for idx = 1:length(spatialFreqs)
     % the mRGC mosaic so that it extends over cone inputs to  the surround
     % subregions of the RGC cells, which are quite large (~7 times the RF
     % center).
-
     maxEccDegs = max(neuralParams.mRGCmosaicParams.eccDegs) + max(0.5*neuralParams.mRGCmosaicParams.sizeDegs);
     extraDegsForRGCSurround = 2.0 * ...
         RGCmodels.CronerKaplan.constants.surroundCharacteristicRadiusFromFitToPandMcells(maxEccDegs);
-    stimFOVdegs = max(neuralParams.mRGCmosaicParams.sizeDegs) + extraDegsForRGCSurround;
+    stimFOVdegs = max(neuralParams.mRGCmosaicParams.sizeDegs) + 2.0*extraDegsForRGCSurround;
     
     gratingScene = createGratingScene(chromaDir, spatialFreqs(idx), ...
         'duration', stimulusDurationSeconds, ...

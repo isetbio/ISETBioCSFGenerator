@@ -39,13 +39,16 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
 
         
         % Render image
-        stimProfile = squeeze(displayLinearRGBimage(mo,:,1));
+        stimProfile = squeeze(sum(displayLinearRGBimage(mo,:,:),3));
         m1 = min(stimProfile);
         m2 = max(stimProfile);
         normalizedStimProfile = 2*((stimProfile-m1)/(m2-m1)-0.5);
 
         image(x,y,displaySettingsImage); hold on;
-        plot(x, yPixels/2 * normalizedStimProfile, 'r.-');
+        
+        % Profile of the R+B+G guns
+        plot(x, yPixels/2 * normalizedStimProfile, 'k.-');
+        
         % Cross hairs
         %plot([0 0], max(abs(y))*[-1 1], 'k-');
         %plot(max(abs(x))*[-1 1], [0 0],'k-');

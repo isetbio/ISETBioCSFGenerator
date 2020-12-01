@@ -1,4 +1,6 @@
-function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses)
+function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(nullScene, testScene, ...
+    temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
+    saveResponses, visualizeAllComponents)
 % Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
 %
 % Syntax:
@@ -77,6 +79,7 @@ responses = [];
 % and training is skipped.  Otherwise trainFlag is passed to the stimulus
 % generation routine to indicate what type of noise (typically 'none' or
 % 'random') should be used in the training.
+
 if (~isempty(trainNoiseFlag))
     % Generate stimulus for training, NULL stimulus
     [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
@@ -86,11 +89,20 @@ if (~isempty(trainNoiseFlag))
         'noiseFlags', {trainNoiseFlag});
     
     % Generate stimulus for training, TEST stimulus
-    [inSampleTestStimResponses, ~] = theNeuralEngine.compute(...
+    [inSampleTestStimResponses, responseTemporalSupportSeconds] = theNeuralEngine.compute(...
         testScene, ...
         temporalSupport, ...
         nTrain, ...
         'noiseFlags', {trainNoiseFlag});
+    
+    if (visualizeAllComponents)
+        %coneMosaicFOV = theNeuralEngine.neuralPipeline.mRGCmosaic.inputConeMosaic.fov;
+        
+        theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
+            responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
+            'stimulusTemporalSupportSeconds', temporalSupport,...
+            'stimulusSceneSequence', testScene);
+    end
     
     % Train the classifier. This shows the usage to extact information
     % from the container retrned as the first return value from the neural

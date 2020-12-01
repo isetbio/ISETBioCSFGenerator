@@ -138,6 +138,7 @@ questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
 
 % Visualization params
 visualizationPara.visualizeStimulus = ~true;
+visualizationPara.visualizeAllComponents = ~true;
 
 % Data saving params
 datasavePara.destDir = '~/Desktop/tmpDir';
