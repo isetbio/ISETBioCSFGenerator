@@ -85,7 +85,7 @@ visualizationPara.visualizeAllComponents = ~true;
 
 % Data saving params
 datasavePara.destDir = '~/Desktop/tmpDir';
-datasavePara.saveMRGCResponses = true;
+datasavePara.saveMRGCResponses = ~true;
 
 %% Compute threshold for each spatial frequency
 % 

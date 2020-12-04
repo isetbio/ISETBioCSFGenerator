@@ -65,6 +65,12 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   'lapseRate'        - Array. An array of all possible lapse rate for
     %                        the psychometric curve
     %
+    %   'validation'       - Boolean. If set to True run the entire
+    %                        psychometric curve
+    %
+    %   'nRepeat'          - Double. Number of trials per contrast level
+    %                        when running the validation
+    %
     %    Also see base class contrastThresholdEngine
     
     
@@ -74,12 +80,14 @@ classdef questThresholdEngine < contrastThresholdEngine
         estimators;
         numEstimator;
         stopCriterion;
+        validation;
         
         slopeRange;
         guessRate;
         lapseRate;
         
         estIdx;
+        nRepeat;
         
     end
     
@@ -98,12 +106,16 @@ classdef questThresholdEngine < contrastThresholdEngine
             p.addParameter('slopeRange', 0.1 : 0.5 : 50);
             p.addParameter('guessRate', 0.5);
             p.addParameter('lapseRate', 0.0);
+            p.addParameter('validation', false, @(x)(islogical(x) && numel(x) == 1));
+            p.addParameter('nRepeat', 64, @(x)(isnumeric(x) && numel(x) == 1));
                         
             parse(p, varargin{:});
             this.numEstimator  = p.Results.numEstimator;
             this.slopeRange = p.Results.slopeRange;
             this.guessRate = p.Results.guessRate;
             this.lapseRate = p.Results.lapseRate;
+            this.validation = p.Results.validation;
+            this.nRepeat = p.Results.nRepeat;
             
             stopCriterion = p.Results.stopCriterion;
             if isnumeric(stopCriterion)
@@ -123,8 +135,7 @@ classdef questThresholdEngine < contrastThresholdEngine
             end
             
             % Set the current estimator to #1
-            this.estIdx = 1;
-            
+            this.estIdx = 1;            
             this.nTrial = 0;
             this.nextFlag = true;
             this.testCrst = qpQuery(this.estimators{this.estIdx});

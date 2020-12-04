@@ -331,6 +331,11 @@ switch questMode
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
             'numEstimator', 4, 'stopCriterion', stopCriterion);
         
+    case 'validationMode'
+        % Validation Mode, instead of running an adpative procedure, compute the
+        % full psychometric curve at each contrast level
+        estimator = questThresholdEngine('validation', true, 'nRepeat', 64);
+        
     otherwise
         error('Unknown threshold engine mode specified');
 end
@@ -384,14 +389,14 @@ while (nextFlag)
         [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
-            theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag);
+            theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag, false, false);
         
     else
         % Classifier is already trained, just get predictions
         predictions = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
-            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag);
+            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag, false, false);
     end
     
     % Report what happened
