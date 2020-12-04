@@ -140,6 +140,10 @@ classdef questThresholdEngine < contrastThresholdEngine
             this.nextFlag = true;
             this.testCrst = qpQuery(this.estimators{this.estIdx});
             
+            if this.validation
+                this.testCrst = this.estDomain(1);
+            end
+            
         end
         
         % Running estimate of parameters of the psychometric curve

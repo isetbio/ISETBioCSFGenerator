@@ -19,7 +19,7 @@ if this.validation
         this.testCrst = NaN;
         this.nextFlag = false;
     else
-        this.testCrst = estDomain(crstIdx);
+        this.testCrst = this.estDomain(crstIdx);
         this.nextFlag = true;
     end
     

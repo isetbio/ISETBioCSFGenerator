@@ -332,9 +332,11 @@ switch questMode
             'numEstimator', 4, 'stopCriterion', stopCriterion);
         
     case 'validationMode'
-        % Validation Mode, instead of running an adpative procedure, compute the
-        % full psychometric curve at each contrast level
-        estimator = questThresholdEngine('validation', true, 'nRepeat', 64);
+        % Validation mode, instead of running an adpative procedure, compute the
+        % full psychometric curve at each contrast level for nTest number
+        % of trials        
+        estimator = questThresholdEngine('validation', true, 'nRepeat', nTest, ...
+            'estDomain', estDomain, 'slopeRange', slopeRange);
         
     otherwise
         error('Unknown threshold engine mode specified');
@@ -418,8 +420,14 @@ fprintf('%d trials recorded \n', estimator.nTrial);
 % Estimate threshold and plot/report results.  This
 % does a maximumu likelihood based on the trials run, and is not subject to
 % the discretization used by QUEST+.
+if(strcmp(questMode, validationMode))
+    plotSize = 50;
+else
+    plotSize = 10;
+end
+
 figure();
-[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', 7.5);
+[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', plotSize);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
