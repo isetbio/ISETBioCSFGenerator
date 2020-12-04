@@ -285,7 +285,7 @@ slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 %   'fixedNumber'    - run a fixed number of trials
 %   'adaptiveMode'   - run until estimate reaches specified precision.
 % See below for more.
-questMode = 'validationMode';
+questMode = 'adaptiveMode';
 switch questMode
     case 'fixedNumber'
         % Run fixed number of trials.  This is done by setting 'minTrial' and
