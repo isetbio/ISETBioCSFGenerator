@@ -285,7 +285,7 @@ slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 %   'fixedNumber'    - run a fixed number of trials
 %   'adaptiveMode'   - run until estimate reaches specified precision.
 % See below for more.
-questMode = 'adaptiveMode';
+questMode = 'validationMode';
 switch questMode
     case 'fixedNumber'
         % Run fixed number of trials.  This is done by setting 'minTrial' and
@@ -420,7 +420,7 @@ fprintf('%d trials recorded \n', estimator.nTrial);
 % Estimate threshold and plot/report results.  This
 % does a maximumu likelihood based on the trials run, and is not subject to
 % the discretization used by QUEST+.
-if(strcmp(questMode, validationMode))
+if(strcmp(questMode, 'validationMode'))
     plotSize = 50;
 else
     plotSize = 10;
