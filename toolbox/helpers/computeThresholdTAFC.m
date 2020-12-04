@@ -1,4 +1,4 @@
-function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, ...
+function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, visualizationPara, datasavePara)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
@@ -32,6 +32,9 @@ function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralE
 %   threshold             - Estimated threshold value
 %   questObj              - questThresholdEngine object, which
 %                           contains information about all the trials run.
+%   psychometricFunction  - Dictionary (indexed by contrast level) with the 
+%                           psychometric function 
+%
 % Optional key/value pairs:
 %
 % See also:
@@ -40,7 +43,8 @@ function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralE
 
 % History: 
 %  10/23/20  dhb  Added commments.
-%  12/04/20  npc  Added option to run method of constant stimuli
+%  12/04/20  npc  Added option to run method of constant stimuli. 
+%                 Also added psychometricFunction return argument.
 
 % Construct a QUEST threshold estimator estimate threshold
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
@@ -73,12 +77,16 @@ if (datasavePara.saveMRGCResponses)
     neuralEngineSaved = false;
 end
 
+% Dictionary to store the measured psychometric function which is returned to the user
+psychometricFunction = containers.Map();
+
 while (nextFlag)
-    
     % Convert log contrast -> contrast
     testContrast = 10 ^ logContrast;
     
-    fprintf('Testing contrast: %2.1f%%\n', testContrast*100);
+    % Label for pCorrect dictionary
+    contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
+    fprintf('Testing %s\n', contrastLabel);
     
     % Have we already built the classifier for this contrast?
     testedIndex = find(testContrast == testedContrasts);
@@ -104,6 +112,9 @@ while (nextFlag)
             theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
             datasavePara.saveMRGCResponses, visualizationPara.visualizeAllComponents);
         
+        % Update the psychometric function with data point for this contrast level
+        psychometricFunction(contrastLabel) = mean(predictions);
+        
         % Save computed responses only the first time we test this contrast
         if (datasavePara.saveMRGCResponses)
             theMRGCmosaic = theNeuralEngine.neuralPipeline.mRGCmosaic;
@@ -128,11 +139,16 @@ while (nextFlag)
         end
     else
         % Classifier is already trained, just get predictions
-        [predictions, ~, responses] = computePerformanceTAFC(...
+        [predictions, ~, ~] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
             false);
+        
+        % Update the psychometric function with data point for this contrast level
+        previousData = psychometricFunction(contrastLabel);
+        currentData = cat(2,previousData,mean(predictions));
+        psychometricFunction(contrastLabel) = currentData;
     end
     
     
