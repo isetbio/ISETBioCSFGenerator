@@ -40,14 +40,23 @@ function [threshold, questObj] = computeThresholdTAFC(theSceneEngine, theNeuralE
 
 % History: 
 %  10/23/20  dhb  Added commments.
+%  12/04/20  npc  Added option to run method of constant stimuli
 
 % Construct a QUEST threshold estimator estimate threshold
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
-estimator = ...
-    questThresholdEngine('minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
-                                                 'estDomain', estDomain, 'slopeRange', slopeRange, ...
-                                                 'numEstimator', questEnginePara.numEstimator, 'stopCriterion', questEnginePara.stopCriterion);
+
+if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
+    estimator = questThresholdEngine(...
+        'validation', true, 'nRepeat', questEnginePara.nTest, ...
+        'estDomain', estDomain, 'slopeRange', slopeRange);
+else
+    estimator = questThresholdEngine(...
+        'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
+        'estDomain', estDomain, 'slopeRange', slopeRange, ...
+        'numEstimator', questEnginePara.numEstimator, ...
+        'stopCriterion', questEnginePara.stopCriterion);
+end
 
 % Generate the NULL stimulus (zero contrast)
 nullContrast = 0.0;
@@ -68,6 +77,8 @@ while (nextFlag)
     
     % Convert log contrast -> contrast
     testContrast = 10 ^ logContrast;
+    
+    fprintf('Testing contrast: %2.1f%%\n', testContrast*100);
     
     % Have we already built the classifier for this contrast?
     testedIndex = find(testContrast == testedContrasts);
@@ -123,8 +134,6 @@ while (nextFlag)
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
             false);
     end
-    
-    
     
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
