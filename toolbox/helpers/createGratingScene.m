@@ -33,6 +33,7 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 % History:
 %   10/23/20  dhb  Added comments.
 %   11/07/20  npc  Added 'presentationMode' key/value pair   
+%   12/10/20  npc  Remove override of minPixelsNumPerCycle 
 
 % Set up parameters with defaults
 p = inputParser;
@@ -55,26 +56,26 @@ sceneComputeFunction = @sceGrating;
 % Retrieve the default params for the grating stimulus
 gratingParams = sceGrating();
 
+gratingParams.coneContrastModulation = chromaticDir;
+gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
+
 % Configure those parameters that we adjust through key/value pairs.
 % chromatic direction and and spatial frequency of the grating
 % with a 90 deg orientation, and a cosine spatial phase
-gratingParams.coneContrastModulation = chromaticDir;
-gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
+gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
 gratingParams.orientationDegs = p.Results.orientation;
+gratingParams.pixelsNum = p.Results.pixelsNum;
 gratingParams.fovDegs = p.Results.fovDegs;
 gratingParams.spatialEnvelopeRadiusDegs = p.Results.spatialEnvelopeRadiusDegs;
 gratingParams.minPixelsNumPerCycle = p.Results.minPixelsNumPerCycle;
+
 
 % Set pixel size
 pixelsNum = p.Results.pixelsNum;
 if(pixelsNum >= 1)
     gratingParams.pixelsNum = pixelsNum;
 end
-
-% Configure a disk spatial envelope
-gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
-gratingParams.minPixelsNumPerCycle = 30;
 
 % Configure temporal modulation:
 switch (p.Results.presentationMode)
