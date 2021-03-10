@@ -211,11 +211,22 @@ function theSceneFrame = generateGratingSequenceFrame(presentationDisplay, grati
         imagesc(squeeze(sum(RGBimage,3)))
         colormap(gray(1024))
     end
+    
     % Make sure we are in gamut (no subpixels with primary values outside of [0 1]
     outOfGamutPixels = numel(find((RGBimage(:)<0)|(RGBimage(:)>1)));
-    assert(outOfGamutPixels==0, ...
+    if (isfield(gratingParams, 'warningInsteadOfErrorOnOutOfGamut'))
+        if (gratingParams.warningInsteadOfErrorOnOutOfGamut)
+               if (~isempty(outOfGamutPixels))
+                   fprintf('Image is out of gamut. Will tonemap\n');
+                   RGBimage = tonemap(RGBimage);
+               end
+        end
+    else
+        % Assert we are in-gamut
+        assert(outOfGamutPixels==0, ...
             sprintf('%d subpixels with primary values > 1; %d subpixels with primary values < 0', ...
             numel(find(RGBimage>1)), numel(find(RGBimage<0))));
+    end
         
     % Generate a gamma corrected RGB image (RGBsettings) that we can pop in the isetbio scene straightforward
     lutLevels = displayGet(presentationDisplay, 'nLevels');
@@ -296,6 +307,8 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
                 (abs(Yp) < gratingParams.spatialEnvelopeRadiusDegs));
             envelope = Xp * 0;
             envelope(idx) = 1;
+        case 'none'
+            envelope = Xp * 0 + 1;
         otherwise
             error('Unknown spatial envelope: ''%s''.\n', gratingParams.spatialEnvelope)
     end
@@ -341,7 +354,7 @@ function validateParams(gratingParamsStruct)
     % Further validations
     % spatialEnvelope
     if (isfield(gratingParamsStruct, 'spatialEnvelope'))
-        assert(ismember(gratingParamsStruct.spatialEnvelope, {'disk', 'square', 'Gaussian'}), ...
+        assert(ismember(gratingParamsStruct.spatialEnvelope, {'none', 'disk', 'square', 'Gaussian'}), ...
             sprintf('>> Invalid value for spatialModulation: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
             gratingParamsStruct.spatialModulation, mfilename()));
     end
@@ -370,7 +383,8 @@ function p = generateDefaultParams()
         'spectralSupport', 400:10:750, ...              % display: spectral support of the primary SPDs, in nanometers
         'meanLuminanceCdPerM2', 40, ...                 % background: mean luminance, in candellas per meter squared
         'meanChromaticityXY', [0.3 0.32], ...           % background: neutral mean chromaticity
-        'coneContrastModulation', [0.09 -0.09 0.0], ...   % chromatic direction: LMS cone contrasts
+        'coneContrastModulation', [0.09 -0.09 0.0], ... % chromatic direction: LMS cone contrasts
+        'warningInsteadOfErrorOnOutOfGamut', false, ... % chromatic: whether to throw an error or a warning if out-of-gamut pixels are generated
         'fovDegs', 1.0, ...                             % spatial: field of view, in degrees
         'minPixelsNumPerCycle', 10, ...                 % spatial: min number of pixels per grating spatial period (to minimize aliasing effects)
         'pixelsNum', 256, ...                           % spatial: desired size of stimulus in pixels - this could be larger depending on the minPixelsNumPerCycle, the SF, and the FOV
@@ -382,7 +396,7 @@ function p = generateDefaultParams()
         'spatialModulationDomain', 'cartesian', ...     % spatial: domain of spatial modulation - choose between {'cartesian', 'polar'}
         'spatialEnvelope', 'Gaussian', ...              % spatial: envelope - choose between {'disk', 'square', 'Gaussian'}
         'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs    
-        'temporalModulation', 'flashed', ...            %   temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
+        'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
         'temporalModulationParams', struct(...          % temporal: modulation params struct
             'stimOnFrameIndices', [2 3], ...            %   params relevant to the temporalModulationMode
             'stimDurationFramesNum', 4), ...            %   params relevant to the temporalModulationMode
@@ -390,3 +404,19 @@ function p = generateDefaultParams()
     );
 
 end
+
+function RGBimage = tonemap(RGBimage)
+    % Transform the RGB image [Rows x Cols x 3] into a [3 x N] matrix for faster computations
+    [rgbPrimariesImageCalFormat,nCols,mRows] = ImageToCalFormat(RGBimage);
+    
+    % Tonemap
+    maxes = max(rgbPrimariesImageCalFormat,[],1);
+    maxes = max(maxes, maxes*0+1);
+    mins = min(rgbPrimariesImageCalFormat,[],1);
+    mins = min(mins, maxes*0);
+    rgbPrimariesImageCalFormat = bsxfun(@times,bsxfun(@minus,rgbPrimariesImageCalFormat,mins), 1./(maxes - mins));
+    
+    % Back to image format
+    RGBimage = CalFormatToImage(rgbPrimariesImageCalFormat, nCols, mRows);
+end
+
