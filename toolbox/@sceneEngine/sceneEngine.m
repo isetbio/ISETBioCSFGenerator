@@ -79,7 +79,7 @@ classdef sceneEngine < handle
         end
         
         % Compute method
-        [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast);
+        [theSceneSequence, temporalSupportSeconds, statusReport] = compute(obj, sceneContrast);
         
         % Visualization method
         visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds);

@@ -1,8 +1,8 @@
-function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast)
+function [theSceneSequence, temporalSupportSeconds, statusReport] = compute(obj, sceneContrast)
 % Generic compute method for the @sceneEngine class.
 %
 % Syntax:
-%   [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast)
+%   [theSceneSequence, temporalSupportSeconds, statusReport] = compute(obj, sceneContrast)
 %
 % Description:
 %    Generic compute method for the @sceneEngine class. Its purpose is to 
@@ -21,6 +21,7 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
 % Outputs:
 %    theSceneSequence        - a cell array of scenes, representing a spatio-temporal stimulus
 %    temporalSupportSeconds  - a vector of time stamps for each frame of the scene sequence 
+%    statusReport            - a struct with different flags indicating whether something went wrong, like an out-of-gamut situation
 %
 % See Also:
 %     t_sceneGeneration, t_modulatedGratingsSceneGeneration,
@@ -46,6 +47,7 @@ function [theSceneSequence, temporalSupportSeconds] = compute(obj, sceneContrast
     % Parse dataOut struct
     theSceneSequence = dataOut.sceneSequence;
     temporalSupportSeconds = dataOut.temporalSupport;
+    statusReport = dataOut.statusReport;
     
     if (isfield(dataOut, 'presentationDisplay'))
         obj.presentationDisplay = dataOut.presentationDisplay;

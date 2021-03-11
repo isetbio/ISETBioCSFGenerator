@@ -90,17 +90,18 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
     presentationDisplay = generatePresentationDisplay(gratingParams);
     
     % Generate ths scene sequence depicting frames of the modulated grating
-    [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(presentationDisplay, gratingParams, testContrast);
+    [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast);
     
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence = theSceneSequence;
     dataOut.temporalSupport = temporalSupportSeconds;
+    dataOut.statusReport = statusReport;
     
     % Add optional fields
     dataOut.presentationDisplay = presentationDisplay;
 end
 
-function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
+function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
 
     switch (gratingParams.temporalModulation)
         case 'flashed'
@@ -149,6 +150,10 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
     % Open progress bar
     hProgressBar = waitbar(0,'Generating scene sequence...');
 
+    theSceneSequence = cell(1, numel(frameContrastSequence));
+    temporalSupportSeconds = zeros(1, numel(frameContrastSequence));
+    outOfGamutFlag = zeros(1, numel(frameContrastSequence));
+    
     % Generate each frame
     for frameIndex = 1:numel(frameContrastSequence)
         % Update progress bar
@@ -156,7 +161,7 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
             sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence)));
         
         % Generate the scene frame
-        theSceneFrame = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
+        [theSceneFrame, outOfGamutFlag(frameIndex)] = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
             frameContrastSequence(frameIndex), frameSpatialPhaseSequence(frameIndex));
         
         % Store the scene frame
@@ -165,11 +170,18 @@ function [theSceneSequence, temporalSupportSeconds] = generateGratingSequence(pr
         temporalSupportSeconds(frameIndex) = (frameIndex-1)*gratingParams.frameDurationSeconds;
     end
     
+    % Set the outOfGamutFlag if we went out of gamut in any of the frames
+    if (any(outOfGamutFlag))
+        statusReport.OutOfGamut = true;
+    else
+        statusReport = struct();
+    end
+
     % Close progress bar
     close(hProgressBar);
 end
 
-function theSceneFrame = generateGratingSequenceFrame(presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
+function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
     % Compute the color transformation matrices for this display
     displayLinearRGBToLMS = displayGet(presentationDisplay, 'rgb2lms');
     displayLMSToLinearRGB = inv(displayLinearRGBToLMS);
@@ -213,11 +225,12 @@ function theSceneFrame = generateGratingSequenceFrame(presentationDisplay, grati
     end
     
     % Make sure we are in gamut (no subpixels with primary values outside of [0 1]
+    outOfGamutFlag = false;
     outOfGamutPixels = numel(find((RGBimage(:)<0)|(RGBimage(:)>1)));
     if (isfield(gratingParams, 'warningInsteadOfErrorOnOutOfGamut'))
         if (gratingParams.warningInsteadOfErrorOnOutOfGamut)
-               if (~isempty(outOfGamutPixels))
-                   fprintf('Image is out of gamut. Will tonemap\n');
+               if (outOfGamutPixels>0)
+                   outOfGamutFlag = true;
                    RGBimage = tonemap(RGBimage);
                end
         end

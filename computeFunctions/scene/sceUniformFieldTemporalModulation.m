@@ -120,6 +120,7 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
     % Assemble dataOut struct
     dataOut.sceneSequence = theSceneSequence;
     dataOut.temporalSupport = temporalSupportSeconds;
+    dataOut.statusReport = struct();
 end
 
 function p = generateDefaultParams()
