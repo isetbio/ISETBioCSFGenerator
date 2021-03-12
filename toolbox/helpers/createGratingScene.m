@@ -44,7 +44,7 @@ p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted'})));
-p.addParameter('pixelsNum', 0, @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isscalar(x)));
 p.addParameter('minPixelsNumPerCycle', 10, @(x)(isscalar(x)));
