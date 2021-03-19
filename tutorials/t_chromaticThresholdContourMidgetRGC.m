@@ -105,8 +105,8 @@ switch (classifierChoice)
                 'kernelFunction', 'linear', ...     % linear
                 'classifierType', 'svm' ...         % binary SVM classifier
             ));
-        % Train classifier using a set of 256 noisy instances, 
-        % Test performance using a set of 128 noisy instances
+        
+        % Train classifier using a set of 512 noisy instances, test on 256.
         classifierPara = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
                                 'nTrain', 512, 'nTest', 256);
@@ -115,11 +115,11 @@ switch (classifierChoice)
         error('Unknown classifier: ''%s''.', classifierChoice);
 end
 
-
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
-% the range of psychometric function slopes.
+% the range of psychometric function slopes. Threshold limits are computed
+% as 10^-logThreshLimitVal.
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'logThreshLimitHigh', 0.0, ...
                        'logThreshLimitDelta', 0.02, ...

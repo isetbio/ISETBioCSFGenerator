@@ -94,6 +94,7 @@ switch (classifierChoice)
         % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
         % Also set up parameters associated with use of this classifier.
         classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        
         % Train classifier using 1 noise-free instance, 
         % Test performance using a set of 128 noisy instances
         classifierPara = struct('trainFlag', 'none', ...

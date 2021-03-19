@@ -76,15 +76,12 @@ neuralParams.coneMosaicParams.noiseFlag = 'none';
 neuralParams.mRGCmosaicParams.noiseFlag = 'random';
 neuralParams.mRGCmosaicParams.noiseFactor = 0.1;
 
-
 % Modify some cone mosaic params
 neuralParams.coneMosaicParams.coneMosaicResamplingFactor = 3;
 neuralParams.coneMosaicParams.integrationTime = stimFrameDurationSeconds;
 
 % Instantiate the neural respone engine
 theNeuralEngine = neuralResponseEngine(@nreMidgetRGC, neuralParams);
-
-
 
 %% Instantiate the PoissonTAFC or the PcaSVMTAFC responseClassifierEngine
 %
@@ -97,6 +94,7 @@ switch (classifierChoice)
         % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
         % Also set up parameters associated with use of this classifier.
         classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        
         % Train classifier using 1 noise-free instance, 
         % Test performance using a set of 128 noisy instances
         classifierPara = struct('trainFlag', 'none', ...
@@ -112,6 +110,7 @@ switch (classifierChoice)
                 'kernelFunction', 'linear', ...     % linear
                 'classifierType', 'svm' ...         % binary SVM classifier
             ));
+        
         % Train classifier using a set of 2048 noisy instances, 
         % Test performance using a set of 256 noisy instances
         nTrain = 2048; nTest = 256;
@@ -126,7 +125,8 @@ end
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
-% the range of psychometric function slopes.
+% the range of psychometric function slopes. Threshold limits are computed
+% as 10^-logThreshLimitVal.
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'logThreshLimitHigh', 0.0, ...
                        'logThreshLimitDelta', 0.02, ...
