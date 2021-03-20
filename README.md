@@ -8,7 +8,7 @@ We have written a set of well-commented tutorial code (under `tutorials`) to dem
 - `t_chromaticThresholdContour.m` computes isothreshold contour in different color directions.
 
 ## Design
-The CSF generator is consist of four main components:
+The CSF generator is consist of four main components that are each reusable and can be easily customized:
 - Scene Engine: Procedure for stimulus generation (see `t_sceneGeneration.m`). 
 - Neural Response Engine: Produces neural responses given a visual stimulus (see `t_neuralResponseCompute.m`).  
 - Response Classifier Engine: Produces binary decisions based on neural responses (see `t_responseClassifier.m`).
