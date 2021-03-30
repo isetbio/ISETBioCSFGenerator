@@ -165,7 +165,7 @@ classdef questThresholdEngine < contrastThresholdEngine
         [nextCrst, nextFlag] = singleTrial(this, stim, response)
         
         % Run MLE estimate of psychometric curve parameter on combined data
-        [threshold, para] = thresholdMLE(this, varargin);
+        [threshold, para, psychometricDataOut] = thresholdMLE(this, varargin);
         
         % Plot data and MLE fit
         function plotMLE(this, markerSize)

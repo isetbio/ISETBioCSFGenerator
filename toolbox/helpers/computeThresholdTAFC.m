@@ -1,5 +1,5 @@
 function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, ...
-    classifierPara, thresholdPara, questEnginePara, visualizationPara, datasavePara)
+    classifierPara, thresholdPara, questEnginePara, visualizationPara, datasavePara, varargin)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
 % Syntax:
@@ -46,6 +46,11 @@ function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theS
 %  12/04/20  npc  Added option to run method of constant stimuli. 
 %                 Also added psychometricFunction return argument.
 
+p = inputParser;
+p.addParameter('beVerbose',  true);
+parse(p, varargin{:});
+beVerbose = p.Results.beVerbose;
+
 % Construct a QUEST threshold estimator estimate threshold
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
@@ -86,7 +91,9 @@ while (nextFlag)
     
     % Label for pCorrect dictionary
     contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
-    fprintf('Testing %s\n', contrastLabel);
+    if (beVerbose)
+        fprintf('Testing %s\n', contrastLabel);
+    end
     
     % Have we already built the classifier for this contrast?
     testedIndex = find(testContrast == testedContrasts);
@@ -161,8 +168,10 @@ end
 
 % Return threshold value
 [threshold, para] = estimator.thresholdMLE('showPlot', false);
-fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
-    para(1), para(2), para(3), para(4));
+if (beVerbose)
+    fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
+        para(1), para(2), para(3), para(4));
+end
 
 % Return the quest+ object wrapper for plotting and/or access to data
 questObj = estimator;
