@@ -68,6 +68,11 @@ classdef neuralResponseEngine < handle
             obj.validateAndSetParamsStruct(neuralResponseParamsStruct);
         end
         
+        % Method to set a custom neural pipeline
+        function customNeuralPipeline(obj, thePipeline)
+            obj.neuralPipeline = thePipeline;
+        end
+        
         % Compute method
         [neuralResponses, temporalSupportSeconds] = compute(obj, ...
                 theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin);
