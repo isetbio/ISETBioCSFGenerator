@@ -48,9 +48,11 @@ p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isscalar(x)));
 p.addParameter('minPixelsNumPerCycle', 10, @(x)(isscalar(x)));
+p.addParameter('spectralSupport', 400:20:750, @isnumeric);
+p.addParameter('warningInsteadOfErrorOnOutOfGamut', false, @islogical);
 parse(p, varargin{:});
 
-% Compute function handle for grating stimuli
+% Compute function handle for grating stimulispatialEnvelopeRadiusDegs = app.stimSizeDegs/2;
 sceneComputeFunction = @sceGrating;
 
 % Retrieve the default params for the grating stimulus
@@ -69,7 +71,8 @@ gratingParams.pixelsNum = p.Results.pixelsNum;
 gratingParams.fovDegs = p.Results.fovDegs;
 gratingParams.spatialEnvelopeRadiusDegs = p.Results.spatialEnvelopeRadiusDegs;
 gratingParams.minPixelsNumPerCycle = p.Results.minPixelsNumPerCycle;
-
+gratingParams.spectralSupport = p.Results.spectralSupport;
+gratingParams.warningInsteadOfErrorOnOutOfGamut = p.Results.warningInsteadOfErrorOnOutOfGamut;
 
 % Set pixel size
 pixelsNum = p.Results.pixelsNum;
