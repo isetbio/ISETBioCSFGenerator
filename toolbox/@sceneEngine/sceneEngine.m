@@ -84,7 +84,9 @@ classdef sceneEngine < handle
         % Visualization method
         visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds);
         
+        % Visualize one frame of the sequence 
         visualizeStaticFrame(obj, sceneSequence, temporalSupportSeconds, varargin);
+        
     end
     
     % Private methods
