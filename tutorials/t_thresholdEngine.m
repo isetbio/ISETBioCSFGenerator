@@ -285,7 +285,7 @@ slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 %   'fixedNumber'    - run a fixed number of trials
 %   'adaptiveMode'   - run until estimate reaches specified precision.
 % See below for more.
-questMode = 'adaptiveMode';
+questMode = 'fixedNumber';
 switch questMode
     case 'fixedNumber'
         % Run fixed number of trials.  This is done by setting 'minTrial' and
@@ -427,9 +427,12 @@ else
 end
 
 figure();
-[threshold, para] = estimator.thresholdMLE('showPlot', true, 'pointSize', plotSize);
+[threshold, para, dataOut] = estimator.thresholdMLE('showPlot', true, 'returnData', true, 'pointSize', plotSize);
 fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
+
+fprintf('Bootstrap estimate of S.E.: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
+    dataOut.paraSD(1), dataOut.paraSD(2), dataOut.paraSD(3), dataOut.paraSD(4));
 
 %% Validation by computing the entire psychometric curve
 %
