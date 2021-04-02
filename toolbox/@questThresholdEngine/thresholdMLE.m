@@ -59,12 +59,12 @@ if ((p.Results.showPlot) || (p.Results.returnData))
         numTotal, searchGrid, paramsFree, PF);
     
     nRun = 1e3;
-    paraSD = PAL_PFML_BootstrapNonParametric(...
+    sePara = PAL_PFML_BootstrapNonParametric(...
         stimVal, numPost, numTotal, [], paramsFree, nRun, PF,...
         'searchGrid', searchGrid);
     
     if (p.Results.returnData)
-        dataOut.paraSD = paraSD;
+        dataOut.sePara = sePara;
     end
 end
 

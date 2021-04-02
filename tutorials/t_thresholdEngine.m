@@ -432,7 +432,7 @@ fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
     para(1), para(2), para(3), para(4));
 
 fprintf('Bootstrap estimate of S.E.: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
-    dataOut.paraSD(1), dataOut.paraSD(2), dataOut.paraSD(3), dataOut.paraSD(4));
+    dataOut.sePara(1), dataOut.sePara(2), dataOut.sePara(3), dataOut.sePara(4));
 
 %% Validation by computing the entire psychometric curve
 %
