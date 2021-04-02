@@ -1,4 +1,10 @@
-function visualizeStaticFrame(obj, sceneSequence)
+function visualizeStaticFrame(obj, sceneSequence, varargin)
+
+% Parse input
+p = inputParser;
+p.addParameter('skipOutOfGamutCheck', false, @islogical);
+p.parse(varargin{:});
+skipOutOfGamutCheck = p.Results.skipOutOfGamutCheck;
 
 scenesNum = numel(sceneSequence);
 maxColsNum = 8;
@@ -33,8 +39,7 @@ for frameIndex = 1:scenesNum
         y = y-mean(y);
     end
     
-    debugMode = ~true;
-    if (debugMode)
+    if (skipOutOfGamutCheck)
         displaySettingsImage = sceneGet(sceneSequence{frameIndex}, 'rgb');
     else
         % Linear RGB image
