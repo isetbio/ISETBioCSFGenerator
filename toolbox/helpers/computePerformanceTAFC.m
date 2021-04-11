@@ -96,12 +96,18 @@ if (~isempty(trainNoiseFlag))
         'noiseFlags', {trainNoiseFlag});
     
     if (visualizeAllComponents)
-        %coneMosaicFOV = theNeuralEngine.neuralPipeline.mRGCmosaic.inputConeMosaic.fov;
+        if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
+            diffResponse = inSampleTestStimResponses(trainNoiseFlag) - inSampleNullStimResponses(trainNoiseFlag);
+            theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', squeeze(diffResponse), 'verticalActivationColorBarInside', true);
+        end
         
-        theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
-            responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
-            'stimulusTemporalSupportSeconds', temporalSupport,...
-            'stimulusSceneSequence', testScene);
+        if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
+            theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
+                responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
+                'stimulusTemporalSupportSeconds', temporalSupport,...
+                'stimulusSceneSequence', testScene);
+        end
+        
     end
     
     % Train the classifier. This shows the usage to extact information
