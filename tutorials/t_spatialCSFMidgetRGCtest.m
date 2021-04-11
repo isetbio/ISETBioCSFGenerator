@@ -142,15 +142,6 @@ questEnginePara = struct('minTrial', nTest*contrastLevelsExamined, ...
                          'maxTrial', nTest*contrastLevelsExamined, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
-                     
-% Visualization params
-visualizationPara.visualizeStimulus = ~true;
-visualizationPara.visualizeAllComponents = ~true;
-
-% Data saving params
-datasavePara.destDir = '~/Desktop/tmpDir';
-datasavePara.saveMRGCResponses = ~true;
-
 %% Compute threshold for each spatial frequency
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
@@ -159,6 +150,8 @@ logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
     
     % Update condition examined label
+    datasavePara.saveMRGCResponses = false;
+    datasavePara.destDir = '~/Desktop';
     datasavePara.condExamined = sprintf('SpatialFrequency_%2.2fCPD', spatialFreqs(idx));
     
     % Create a static grating scene with a particular chromatic direction,
@@ -187,8 +180,8 @@ for idx = 1:length(spatialFreqs)
     % function computePerformanceTAFC.
     [logThreshold(idx), questObj] = ...
         computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara, visualizationPara, ...
-        datasavePara);
+        classifierPara, thresholdPara, questEnginePara, ...
+        'datasavePara', datasavePara);
     
     % Plot stimulus
     figure(dataFig);

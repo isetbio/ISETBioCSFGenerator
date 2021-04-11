@@ -12,7 +12,7 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %     1's and 0's indicating correct and incorrect trials respectively.
 %
 %     This uses the ISETBioCSFGeneratorFramework and works because the uers
-%     passes a set of objects with standardized API.  These describd the
+%     passes a set of objects with standardized API.  These describe the
 %     two scenes to be discriminated, the neural pipeline that processes
 %     these scenes, and the classifer.
 %

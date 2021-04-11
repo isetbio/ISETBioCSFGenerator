@@ -1,5 +1,5 @@
 function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, ...
-    classifierPara, thresholdPara, questEnginePara, visualizationPara, datasavePara, varargin)
+    classifierPara, thresholdPara, questEnginePara, varargin)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
 % Syntax:
@@ -25,8 +25,6 @@ function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theS
 %   classifierPara        - Parameter struct associated with the classifier engine
 %   thresholdPara         - Parameter struct associated with threshold estimation
 %   questEnginePara       - Parameter struct for running the questThresholdEngine
-%   visualizationPara     - Parameter struct for visualizing different components
-%   datasavePara          - Parameter struct for saving intermediate results
 %
 % Outputs:
 %   threshold             - Estimated threshold value
@@ -48,8 +46,15 @@ function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theS
 
 p = inputParser;
 p.addParameter('beVerbose',  true);
+p.addParameter('visualizeStimulus', false, @islogical);
+p.addParameter('visualizeAllComponents', false, @islogical);
+p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
+
 parse(p, varargin{:});
 beVerbose = p.Results.beVerbose;
+visualizeStimulus = p.Results.visualizeStimulus;
+visualizeAllComponents = p.Results.visualizeAllComponents;
+datasavePara = p.Results.datasavePara;
 
 % Construct a QUEST threshold estimator estimate threshold
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
@@ -78,8 +83,12 @@ nullContrast = 0.0;
 % Loop over trials.
 testedContrasts = [];
 
-if (datasavePara.saveMRGCResponses)
+if ((isstruct(datasavePara)) && isfield(datasavePara, 'saveMRGCResponses') && (datasavePara.saveMRGCResponses) && ...
+        (isfield(datasavePara, 'destDir')) && (ischar(datasavePara.destDir)) && ...
+        (isfield(datasavePara, 'condExamined')))
     neuralEngineSaved = false;
+else
+    datasavePara.saveMRGCResponses = false;
 end
 
 % Dictionary to store the measured psychometric function which is returned to the user
@@ -106,7 +115,7 @@ while (nextFlag)
         [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
         
         % Visualize the drifting sequence
-        if (visualizationPara.visualizeStimulus)
+        if (visualizeStimulus)
             theSceneEngine.visualizeSceneSequence(theTestSceneSequences{testedIndex}, theSceneTemporalSupportSeconds);
         end
         
@@ -117,7 +126,7 @@ while (nextFlag)
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
-            datasavePara.saveMRGCResponses, visualizationPara.visualizeAllComponents);
+            datasavePara.saveMRGCResponses, visualizeAllComponents);
         
         % Update the psychometric function with data point for this contrast level
         psychometricFunction(contrastLabel) = mean(predictions);
