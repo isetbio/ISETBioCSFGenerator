@@ -311,10 +311,10 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
             idx = find(sqrt(Xp.^2 + Yp.^2) < gratingParams.spatialEnvelopeRadiusDegs);
             envelope = X * 0;
             envelope(idx) = 1;
-        case 'Gaussian'
+        case 'soft'
             envelope = exp(-(0.5*(Xp/gratingParams.spatialEnvelopeRadiusDegs).^2)) .* ...
                        exp(-(0.5*(Yp/gratingParams.spatialEnvelopeRadiusDegs).^2));
-        case 'square'
+        case 'rect'
             idx = find(...
                 (abs(Xp) < gratingParams.spatialEnvelopeRadiusDegs) & ...
                 (abs(Yp) < gratingParams.spatialEnvelopeRadiusDegs));
@@ -367,9 +367,9 @@ function validateParams(gratingParamsStruct)
     % Further validations
     % spatialEnvelope
     if (isfield(gratingParamsStruct, 'spatialEnvelope'))
-        assert(ismember(gratingParamsStruct.spatialEnvelope, {'none', 'disk', 'square', 'Gaussian'}), ...
-            sprintf('>> Invalid value for spatialModulation: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
-            gratingParamsStruct.spatialModulation, mfilename()));
+        assert(ismember(gratingParamsStruct.spatialEnvelope, {'none', 'disk', 'rect', 'soft'}), ...
+            sprintf('>> Invalid value for spatialEnvelope: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
+            gratingParamsStruct.spatialEnvelope, mfilename()));
     end
     
     % spatialModulation
@@ -407,7 +407,7 @@ function p = generateDefaultParams()
         'spatialPositionDegs', [0.0 0.0], ...           % spatial: center of grating, in degrees
         'spatialModulation', 'harmonic', ...            % spatial: contrast modulation - choose between {'harmonic', 'square'} for sinusoidal/square spatial modulation 
         'spatialModulationDomain', 'cartesian', ...     % spatial: domain of spatial modulation - choose between {'cartesian', 'polar'}
-        'spatialEnvelope', 'Gaussian', ...              % spatial: envelope - choose between {'disk', 'square', 'Gaussian'}
+        'spatialEnvelope', 'soft', ...                  % spatial: envelope - choose between {'disk', 'rect', 'soft'}
         'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs    
         'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
         'temporalModulationParams', struct(...          % temporal: modulation params struct

@@ -109,7 +109,7 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.coneContrastModulation = [0.6 0.6 0.6];
     customGratingParams.spatialPositionDegs =  [0.08 -0.07];
     customGratingParams.orientationDegs = 30;
-    customGratingParams.spatialEnvelope = 'square';
+    customGratingParams.spatialEnvelope = 'rect';
     customGratingParams.spatialModulation =  'harmonic';
     customGratingParams.minPixelsNumPerCycle = 100;
     customGratingParams.spatialPhaseDegs = 0;
@@ -162,7 +162,7 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.coneContrastModulation = [0.7 0.7 -0.7];
     customGratingParams.spatialFrequencyCyclesPerDeg = 4;
     customGratingParams.spatialPositionDegs =  [00.1 -0.05];
-    customGratingParams.spatialEnvelope = 'Gaussian';
+    customGratingParams.spatialEnvelope = 'soft';
     customGratingParams.spatialModulationDomain = 'polar';
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
     customGratingParams.temporalModulation = 'drifted';

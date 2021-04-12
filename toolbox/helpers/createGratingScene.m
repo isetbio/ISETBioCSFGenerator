@@ -38,7 +38,7 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 % Set up parameters with defaults
 p = inputParser;
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
-p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'square', 'Gaussian'})));
+p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'rect', 'soft'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
