@@ -147,9 +147,12 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             error('Unknown temporal modulation: ''%s''.\n', gratingParams.temporalModulation);
     end
 
-    % Open progress bar
-    hProgressBar = waitbar(0,'Generating scene sequence...');
-
+    displayProgressBar = false; % getpref('ISET','waitbar');
+    if (displayProgressBar)
+        % Open progress bar
+        hProgressBar = waitbar(0,'Generating scene sequence...');
+    end
+    
     theSceneSequence = cell(1, numel(frameContrastSequence));
     temporalSupportSeconds = zeros(1, numel(frameContrastSequence));
     outOfGamutFlag = zeros(1, numel(frameContrastSequence));
@@ -157,8 +160,10 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
     % Generate each frame
     for frameIndex = 1:numel(frameContrastSequence)
         % Update progress bar
-        waitbar(frameIndex/numel(frameContrastSequence),hProgressBar,...
-            sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence)));
+        if (displayProgressBar)
+            waitbar(frameIndex/numel(frameContrastSequence),hProgressBar,...
+                sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence)));
+        end
         
         % Generate the scene frame
         [theSceneFrame, outOfGamutFlag(frameIndex)] = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
@@ -177,8 +182,10 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
         statusReport = struct();
     end
 
-    % Close progress bar
-    close(hProgressBar);
+    if (displayProgressBar)
+        % Close progress bar
+        close(hProgressBar);
+    end
 end
 
 function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
