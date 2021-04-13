@@ -356,6 +356,13 @@ function presentationDisplay = generatePresentationDisplay(gratingParams)
     end
     % Set the gamma table
     presentationDisplay = displaySet(presentationDisplay, 'gTable', gTable);
+    
+    % Adjust display SPDs so we can gemerate desired mean luminance
+    desiredPeakLuminance = gratingParams.meanLuminanceCdPerM2 * 2.1;
+    peakLuminance = displayGet(presentationDisplay, 'peak luminance');
+    scalingFactor = desiredPeakLuminance / peakLuminance;
+    spds = displayGet(presentationDisplay, 'spd primaries');
+    presentationDisplay = displaySet(presentationDisplay, 'spd primaries', spds*scalingFactor);
 end
 
 function validateParams(gratingParamsStruct)

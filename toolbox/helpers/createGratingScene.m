@@ -37,6 +37,7 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 
 % Set up parameters with defaults
 p = inputParser;
+p.addParameter('meanLuminanceCdPerM2', 40, @isscalar);
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'rect', 'soft'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
@@ -64,6 +65,7 @@ gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 % Configure those parameters that we adjust through key/value pairs.
 % chromatic direction and and spatial frequency of the grating
 % with a 90 deg orientation, and a cosine spatial phase
+gratingParams.meanLuminanceCdPerM2 = p.Results.meanLuminanceCdPerM2;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
 gratingParams.orientationDegs = p.Results.orientation;
