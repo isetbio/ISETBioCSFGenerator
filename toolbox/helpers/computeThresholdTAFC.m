@@ -86,7 +86,7 @@ nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 
 % Some diagnosis
-if (p.Results.p.Results.extraVerbose)
+if (p.Results.extraVerbose)
     theWl = 400;
     theFrame = 1;
     index = find(theNullSceneSequence{theFrame}.spectrum.wave == theWl);
@@ -138,7 +138,7 @@ while (nextFlag)
         [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
         
         % Some diagnosis
-        if (p.Results.p.Results.extraVerbose)
+        if (p.Results.extraVerbose)
             theWl = 400;
             theFrame = 1;
             index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
