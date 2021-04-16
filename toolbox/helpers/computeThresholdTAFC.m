@@ -34,6 +34,14 @@ function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theS
 %                           psychometric function 
 %
 % Optional key/value pairs:
+%   'beVerbose'           - Logical. Provide some printout? Default true.
+%   'extraVerbose'        - Logical.  More detailed printout? Default false.
+%   'visualizeStimulus'   - Logical. Provide stimulus visualization.
+%                           Default false.
+%   'visualizeAllComponents' - Logical. All component visualization.
+%                           Default false.
+%   'datasaveParameters'  - Parameters related to data saving. Default
+%                           empty.
 %
 % See also:
 %    t_spatialCSF, t_thresholdEngine, computePerformanceTAFC
@@ -45,7 +53,8 @@ function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theS
 %                 Also added psychometricFunction return argument.
 
 p = inputParser;
-p.addParameter('beVerbose',  true);
+p.addParameter('beVerbose',  true, @islogical);
+p.addParameter('extraVerbose',false, @islogical);
 p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
@@ -75,6 +84,20 @@ end
 % Generate the NULL stimulus (zero contrast)
 nullContrast = 0.0;
 [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
+
+% Some diagnosis
+if (p.Results.p.Results.extraVerbose)
+    theWl = 400;
+    theFrame = 1;
+    index = find(theNullSceneSequence{theFrame}.spectrum.wave == theWl);
+    temp = theNullSceneSequence{theFrame}.data.photons(:,:,index);
+    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+    theWl = 550;
+    index = find(theNullSceneSequence{theFrame}.spectrum.wave == theWl);
+    temp = theNullSceneSequence{theFrame}.data.photons(:,:,index);
+    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+end
+
 
 % Threshold estimation with QUEST+
 % Get the initial stimulus contrast from QUEST+
@@ -113,6 +136,19 @@ while (nextFlag)
         
         % Generate the TEST scene sequence for the given contrast
         [theTestSceneSequences{testedIndex}, ~] = theSceneEngine.compute(testContrast);
+        
+        % Some diagnosis
+        if (p.Results.p.Results.extraVerbose)
+            theWl = 400;
+            theFrame = 1;
+            index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
+            temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
+            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
+            theWl = 550;
+            index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
+            temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
+            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
+        end
         
         % Visualize the drifting sequence
         if (visualizeStimulus)
