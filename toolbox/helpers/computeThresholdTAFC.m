@@ -39,9 +39,15 @@ function [threshold, questObj, psychometricFunction] = computeThresholdTAFC(theS
 %   'visualizeStimulus'   - Logical. Provide stimulus visualization.
 %                           Default false.
 %   'visualizeAllComponents' - Logical. All component visualization.
-%                           Default false.
+%                           Default false. If set to true, it visualizes
+%                           the mosaic responses to all the stimuli (multiple contrasts)
+%                           which are computed by the neural engine.
 %   'datasaveParameters'  - Parameters related to data saving. Default
-%                           empty.
+%                           empty. When not empty, this has to be a struct
+%                           with fields indicating which responses to save.
+%                           Right now, the only accepted field is
+%                           'saveMRGCResponses' which saved responses of
+%                           the mRGC mosaic attached to an MRGC neural engine
 %
 % See also:
 %    t_spatialCSF, t_thresholdEngine, computePerformanceTAFC
