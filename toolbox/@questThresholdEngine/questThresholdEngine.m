@@ -14,7 +14,8 @@ classdef questThresholdEngine < contrastThresholdEngine
     % questThresholdEngine Properties:
     %   estimators     - The array of questData object.
     %   numEstimator   - The number questData object to maintain
-    %   stopCriterion  - Stop criterion for deciding if we have enough trials
+    %   stopCriterion  - Stop criterion for deciding if we have enough
+    %                    trials. See key/value pair description below.
     %   slopeRange     - Range of slopes for psychometric curve
     %   guessRate      - Range of guess rate for psychometric curve
     %   lapseRate      - Range of lapseRate rate for psychometric curve
@@ -39,7 +40,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     % Outputs:
     %   questThresholdEngine Object.
     %
-    % Optional key/value pairs:
+    % Optional key/value pairs.  Also inherits those in contrastThesholdEngine.
     %   'minTrial'        - Int. The minimal number of trials to run
     %
     %   'maxTrial'        - Int. The maximum number of trials to run
@@ -49,12 +50,20 @@ classdef questThresholdEngine < contrastThresholdEngine
     %                       [0:0.01:1] or log contrast [-10:0.1:0]. User
     %                       should handle the conversion externally
     %
-    %   'numEstimator'    - Int. Number of questData object to run
-    %
-    %   'stopCriterion'   - A function handler that takes two arguments,
-    %                       the current threshold estimate, and the S.E. of
-    %                       the estimate among N quest objects, and return
-    %                       a boolean variable if more trials are required
+    %   'stopCriterion'   - Either empty, a number, or a function handle.
+    %                       If empty, then no stop criterion. If a number,
+    %                       stops when SE across estimators is less than
+    %                       the number.  If a function handle, it should
+    %                       take two arguments, the current threshold
+    %                       estimate, and the S.E. of the estimate among N
+    %                       quest objects, and return a boolean variable if
+    %                       more trials are required. If numEstimator is 1,
+    %                       then the S.E. is always zero so the routine
+    %                       stops when the minTrials value is reached. Same
+    %                       when this is empty.  Indeed, setting to empty
+    %                       means that S.E. across estimators is not used
+    %                       as a a stopping criterion. See
+    %                       t_thresholdEngine for elaboration on stopping.
     %
     %   'slopeRange'       - Array. An array of all possible slope for the
     %                        psychometric curve
@@ -71,9 +80,9 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   'nRepeat'          - Double. Number of trials per contrast level
     %                        when running the validation
     %
-    %    Also see base class contrastThresholdEngine
+    %    See also t_thresholdEngine, contrastThresholdEngine
     
-    
+   
     % Class properties
     properties %(Access = private)
         
@@ -118,7 +127,9 @@ classdef questThresholdEngine < contrastThresholdEngine
             this.nRepeat = p.Results.nRepeat;
             
             stopCriterion = p.Results.stopCriterion;
-            if isnumeric(stopCriterion)
+            if isempty(stopCriterion)
+                this.stopCriterion = @(threshold, se) true;  
+            elseif isnumeric(stopCriterion)
                 this.stopCriterion = @(threshold, se) se <= stopCriterion;
             elseif isa(stopCriterion, 'function_handle')
                 this.stopCriterion = stopCriterion;
