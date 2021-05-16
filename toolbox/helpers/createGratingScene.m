@@ -44,7 +44,7 @@ p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
-p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted'})));
+p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted', 'counter phase modulated'})));
 p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isscalar(x)));
@@ -97,6 +97,14 @@ switch (p.Results.presentationMode)
         gratingParams.temporalModulationParams =  struct(...
             'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
             'stimDurationTemporalCycles', p.Results.duration * p.Results.temporalFrequencyHz);
+        
+    case 'counter phase modulated'
+        gratingParams.temporalModulation = 'counter phase modulated';
+        gratingParams.frameDurationSeconds = 1.0/(p.Results.temporalFrequencyHz*360/p.Results.spatialPhaseAdvanceDegs);
+        gratingParams.temporalModulationParams =  struct(...
+            'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
+            'stimDurationTemporalCycles', p.Results.duration * p.Results.temporalFrequencyHz);
+        
     otherwise
         error('Unknown presentationMode: ''%s''.', p.Results.presentationMode);
         
