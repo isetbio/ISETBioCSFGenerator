@@ -98,7 +98,12 @@ if (~isempty(trainNoiseFlag))
     if (visualizeAllComponents)
         if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
             diffResponse = inSampleTestStimResponses(trainNoiseFlag) - inSampleNullStimResponses(trainNoiseFlag);
+            % Visualize the activation
             theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', squeeze(diffResponse), 'verticalActivationColorBarInside', true);
+        
+            % Also visualize the full absorptions density
+            figNo = 999;
+            theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
         end
         
         if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
