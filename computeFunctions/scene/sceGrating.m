@@ -323,8 +323,8 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
                        exp(-(0.5*(Yp/gratingParams.spatialEnvelopeRadiusDegs).^2));
         case 'rect'
             idx = find(...
-                (abs(Xp) < gratingParams.spatialEnvelopeRadiusDegs) & ...
-                (abs(Yp) < gratingParams.spatialEnvelopeRadiusDegs));
+                (abs(X) < gratingParams.spatialEnvelopeRadiusDegs) & ...
+                (abs(Y) < gratingParams.spatialEnvelopeRadiusDegs));
             envelope = Xp * 0;
             envelope(idx) = 1;
         case 'none'
