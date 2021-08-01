@@ -234,12 +234,18 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
     % Make sure we are in gamut (no subpixels with primary values outside of [0 1]
     outOfGamutFlag = false;
     outOfGamutPixels = numel(find((RGBimage(:)<0)|(RGBimage(:)>1)));
+
     if (isfield(gratingParams, 'warningInsteadOfErrorOnOutOfGamut'))
-        if (gratingParams.warningInsteadOfErrorOnOutOfGamut)
-               if (outOfGamutPixels>0)
-                   outOfGamutFlag = true;
-                   RGBimage = tonemap(RGBimage);
-               end
+        if (outOfGamutPixels>0)
+            if (gratingParams.warningInsteadOfErrorOnOutOfGamut)
+               % Tone map and do not throw an error
+               outOfGamutFlag = true;
+               RGBimage = tonemap(RGBimage);
+            else
+               % Throw an error
+               error('%d subpixels with primary values > 1; %d subpixels with primary values < 0', ...
+                    numel(find(RGBimage>1)), numel(find(RGBimage<0)));
+            end
         end
     else
         % Assert we are in-gamut
