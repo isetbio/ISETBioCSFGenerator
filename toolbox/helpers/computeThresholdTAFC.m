@@ -161,9 +161,35 @@ while (nextFlag)
             theSceneEngine.visualizeSceneSequence(theTestSceneSequences{testedIndex}, theSceneTemporalSupportSeconds);
         end
         
+        
+        % Update the classifier engine pooling params for this particular test contrast
+        if (isfield(classifierEngine.classifierParams, 'pooling')) && ...
+           (~strcmp(classifierEngine.classifierParams.pooling, 'none'))
+            
+            fprintf('Computing pooling kernels for contrast %f\n', testContrast*100);
+       
+            % Compute pooling weights
+            switch (classifierEngine.classifierParams.pooling.type)
+                case 'linear'
+                   [poolingWeights.direct, ~, ...
+                       noiseFreeNullResponse, noiseFreeTestResponse] = spatioTemporalPoolingWeights(theNeuralEngine,theTestSceneSequences{testedIndex},theNullSceneSequence, theSceneTemporalSupportSeconds);
+                   
+                case 'quadratureEnergy'
+                   [poolingWeights.direct, poolingWeights.quadrature, ...
+                       noiseFreeNullResponse, noiseFreeTestResponse] = spatioTemporalPoolingWeights(theNeuralEngine,theTestSceneSequences{testedIndex},theNullSceneSequence, theSceneTemporalSupportSeconds);
+                   
+                otherwise
+                    error('Unknown classifier engine pooling type: ''%s''.', classifierEngine.classifierParams.pooling.type)
+            end
+            
+            % Update the classifier engine's pooling weights
+            classifierEngine.updateSpatioTemporalPoolingWeightsAndNoiseFreeResponses(poolingWeights,noiseFreeNullResponse, noiseFreeTestResponse);
+        end
+        
         % Train classifier for this TEST contrast and get predicted
         % correct/incorrect predictions.  This function also computes the
         % neural responses needed to train and predict.
+        
         [predictions, theTrainedClassifierEngines{testedIndex}, responses] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...

@@ -75,6 +75,14 @@ classdef responseClassifierEngine < handle
             obj.validateAndSetParamsStruct(classifierParamsStruct);
         end
         
+        % Method to update the pooling weights of the response classifier
+        function updateSpatioTemporalPoolingWeightsAndNoiseFreeResponses(obj,poolingWeights,noiseFreeNullResponse, noiseFreeTestResponse)
+            obj.classifierParams.pooling.weights = poolingWeights;
+            obj.classifierParams.pooling.noiseFreeNullResponse = noiseFreeNullResponse;
+            obj.classifierParams.pooling.noiseFreeTestResponse = noiseFreeTestResponse;
+        end
+        
+        
         % Compute method
         dataOut = compute(obj, operationMode, nullResponses, testResponses);
 
