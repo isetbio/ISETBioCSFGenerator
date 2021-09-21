@@ -37,8 +37,6 @@ function [poolingWeights,quadraturePoolingWeights, ...
 % History:
 %   8/28/21  npc  Wrote it.
 
-
-
     % Compute the noise-free response to the NULL stimulus
     fprintf('Computing noise-free response to the NULL stimulus\n');
     responseInstancesNum = 1;
@@ -59,7 +57,8 @@ function [poolingWeights,quadraturePoolingWeights, ...
     noiseFreeSpatioTemporalResponseTestStimulus = response('none');
     
     
-    % Only keep the last time bin
+    % Only keep the last time bin - this is a spatial kernel only, not a
+    % spatiotemporal kernel
     noiseFreeSpatioTemporalResponseTestStimulus = noiseFreeSpatioTemporalResponseTestStimulus(1,end,:);
     noiseFreeSpatioTemporalResponseNullStimulus = noiseFreeSpatioTemporalResponseNullStimulus(1,end,:);
     
