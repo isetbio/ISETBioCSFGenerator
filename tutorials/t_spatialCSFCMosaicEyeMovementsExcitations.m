@@ -2,7 +2,8 @@
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in the achromatic color direction
-%    in the presence of fixatinal eye movements.
+%    in the presence of fixatinal eye movements using the cone excitations
+%    signal.
 %    This example uses the new @cMosaic object, an SVM computational observer,
 %    operating on the output of a quadrature energy spatial pooling mechanism
 %    and square windowed gratings of constant size.
@@ -57,21 +58,20 @@ oiEnsemble = theConeMosaic.oiEnsembleGenerate(theConeMosaic.eccentricityDegs, ..
 theOptics = oiEnsemble{1};      
   
 
+% The neural compute function to employ
+neuralComputeFunction = @nrePhotopigmentExcitationsCmosaicEyeMovements;
 
+% Obtain default neural response engine params
+neuralParams = neuralComputeFunction();
 
 % Update the eyeMovementsParams to simulate a different model
-% Obtain default neural response engine params
-neuralParams = nrePhotocurrentsCmosaicEyeMovements;
-% Update the eye movements params
-neuralParams.eyeMovementsParams.durationSeconds = 300/1000;
-neuralParams.eyeMovementsParams.keptResponsesDurationSeconds = 100/1000;
+neuralParams.eyeMovementsParams.durationSeconds = 100/1000;
 neuralParams.eyeMovementsParams.driftModel = 'high velocity';    % Choose between {'low velocity', 'high velocity', 'default'}
 
 
 % Instantiate the neural engine with custom optics, custom cone mosaic and
 % custom eye movement parms using cone photocurrents as the output signal
-
-theNeuralEngine = neuralResponseEngine(@nrePhotocurrentsCmosaicEyeMovements, neuralParams);
+theNeuralEngine = neuralResponseEngine(neuralComputeFunction, neuralParams);
 
 % Update the cone mosaic and optics using custom cone mosaic and optics
 theNeuralEngine.customNeuralPipeline(struct(...
