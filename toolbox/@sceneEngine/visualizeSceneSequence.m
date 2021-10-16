@@ -1,5 +1,9 @@
-function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
-   
+function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, varargin)
+    p = inputParser;
+    p.addParameter('videoFilename', [], @(x)(isempty(x)||ischar(x)));
+    parse(p, varargin{:});
+    videoFileName = p.Results.videoFilename;
+    
     scenesNum = numel(sceneSequence);
     RGBgunTrace = zeros(scenesNum,3);
     
@@ -14,6 +18,13 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
     displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
      
+    if (~isempty(videoFileName))
+        videoOBJ = VideoWriter(videoFileName, 'MPEG-4');
+        videoOBJ.FrameRate = 10;
+        videoOBJ.Quality = 100;
+        videoOBJ.open();
+    end
+    
     hFig = figure(); clf;
     set(hFig, 'Position', [100 400 1400 640], 'Color', [1 1 1]); 
     for frameIndex = 1:scenesNum
@@ -69,5 +80,12 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds)
         xlabel('time (seconds)');
         title('gun modulation at center of stimulus');
         drawnow;
+        if (~isempty(videoFileName))
+            videoOBJ.writeVideo(getframe(hFig));
+        end
+    end
+    
+    if (~isempty(videoFileName))
+    	videoOBJ.close()
     end
 end

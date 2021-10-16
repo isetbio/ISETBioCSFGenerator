@@ -82,7 +82,7 @@ classdef sceneEngine < handle
         [theSceneSequence, temporalSupportSeconds, statusReport] = compute(obj, sceneContrast);
         
         % Visualization method
-        visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds);
+        visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, varargin);
         
         % Visualize one frame of the sequence 
         visualizeStaticFrame(obj, sceneSequence, temporalSupportSeconds, varargin);
