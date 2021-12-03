@@ -1,8 +1,8 @@
-function dataOut = rcePoissonTAFC(obj, operationMode, classifierParamsStruct, nullResponses, testResponses)
-% Compute function for ideal signal-known Poisson noise classifier for TAFC
+function dataOut = rcePoissonNWayFC(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
+% Compute function for ideal signal-known Poisson noise classifier for N-way forced choice.
 %
 % Syntax:
-%     dataOut = rcePoissonTAFC(obj, operationMode, classifierParamsStruct, nullResponses, testResponses)
+%     dataOut = rcePoissonNWayFC(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a
@@ -14,23 +14,23 @@ function dataOut = rcePoissonTAFC(obj, operationMode, classifierParamsStruct, nu
 %    keep the calling machinery happy.
 %
 %    When called from a parent @responseClassifierEngine object with operationMode set to 'predict', it
-%    sets up the Poission log-likehood ratio (LL) of test stimulus, using
-%    the mean of the passed null and test responses as a template.  Pass
+%    sets up the Poission log-likehood ratio (LL) for the decision, using
+%    the mean of the passed N responses as a template.  Pass
 %    noise free responses to get the signal known exactly version.
 %
 %    When this is called from a parent @responseClassifierEngine object
 %    with operationMode set to 'predict', it makes correct/incorrect
 %    predictions for the passed instances. The predictions are made using a
-%    maximum likelihood classifier for TAFC and Poisson noise.
+%    maximum likelihood classifier for N-way forced choice and Poisson noise.
 %
-%    This function models a TAFC task, so that each trial is considered to
-%    be either null/test across the two alternatives, or test/null.
+%    This function models an N-way forced choice task with one stimulus
+%    presented per trial, so that each trial is considered to be one of the
+%    four passed alternatives.
 %
-%    Typically, training will be with one noise free instances of the null
-%    and test responses, while testing will be on noisy instances.  For
-%    training, however, the means of the passed null and test instances are
-%    taken as the noise free template, so that you can in fact pass
-%    multiple instances and they can be noisy.
+%    Typically, training will be with one noise free instances four alternatives,
+%    while testing will be on noisy instances.  For training, however, the means
+%    of the passed instances are taken as the noise free template, so that you
+%    can in fact pass multiple instances per alternative and they can be noisy.
 %
 % Inputs:
 %    obj                      - The calling @responseClassifierEngine.
@@ -45,18 +45,18 @@ function dataOut = rcePoissonTAFC(obj, operationMode, classifierParamsStruct, nu
 %                               be used to control details of how the classifier
 %                               is set up. Currently this function does not
 %                               use any parameters.
-%    nullResponses            - an [mInstances x nDims x tTimePoints] matrix of responses to the null stimulus
-%    testResponses            - an [mInstances x nDims x tTimePoints] matrix of responses to the test stimulus
-%
+%    theResponses             - an N-dimensional cell array, with each entry
+%                               a [mInstances x nDims x tTimePoints] matrix
+%                               of responses for one of the N alternatives.
 % Outputs:
 %    dataOut                  - If function called with no input arguments,
 %                               this is the default parameter structure for
 %                               this funciton.
 %                              
-%                               If function is called from a @responseClassifierEngine
-%                               object, what this contains depends on
-%                               whether operationMode is 'train' or
-%                               'predict'.
+%                               If function is called from a
+%                               @responseClassifierEngine object, what this
+%                               contains depends on whether operationMode
+%                               is 'train' or 'predict'.
 % 
 %                               For 'train', the struct has two fields as
 %                               required by responseClassifierEngine
@@ -80,17 +80,17 @@ function dataOut = rcePoissonTAFC(obj, operationMode, classifierParamsStruct, nu
 % Optional key/value pairs:
 %   None.
 %
-% See also: t_thresholdEngine, t_responseClassifer, rcePoissonNWay,
-%           PoissonDecisionLogLikelihood
+% See also: t_thresholdEngine, t_responseClassifer, rcePoissonTAFC,
+%           PoissonDecisionLogLikelihood,
+%           PoissonIdealObserverNAlternativeFC.
+%            
 
 % History:
-%   10/17/20  dhb  Lots of work on comments.
-%   12/03/21  dhb  Pull out Poisson log likelihood as function into
-%                  isetbio.
+%   12/03/21  dhb  Started on this.
 
 % For consistency with the interface
 if (nargin == 0)
-    dataOut = struct('Classifier', 'Poisson 2AFC Ideal Observer');
+    dataOut = struct('Classifier', 'Poisson N-way Forced Choice Ideal Observer');
     return;
 end
 
@@ -100,35 +100,34 @@ if (~strcmp(operationMode,'train') && ~strcmp(operationMode,'predict'))
 end
     
 if (strcmp(operationMode, 'train'))  
-    % We simulate the observer with a "detection" protocol
-    % No noise response template for test/null stimulus 
-    nullTemplate = mean(nullResponses(:, :), 1);
-    testTemplate = mean(testResponses(:, :), 1);
+    % No noise response template for each alternative stimulus 
+    for ii = 1:length(theResponses)
+        theTemplates{ii} = mean(theResponses{ii}(:, :), 1);
+    end
     dataOut.trainedClassifier = [];
-    dataOut.preProcessingConstants = struct('nullTemplate', nullTemplate, 'testTemplate', testTemplate);
+    dataOut.preProcessingConstants = struct('theTemplates', theTemplate);
     
     return;
 end
 
 if (strcmp(operationMode, 'predict'))
-    % Get template we tucked away at training time.
-    nullTemplate = obj.preProcessingConstants.nullTemplate;
-    testTemplate = obj.preProcessingConstants.testTemplate;
+    % Get templates we tucked away at training time.
+    theTemplates = obj.preProcessingConstants.theTemplates;
     
-    % Make sure number of null and test instances matches.
+    % Make sure number of instances matches across passed responses.
     nTrials = size(nullResponses, 1);
     assert(nTrials == size(testResponses, 1));
     
-    % Compute response {0, 1} with log likelihood ratio.  Assume without
-    % loss of generality that alternative order on each trial is null/test,
-    % compute likelihood of each order, and call it correct if likelihood
-    % for null/test order is higher.  Because each entry of the response
-    % vectors is an indendent Poisson observation, we can just sum the log
-    % likelihood of the null and test components of the TAFC response.
+    % Compute response {0, 1} with log likelihood ratio.  Assume alternative order on
+    % each trial is null/test, compute likelihood of each order, and call
+    % it correct if likelihood for null/test order is higher.  Because each
+    % entry of the response vectors is an indendent Poisson observation, we
+    % can just sum the log likelihood of the null and test components of
+    % the TAFC response.
     response = zeros(1, nTrials);
     for idx = 1:nTrials
-        llhdCr = PoissonDecisionLogLikelihoood(nullResponses(idx, :), nullTemplate) + PoissonDecisionLogLikelihoood(testResponses(idx, :), testTemplate);
-        llhdIc = PoissonDecisionLogLikelihoood(nullResponses(idx, :), testTemplate) + PoissonDecisionLogLikelihoood(testResponses(idx, :), nullTemplate);
+        llhdCr = llhd(nullResponses(idx, :), nullTemplate) + PoissonDecisionLogLikelihoood(testResponses(idx, :), testTemplate);
+        llhdIc = llhd(nullResponses(idx, :), testTemplate) + PoissonDecisionLogLikelihoood(testResponses(idx, :), nullTemplate);
         
         % For likelihood ratio extremely close to 1, do a coin flip
         threshold = 1e-10;
@@ -147,4 +146,5 @@ if (strcmp(operationMode, 'predict'))
 end
 
 end
+
 
