@@ -1,8 +1,8 @@
-function dataOut = rcePoissonNWayFC(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
+function dataOut = rcePoissonNWayFC_OneStimPerTrial(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
 % Compute function for ideal signal-known Poisson noise classifier for N-way forced choice.
 %
 % Syntax:
-%     dataOut = rcePoissonNWayFC(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
+%     dataOut = rcePoissonNWayFC_OneStimPerTrial(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a
@@ -24,13 +24,14 @@ function dataOut = rcePoissonNWayFC(obj, operationMode, classifierParamsStruct, 
 %    maximum likelihood classifier for N-way forced choice and Poisson noise.
 %
 %    This function models an N-way forced choice task with one stimulus
-%    presented per trial, so that each trial is considered to be one of the
-%    four passed alternatives.
+%    presented per trial, so that each trial is has responses to be one of the
+%    N possible alternatives.
 %
-%    Typically, training will be with one noise free instances four alternatives,
-%    while testing will be on noisy instances.  For training, however, the means
-%    of the passed instances are taken as the noise free template, so that you
-%    can in fact pass multiple instances per alternative and they can be noisy.
+%    Typically, training will be with one noise free instances of each of
+%    the N alternatives, while testing will be on noisy instances.  For
+%    training, however, the means of the passed instances are taken as the
+%    noise free template, so that you can in fact pass multiple instances
+%    per alternative and they can be noisy.
 %
 % Inputs:
 %    obj                      - The calling @responseClassifierEngine.
@@ -45,9 +46,20 @@ function dataOut = rcePoissonNWayFC(obj, operationMode, classifierParamsStruct, 
 %                               be used to control details of how the classifier
 %                               is set up. Currently this function does not
 %                               use any parameters.
-%    theResponses             - an N-dimensional cell array, with each entry
-%                               a [mInstances x nDims x tTimePoints] matrix
-%                               of responses for one of the N alternatives.
+%               In 'train' mode:    
+%                    theResponses   - an N-dimensional cell array, with each entry
+%                                     a [mInstances x nDims x tTimePoints] matrix
+%                                     of responses for one of the N alternatives.
+%                    whichAlternatives - Not used. 
+%
+%               In 'predict' mode:  
+%                    theResponses   - an [mTrials x nDims x nTimePoints]
+%                                     matrix of responses for each trial.
+%                    whichAlternatives - Vector of dimension mTrials whose
+%                                     entries are integers in the range [1,N] and which
+%                                     specify the alternative presented on each trial.
+%
+%
 % Outputs:
 %    dataOut                  - If function called with no input arguments,
 %                               this is the default parameter structure for
@@ -115,26 +127,29 @@ if (strcmp(operationMode, 'predict'))
     theTemplates = obj.preProcessingConstants.theTemplates;
     
     % Make sure number of instances matches across passed responses.
-    nTrials = size(nullResponses, 1);
-    assert(nTrials == size(testResponses, 1));
+    nTrials = size(theResponses, 1);
+    assert(nTrials == length(whichAlternatives));
     
-    % Compute response {0, 1} with log likelihood ratio.  Assume alternative order on
-    % each trial is null/test, compute likelihood of each order, and call
-    % it correct if likelihood for null/test order is higher.  Because each
-    % entry of the response vectors is an indendent Poisson observation, we
-    % can just sum the log likelihood of the null and test components of
-    % the TAFC response.
+    % Compute response finding which of the possible alternatives has the
+    % highest likelihood.
     response = zeros(1, nTrials);
-    for idx = 1:nTrials
-        llhdCr = llhd(nullResponses(idx, :), nullTemplate) + PoissonDecisionLogLikelihoood(testResponses(idx, :), testTemplate);
-        llhdIc = llhd(nullResponses(idx, :), testTemplate) + PoissonDecisionLogLikelihoood(testResponses(idx, :), nullTemplate);
-        
-        % For likelihood ratio extremely close to 1, do a coin flip
-        threshold = 1e-10;
-        if (abs(llhdCr - llhdIc) <= threshold)
-            response(idx) = (rand() > 0.5);
+    nAlternatives = length(theTemplates);
+    trialDecisionLikelihoods = zeros(nTrials,nAlternatives);
+    for tt = 1:nTrials
+        % Find the decision likelihood
+        for aa = 1:nAlternatives
+            trialDecisionLikelihoods(tt,aa) = PoissonDecisionLogLikelihoood(theResponses(tt, :), theTemplates{aa});
+        end
+
+        % Pick the winner
+        [~,whichAlternativeList] = max(trialDecisionLikelihoods(tt,:));
+        whichAlternative = whichAlternativeList(1);
+
+        % See if it was correct
+        if (whichAlternatve == whichAlternatives(tt))
+            response = 1;
         else
-            response(idx) = ((llhdCr - llhdIc) > 0);
+            response = 0;
         end
     end
     
