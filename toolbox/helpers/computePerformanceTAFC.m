@@ -5,7 +5,8 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses] = ...
-%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses)
+%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, ...
+%       theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
 %
 % Description:
 %     Train a classifier on a discrimination and report back a vector of
@@ -50,6 +51,7 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %                             response instances. Typically 'random'.
 %     saveResponses         - Logical. Whether to return the computed
 %                             response instances
+%     visualAllComponentrs  - Logical. Whether to visualize or not.
 %
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
@@ -64,7 +66,7 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %     None.
 %
 % See also
-%   t_thresholdEngine, t_spatialCsf, computeThreshold
+%   t_thresholdEngine, t_spatialCsf, computeThresholdTAFC
 %
 
 % History:

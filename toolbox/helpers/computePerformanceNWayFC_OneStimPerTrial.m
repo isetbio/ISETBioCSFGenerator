@@ -1,11 +1,12 @@
-function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(nullScene, testScene, ...
+function [predictions, theClassifierEngine, responses] = computePerformanceNWayFC_OneStimPerTrial(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     saveResponses, visualizeAllComponents)
 % Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses] = ...
-%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses)
+%        computePerformanceNWayFC_OneStimPerTrial(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
+%           theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
 %
 % Description:
 %     Train a classifier on a discrimination and report back a vector of
@@ -17,8 +18,7 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %     these scenes, and the classifer.
 %
 % Inputs:
-%     nullScene             - Null scene sequence.
-%     testScene             - Test scene sequence.
+%     theScenes             - Cell array of the scene sequences for each alternative.
 %     temporalSupport       - Temporal support vector (in seconds) for
 %                             scene sequences.
 %     nTrain                - Number of null and test response instances
@@ -49,7 +49,8 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %                             theNeuralEngine to generate the test
 %                             response instances. Typically 'random'.
 %     saveResponses         - Logical. Whether to return the computed
-%                             response instances
+%                             response instances.
+%     visualAllComponentrs  - Logical. Whether to visualize or not.
 %
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
@@ -64,7 +65,7 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %     None.
 %
 % See also
-%   t_thresholdEngine, t_spatialCsf, computeThreshold
+%   t_thresholdEngineNWay_OneStimPerTrial
 %
 
 % History:
@@ -73,47 +74,45 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 % Empty responses
 responses = [];
 
+% Number of alternatives
+nAlternatives = length(theScenes);
+
 % Train the classifier.
 %
 % If trainNoiseFlag is empty, then the passed classifier has already been trained
 % and training is skipped.  Otherwise trainFlag is passed to the stimulus
 % generation routine to indicate what type of noise (typically 'none' or
 % 'random') should be used in the training.
-
 if (~isempty(trainNoiseFlag))
-    % Generate stimulus for training, NULL stimulus
-    [inSampleNullStimResponses, ~] = theNeuralEngine.compute(...
-        nullScene, ...
-        temporalSupport, ...
-        nTrain, ...
-        'noiseFlags', {trainNoiseFlag});
-    
-    % Generate stimulus for training, TEST stimulus
-    [inSampleTestStimResponses, responseTemporalSupportSeconds] = theNeuralEngine.compute(...
-        testScene, ...
-        temporalSupport, ...
-        nTrain, ...
-        'noiseFlags', {trainNoiseFlag});
-    
-    if (visualizeAllComponents)
-        if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
-            diffResponse = inSampleTestStimResponses(trainNoiseFlag) - inSampleNullStimResponses(trainNoiseFlag);
-            % Visualize the activation
-            theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', squeeze(diffResponse), 'verticalActivationColorBarInside', true);
-        
-            % Also visualize the full absorptions density
-            figNo = 999;
-            theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
-        end
-        
-        if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
-            theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
-                responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
-                'stimulusTemporalSupportSeconds', temporalSupport,...
-                'stimulusSceneSequence', testScene);
-        end
-        
+    % Generate stimuli for training
+    for aa = 1:nAlternatives
+        [inSampleStimResponses{aa}, ~] = theNeuralEngine.compute(...
+            theScenes{aa}, ...
+            temporalSupport, ...
+            nTrain, ...
+            'noiseFlags', {trainNoiseFlag});
     end
+    
+    % Visualization. This from TAFC code.  Need to update
+    %
+    % if (visualizeAllComponents)
+    %     if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
+    %         diffResponse = inSampleTestStimResponses(trainNoiseFlag) - inSampleNullStimResponses(trainNoiseFlag);
+    %         % Visualize the activation
+    %         theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', squeeze(diffResponse), 'verticalActivationColorBarInside', true);
+    %     
+    %         % Also visualize the full absorptions density
+    %         figNo = 999;
+    %         theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
+    %     end
+    %     
+    %     if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
+    %         theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
+    %             responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
+    %             'stimulusTemporalSupportSeconds', temporalSupport,...
+    %             'stimulusSceneSequence', testScene);
+    %     end
+    % end
     
     % Train the classifier. This shows the usage to extact information
     % from the container retrned as the first return value from the neural
@@ -126,14 +125,11 @@ if (~isempty(trainNoiseFlag))
     %   instancesNum   - number of response instances
     %   mNeuralDim     - dimension of neural response at one timepoint
     %   tTimeBins      - number of time points in stimulus sequence.
-    theClassifierEngine.compute('train', ...
-        inSampleNullStimResponses(trainNoiseFlag), ...
-        inSampleTestStimResponses(trainNoiseFlag));
+    theClassifierEngine.compute('train', inSampleStimResponses(trainNoiseFlag));
     
     % Save computed response instances
     if (saveResponses)
-        responses.inSampleNullStimResponses = inSampleNullStimResponses;
-        responses.inSampleTestStimResponses = inSampleTestStimResponses;
+        responses.inSampleStimResponses = inSampleStimResponses;
     end
     
 end
@@ -143,7 +139,23 @@ end
 % Generate stimulus for prediction, NULL stimulus.  The variable testFlag
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
-[outOfSampleNullStimResponses, ~] = theNeuralEngine.compute(...
+whichAlternatives = randi(nAlternatives,1,nTest);
+for tt = 1:nTest
+    % Get responses for scene for this trial
+    [outOfSampleStimResponsesTemp, ~] = theNeuralEngine.compute(...
+        theScenes(whichAlternatives(tt)), ...
+        temporalSupport, ...
+        1, ...
+        'noiseFlags', {testNoiseFlag});
+
+    % Pack it into desired format
+    outOfSampleStimResponses(tt,:,:)
+
+end
+    
+end
+
+[outOfSampleStimResponses, ~] = theNeuralEngine.compute(...
     nullScene, ...
     temporalSupport, ...
     nTest, ...
