@@ -39,15 +39,15 @@ function dataOut = compute(obj, operationMode, nullResponses, testResponses)
 %               In 'train' mode, the struct must have the following two
 %               fields.  It can additional fields that are classifier
 %               dependent.
-%                   .trainedClassifier       : the trained binary SCV classifer
-%                   .preProcessingConstants  : constants computed during the dimensionality reduction preprocessing phase
+%                   .trainedClassifier       : the trained classifer information
+%                   .preProcessingConstants  : constants computed during the training
 %
 %               In 'predict' mode, the struct must have the following two
 %               fields.  It can have additional fields that are classifier
 %               dependent.
 %                   .pCorrect                : probability of correct classification for the out-of-sample trials (testing data)
-%                   .trialPredictions        : vector of the trial-by-trial predictions 
-%                                              (0 == incorrectly predicting nominal class, 1 == correctly predicting nominal class)
+%                   .trialPredictions        : vector of the trial-by-trial performance 
+%                                              (0 == incorrect, 1 == correct)
 % See Also:
 %     t_responseClassifier
 

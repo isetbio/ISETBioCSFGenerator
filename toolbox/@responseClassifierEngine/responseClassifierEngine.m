@@ -10,6 +10,12 @@ classdef responseClassifierEngine < handle
 %    constants returned by its computeFunction while in 'train' mode, so that when its 
 %    computeFunction is called in the 'predict' operation mode, it can have access to them.
 %
+%    The responseClassifierEngine is written to for experiments involving
+%    the discrimination of two stimulus alternatives, a "null" and "test"
+%    stimulus, with the details of how these are handled implemented in the
+%    compute function.  See responseClassifierEngineNWay for an engine
+%    written for experiments with more stimulus alternatives.
+%
 % Inputs:
 %    classifierComputeFunctionHandle  - Function handle to the computeFunction that defines the
 %                                       operation of the classifier
@@ -24,11 +30,12 @@ classdef responseClassifierEngine < handle
 %
 %
 % See Also:
-%    t_responseClassifier.m, rcePcaSVMClassifier.m
+%    t_responseClassifier, rcePoissonTAFC, rcePcaSVMClassifier, responseClassifierEngineNWay
 %
 
 % History:
 %    9/20/2020  NPC Wrote it
+%   12/03/2021  dhb Comments.
 
     %% Public properties
     properties
