@@ -59,7 +59,6 @@ function dataOut = rcePoissonNWayFC_OneStimPerTrial(obj, operationMode, classifi
 %                                     entries are integers in the range [1,N] and which
 %                                     specify the alternative presented on each trial.
 %
-%
 % Outputs:
 %    dataOut                  - If function called with no input arguments,
 %                               this is the default parameter structure for

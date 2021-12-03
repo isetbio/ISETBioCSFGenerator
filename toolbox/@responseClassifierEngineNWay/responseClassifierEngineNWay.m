@@ -29,7 +29,7 @@ classdef responseClassifierEngineNWay < handle
 % Optional key/value pairs: None
 %
 % See Also:
-%    t_responseClassifierNWay, rcePoissonTAFC, rcePcaSVMClassifier, esponseClassifierEngineNWay
+%    t_responseClassifierNWay, rcePoissonTAFC, rcePcaSVMClassifier, responseClassifierEngineNWay
 %
 
 % History:

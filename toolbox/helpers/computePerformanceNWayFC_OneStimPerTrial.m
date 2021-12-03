@@ -151,6 +151,7 @@ for tt = 1:nTest
     % Pack it into desired format
     outOfSampleStimResponses(tt,:,:)
 
+    % DB coding here
 end
     
 end
