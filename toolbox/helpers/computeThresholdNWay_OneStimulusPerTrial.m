@@ -233,7 +233,7 @@ while (nextFlag)
 end
 
 % Return threshold value
-[threshold, para] = estimator.thresholdMLE('showPlot', false);
+[threshold, para] = estimator.thresholdMLE('showPlot', true);
 if (beVerbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
         para(1), para(2), para(3), para(4));
