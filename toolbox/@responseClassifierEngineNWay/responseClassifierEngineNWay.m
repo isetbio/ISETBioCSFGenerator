@@ -1,5 +1,5 @@
 classdef responseClassifierEngineNWay < handle
-% Define a responseClassifierEngine class
+% Define a responseClassifierEngineNWay class
 %
 % Syntax:
 %   theClassifierEngine =
@@ -29,11 +29,12 @@ classdef responseClassifierEngineNWay < handle
 % Optional key/value pairs: None
 %
 % See Also:
-%    t_responseClassifierNWay, rcePoissonTAFC, rcePcaSVMClassifier, responseClassifierEngineNWay
+%    t_responseClassifier, rcePoissonTAFC, rcePcaSVMClassifier,
+%    responseClassifierEngine
 %
 
 % History:
-%    9/20/2020  NPC Wrote it
+%    12/03/21 Wrote it from responseClassifierEngine
 
     %% Public properties
     properties
@@ -66,11 +67,11 @@ classdef responseClassifierEngineNWay < handle
     % Public methods
     methods
         % Constructor
-        function obj = responseClassifierEngine(classifierComputeFunctionHandle, classifierParamsStruct)
+        function obj = responseClassifierEngineNWay(classifierComputeFunctionHandle, classifierParamsStruct)
             % Validate and set the classifier compute function handle
             obj.validateAndSetComputeFunctionHandle(classifierComputeFunctionHandle);
             
-            % If we dont receice a paramsStruct as the second argument use
+            % If we dont receive a paramsStruct as the second argument use
             % the default params returned by the classifierComputeFunctionHandle
             if (nargin == 1)
                 classifierParamsStruct = obj.classifierComputeFunction();
@@ -88,7 +89,7 @@ classdef responseClassifierEngineNWay < handle
         end
         
         % Compute method
-        dataOut = compute(obj, operationMode, nullResponses, testResponses);
+        dataOut = compute(obj, operationMode, testResponses, whichAlternatives);
 
     end
     

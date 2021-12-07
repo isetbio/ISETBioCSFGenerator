@@ -1,11 +1,11 @@
-function [predictions, theClassifierEngine, responses] = computePerformanceNWayFC_OneStimPerTrial(theScenes, ...
+function [predictions, theClassifierEngine, responses] = computePerformanceNWay_OneStimPerTrial(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     saveResponses, visualizeAllComponents)
 % Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses] = ...
-%        computePerformanceNWayFC_OneStimPerTrial(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
+%        computePerformanceNWay_OneStimPerTrial(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
 %           theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
 %
 % Description:
@@ -86,13 +86,19 @@ nAlternatives = length(theScenes);
 if (~isempty(trainNoiseFlag))
     % Generate stimuli for training
     for aa = 1:nAlternatives
-        [inSampleStimResponses{aa}, ~] = theNeuralEngine.compute(...
+        [inSampleStimResponsesTemp, ~] = theNeuralEngine.compute(...
             theScenes{aa}, ...
             temporalSupport, ...
             nTrain, ...
             'noiseFlags', {trainNoiseFlag});
+
+        % Extract from returend container and accumulate
+        inSampleStimResponsesCell{aa} = inSampleStimResponsesTemp(trainNoiseFlag);
     end
-    
+
+    % Put the cell array back into a container.
+    inSampleStimResponses = containers.Map(trainNoiseFlag,inSampleStimResponsesCell);
+
     % Visualization. This from TAFC code.  Need to update
     %
     % if (visualizeAllComponents)
@@ -100,12 +106,12 @@ if (~isempty(trainNoiseFlag))
     %         diffResponse = inSampleTestStimResponses(trainNoiseFlag) - inSampleNullStimResponses(trainNoiseFlag);
     %         % Visualize the activation
     %         theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', squeeze(diffResponse), 'verticalActivationColorBarInside', true);
-    %     
+    %
     %         % Also visualize the full absorptions density
     %         figNo = 999;
     %         theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
     %     end
-    %     
+    %
     %     if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
     %         theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
     %             responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
@@ -113,7 +119,7 @@ if (~isempty(trainNoiseFlag))
     %             'stimulusSceneSequence', testScene);
     %     end
     % end
-    
+
     % Train the classifier. This shows the usage to extact information
     % from the container retrned as the first return value from the neural
     % response engine - we index the responses by the string contained in
@@ -126,12 +132,11 @@ if (~isempty(trainNoiseFlag))
     %   mNeuralDim     - dimension of neural response at one timepoint
     %   tTimeBins      - number of time points in stimulus sequence.
     theClassifierEngine.compute('train', inSampleStimResponses(trainNoiseFlag));
-    
+
     % Save computed response instances
     if (saveResponses)
         responses.inSampleStimResponses = inSampleStimResponses;
     end
-    
 end
 
 % Predict using trained classifier.
@@ -143,43 +148,41 @@ whichAlternatives = randi(nAlternatives,1,nTest);
 for tt = 1:nTest
     % Get responses for scene for this trial
     [outOfSampleStimResponsesTemp, ~] = theNeuralEngine.compute(...
-        theScenes(whichAlternatives(tt)), ...
+        theScenes{whichAlternatives(tt)}, ...
         temporalSupport, ...
         1, ...
         'noiseFlags', {testNoiseFlag});
 
-    % Pack it into desired format
-    outOfSampleStimResponses(tt,:,:)
-
-    % DB coding here
-end
-    
+    % Extract from returend container and accumulate
+    outOfSampleStimResponsesMat(tt,:,:) = outOfSampleStimResponsesTemp(testNoiseFlag);
 end
 
-[outOfSampleStimResponses, ~] = theNeuralEngine.compute(...
-    nullScene, ...
-    temporalSupport, ...
-    nTest, ...
-    'noiseFlags', {testNoiseFlag});
+% Put the packed format back into a container.
+outOfSampleStimResponses = containers.Map(testNoiseFlag,outOfSampleStimResponsesMat);
 
-% Generate stimuli for prediction, TEST stimulus
-[outOfSampleTestStimResponses, ~] = theNeuralEngine.compute(...
-    testScene, ...
-    temporalSupport, ...
-    nTest, ...
-    'noiseFlags', {testNoiseFlag});
+% [outOfSampleStimResponses, ~] = theNeuralEngine.compute(...
+%     nullScene, ...
+%     temporalSupport, ...
+%     nTest, ...
+%     'noiseFlags', {testNoiseFlag});
+% 
+% % Generate stimuli for prediction, TEST stimulus
+% [outOfSampleTestStimResponses, ~] = theNeuralEngine.compute(...
+%     testScene, ...
+%     temporalSupport, ...
+%     nTest, ...
+%     'noiseFlags', {testNoiseFlag});
 
 % Do the prediction
 dataOut = theClassifierEngine.compute('predict', ...
-    outOfSampleNullStimResponses(testNoiseFlag), ...
-    outOfSampleTestStimResponses(testNoiseFlag));
+    outOfSampleStimResponses(testNoiseFlag),whichAlternatives);
 
 % Save computed response instances
 if (saveResponses)
     responses.outOfSampleNullStimResponses = outOfSampleNullStimResponses;
     responses.outOfSampleTestStimResponses = outOfSampleTestStimResponses;
 end
-    
+
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
 predictions = dataOut.trialPredictions;

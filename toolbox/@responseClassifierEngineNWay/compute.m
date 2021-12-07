@@ -67,7 +67,7 @@ function dataOut = compute(obj, operationMode, theResponses, whichAlternatives)
 %    9/20/2020  NPC Wrote it
 
     % Validate the operationMode
-    assert(ismember(operationMode, obj.validOperationModes), sprintf('The passed responseClassifierEngine.compute() ''%s'' is invalid.', operationMode));
+    assert(ismember(operationMode, obj.validOperationModes), sprintf('The passed responseClassifierEngineNWay.compute() ''%s'' is invalid.', operationMode));
 
     % Call the user-supplied compute function
     if (strcmp(operationMode,'train'))

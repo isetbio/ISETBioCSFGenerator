@@ -1,8 +1,8 @@
-function dataOut = rcePoissonNWayFC_OneStimPerTrial(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
+function dataOut = rcePoissonNWay_OneStimPerTrial(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
 % Compute function for ideal signal-known Poisson noise classifier for N-way forced choice.
 %
 % Syntax:
-%     dataOut = rcePoissonNWayFC_OneStimPerTrial(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
+%     dataOut = rcePoissonNWay_OneStimPerTrial(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a
@@ -116,7 +116,7 @@ if (strcmp(operationMode, 'train'))
         theTemplates{ii} = mean(theResponses{ii}(:, :), 1);
     end
     dataOut.trainedClassifier = [];
-    dataOut.preProcessingConstants = struct('theTemplates', theTemplate);
+    dataOut.preProcessingConstants.theTemplates = theTemplates;
     
     return;
 end
@@ -145,7 +145,7 @@ if (strcmp(operationMode, 'predict'))
         whichAlternative = whichAlternativeList(1);
 
         % See if it was correct
-        if (whichAlternatve == whichAlternatives(tt))
+        if (whichAlternative == whichAlternatives(tt))
             response = 1;
         else
             response = 0;
