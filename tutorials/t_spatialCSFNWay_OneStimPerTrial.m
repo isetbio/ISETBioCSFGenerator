@@ -17,8 +17,11 @@
 % History:
 %    12/07/21  dhb  Wrote it from t_spatialCSF.
 
-% Clear and close
+%% Clear and close
 clear; close all;
+
+%% Set number of alternatives
+nAlternatives = 4;
 
 % List of spatial frequencies to be tested.
 spatialFreqs = [2];
@@ -73,7 +76,9 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'logThreshLimitDelta', 0.02, ...
                        'slopeRangeLow', 1, ...
                        'slopeRangeHigh', 50, ...
-                       'slopeDelta', 2.5);
+                       'slopeDelta', 2.5, ...
+                       'nAlternatives', nAlternatives, ...
+                       'guessRate', 1/nAlternatives);
 
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
@@ -90,7 +95,6 @@ for idx = 1:length(spatialFreqs)
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration
-    nAlternatives = 4;
     orientations = linspace(0,180,nAlternatives);
     for oo = 1:length(orientations)
         gratingScenes{oo} = createGratingScene(chromaDir, spatialFreqs(idx),'orientation',orientations(oo));
@@ -104,7 +108,7 @@ for idx = 1:length(spatialFreqs)
         computeThresholdNWay_OneStimulusPerTrial(gratingScenes, theNeuralEngine, classifierEngine, ...
         classifierPara, thresholdPara, questEnginePara);
     
-    % Plot stimulus
+    % Plot stimulusg
     figure(dataFig);
     subplot(4, 4, idx * 2 - 1);
     

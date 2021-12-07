@@ -69,16 +69,19 @@ classdef questThresholdEngine < contrastThresholdEngine
     %                        psychometric curve
     %
     %   'guessRate'        - Array. An array of all possible guess rate for
-    %                        the psychometric curve
+    %                        the psychometric curve. Default 0.5;
     %
     %   'lapseRate'        - Array. An array of all possible lapse rate for
-    %                        the psychometric curve
+    %                        the psychometric curve. Default 0.
     %
     %   'validation'       - Boolean. If set to True run the entire
     %                        psychometric curve
     %
     %   'nRepeat'          - Double. Number of trials per contrast level
     %                        when running the validation
+    %
+    %   'nAlternatives'    - Double. Number of stimulus alternatives per
+    %                        trial. Default 2.
     %
     %    See also t_thresholdEngine, contrastThresholdEngine
     
@@ -97,6 +100,8 @@ classdef questThresholdEngine < contrastThresholdEngine
         
         estIdx;
         nRepeat;
+
+        nAlternatives;
         
     end
     
@@ -114,6 +119,7 @@ classdef questThresholdEngine < contrastThresholdEngine
             p.addParameter('stopCriterion', 0.05, @(x) (isa(x, 'function_handle') || isnumeric(x)));            
             p.addParameter('slopeRange', 0.1 : 0.5 : 50);
             p.addParameter('guessRate', 0.5);
+            p.addParameter('nAlternatives', 2);
             p.addParameter('lapseRate', 0.0);
             p.addParameter('validation', false, @(x)(islogical(x) && numel(x) == 1));
             p.addParameter('nRepeat', 64, @(x)(isnumeric(x) && numel(x) == 1));
@@ -125,6 +131,7 @@ classdef questThresholdEngine < contrastThresholdEngine
             this.lapseRate = p.Results.lapseRate;
             this.validation = p.Results.validation;
             this.nRepeat = p.Results.nRepeat;
+            this.nAlternatives = p.Results.nAlternatives;
             
             stopCriterion = p.Results.stopCriterion;
             if isempty(stopCriterion)
@@ -142,7 +149,8 @@ classdef questThresholdEngine < contrastThresholdEngine
             for idx = 1 : this.numEstimator
                 this.estimators{idx} = ...
                     qpInitialize('stimParamsDomainList', {this.estDomain}, ...
-                    'psiParamsDomainList',  {this.estDomain, this.slopeRange, this.guessRate, this.lapseRate});
+                    'psiParamsDomainList',  {this.estDomain, this.slopeRange, this.guessRate, this.lapseRate}, ...
+                    'nOutcomes',this.nAlternatives);
             end
             
             % Set the current estimator to #1

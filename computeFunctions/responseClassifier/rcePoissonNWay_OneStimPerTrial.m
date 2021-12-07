@@ -146,9 +146,9 @@ if (strcmp(operationMode, 'predict'))
 
         % See if it was correct
         if (whichAlternative == whichAlternatives(tt))
-            response = 1;
+            response(tt) = 1;
         else
-            response = 0;
+            response(tt) = 0;
         end
     end
     
