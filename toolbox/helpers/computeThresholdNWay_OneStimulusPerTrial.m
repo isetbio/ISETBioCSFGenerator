@@ -56,10 +56,9 @@ function [threshold, questObj, psychometricFunction] = computeThresholdNWay_OneS
 %  
 
 % History: 
-%  10/23/20  dhb  Added commments.
-%  12/04/20  npc  Added option to run method of constant stimuli. 
-%                 Also added psychometricFunction return argument.
+%  12/07/21  dhb  Wrote NWay version from original TAFC version.
 
+% Parse
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);
 p.addParameter('extraVerbose',false, @islogical);
@@ -73,6 +72,13 @@ visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 
+% Get number of alternatives, determines guess rate of PF
+nAlternatives = length(theSceneEngines);
+
+% PF is based on correct/incorrect, so number of response
+% outcomes is 2 independent of number of alternatives.
+nOutcomes = 2;
+
 % Construct a QUEST threshold estimator estimate threshold
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
@@ -80,13 +86,13 @@ slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPa
 if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
     estimator = questThresholdEngine(...
         'validation', true, 'nRepeat', questEnginePara.nTest, ...
-        'estDomain', estDomain, 'slopeRange', slopeRange);
+        'estDomain', estDomain, 'slopeRange', slopeRange, 'nOutcomes', nOutcomes, 'GuessRate', 1/nAlternatives);
 else
     estimator = questThresholdEngine(...
         'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'numEstimator', questEnginePara.numEstimator, ...
-        'stopCriterion', questEnginePara.stopCriterion);
+        'stopCriterion', questEnginePara.stopCriterion, 'nOutcomes', nOutcomes, 'GuessRate', 1/nAlternatives);
 end
 
 % Threshold estimation with QUEST+
@@ -207,7 +213,7 @@ while (nextFlag)
 %         end
     else
         % Classifier is already trained, just get predictions
-        [predictions, ~, ~] = computePerformanceTAFC(...
+        [predictions, ~, ~] = computePerformanceNWay_OneStimPerTrial(...
             theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...

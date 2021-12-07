@@ -112,9 +112,9 @@ for idx = 1:length(spatialFreqs)
     figure(dataFig);
     subplot(4, 4, idx * 2 - 1);
     
-    visualizationContrast = 1.0;
-    [theSceneSequence] = gratingScenes.compute(visualizationContrast);
-    gratingScenes.visualizeStaticFrame(theSceneSequence);
+%     visualizationContrast = 1.0;
+%     [theSceneSequence] = gratingScenes.compute(visualizationContrast);
+%     gratingScenes.visualizeStaticFrame(theSceneSequence);
     
     % Plot data and psychometric curve 
     % with a marker size of 2.5

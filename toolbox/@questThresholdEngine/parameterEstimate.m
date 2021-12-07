@@ -1,6 +1,6 @@
 function estimates = parameterEstimate(this)
 
-% For now, hard code the number of parameter to be 4
+% For now, hard code the number of parameters to be 4
 estimates = zeros(this.numEstimator, 4);
 
 for idx = 1 : this.numEstimator
