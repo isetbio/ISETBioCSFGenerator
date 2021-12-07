@@ -27,25 +27,13 @@ nAlternatives = 4;
 spatialFreqs = [2];
 %spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
 
-% Choose stimulus chromatic direction specified as a 1-by-3 vector
-% of L, M, S cone contrast.  These vectors get normalized below, so only
-% their direction matters in the specification.
-stimType = 'luminance';
-switch (stimType)
-    case 'luminance'
-        chromaDir = [1.0, 1.0, 1.0]';
-    case 'red-green'
-        chromaDir = [1.0, -1.0, 0.0]';
-    case 'L-isolating'
-        chromaDir = [1.0, 0.0, 0.0]';
-end
-
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
 % exceed the gamut of the monitor, so we are conservative and set this at a
 % value that is within gamut of typical monitors and don't worry about it
 % further for this tutorial.  A vector length contrast of 0.08 should be
 % OK.
-rmsContrast = 0.08;
+chromaDir = [1.0, 1.0, 1.0]';
+rmsContrast = 0.9;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
