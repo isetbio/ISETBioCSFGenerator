@@ -123,6 +123,8 @@ classdef questThresholdEngine < contrastThresholdEngine
             p.addParameter('lapseRate', 0.0);
             p.addParameter('validation', false, @(x)(islogical(x) && numel(x) == 1));
             p.addParameter('nRepeat', 64, @(x)(isnumeric(x) && numel(x) == 1));
+            p.addParameter('qpPF',@qpPFWeibull,@(x) isa(x,'function_handle'));
+            p.addParameter('qpPFInv',@qpPFWeibullInv,@(x) isa(x,'function_handle'));
                         
             parse(p, varargin{:});
             this.numEstimator  = p.Results.numEstimator;
@@ -132,6 +134,8 @@ classdef questThresholdEngine < contrastThresholdEngine
             this.validation = p.Results.validation;
             this.nRepeat = p.Results.nRepeat;
             this.nOutcomes = p.Results.nOutcomes;
+            this.qpPF = p.Results.qpPF;
+            this.qpPFInv = p.Results.qpPFInv;
             
             stopCriterion = p.Results.stopCriterion;
             if isempty(stopCriterion)

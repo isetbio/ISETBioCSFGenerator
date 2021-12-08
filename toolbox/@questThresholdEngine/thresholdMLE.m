@@ -1,5 +1,32 @@
 % Combine all data to make a final MLE
 function [threshold, para, dataOut] = thresholdMLE(this, varargin)
+% Find maximum likelihood fit to psychometric data and return threshold estimate.
+%
+% Synopsis:
+%    [threshold, para, dataOut] = thresholdMLE(this, varargin) 
+%
+% Description:
+%
+% Inputs:
+%
+% Outputs:
+%
+% Optional key/value pairs.
+%    'thresholdCriterion'   - Threshold fraction correct to which threshold
+%                             should correspond.
+
+% History:
+%  12/8/21: dhb  Add thresholdCriterion key/value pair, trying to keep
+%                default behavior fixed.  Added skeleton header comment.
+%           dhb  Move input parsing to the top, where I was looking for it.
+
+% Parse inputs.
+p = inputParser;
+p.addParameter('showPlot',  false);
+p.addParameter('newFigure', false);
+p.addParameter('pointSize', 25);
+p.addParameter('returnData',  false);\
+parse(p, varargin{:});
 
 [stimVec, responseVec, structVec] = this.combineData();
 
@@ -11,14 +38,16 @@ para = qpFit(structVec, questData.qpPF, psiParamsQuest, questData.nOutcomes, ...
     'lowerBounds', [min(this.estDomain) min(this.slopeRange) min(this.guessRate) min(this.lapseRate)], ...
     'upperBounds', [max(this.estDomain) max(this.slopeRange) max(this.guessRate) max(this.lapseRate)]);
 
+% Return the thresholds.  The default, perhaps not well chosen, is to
+% return the first parameter of the psychometric function.  If a criterion
+% percent correct is set via the key/value pair 'thresholdCriterion', then
+% threshold is returned as the stimulus that leads to this percent correct.
+% stimContrast  = qpPFWeibullInv(proportionCorrect,psiParams)
+% predictedProportions = qpPFWeibull(stimParams,psiParams)
+
 threshold = para(1);
 
-p = inputParser;
-p.addParameter('showPlot',  false);
-p.addParameter('newFigure', false);
-p.addParameter('pointSize', 25);
-p.addParameter('returnData',  false);
-parse(p, varargin{:});
+
 
 if ((p.Results.showPlot) || (p.Results.returnData))
     if p.Results.newFigure
