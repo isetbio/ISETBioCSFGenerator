@@ -1,4 +1,3 @@
-% Combine all data to make a final MLE
 function [threshold, para, dataOut] = thresholdMLE(this, varargin)
 % Find maximum likelihood fit to psychometric data and return threshold estimate.
 %
@@ -6,6 +5,8 @@ function [threshold, para, dataOut] = thresholdMLE(this, varargin)
 %    [threshold, para, dataOut] = thresholdMLE(this, varargin) 
 %
 % Description:
+%    This combines the data, fits the psychometric function, and returns a
+%    threshold estimate.  Units of threshold are dB.
 %
 % Inputs:
 %
@@ -26,7 +27,7 @@ p.addParameter('showPlot',  false);
 p.addParameter('newFigure', false);
 p.addParameter('pointSize', 25);
 p.addParameter('returnData',  false);
-p.addParameter('thresholdCriterion',0.81606)
+p.addParameter('thresholdCriterion',0.81606);
 parse(p, varargin{:});
 
 [stimVec, responseVec, structVec] = this.combineData();
@@ -55,7 +56,7 @@ para = qpFit(structVec, questData.qpPF, psiParamsQuest, questData.nOutcomes, ...
 % finds the threshold corresponding to a passed proportion correct, with
 % default 0.81606.
 threshold = this.qpPFInv(p.Results.thresholdCriterion,para);
-if (p.Results.thresholdCriterion == 0.81606)
+if (p.Results.thresholdCriterion == 0.81606 & isequal(this.qpPF,@qpPFWeibull))
     thresholdOld = para(1);
     if (abs(threshold-thresholdOld)/threshold > 1e-4)
         error('Not successfully producing old threshold with new method');

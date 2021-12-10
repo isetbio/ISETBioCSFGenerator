@@ -10,6 +10,12 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   See t_thresholdEngine.m
     %   Also see base class contrastThresholdEngine
     %
+    %   Note. The interpretation of the stimulus units is handled by the
+    %   psychometric function associated with the object. The default is
+    %   qpPFWeibull, which itself works in dB units of contrast.  However,
+    %   any other log contrast units (e.g. dB/20) will also be OK as long
+    %   as they are used consistently. Other psychometric functions may
+    %   expect other units.
     %
     % questThresholdEngine Properties:
     %   estimators     - The array of questData object.
@@ -21,7 +27,8 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   lapseRate      - Range of lapseRate rate for psychometric curve
     %   estIdx         - Current questData object being used
     %
-    %   Also see base class contrastThresholdEngine for additional info.
+    %   Also see base class contrastThresholdEngine for additional info,
+    %   including info about key/value pair 'estDomain'.
     %
     % questThresholdEngine Methods:
     %   thresholdEstimate    - Current running estimate of threshold and
