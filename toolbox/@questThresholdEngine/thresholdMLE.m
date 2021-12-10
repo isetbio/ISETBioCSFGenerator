@@ -25,7 +25,8 @@ p = inputParser;
 p.addParameter('showPlot',  false);
 p.addParameter('newFigure', false);
 p.addParameter('pointSize', 25);
-p.addParameter('returnData',  false);\
+p.addParameter('returnData',  false);
+p.addParameter('thresholdCriterion',0.81606)
 parse(p, varargin{:});
 
 [stimVec, responseVec, structVec] = this.combineData();
@@ -34,20 +35,32 @@ questData = this.estimators{1};
 psiParamsIndex = qpListMaxArg(questData.posterior);
 psiParamsQuest = questData.psiParamsDomain(psiParamsIndex,:);
 
+% Make sure object and the quest data structure have the same PF.
+if (~isequal(this.qpPF,questData.qpPF))
+    error('Psychometric function not matched between object and QuestPlus data structure');
+end
+
+% Fit the PF to the data
 para = qpFit(structVec, questData.qpPF, psiParamsQuest, questData.nOutcomes, ...
     'lowerBounds', [min(this.estDomain) min(this.slopeRange) min(this.guessRate) min(this.lapseRate)], ...
     'upperBounds', [max(this.estDomain) max(this.slopeRange) max(this.guessRate) max(this.lapseRate)]);
 
-% Return the thresholds.  The default, perhaps not well chosen, is to
+% Return the threshold.  The default, perhaps not well chosen, is to
 % return the first parameter of the psychometric function.  If a criterion
 % percent correct is set via the key/value pair 'thresholdCriterion', then
 % threshold is returned as the stimulus that leads to this percent correct.
-% stimContrast  = qpPFWeibullInv(proportionCorrect,psiParams)
-% predictedProportions = qpPFWeibull(stimParams,psiParams)
-
-threshold = para(1);
-
-
+%
+% The old way was to use the psychometric function mean as the threshold.
+% This corresponds to proportion correct 0.81606.  The new way explicitly
+% finds the threshold corresponding to a passed proportion correct, with
+% default 0.81606.
+threshold = this.qpPFInv(p.Results.thresholdCriterion,para);
+if (p.Results.thresholdCriterion == 0.81606)
+    thresholdOld = para(1);
+    if (abs(threshold-thresholdOld)/threshold > 1e-4)
+        error('Not successfully producing old threshold with new method');
+    end
+end
 
 if ((p.Results.showPlot) || (p.Results.returnData))
     if p.Results.newFigure

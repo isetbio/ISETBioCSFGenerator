@@ -8,7 +8,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %
     % Usage:
     %   See t_thresholdEngine.m
-    %   Also see base class QuestThresholdEstimator
+    %   Also see base class contrastThresholdEngine
     %
     %
     % questThresholdEngine Properties:
@@ -21,7 +21,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   lapseRate      - Range of lapseRate rate for psychometric curve
     %   estIdx         - Current questData object being used
     %
-    %   Also see base class QuestThresholdEstimator
+    %   Also see base class contrastThresholdEngine for additional info.
     %
     % questThresholdEngine Methods:
     %   thresholdEstimate    - Current running estimate of threshold and
@@ -82,8 +82,13 @@ classdef questThresholdEngine < contrastThresholdEngine
     %
     %   'nOutcomes'    - Double. Number of stimulus alternatives per
     %                        trial. Default 2.
+    %   'qpPF'         - Psychometric function as expected by QuestPlus.
+    %                    Default: @qpPFWeibull.
+    %   'qpPFInv'      - Inverse psychometric function as expected by
+    %                    QuestPlus. Must invert qpPF.  Default:
+    %                    @qpPFWeibullInv.
     %
-    %    See also t_thresholdEngine, contrastThresholdEngine
+    %    See also t_thresholdEngine, contrastThresholdEngine, mQUESTPlus
     
    
     % Class properties
@@ -102,6 +107,9 @@ classdef questThresholdEngine < contrastThresholdEngine
         nRepeat;
 
         nOutcomes;
+
+        qpPF;
+        qpPFInv;
         
     end
     
@@ -146,6 +154,15 @@ classdef questThresholdEngine < contrastThresholdEngine
                 this.stopCriterion = stopCriterion;
             else
                 error('Input argument stopCriterion is an invalid type')
+            end
+
+            % Check that PF and its inverse are known to us and matched.
+            if (isequal(this.qpPF,@qpPFWeibull))
+                    if (~isequal(this.qpPFInv,@qpPFWeibullInv))
+                        error('Inverse PF for qpPFWeibull not qpPFWeibullInv');
+                    end
+            else
+                    error('Unknown qpPF set');
             end
             
             % Initialize QUEST+ objects specified by 'numEstimator'

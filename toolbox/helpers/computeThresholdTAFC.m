@@ -72,6 +72,13 @@ visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 
 % Construct a QUEST threshold estimator estimate threshold
+%
+% The questThreshold estimator is associated with a psychometric function,
+% by default qpPFWeibull.  It's important that the stimulus units be
+% compatable with those expected by the psychometric function.  qpPFWeibull
+% is coded in dB, but any multiple of this should work as long as its
+% interpretted consistently outside of the quest code.  Here we use log
+% units, which are dB/20.
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
