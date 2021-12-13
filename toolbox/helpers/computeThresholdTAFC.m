@@ -88,17 +88,31 @@ else
     qpPF = questEnginePara.qpPF;
 end
 
+% Set defaults for guess/lapse rates if not passed.
+if (~isfield(thresholdPara,'guessRate'))
+    lapseRate = 0.5;
+else
+    lapseRate  = thresholdPara.guessRate ;
+end
+if (~isfield(thresholdPara,'lapseRate'))
+    lapseRate = 0;
+else
+    lapseRate = thresholdPara.lapseRate;
+end
+
 % Handle quest method.
 if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
     estimator = questThresholdEngine(...
         'validation', true, 'nRepeat', questEnginePara.nTest, ...
-        'estDomain', estDomain, 'slopeRange', slopeRange, 'qpPF', qpPF);
+        'estDomain', estDomain, 'slopeRange', slopeRange, ...
+        'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 else
     estimator = questThresholdEngine(...
         'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'numEstimator', questEnginePara.numEstimator, ...
-        'stopCriterion', questEnginePara.stopCriterion, 'qpPF', qpPF);
+        'stopCriterion', questEnginePara.stopCriterion, ...
+        'qpPF', qpPF, 'guessRate', guressRate, 'lapseRate', lapseRate);
 end
 
 % Generate the NULL stimulus (zero contrast)

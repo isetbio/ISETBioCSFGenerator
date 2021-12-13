@@ -83,21 +83,19 @@ nAlternatives = length(theScenes);
 % and training is skipped.  Otherwise trainFlag is passed to the stimulus
 % generation routine to indicate what type of noise (typically 'none' or
 % 'random') should be used in the training.
+%
+% Note use of combineContainers to reformat the individual responses the
+% way we need them.
 if (~isempty(trainNoiseFlag))
     % Generate stimuli for training
     for aa = 1:nAlternatives
-        [inSampleStimResponsesTemp, ~] = theNeuralEngine.compute(...
+        [inSampleStimResponsesCell{aa}, ~] = theNeuralEngine.compute(...
             theScenes{aa}, ...
             temporalSupport, ...
             nTrain, ...
             'noiseFlags', {trainNoiseFlag});
-
-        % Extract from returend container and accumulate
-        inSampleStimResponsesCell{aa} = inSampleStimResponsesTemp(trainNoiseFlag);
     end
-
-    % Put the cell array back into a container.
-    inSampleStimResponses = containers.Map(trainNoiseFlag,inSampleStimResponsesCell);
+    inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
 
     % Visualization. This from TAFC code.  Need to update
     %
@@ -153,7 +151,7 @@ for tt = 1:nTest
         1, ...
         'noiseFlags', {testNoiseFlag});
 
-    % Extract from returend container and accumulate
+    % Extract from returned container and accumulate
     outOfSampleStimResponsesMat(tt,:,:) = outOfSampleStimResponsesTemp(testNoiseFlag);
 end
 

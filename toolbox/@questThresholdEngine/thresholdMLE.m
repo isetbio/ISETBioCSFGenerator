@@ -61,15 +61,20 @@ para = qpFit(structVec, questData.qpPF, psiParamsQuest, questData.nOutcomes, ...
 % threshold is returned as the stimulus that leads to this percent correct.
 %
 % The old way was to use the psychometric function mean as the threshold.
-% This corresponds to proportion correct 0.81606.  The new way explicitly
-% finds the threshold corresponding to a passed proportion correct, with
-% default 0.81606.
+% This corresponds to proportion correct 0.81606 when guess rate is 0.5 and
+% lapse rate is 0.  The new way explicitly finds the threshold
+% corresponding to a passed proportion correct, with default 0.81606.
 threshold = this.qpPFInv(p.Results.thresholdCriterion,para);
+
+% Check that we get the same answer as the old way if enough else is
+% matched to the way we were computing then.
 if (p.Results.thresholdCriterion == 0.81606 && ...
         (isequal(this.qpPF,@qpPFWeibull) || isequal(this.qpPF,@qpPFWeibullLog) || isequal(this.qpPF,@qpPFStandardWeibull)))
-    thresholdOld = para(1);
-    if (abs(threshold-thresholdOld)/threshold > 1e-4)
-        error('Not successfully producing old threshold with new method');
+    if (para(3) == 0.5 && para(4) == 0 )
+        thresholdOld = para(1);
+        if (abs(threshold-thresholdOld)/threshold > 1e-4)
+            error('Not successfully producing old threshold with new method');
+        end
     end
 end
 

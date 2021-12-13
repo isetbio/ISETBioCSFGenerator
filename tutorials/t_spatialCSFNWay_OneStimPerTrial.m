@@ -30,8 +30,8 @@ spatialFreqs = [2];
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
 % exceed the gamut of the monitor, so we are conservative and set this at a
 % value that is within gamut of typical monitors and don't worry about it
-% further for this tutorial.  A vector length contrast of 0.08 should be
-% OK.
+% further for this tutorial. You would need to use smaller numbers for
+% chromatic directions.
 chromaDir = [1.0, 1.0, 1.0]';
 rmsContrast = 0.9;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
@@ -43,6 +43,7 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 % noise, and includes optical blur.
 neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
+neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.005;
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
@@ -58,21 +59,32 @@ classifierPara = struct('trainFlag', 'none', ...
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes. Threshold limits are computed
-% as 10^-logThreshLimitVal.
+% as 10^-logThreshLimitVal. The reason it is log units is that below we
+% define the PF for the questEngine as @qpPFWeibullLog. Had we used the
+% default (@qpPFWeibull), the units would have been dB.
+%
+% Also note explicit passing of proportion correct criterion for threshold.
+% The default value of 0.81606 matches the parameterization of mQUESTPlus'
+% Weibull PFs, when lapse rate is 0 and guess rate is 0.5.  But it seems
+% better to pass it explicitly so we know what it is. Keeping 0.81606 for
+% backward compatibilty.
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'logThreshLimitHigh', 0.0, ...
                        'logThreshLimitDelta', 0.02, ...
-                       'slopeRangeLow', 1, ...
-                       'slopeRangeHigh', 50, ...
-                       'slopeDelta', 2.5, ...
+                       'slopeRangeLow', 10/20, ...
+                       'slopeRangeHigh', 1000/20, ...
+                       'slopeDelta', 50/20, ...
                        'nAlternatives', nAlternatives, ...
-                       'guessRate', 1/nAlternatives);
+                       'guessRate', 1/nAlternatives, ...
+                       'lapseRate', [0 0.02], ...
+                       'thresholdCriterion', 0.60);
 
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
-                         'numEstimator', 1, 'stopCriterion', 0.05);
+                         'numEstimator', 1, 'stopCriterion', 0.05, ...
+                         'qpPF',@qpPFWeibullLog);
 
 %% Compute threshold for each spatial frequency
 % 
@@ -83,7 +95,7 @@ for idx = 1:length(spatialFreqs)
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration
-    orientations = linspace(0,180,nAlternatives);
+    orientations = linspace(0,(nAlternatives-1)*180/nAlternatives,nAlternatives);
     for oo = 1:length(orientations)
         gratingScenes{oo} = createGratingScene(chromaDir, spatialFreqs(idx),'orientation',orientations(oo));
     end
