@@ -5,12 +5,21 @@ function [threshold, para, dataOut] = thresholdMLE(this, varargin)
 %    [threshold, para, dataOut] = thresholdMLE(this, varargin) 
 %
 % Description:
-%    This combines the data, fits the psychometric function, and returns a
-%    threshold estimate.  Units of threshold are dB.
+%    This method combines the data, fits the psychometric function, and
+%    returns a threshold estimate.  Units of threshold are determined by
+%    the PF specified in the object.
+% 
+%    A key/value pair determines the criterion proportion correct
+%    threshold.  The default of 0.81606 corresponds to the performance
+%    level in the mQUESTPlus parameterization of the Weibull, when the
+%    lapse rate is 0 and the guess rate is 0.5.  Better to specify it
+%    explicitly, however.
 %
 % Inputs:
 %
 % Outputs:
+%    threshold              - Threshold estimate in the units of the
+%                             psychometric function specified in the object.
 %
 % Optional key/value pairs.
 %    'thresholdCriterion'   - Threshold fraction correct to which threshold
