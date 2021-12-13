@@ -135,9 +135,9 @@ switch (whichNeuralEngine)
         logThreshLimitLow = 4;
         logThreshLimitHigh = 1;
         logThreshLimitDelta = 0.05;
-        slopeRangeLow = 1;
-        slopeRangeHigh = 100;
-        slopeDelta = 5;
+        slopeRangeLow = 1/20;
+        slopeRangeHigh = 100/20;
+        slopeDelta = 5/20;
         
     case 'nreScenePhotonNoise'
         % Add Poisson noise to the photon counts.  This doesn't take any
@@ -152,9 +152,9 @@ switch (whichNeuralEngine)
         logThreshLimitLow = 7;
         logThreshLimitHigh = 5;
         logThreshLimitDelta = 0.005;
-        slopeRangeLow = 100;
-        slopeRangeHigh = 10000;
-        slopeDelta = 100;
+        slopeRangeLow = 100/20;
+        slopeRangeHigh = 10000/20;
+        slopeDelta = 100/20;
         
     otherwise
         error('Unknown neural engine specified');
@@ -281,6 +281,10 @@ slopeRange = slopeRangeLow: slopeDelta : slopeRangeHigh;
 % interleaved. We stop when the standard error of the threshold estimates
 % across them becomes small enough.  See below for more.
 %
+% Note the explicit setting of the PF for the questThresholdEnging.  Using
+% @qpPFWeibullLog causes it all to happen in log10 units, rather than the
+% default dB units.
+%
 % Choices:
 %   'fixedNumber'    - run a fixed number of trials
 %   'adaptiveMode'   - run until estimate reaches specified precision.
@@ -292,7 +296,8 @@ switch questMode
         % maxTrial values to be the same and running a single Quest+
         % object.
         estimator = questThresholdEngine('minTrial', 1e3, 'maxTrial', 1e3, ...
-            'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1);
+            'estDomain', estDomain, 'slopeRange', slopeRange, 'numEstimator', 1, ...
+            'qpPF',@qpPFWeibullLog);
         
     case 'adaptiveMode'
         % Run 'numEstimator > 1' interleaved QUEST+ objects. In this case,
@@ -326,17 +331,19 @@ switch questMode
         %stopCriterion = 0.025;
         stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
         
-        % Set up the estimate object.
+        % Set up the estimator object.
         estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
-            'numEstimator', 4, 'stopCriterion', stopCriterion);
+            'numEstimator', 4, 'stopCriterion', stopCriterion, ...
+            'qpPF',@qpPFWeibullLog);
         
     case 'validationMode'
         % Validation mode, instead of running an adpative procedure, compute the
         % full psychometric curve at each contrast level for nTest number
         % of trials        
         estimator = questThresholdEngine('validation', true, 'nRepeat', nTest, ...
-            'estDomain', estDomain, 'slopeRange', slopeRange);
+            'estDomain', estDomain, 'slopeRange', slopeRange, ...
+            'qpPF',@qpPFWeibullLog);
         
     otherwise
         error('Unknown threshold engine mode specified');
