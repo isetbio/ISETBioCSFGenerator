@@ -16,7 +16,6 @@
 %   10/23/20  dhb   More commments.
 %   10/25/20  dhb   Change contrast vectors to column vectors.  This is PTB
 %                   convention, and also the convention of my brain.
-%   12/13/21  dhb   
 
 % Clear and close
 clear; close all;
@@ -67,22 +66,19 @@ classifierPara = struct('trainFlag', 'none', ...
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes. Threshold limits are computed
-% as 10^-logThreshLimitVal.  The reason it is log units is that below we
-% define the PF for the questEngine as @qpPFWeibullLog. Had we used the
-% default (@qpPFWeibull), the units would have been dB.
+% as 10^-logThreshLimitVal.
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'logThreshLimitHigh', 0.0, ...
                        'logThreshLimitDelta', 0.02, ...
-                       'slopeRangeLow', 1/20, ...
-                       'slopeRangeHigh', 50/20, ...
-                       'slopeDelta', 2.5/20);
+                       'slopeRangeLow', 1, ...
+                       'slopeRangeHigh', 50, ...
+                       'slopeDelta', 2.5);
 
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
-                         'numEstimator', 1, 'stopCriterion', 0.05, ...
-                         'qpPF',@qpPFWeibullLog);
+                         'numEstimator', 1, 'stopCriterion', 0.05);
 
 %% Compute threshold for each spatial frequency
 % 

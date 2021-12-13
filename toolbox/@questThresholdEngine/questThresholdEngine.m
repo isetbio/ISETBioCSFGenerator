@@ -12,10 +12,16 @@ classdef questThresholdEngine < contrastThresholdEngine
     %
     %   Note. The interpretation of the stimulus units is handled by the
     %   psychometric function associated with the object. The default is
-    %   qpPFWeibull, which itself works in dB units of contrast.  However,
-    %   any other log contrast units (e.g. dB/20) will also be OK as long
-    %   as they are used consistently. Other psychometric functions may
-    %   expect other units.
+    %   qpPFWeibull, which itself works in dB units of contrast. If you
+    %   want log10 units, specify the PF as @qpPFWeibullLog using the
+    %   'qpPF' key/value pair. Similarly for linear contrast units, use
+    %   @qpPFStandardWeibull.
+    %
+    %   Other PFs could be added, but they need to be in the form expected
+    %   by mQUESTPlus, and need to have an inverse PF associated with them.
+    %   Add to the list in the constructor to add additional PFs; follow
+    %   the template there to see how to check for the PF and add its
+    %   associated inverse.
     %
     % questThresholdEngine Properties:
     %   estimators     - The array of questData object.
@@ -90,10 +96,8 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   'nOutcomes'    - Double. Number of stimulus alternatives per
     %                        trial. Default 2.
     %   'qpPF'         - Psychometric function as expected by QuestPlus.
-    %                    Default: @qpPFWeibull.
-    %   'qpPFInv'      - Inverse psychometric function as expected by
-    %                    QuestPlus. Must invert qpPF.  Default:
-    %                    @qpPFWeibullInv.
+    %                    Default: @qpPFWeibull.  Other options are
+    %                    qpPFWeibullLog and qpPFStandardWeibull.
     %
     %    See also t_thresholdEngine, contrastThresholdEngine, mQUESTPlus
     
@@ -139,7 +143,6 @@ classdef questThresholdEngine < contrastThresholdEngine
             p.addParameter('validation', false, @(x)(islogical(x) && numel(x) == 1));
             p.addParameter('nRepeat', 64, @(x)(isnumeric(x) && numel(x) == 1));
             p.addParameter('qpPF',@qpPFWeibull,@(x) isa(x,'function_handle'));
-            p.addParameter('qpPFInv',@qpPFWeibullInv,@(x) isa(x,'function_handle'));
                         
             parse(p, varargin{:});
             this.numEstimator  = p.Results.numEstimator;
@@ -150,7 +153,6 @@ classdef questThresholdEngine < contrastThresholdEngine
             this.nRepeat = p.Results.nRepeat;
             this.nOutcomes = p.Results.nOutcomes;
             this.qpPF = p.Results.qpPF;
-            this.qpPFInv = p.Results.qpPFInv;
             
             stopCriterion = p.Results.stopCriterion;
             if isempty(stopCriterion)
@@ -163,13 +165,16 @@ classdef questThresholdEngine < contrastThresholdEngine
                 error('Input argument stopCriterion is an invalid type')
             end
 
-            % Check that PF and its inverse are known to us and matched.
+            % Make sure we know about PF and set up its inverse.  Can add
+            % more PFs here as desired.
             if (isequal(this.qpPF,@qpPFWeibull))
-                    if (~isequal(this.qpPFInv,@qpPFWeibullInv))
-                        error('Inverse PF for qpPFWeibull not qpPFWeibullInv');
-                    end
+                this.qpPFInv = @qpPFWeibullInv;
+            elseif (isequal(this.qpPF,@qpPFWeibullLog))
+                this.qpPFInv = @qpPFWeibullLogInv;
+            elseif (isequal(this.qpPF,@qpPFStandardWeibull))
+                this.qpPFInv = @qpPFStandardWeibullInv;
             else
-                    error('Unknown qpPF set');
+                error('Unknown qpPF specified');
             end
             
             % Initialize QUEST+ objects specified by 'numEstimator'
@@ -178,7 +183,7 @@ classdef questThresholdEngine < contrastThresholdEngine
                 this.estimators{idx} = ...
                     qpInitialize('stimParamsDomainList', {this.estDomain}, ...
                     'psiParamsDomainList',  {this.estDomain, this.slopeRange, this.guessRate, this.lapseRate}, ...
-                    'nOutcomes',this.nOutcomes);
+                    'nOutcomes',this.nOutcomes,'qpPF',this.qpPF);
             end
             
             % Set the current estimator to #1

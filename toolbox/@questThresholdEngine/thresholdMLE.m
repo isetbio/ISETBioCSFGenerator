@@ -56,7 +56,8 @@ para = qpFit(structVec, questData.qpPF, psiParamsQuest, questData.nOutcomes, ...
 % finds the threshold corresponding to a passed proportion correct, with
 % default 0.81606.
 threshold = this.qpPFInv(p.Results.thresholdCriterion,para);
-if (p.Results.thresholdCriterion == 0.81606 & isequal(this.qpPF,@qpPFWeibull))
+if (p.Results.thresholdCriterion == 0.81606 && ...
+        (isequal(this.qpPF,@qpPFWeibull) || isequal(this.qpPF,@qpPFWeibullLog) || isequal(this.qpPF,@qpPFStandardWeibull)))
     thresholdOld = para(1);
     if (abs(threshold-thresholdOld)/threshold > 1e-4)
         error('Not successfully producing old threshold with new method');
@@ -82,7 +83,7 @@ if ((p.Results.showPlot) || (p.Results.returnData))
     end
     
     stimSpace = this.estDomain;
-    fitCurve = qpPFWeibull(stimSpace', para);
+    fitCurve = this.qpPF(stimSpace', para);
     
     if (p.Results.showPlot)
         plot(stimSpace, fitCurve(:, 2), '-', 'Color', [1.0 0.2 0.0], 'LineWidth', 3);

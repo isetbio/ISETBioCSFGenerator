@@ -76,22 +76,29 @@ datasavePara = p.Results.datasavePara;
 % The questThreshold estimator is associated with a psychometric function,
 % by default qpPFWeibull.  It's important that the stimulus units be
 % compatable with those expected by the psychometric function.  qpPFWeibull
-% is coded in dB, but any multiple of this should work as long as its
-% interpretted consistently outside of the quest code.  Here we use log
-% units, which are dB/20.
+% is coded in dB, which is confusing to many.  Probably better to work in
+% log10 units, which can be done by passing qpPFWeibullLog as the PF.
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
+% Check whether the quest parameters include a PF, and set default if not.
+if (~isfield(questEnginePara,'qpPF'))
+    qpPF = @qpPFWeibull;
+else
+    qpPF = questEnginePara.qpPF;
+end
+
+% Handle quest method.
 if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
     estimator = questThresholdEngine(...
         'validation', true, 'nRepeat', questEnginePara.nTest, ...
-        'estDomain', estDomain, 'slopeRange', slopeRange);
+        'estDomain', estDomain, 'slopeRange', slopeRange, 'qpPF', qpPF);
 else
     estimator = questThresholdEngine(...
         'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'numEstimator', questEnginePara.numEstimator, ...
-        'stopCriterion', questEnginePara.stopCriterion);
+        'stopCriterion', questEnginePara.stopCriterion, 'qpPF', qpPF);
 end
 
 % Generate the NULL stimulus (zero contrast)
