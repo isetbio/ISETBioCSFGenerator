@@ -137,8 +137,8 @@ set(dataFig, 'Position',  [0, 0, 800, 800]);
 threshold = 10 .^ logThreshold;
 
 %% Plot sensitivity against number of alternatives
-theCsfFig = figure();
-loglog(nAlternaivesList, 1 ./ threshold, '-ok', 'LineWidth', 2);
-xlabel('Spatial Frequency (cyc/deg)');
+theNwayFig = figure();
+loglog(nAlternativesList, 1 ./ threshold, '-ok', 'LineWidth', 2);
+xlabel('Number of Alternatives');
 ylabel('Sensitivity');
-set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+set(theNwayFig, 'Position',  [800, 0, 600, 800]);
