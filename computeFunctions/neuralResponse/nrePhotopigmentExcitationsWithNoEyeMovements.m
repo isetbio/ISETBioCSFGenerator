@@ -71,6 +71,11 @@ function dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
 %       and are arranged in a matrix of:
 %           [instancesNum x mCones x tTimeBins] 
 %
+%       NOTE: MATLAB always drops the last dimension of an matrix if that  is 1. 
+%             So if tBins is 1, the returned array will be [instancesNum x  mCones], 
+%             NOT [instancesNum x mCones x 1].
+%
+%
 % See Also:
 %     t_neuralResponseCompute
 
