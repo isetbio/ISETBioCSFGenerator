@@ -90,9 +90,9 @@ end
 
 % Set defaults for guess/lapse rates if not passed.
 if (~isfield(thresholdPara,'guessRate'))
-    lapseRate = 0.5;
+    guessRate = 0.5;
 else
-    lapseRate  = thresholdPara.guessRate ;
+    guessRate  = thresholdPara.guessRate ;
 end
 if (~isfield(thresholdPara,'lapseRate'))
     lapseRate = 0;
@@ -112,7 +112,7 @@ else
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'numEstimator', questEnginePara.numEstimator, ...
         'stopCriterion', questEnginePara.stopCriterion, ...
-        'qpPF', qpPF, 'guessRate', guressRate, 'lapseRate', lapseRate);
+        'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 end
 
 % Generate the NULL stimulus (zero contrast)

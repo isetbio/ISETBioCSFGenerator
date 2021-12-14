@@ -72,27 +72,52 @@ visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 
-% Get number of alternatives, determines guess rate of PF
-nAlternatives = length(theSceneEngines);
-
 % PF is based on correct/incorrect, so number of response
 % outcomes is 2 independent of number of alternatives.
 nOutcomes = 2;
 
 % Construct a QUEST threshold estimator estimate threshold
+%
+% The questThreshold estimator is associated with a psychometric function,
+% by default qpPFWeibull.  It's important that the stimulus units be
+% compatable with those expected by the psychometric function.  qpPFWeibull
+% is coded in dB, which is confusing to many.  Probably better to work in
+% log10 units, which can be done by passing qpPFWeibullLog as the PF.
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
+% Check whether the quest parameters include a PF, and set default if not.
+if (~isfield(questEnginePara,'qpPF'))
+    qpPF = @qpPFWeibull;
+else
+    qpPF = questEnginePara.qpPF;
+end
+
+% Set defaults for guess/lapse rates if not passed.
+if (~isfield(thresholdPara,'guessRate'))
+    guessRate = 0.5;
+else
+    guessRate  = thresholdPara.guessRate ;
+end
+if (~isfield(thresholdPara,'lapseRate'))
+    lapseRate = 0;
+else
+    lapseRate = thresholdPara.lapseRate;
+end
+
+% Handle quest method.
 if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
     estimator = questThresholdEngine(...
         'validation', true, 'nRepeat', questEnginePara.nTest, ...
-        'estDomain', estDomain, 'slopeRange', slopeRange, 'nOutcomes', nOutcomes, 'GuessRate', 1/nAlternatives);
+        'estDomain', estDomain, 'slopeRange', slopeRange, ...
+        'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 else
     estimator = questThresholdEngine(...
         'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'numEstimator', questEnginePara.numEstimator, ...
-        'stopCriterion', questEnginePara.stopCriterion, 'nOutcomes', nOutcomes, 'GuessRate', 1/nAlternatives);
+        'stopCriterion', questEnginePara.stopCriterion, ...
+        'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 end
 
 % Threshold estimation with QUEST+

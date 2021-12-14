@@ -142,21 +142,20 @@ end
 % Generate stimulus for prediction, NULL stimulus.  The variable testFlag
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
+%
+% Note that for compatibility, put all the instances into a single
+% matrix in a single container at the end.
 whichAlternatives = randi(nAlternatives,1,nTest);
+outOfSamplesStimResponses = cell(1,nTest);
 for tt = 1:nTest
     % Get responses for scene for this trial
-    [outOfSampleStimResponsesTemp, ~] = theNeuralEngine.compute(...
+    [outOfSampleStimResponsesCell{tt}, ~] = theNeuralEngine.compute(...
         theScenes{whichAlternatives(tt)}, ...
         temporalSupport, ...
         1, ...
         'noiseFlags', {testNoiseFlag});
-
-    % Extract from returned container and accumulate
-    outOfSampleStimResponsesMat(tt,:,:) = outOfSampleStimResponsesTemp(testNoiseFlag);
 end
-
-% Put the packed format back into a container.
-outOfSampleStimResponses = containers.Map(testNoiseFlag,outOfSampleStimResponsesMat);
+outOfSampleStimResponses = combineContainersMat(outOfSampleStimResponsesCell);
 
 % [outOfSampleStimResponses, ~] = theNeuralEngine.compute(...
 %     nullScene, ...
