@@ -1,9 +1,11 @@
-function [threshold, questObj, psychometricFunction] = computeThresholdNWay_OneStimulusPerTrial(theSceneEngines, theNeuralEngine, classifierEngine, ...
+function [threshold, questObj, psychometricFunction, para] = computeThresholdNWay_OneStimulusPerTrial(theSceneEngines, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
 % Syntax:
-%    [threshold, questObj] = computeThresholdNWay_OneStimulusPerTrial(theSceneEngines, theNeuralEngine, classifierEngine, classifierPara, thresholdPara, questEnginePara)  
+%    [threshold, questObj, psychometricFunction, para] = ...
+%        computeThresholdNWay_OneStimulusPerTrial(theSceneEngines, theNeuralEngine, ...
+%        classifierEngine, classifierPara, thresholdPara, questEnginePara)  
 %
 % Description:
 %    Uses Quest+ and the ISETBioCSFGenerator objects to obtain
@@ -32,7 +34,9 @@ function [threshold, questObj, psychometricFunction] = computeThresholdNWay_OneS
 %   questObj              - questThresholdEngine object, which
 %                           contains information about all the trials run.
 %   psychometricFunction  - Dictionary (indexed by contrast level) with the 
-%                           psychometric function 
+%                           psychometric function.
+%   para                  - Parameters of psychometric function fit,
+%                           matched to PF used in the questThresholdEngine object
 %
 % Optional key/value pairs:
 %   'beVerbose'           - Logical. Provide some printout? Default true.

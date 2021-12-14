@@ -112,7 +112,7 @@ for idx = 1:length(spatialFreqs)
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceTAFC.
-    [logThreshold(idx), questObj] = ...
+    [logThreshold(idx), questObj, ~, para(idx,:)] = ...
         computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
         classifierPara, thresholdPara, questEnginePara);
     
@@ -127,7 +127,7 @@ for idx = 1:length(spatialFreqs)
     % Plot data and psychometric curve 
     % with a marker size of 2.5
     subplot(4, 4, idx * 2);
-    questObj.plotMLE(2.5);
+    questObj.plotMLE(2.5,'para',para(idx,:));
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 

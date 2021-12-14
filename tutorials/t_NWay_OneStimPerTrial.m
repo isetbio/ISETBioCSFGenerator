@@ -116,7 +116,7 @@ for idx = 1:length(nAlternativesList)
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceNWay_OneStimulusPerTrial.
-    [logThreshold(idx), questObj] = ...
+    [logThreshold(idx), questObj, ~, para(idx,:)] = ...
         computeThresholdNWay_OneStimulusPerTrial(gratingScenes, theNeuralEngine, classifierEngine, ...
         classifierPara, thresholdPara, questEnginePara);
     
@@ -131,7 +131,7 @@ for idx = 1:length(nAlternativesList)
     % Plot data and psychometric curve 
     % with a marker size of 2.5
     subplot(4, 4, idx * 2);
-    questObj.plotMLE(2.5);
+    questObj.plotMLE(2.5,'para',para(idx,:));
     drawnow;
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);

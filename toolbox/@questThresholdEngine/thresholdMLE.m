@@ -20,10 +20,27 @@ function [threshold, para, dataOut] = thresholdMLE(this, varargin)
 % Outputs:
 %    threshold              - Threshold estimate in the units of the
 %                             psychometric function specified in the object.
+%    para                   - Psychometric function parameters from fit.
+%                             If these are passed via key/value pair then
+%                             the passed values are returned.
+%    dataOut                - Optional structure with more products of this
+%                             routine. Use dataOut key/value pair for this
+%                             to be returned.
 %
 % Optional key/value pairs.
 %    'thresholdCriterion'   - Threshold fraction correct to which threshold
 %                             should correspond.
+%    'para'                 - Psychometric function parameters.  If passed,
+%                             these are used and the fit is skipped. Must
+%                             be matched to what the object's PF expects.
+%                             Default empty, so that fitting is done.
+%    'showPlot'             - Show a plot of data and fit. Default false.
+%    'newFigure'            - Create a new figure window for the plot. 
+%                             Otherwise the plot goes into the current
+%                             figure. Default false.
+%    'pointSize'            - Base point size for plot.  Default 25.
+%    'returnedData'         - dataOut structure is only filled if this is
+%                             true. Default false.
 
 % History:
 %  12/8/21: dhb  Add thresholdCriterion key/value pair, trying to keep
@@ -36,6 +53,7 @@ p.addParameter('showPlot',  false);
 p.addParameter('newFigure', false);
 p.addParameter('pointSize', 25);
 p.addParameter('returnData',  false);
+p.addParameter('para', []);
 p.addParameter('thresholdCriterion',0.81606);
 parse(p, varargin{:});
 

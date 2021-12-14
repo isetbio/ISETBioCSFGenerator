@@ -220,11 +220,29 @@ classdef questThresholdEngine < contrastThresholdEngine
         [threshold, para, psychometricDataOut] = thresholdMLE(this, varargin);
         
         % Plot data and MLE fit
-        function plotMLE(this, markerSize)
-            this.thresholdMLE('showPlot', true, 'newFigure', false, 'pointSize', markerSize);
+        %
+        % Inputs:
+        %    this                   - The questThresholdEngine object.
+        %    baseMarkerSize         - Base marker size.
+        %    
+        % Optional key/value pairs.
+        %    'para'                 - Psychometric function parameters.  If passed,
+        %                             these are used and the fit is skipped. Must
+        %                             be matched to what the object's PF expects.
+        %                             Default empty, so that fitting is done.
+        %    'showPlot'             - Show a plot of data and fit. Default false.
+        %    'newFigure'            - Create a new figure window for the plot. 
+        %                             Otherwise the plot goes into the current
+        %                             figure. Default false.
+        function plotMLE(this, baseMarkerSize, varargin)
+            p = inputParser;
+            p.addParameter('newFigure', false);
+            p.addParameter('para', []);
+            parse(p, varargin{:});
+            this.thresholdMLE('showPlot', true, 'newFigure', p.Results.newFigure, ...
+                'para', p.Results.para, 'pointSize', baseMarkerSize);
         end
-    end
-    
+    end   
 end
 
 
