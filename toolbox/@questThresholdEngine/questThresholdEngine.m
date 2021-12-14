@@ -87,7 +87,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   'lapseRate'        - Array. An array of all possible lapse rate for
     %                        the psychometric curve. Default 0.
     %
-    %   'validation'       - Boolean. If set to True run the entire
+    %   'validation'       - Boolean. If set to true run the entire
     %                        psychometric curve
     %
     %   'nRepeat'          - Double. Number of trials per contrast level

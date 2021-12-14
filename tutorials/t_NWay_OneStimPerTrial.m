@@ -1,10 +1,12 @@
-% Compute spatial CSF in different color directions
+% Compute contrast sensitivity for different numbers of alternatives
 %
 % Description:
-%    Use ISETBioCSFGenerator to run out CSFs in different color directions.
+%    Use ISETBioCSFGenerator to run out sensitivity for different N alternatives.
+%    We expect sensitivity to go down, both because stimuli become more
+%    similar and because uncertainty increases.
 %
-%    This example uses an ideal Poisson observer and circularly
-%    windowed gratings of constant size.
+%    This example uses an ideal Poisson observer and gratings at different
+%    orientations.
 %
 %    This version illustrates how to model an NWay forced choice task, in
 %    which one alternative of N alternatives is presented on each trial,
@@ -21,11 +23,10 @@
 clear; close all;
 
 %% Set number of alternatives
-nAlternatives = 4;
+nAlternativesList = [2 4 8 16];
 
-% List of spatial frequencies to be tested.
-spatialFreqs = [2];
-%spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
+% Run just one spatial frequency.
+spatialFreq = 2;
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
 % exceed the gamut of the monitor, so we are conservative and set this at a
@@ -66,38 +67,47 @@ classifierPara = struct('trainFlag', 'none', ...
 % Also note explicit passing of proportion correct criterion for threshold.
 % The default value of 0.81606 matches the parameterization of mQUESTPlus'
 % Weibull PFs, when lapse rate is 0 and guess rate is 0.5.  But it seems
-% better to pass it explicitly so we know what it is. Keeping 0.81606 for
-% backward compatibilty.
+% better to pass it explicitly so we know what it is.  Using a lower
+% criterion for the NAFC example run here seems fun.
+%
+% There are two separate structures below. The conceptual distinction
+% between them is not entirely clear.  These are interpretted by
+% computeThresholdNWay_OneStimulusPerTrial.
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
-                       'logThreshLimitHigh', 0.0, ...
-                       'logThreshLimitDelta', 0.02, ...
-                       'slopeRangeLow', 1/20, ...
-                       'slopeRangeHigh', 100/20, ...
-                       'slopeDelta', 5/20, ...
-                       'nAlternatives', nAlternatives, ...
-                       'guessRate', 1/nAlternatives, ...
-                       'lapseRate', [0 0.02], ...
-                       'thresholdCriterion', 0.60);
+    'logThreshLimitHigh', 0.0, ...
+    'logThreshLimitDelta', 0.02, ...
+    'slopeRangeLow', 1/20, ...
+    'slopeRangeHigh', 100/20, ...
+    'slopeDelta', 5/20, ...
+    'thresholdCriterion', 0.60, ...
+    'guessRate', [], ...
+    'lapseRate', [0 0.02]);
 
-% Parameter for running the QUEST+
-% See t_thresholdEngine.m for more on options of the two different mode of
-% operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
-                         'numEstimator', 1, 'stopCriterion', 0.05, ...
-                         'qpPF',@qpPFWeibullLog);
+questEnginePara = struct( ...
+    'qpPF',@qpPFWeibullLog, ...
+    'minTrial', 1280, ...
+    'maxTrial', 1280, ...
+    'numEstimator', 1, ...
+    'stopCriterion', 0.05);
 
-%% Compute threshold for each spatial frequency
+%% Compute threshold for each number of alternatives specified
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 dataFig = figure();
-logThreshold = zeros(1, length(spatialFreqs));
-for idx = 1:length(spatialFreqs)
+logThreshold = zeros(1, length(nAlternativesList));
+for idx = 1:length(nAlternativesList)
+    % Set nAlternatives
+    nAlternatives = nAlternativesList(idx);
+    
+    % Set guess rate
+    thresholdPara.guessRate = 1/nAlternatives;
+
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration
     orientations = linspace(0,(nAlternatives-1)*180/nAlternatives,nAlternatives);
     for oo = 1:length(orientations)
-        gratingScenes{oo} = createGratingScene(chromaDir, spatialFreqs(idx),'orientation',orientations(oo));
+        gratingScenes{oo} = createGratingScene(chromaDir, spatialFreq,'orientation',orientations(oo));
     end
     
     % Compute the threshold for our grating scene with the previously
@@ -108,7 +118,7 @@ for idx = 1:length(spatialFreqs)
         computeThresholdNWay_OneStimulusPerTrial(gratingScenes, theNeuralEngine, classifierEngine, ...
         classifierPara, thresholdPara, questEnginePara);
     
-    % Plot stimulusg
+    % Plot stimulus
     figure(dataFig);
     subplot(4, 4, idx * 2 - 1);
     
@@ -126,9 +136,9 @@ set(dataFig, 'Position',  [0, 0, 800, 800]);
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
 
-%% Plot Contrast Sensitivity Function
+%% Plot sensitivity against number of alternatives
 theCsfFig = figure();
-loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
+loglog(nAlternaivesList, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
