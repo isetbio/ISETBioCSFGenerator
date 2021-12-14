@@ -258,10 +258,18 @@ while (nextFlag)
 end
 
 % Return threshold value
-[threshold, para] = estimator.thresholdMLE('showPlot', true);
+if (~isfield(thresholdPara,'thresholdCriterion'))
+    thresholdCriterion = 0.81606;
+else
+    thresholdCriterion = thresholdPara.thresholdCriterion;
+end
+[threshold, para] = estimator.thresholdMLE('showPlot', false, ...
+    'thresholdCriterion', thresholdCriterion);
 if (beVerbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
         para(1), para(2), para(3), para(4));
+    fprintf('Threshold (criterion proportion correct %0.4f: %0.2f (log10 units)\n', ...
+        thresholdCriterion,threshold);
 end
 
 % Return the quest+ object wrapper for plotting and/or access to data

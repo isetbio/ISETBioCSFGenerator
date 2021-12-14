@@ -93,9 +93,11 @@ questEnginePara = struct( ...
 %% Compute threshold for each number of alternatives specified
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
-dataFig = figure();
 logThreshold = zeros(1, length(nAlternativesList));
+dataFig = figure();
 for idx = 1:length(nAlternativesList)
+    % Open figure
+
     % Set nAlternatives
     nAlternatives = nAlternativesList(idx);
     
@@ -130,6 +132,7 @@ for idx = 1:length(nAlternativesList)
     % with a marker size of 2.5
     subplot(4, 4, idx * 2);
     questObj.plotMLE(2.5);
+    drawnow;
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 
@@ -137,7 +140,7 @@ set(dataFig, 'Position',  [0, 0, 800, 800]);
 threshold = 10 .^ logThreshold;
 
 %% Plot sensitivity against number of alternatives
-theNwayFig = figure();
+theNwayFig = figure;
 loglog(nAlternativesList, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Number of Alternatives');
 ylabel('Sensitivity');
