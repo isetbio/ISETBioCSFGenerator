@@ -3,6 +3,13 @@
 % Description:
 %   Use the machinery of sceTwoSpot to produce an AO apparatus scene with a
 %   rectanglur stimuls.
+%
+% See also:
+%    Project AOCompObserver, where sceTwoSpot is used in the context of the
+%    whole CSF generator machinery.
+
+% History:
+%    01/08/21  dhb  Wrote it.
 
 %% Set parameters 
 defocusDiopters = 0.05;
