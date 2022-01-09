@@ -80,11 +80,11 @@ rectParams = struct(...
     'frameDurationSeconds', 3/16, ...               % temporal: frame duration, in seconds
     'pupilDiameterMm', pupilDiameterMm ...          % pupil diameter mm
     );
-
                      
 % Create a static two-spot AO scene with a particular incr-decr direction,
-% and other relevant parameters
-% Compute function handle for two-spot AO stimuli
+% and other relevant parameters. This uses compute function handle for
+% two-spot AO stimuli, as commented above the parameters have been cooked
+% to make one rectangular spot on a dark background.
 rectComputeFunction = @sceAOTwoSpot;
 
 % Instantiate a sceneEngine with the above sceneComputeFunctionHandle
