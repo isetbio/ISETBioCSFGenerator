@@ -11,6 +11,9 @@
 % History:
 %    01/08/21  dhb  Wrote it.
 
+%% Clear and close
+clear; close all;
+
 %% Set parameters 
 defocusDiopters = 0.05;
 pupilDiameterMm = 7;
@@ -31,6 +34,7 @@ spotHorizontalPositionMinutes = 5;
 wls = 400:10:750;
 spotWavelengthNm = 580;
 
+% Spatial parameters
 nPixels = 128;
 fieldSizeMinutes = 60;
 fieldSizeDegs = fieldSizeMinutes/60;
