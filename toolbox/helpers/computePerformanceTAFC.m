@@ -51,7 +51,7 @@ function [predictions, theClassifierEngine, responses] = computePerformanceTAFC(
 %                             response instances. Typically 'random'.
 %     saveResponses         - Logical. Whether to return the computed
 %                             response instances
-%     visualAllComponentrs  - Logical. Whether to visualize or not.
+%     visualAllComponents   - Logical. Whether to visualize or not.
 %
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
