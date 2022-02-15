@@ -193,7 +193,18 @@ classdef questThresholdEngine < contrastThresholdEngine
             this.testCrst = qpQuery(this.estimators{this.estIdx});
             
             if this.validation
-                this.testCrst = this.estDomain(1);
+                if (this.numEstimator ~= 1)
+                    error('Only run one estimator in validation mode');
+                end
+
+                % Pre-randomize the contrasts in blocked fashion in this
+                % mode.
+                this.validationTrialContrasts = [];
+                for tt = 1:this.nRepeats
+                    this.validationTrialContrasts = [this.validationTrialContrasts...
+                        this.estDoman(randperm(length(this.estDoman)))];
+                end
+                this.testCrst = this.validationTrialContrasts(1);
             end
             
         end

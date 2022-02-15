@@ -11,16 +11,34 @@ this.nTrial = this.nTrial + 1;
 this.estIdx = mod(this.estIdx, this.numEstimator) + 1;
 
 % Run the entire psychometric curve for validation mode
+OLDWAY = false;
 if this.validation
+    % The old way went through all of the contrasts in fixed order,
+    % running all trials for one contrast before moving on to the next.
+    % It is still here in case the new way breaks something.
+    if (OLDWAY)
+        crstIdx = floor(this.nTrial / this.nRepeat) + 1;
+        
+        if crstIdx > length(this.estDomain)
+            this.testCrst = NaN;
+            this.nextFlag = false;
+        else
+            this.testCrst = this.estDomain(crstIdx);
+            this.nextFlag = true;
+        end
     
-    crstIdx = floor(this.nTrial / this.nRepeat) + 1;
-    
-    if crstIdx > length(this.estDomain)
-        this.testCrst = NaN;
-        this.nextFlag = false;
+    % The new way draws from a pre-randomized order set up when
+    % we created the questThresholdObject.  The two ways should
+    % give the same result for a computational observer, but the
+    % new way is better for a human psychophysical experiment.
     else
-        this.testCrst = this.estDomain(crstIdx);
-        this.nextFlag = true;
+        if (this.nTrial > length(this.validationTrialContrasts))
+            this.testCrst = NaN;
+            this.nextFlag = false;
+        else
+            this.testCrst = this.validationTrialContrasts(this.nTrial);
+            this.nextFlag = true;
+        end
     end
     
 else
