@@ -122,6 +122,7 @@ classdef questThresholdEngine < contrastThresholdEngine
         qpPF;
         qpPFInv;
         
+        validationTrialContrasts;
     end
     
     methods
@@ -200,13 +201,13 @@ classdef questThresholdEngine < contrastThresholdEngine
                 % Pre-randomize the contrasts in blocked fashion in this
                 % mode.
                 this.validationTrialContrasts = [];
-                for tt = 1:this.nRepeats
+                
+                for tt = 1:this.nRepeat
                     this.validationTrialContrasts = [this.validationTrialContrasts...
-                        this.estDoman(randperm(length(this.estDoman)))];
+                        this.estDomain(randperm(length(this.estDomain)))];
                 end
                 this.testCrst = this.validationTrialContrasts(1);
             end
-            
         end
         
         % Running estimate of parameters of the psychometric curve
