@@ -147,9 +147,9 @@ while (nextFlag)
     testContrast = 10 ^ logContrast;
     
     % Label for pCorrect dictionary
-    contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
+    stimParamValueLabel = sprintf('paramNormalizedValue = %2.6f', testContrast);
     if (beVerbose)
-        fprintf('Testing %s\n', contrastLabel);
+        fprintf('Testing %s\n', stimParamValueLabel);
     end
     
     % Have we already built the classifier for this contrast?
@@ -161,50 +161,10 @@ while (nextFlag)
         
         % Generate the scenes for each alternative, at the test contrast
         for oo = 1:length(theSceneEngines)
-            [theTestSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = theSceneEngines{oo}.compute(testContrast);
+            [theTestSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
+                theSceneEngines{oo}.compute(testContrast);
         end
       
-%         % Some diagnosis
-%         if (p.Results.extraVerbose)
-%             theWl = 400;
-%             theFrame = 1;
-%             index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
-%             temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
-%             fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
-%             theWl = 550;
-%             index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
-%             temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
-%             fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
-%         end
-%         
-%         % Visualize the drifting sequence
-%         if (visualizeStimulus)
-%             theSceneEngines.visualizeSceneSequence(theTestSceneSequences{testedIndex}, theSceneTemporalSupportSeconds);
-%         end
-              
-%         % Update the classifier engine pooling params for this particular test contrast
-%         if (isfield(classifierEngine.classifierParams, 'pooling')) && ...
-%            (~strcmp(classifierEngine.classifierParams.pooling, 'none'))
-%             
-%             fprintf('Computing pooling kernels for contrast %f\n', testContrast*100);
-%        
-%             % Compute pooling weights
-%             switch (classifierEngine.classifierParams.pooling.type)
-%                 case 'linear'
-%                    [poolingWeights.direct, ~, ...
-%                        noiseFreeNullResponse, noiseFreeTestResponse] = spatioTemporalPoolingWeights(theNeuralEngine,theTestSceneSequences{testedIndex},theNullSceneSequence, theSceneTemporalSupportSeconds);
-%                    
-%                 case 'quadratureEnergy'
-%                    [poolingWeights.direct, poolingWeights.quadrature, ...
-%                        noiseFreeNullResponse, noiseFreeTestResponse] = spatioTemporalPoolingWeights(theNeuralEngine,theTestSceneSequences{testedIndex},theNullSceneSequence, theSceneTemporalSupportSeconds);
-%                    
-%                 otherwise
-%                     error('Unknown classifier engine pooling type: ''%s''.', classifierEngine.classifierParams.pooling.type)
-%             end
-%             
-%             % Update the classifier engine's pooling weights
-%             classifierEngine.updateSpatioTemporalPoolingWeightsAndNoiseFreeResponses(poolingWeights,noiseFreeNullResponse, noiseFreeTestResponse);
-%         end
         
         % Train classifier for this TEST contrast and get predicted
         % correct/incorrect predictions.  This function also computes the
@@ -216,30 +176,8 @@ while (nextFlag)
             datasavePara.saveMRGCResponses, visualizeAllComponents);
         
         % Update the psychometric function with data point for this contrast level
-        psychometricFunction(contrastLabel) = mean(predictions);
+        psychometricFunction(stimParamValueLabel) = mean(predictions);
         
-%         % Save computed responses only the first time we test this contrast
-%         if (datasavePara.saveMRGCResponses)
-%             theMRGCmosaic = theNeuralEngine.neuralPipeline.mRGCmosaic;
-%             
-%             % Save neural engine
-%             if (neuralEngineSaved == false)
-%                 if (~exist(datasavePara.destDir, 'dir'))
-%                     fprintf('Creating destination directory: ''%s''\n.',datasavePara.destDir);
-%                     mkdir(datasavePara.destDir);
-%                 end
-%                 mosaicFileName = fullfile(datasavePara.destDir,'mRGCmosaic.mat');
-%                 fprintf('Saving mRGC mosaic to %s.\n', mosaicFileName);
-%                 save(mosaicFileName, 'theMRGCmosaic', '-v7.3');
-%                 neuralEngineSaved = true;
-%             end
-%             
-%             % Save responses
-%             responseFileName = fullfile(datasavePara.destDir, ...
-%                 sprintf('responses_%s_ContrastLevel_%2.2f.mat', datasavePara.condExamined, testContrast*100));
-%             fprintf('Saving computed responses to %s.\n', responseFileName);
-%             save(responseFileName, 'responses',  '-v7.3');
-%         end
     else
         % Classifier is already trained, just get predictions
         [predictions, ~, ~] = computePerformanceNWay_OneStimPerTrial(...
@@ -249,9 +187,9 @@ while (nextFlag)
             false);
         
         % Update the psychometric function with data point for this contrast level
-        previousData = psychometricFunction(contrastLabel);
+        previousData = psychometricFunction(stimParamValueLabel);
         currentData = cat(2,previousData,mean(predictions));
-        psychometricFunction(contrastLabel) = currentData;
+        psychometricFunction(stimParamValueLabel) = currentData;
     end
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and

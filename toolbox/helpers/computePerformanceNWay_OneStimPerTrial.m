@@ -97,26 +97,37 @@ if (~isempty(trainNoiseFlag))
     end
     inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
 
-    % Visualization. This from TAFC code.  Need to update
+    % Visualization.
     %
-    % if (visualizeAllComponents)
-    %     if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
-    %         diffResponse = inSampleTestStimResponses(trainNoiseFlag) - inSampleNullStimResponses(trainNoiseFlag);
-    %         % Visualize the activation
-    %         theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', squeeze(diffResponse), 'verticalActivationColorBarInside', true);
-    %
-    %         % Also visualize the full absorptions density
-    %         figNo = 999;
-    %         theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
-    %     end
-    %
-    %     if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
-    %         theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
-    %             responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
-    %             'stimulusTemporalSupportSeconds', temporalSupport,...
-    %             'stimulusSceneSequence', testScene);
-    %     end
-    % end
+    if (visualizeAllComponents)
+        if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
+            diffResponse = inSampleStimResponses(trainNoiseFlag); % - inSampleNullStimResponses(trainNoiseFlag);
+            hFig = figure(998);
+            set(hFig, 'Position', [10 10 1200 600]);
+            for aa = 1:nAlternatives
+                tmp = diffResponse{aa};
+                diffResponse{aa} = diffResponse{aa} - mean(tmp(:));
+                ax = subplot(1, nAlternatives,aa);
+                % Visualize the activation
+                theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
+                    'figureHandle', hFig, ...
+                    'axesHandle', ax, ...
+                    'activation', squeeze(diffResponse{aa}), ...
+                    'verticalActivationColorBarInside', true);
+            end
+
+            % Also visualize the full absorptions density
+            figNo = 999;
+            theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
+        end
+    
+        if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
+            theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
+                responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
+                'stimulusTemporalSupportSeconds', temporalSupport,...
+                'stimulusSceneSequence', testScene);
+        end
+    end
 
     % Train the classifier. This shows the usage to extact information
     % from the container retrned as the first return value from the neural
