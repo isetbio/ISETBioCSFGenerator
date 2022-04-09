@@ -1,4 +1,4 @@
-function [paramValueThreshold, questObj, psychometricFunction, para]  = computeParameterThreshold(...
+function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometricParams]  = computeParameterThreshold(...
     theSceneEngines, theNeuralEngine, classifierEngine, classifierPara, ...
     thresholdPara, questEnginePara, varargin)
     
@@ -142,7 +142,7 @@ function [paramValueThreshold, questObj, psychometricFunction, para]  = computeP
     end
 
     % Param threshold (log normalized value)
-    [logNormalizedParamValueThreshold, para] = estimator.thresholdMLE('showPlot', false, ...
+    [logNormalizedParamValueThreshold, fittedPsychometricParams] = estimator.thresholdMLE('showPlot', false, ...
         'thresholdCriterion', thresholdCriterion);
 
     % Convert log normalized param value -> normalized param value
@@ -153,7 +153,7 @@ function [paramValueThreshold, questObj, psychometricFunction, para]  = computeP
 
     if (beVerbose)
         fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
-            para(1), para(2), para(3), para(4));
+            fittedPsychometricParams(1), fittedPsychometricParams(2), fittedPsychometricParams(3), fittedPsychometricParams(4));
         fprintf('Threshold (criterion proportion correct %0.4f: %0.2f \n', ...
             thresholdCriterion, paramValueThreshold);
     end
