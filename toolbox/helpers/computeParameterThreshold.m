@@ -1,7 +1,56 @@
 function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometricParams]  = computeParameterThreshold(...
     theSceneEngines, theNeuralEngine, classifierEngine, classifierPara, ...
     thresholdPara, questEnginePara, varargin)
-    
+% Compute threshold for a parameter (not necessarily threshold) in an N-alternative forced choice paradigm
+%
+% Syntax:
+%    [paramValueThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeParameterThreshold( ...
+%        theSceneEngines, theNeuralEngine, classifierEngine, ...
+%        classifierPara, thresholdPara, questEnginePara)  
+%
+% Description:
+%     Uses Quest+ and the ISETBioCSFGenerator objects to obtain
+%     computational observer threshold for the varied parameter in an N-Way AFC paradigm 
+%
+%
+% Inputs:
+%   theSceneEngines       - Cell array of scene engines, each responsible for a different of the N-alternative stimuli.
+%   theNeuralEngine       - @neuralResponseEngine object to compute neural responses.
+%   classifierEngine      - @responseClassifierEngine object that implements observer decision model.  
+%   classifierPara        - Parameter struct associated with the classifier engine
+%   thresholdPara         - Parameter struct associated with threshold estimation
+%   questEnginePara       - Parameter struct for running the questThresholdEngine
+%
+% Outputs:
+%   paramValueThreshold      - Estimated threshold value
+%   questObj                 - questThresholdEngine object, which
+%                              contains information about all the trials run.
+%   psychometricFunction     - Dictionary (indexed by contrast level) with the 
+%                              psychometric function.
+%   fittedPsychometricParams - Parameters of psychometric function fit,
+%                              matched to PF used in the questThresholdEngine object
+%
+% Optional key/value pairs:
+%   'beVerbose'           - Logical. Provide some printout? Default true.
+%   'visualizeAllComponents' - Logical. All component visualization.
+%                           Default false. If set to true, it visualizes
+%                           the mosaic responses to all the stimuli (multiple contrasts)
+%                           which are computed by the neural engine.
+%   'datasaveParameters'  - Parameters related to data saving. Default
+%                           empty. When not empty, this has to be a struct
+%                           with fields indicating which responses to save.
+%                           Right now, the only accepted field is
+%                           'saveMRGCResponses' which saved responses of
+%                           the mRGC mosaic attached to an MRGC neural engine
+%
+% See also:
+%    t_spatialCSF, t_thresholdEngine,
+%    computePerformanceNWay_OneStimulusPerTrial.
+%  
+
+% History: 
+%  03/01/22  NPC     Wrote it by adapting computeThresholdNWay_OneStimulusPerTrial
+
     % Parse
     p = inputParser;
     p.addParameter('beVerbose',  true, @islogical);
@@ -112,7 +161,6 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
             % Update the psychometric function with data point for this contrast level
             psychometricFunction(parameterLabel) = mean(predictions);
             
-    
         else
             % Classifier is already trained, just get predictions
             [predictions, ~, ~] = computePerformanceNWay_OneStimPerTrial(...
@@ -160,6 +208,5 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
 
     % Return the quest+ object wrapper for plotting and/or access to data
     questObj = estimator;
-
 end
 
