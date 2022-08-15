@@ -77,7 +77,7 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
 %   Examples:
 %{
     % Usage case #1. Just return the default classifier params
-    defaultParams =  rcePcaSVMClassifier()
+    defaultParams =  rcePcaSVMTAFC()
 
     % Usage case #2. Train a binary SVM classifier on a data set  using a parent 
     % @responseClassifierEngine object and the default classifier params
@@ -87,7 +87,7 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
 
     % Instantiate a @sceneEngine object and generate a test scene sequence
     theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
-    testContrast = 0.7/100;
+    testContrast = 1.2/100;
     [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
         theSceneEngineOBJ.compute(testContrast);
     % Generate the null scene sequence
@@ -112,7 +112,7 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
             );
 
     % Instantiate a responseClassifierEngine with the @rcePcaSVMClassifier compute function
-    theClassifierEngine = responseClassifierEngine(@rcePcaSVMClassifier);
+    theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
    
     % Train a binary SVM classifier on the in-sample data set
     trainingData = theClassifierEngine.compute('train',...
@@ -139,7 +139,7 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
     % out-of-sample data set.
     predictedData = theClassifierEngine.compute('predict',...
             outOfSampleNullResponses('random'), ...
-            outOfSampleTestResponses('random'));
+            outOfSampleTestResponses('random'))
     
 %}
 
