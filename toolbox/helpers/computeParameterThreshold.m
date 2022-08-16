@@ -53,7 +53,7 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
 
     % Parse
     p = inputParser;
-    p.addParameter('beVerbose',  true, @islogical);
+    p.addParameter('beVerbose',  false, @islogical);
     p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
     p.addParameter('visualizeAllComponents', false, @islogical);
     p.parse(varargin{:});
