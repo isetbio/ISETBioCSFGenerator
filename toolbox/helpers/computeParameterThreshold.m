@@ -31,7 +31,7 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
 %                              matched to PF used in the questThresholdEngine object
 %
 % Optional key/value pairs:
-%   'beVerbose'           - Logical. Provide some printout? Default true.
+%   'beVerbose'           - Logical. Provide some printout? Default false.
 %   'visualizeAllComponents' - Logical. All component visualization.
 %                           Default false. If set to true, it visualizes
 %                           the mosaic responses to all the stimuli (multiple contrasts)
@@ -42,6 +42,8 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
 %                           Right now, the only accepted field is
 %                           'saveMRGCResponses' which saved responses of
 %                           the mRGC mosaic attached to an MRGC neural engine
+%   'roundEstDomainToIntegers' - Just keep the unique integers in the
+%                           linear estimation domain.
 %
 % See also:
 %    t_spatialCSF, t_thresholdEngine,
@@ -56,14 +58,17 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
     p.addParameter('beVerbose',  false, @islogical);
     p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
     p.addParameter('visualizeAllComponents', false, @islogical);
+    p.addParameter('roundEstDomainToIntegers',false,@islogical);
     p.parse(varargin{:});
     datasavePara = p.Results.datasavePara;
     beVerbose = p.Results.beVerbose;
     visualizeAllComponents = p.Results.visualizeAllComponents;
 
-
     % Construct a QUEST threshold estimator
     variedParameterEstimationDomain = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
+    if (p.Results.roundEstDomainToIntegers)
+        variedParameterEstimationDomain = log10(unique(round(10.^variedParameterEstimationDomain)));
+    end
     variedParameterSlopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
     % Check whether the quest parameters include a PF, and set default if not.
@@ -86,7 +91,6 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
     else
         lapseRate = thresholdPara.lapseRate;
     end
-
 
     % Handle quest method.
     if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
@@ -147,7 +151,6 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
                 [theTestSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngines{oo}.compute(paramValue);
             end
-          
             
             % Train classifier for this parameter value and get predicted
             % correct/incorrect predictions.  This function also computes the
