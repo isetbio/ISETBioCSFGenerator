@@ -157,7 +157,7 @@ end
 % Note that for compatibility, put all the instances into a single
 % matrix in a single container at the end.
 whichAlternatives = randi(nAlternatives,1,nTest);
-outOfSamplesStimResponses = cell(1,nTest);
+outOfSampleStimResponsesCell = cell(1,nTest);
 parfor tt = 1:nTest
     % Get responses for scene for this trial
     [outOfSampleStimResponsesCell{tt}, ~] = theNeuralEngine.compute(...
