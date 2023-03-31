@@ -88,7 +88,7 @@ nAlternatives = length(theScenes);
 % way we need them.
 if (~isempty(trainNoiseFlag))
     % Generate stimuli for training
-    for aa = 1:nAlternatives
+    parfor aa = 1:nAlternatives
         [inSampleStimResponsesCell{aa}, ~] = theNeuralEngine.compute(...
             theScenes{aa}, ...
             temporalSupport, ...
@@ -158,7 +158,7 @@ end
 % matrix in a single container at the end.
 whichAlternatives = randi(nAlternatives,1,nTest);
 outOfSamplesStimResponses = cell(1,nTest);
-for tt = 1:nTest
+parfor tt = 1:nTest
     % Get responses for scene for this trial
     [outOfSampleStimResponsesCell{tt}, ~] = theNeuralEngine.compute(...
         theScenes{whichAlternatives(tt)}, ...
