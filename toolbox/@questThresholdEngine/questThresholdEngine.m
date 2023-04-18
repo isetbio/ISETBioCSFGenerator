@@ -223,6 +223,10 @@ classdef questThresholdEngine < contrastThresholdEngine
         % Record a set of trials of the experiment
         % Return next next query contrast, an indicator for new trial
         [nextCrst, nextFlag] = multiTrial(this, stimVec, responseVec)
+
+        % Record a set of trials of the experiment
+        % Return next next query contrast, an indicator for new trial
+        [nextCrst, nextFlag] = multiTrialFast(this, stimVec, responseVec)
         
         % Record one trial of the experiment
         % Return next next query contrast, an indicator for new trial

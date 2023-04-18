@@ -181,7 +181,7 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
         % Tell QUEST+ what we ran (how many trials at the given normalized param value) and
         % get next normalized param value to run.
         [logNormalizedParamValue, nextFlag] = ...
-            estimator.multiTrial(logNormalizedParamValue * ones(1, classifierPara.nTest), predictions);
+            estimator.multiTrialFast(logNormalizedParamValue * ones(1, classifierPara.nTest), predictions);
 
     end  % (while nextFlag)
 
