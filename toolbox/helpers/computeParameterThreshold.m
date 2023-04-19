@@ -180,8 +180,27 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
     
         % Tell QUEST+ what we ran (how many trials at the given normalized param value) and
         % get next normalized param value to run.
+        checkTwoWays = false;
+        if (checkTwoWays)
+            questEstimatorSave = estimator.estimators{1};
+            tic;
+            [logNormalizedParamValue1, nextFlag1] = ...
+                estimator.multiTrial(logNormalizedParamValue * ones(1, classifierPara.nTest), predictions);
+            toc
+            estimator.estimators{1} = questEstimatorSave;
+        end
+        tic;
         [logNormalizedParamValue, nextFlag] = ...
             estimator.multiTrialFast(logNormalizedParamValue * ones(1, classifierPara.nTest), predictions);
+        toc
+        if (checkTwoWays)
+            if (logNormalizedParamValue ~= logNormalizedParamValue1)
+                error('Two next values don''t match');
+            end
+            if (nextFlag ~= nextFlag1)
+                error('Two next flags don''t match');
+            end
+        end
 
     end  % (while nextFlag)
 

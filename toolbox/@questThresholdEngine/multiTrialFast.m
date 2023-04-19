@@ -6,7 +6,7 @@ responseVec = responseVec + 1;
 % Update for all the trials without updating entropy.
 saveNoentropy = this.estimators{this.estIdx}.noentropy;
 this.estimators{this.estIdx}.noentropy = 1;
-for idx = 1:length(stimVec)
+for idx = 1:size(stimVec,1)
     this.estimators{this.estIdx} = qpUpdate(this.estimators{this.estIdx}, stimVec, responseVec(idx));
 end
 this.estimators{this.estIdx}.noentropy = saveNoentropy;
@@ -15,7 +15,7 @@ this.estimators{this.estIdx}.noentropy = saveNoentropy;
 this.estimators{this.estIdx} = qpUpdate(this.estimators{this.estIdx}, [], []);
 
 % Select next QUEST object
-this.nTrial = this.nTrial + 1;
+this.nTrial = this.nTrial + size(stimVec,1);
 this.estIdx = mod(this.estIdx, this.numEstimator) + 1;
 
 % Check that we're done  
