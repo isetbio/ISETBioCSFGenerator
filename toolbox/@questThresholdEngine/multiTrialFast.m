@@ -7,7 +7,7 @@ responseVec = responseVec + 1;
 saveNoentropy = this.estimators{this.estIdx}.noentropy;
 this.estimators{this.estIdx}.noentropy = 1;
 for idx = 1:size(stimVec,1)
-    this.estimators{this.estIdx} = qpUpdate(this.estimators{this.estIdx}, stimVec, responseVec(idx));
+    this.estimators{this.estIdx} = qpUpdate(this.estimators{this.estIdx}, stimVec(idx), responseVec(idx));
 end
 this.estimators{this.estIdx}.noentropy = saveNoentropy;
 

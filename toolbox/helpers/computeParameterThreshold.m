@@ -183,16 +183,12 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
         checkTwoWays = false;
         if (checkTwoWays)
             questEstimatorSave = estimator.estimators{1};
-            tic;
             [logNormalizedParamValue1, nextFlag1] = ...
                 estimator.multiTrial(logNormalizedParamValue * ones(1, classifierPara.nTest), predictions);
-            toc
             estimator.estimators{1} = questEstimatorSave;
         end
-        tic;
         [logNormalizedParamValue, nextFlag] = ...
-            estimator.multiTrialFast(logNormalizedParamValue * ones(1, classifierPara.nTest), predictions);
-        toc
+            estimator.multiTrialFast(logNormalizedParamValue * ones(classifierPara.nTest,1), predictions);
         if (checkTwoWays)
             if (logNormalizedParamValue ~= logNormalizedParamValue1)
                 error('Two next values don''t match');
