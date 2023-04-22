@@ -1,4 +1,8 @@
-function [nextCrst, nextFlag] = multiTrialFast(this, stimVec, responseVec)
+function [nextCrst, nextFlag] = multiTrialQuestBlocked(this, stimVec, responseVec)
+
+if (this.validation)
+    error('This function is not for validation method');
+end
 
 % Convert from {0, 1} to {1, 2} response encoding for QUEST procedure
 responseVec = responseVec + 1;
