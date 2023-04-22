@@ -1,9 +1,12 @@
-function [nextCrst, nextFlag] = singleTrial(this, stim, response)
+function [nextCrst, nextFlag] = singleTrialValidationBlocked(this, stim, response)
 
 % Check that we're not doing method of constant stimuli, in which case we
 % should not be here.
-if (this.validation & this.nTest > 1)
-    error('This routine is not for validation with nTest > 1');
+if (~this.validation)
+    error('singleTrialValidationBlocked is only for validation method');
+end
+if (if this.nTest <= 1)
+    error('singleTrialValidationBlocked is only for nTest > 1);
 end
 
 % Convert from {0, 1} to {1, 2} response encoding for QUEST procedure
@@ -17,14 +20,12 @@ this.nTrial = this.nTrial + 1;
 this.estIdx = mod(this.estIdx, this.numEstimator) + 1;
 
 % Run the entire psychometric curve for validation mode
-OLDWAY = false;
+OLDWAY = true;
 if this.validation
     % The old way went through all of the contrasts in fixed order,
     % running all trials for one contrast before moving on to the next.
     % It is still here in case the new way breaks something.
     if (OLDWAY)
-        error('Should not be here');
-        
         crstIdx = floor(this.nTrial / this.nRepeat) + 1;
         
         if crstIdx > length(this.estDomain)
@@ -40,6 +41,8 @@ if this.validation
     % give the same result for a computational observer, but the
     % new way is better for a human psychophysical experiment.
     else
+        error('This routine should not get here.');
+
         if (this.nTrial > length(this.validationTrialContrasts))
             this.testCrst = NaN;
             this.nextFlag = false;
@@ -50,25 +53,7 @@ if this.validation
     end
     
 else
-    
-    if this.nTrial >= this.maxTrial
-        this.nextFlag = false;
-    end
-    
-    % Running estimate of threshold and its standard error
-    [threshold, stderr] = thresholdEstimate(this);
-    
-    % Stop only if stderr drop below criterion and we have at least minTrial # of trials
-    if ((this.stopCriterion(threshold, stderr)) && this.nTrial >= this.minTrial)
-        this.nextFlag = false;
-    else
-        this.nextFlag = true;
-    end
-    
-    % Set next stimulus to ask for
-    this.testCrst = qpQuery(this.estimators{this.estIdx});
-    
-    [nextCrst, nextFlag] = this.nextStimulus();
+    error('This routine is only for validation method')
     
 end
 

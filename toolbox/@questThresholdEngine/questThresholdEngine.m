@@ -75,7 +75,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %                       stops when the minTrials value is reached. Same
     %                       when this is empty.  Indeed, setting to empty
     %                       means that S.E. across estimators is not used
-    %                       as a a stopping criterion. See
+    %                       as a stopping criterion. See
     %                       t_thresholdEngine for elaboration on stopping.
     %
     %   'slopeRange'       - Array. An array of all possible slope for the
@@ -100,6 +100,15 @@ classdef questThresholdEngine < contrastThresholdEngine
     %                    qpPFWeibullLog and qpPFStandardWeibull.
     %
     %    See also t_thresholdEngine, contrastThresholdEngine, mQUESTPlus
+
+    % History:
+    %   04/22/23  dhb  Change sign of what happens from true to false for
+    %                  empty stop criterion, to match what the documentation above says
+    %                  will happen. 
+    %             dhb  Change comparison of se to numeric to specified stop
+    %                  criterion from <= to <, so that we don't throw a stop
+    %                  when the criterion is zero se and there is only one
+    %                  estimator.
     
    
     % Class properties
@@ -157,9 +166,9 @@ classdef questThresholdEngine < contrastThresholdEngine
             
             stopCriterion = p.Results.stopCriterion;
             if isempty(stopCriterion)
-                this.stopCriterion = @(threshold, se) true;  
+                this.stopCriterion = @(threshold, se) false;  
             elseif isnumeric(stopCriterion)
-                this.stopCriterion = @(threshold, se) se <= stopCriterion;
+                this.stopCriterion = @(threshold, se) se < stopCriterion;
             elseif isa(stopCriterion, 'function_handle')
                 this.stopCriterion = stopCriterion;
             else
@@ -226,11 +235,18 @@ classdef questThresholdEngine < contrastThresholdEngine
 
         % Record a set of trials of the experiment
         % Return next next query contrast, an indicator for new trial
-        [nextCrst, nextFlag] = multiTrialFast(this, stimVec, responseVec)
+        % This version for Quest when nRepeat > 1.
+        [nextCrst, nextFlag] = multiTrialQuestBlocked(this, stimVec, responseVec)
         
         % Record one trial of the experiment
         % Return next next query contrast, an indicator for new trial
         [nextCrst, nextFlag] = singleTrial(this, stim, response)
+
+        % Record one trial of the experiment
+        % Return next next query contrast, an indicator for new trial
+        % This version is for cases where a block of trials (nRepeat > 1) at a single
+        % contrast is run, in validation mode.
+        [nextCrst, nextFlag] = singleTrialValidationBlocked(this, stim, response)
         
         % Run MLE estimate of psychometric curve parameter on combined data
         [threshold, para, psychometricDataOut] = thresholdMLE(this, varargin);
