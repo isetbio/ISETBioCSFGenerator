@@ -1,8 +1,8 @@
 function [nextCrst, nextFlag] = singleTrial(this, stim, response)
 
-% Check that we're not doing method of constant stimuli, in which case we
-% should not be here.
-if (this.validation & this.nTest > 1)
+% Check that we're not doing method of constant stimuli with
+% multiple trials, in which case we should not be here.
+if (this.validation & this.nRepeat > 1)
     error('This routine is not for validation with nTest > 1');
 end
 
@@ -16,7 +16,11 @@ this.estimators{this.estIdx} = qpUpdate(this.estimators{this.estIdx}, stim, resp
 this.nTrial = this.nTrial + 1;
 this.estIdx = mod(this.estIdx, this.numEstimator) + 1;
 
-% Run the entire psychometric curve for validation mode
+% Run the entire psychometric curve for validation mode.
+%
+% With OLDWAY set to false, this goes through blocks of contrast
+% on trial at a time, in random order.  Good for real psychophysical
+% experiments, and some simulations.
 OLDWAY = false;
 if this.validation
     % The old way went through all of the contrasts in fixed order,
@@ -24,7 +28,7 @@ if this.validation
     % It is still here in case the new way breaks something.
     if (OLDWAY)
         error('Should not be here');
-        
+
         crstIdx = floor(this.nTrial / this.nRepeat) + 1;
         
         if crstIdx > length(this.estDomain)

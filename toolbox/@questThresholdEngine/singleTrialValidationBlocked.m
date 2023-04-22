@@ -5,8 +5,8 @@ function [nextCrst, nextFlag] = singleTrialValidationBlocked(this, stim, respons
 if (~this.validation)
     error('singleTrialValidationBlocked is only for validation method');
 end
-if (if this.nTest <= 1)
-    error('singleTrialValidationBlocked is only for nTest > 1);
+if (this.nRepeat <= 1)
+    error('singleTrialValidationBlocked is only for nTest > 1');
 end
 
 % Convert from {0, 1} to {1, 2} response encoding for QUEST procedure
@@ -20,6 +20,10 @@ this.nTrial = this.nTrial + 1;
 this.estIdx = mod(this.estIdx, this.numEstimator) + 1;
 
 % Run the entire psychometric curve for validation mode
+%
+% With OLDWAY set to true, as it is here, each desired contrast
+% is run once as a block. The code is pretty obscure, but we
+% believe it is right.
 OLDWAY = true;
 if this.validation
     % The old way went through all of the contrasts in fixed order,
@@ -53,7 +57,7 @@ if this.validation
     end
     
 else
-    error('This routine is only for validation method')
+    error('This routine is only for the validation method')
     
 end
 
