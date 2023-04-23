@@ -221,17 +221,21 @@ classdef questThresholdEngine < contrastThresholdEngine
                 % Pre-randomize the contrasts in blocked fashion in this
                 % mode.
                 % 
-                % If trials are blocked, just set up one block.
+                % If trials are blocked, just set to blank as we use
+                % estDomain directly in order, in this case.  Also,
+                % override testCrst obtained above to start the party off
+                % right.
                 if (this.blocked)
-                    this.validationTrialContrasts = this.estDomain(randperm(length(this.estDomain)));
+                    this.validationTrialContrasts = [];
+                    this.testCrst = this.estDomain(1);
                 else
                     this.validationTrialContrasts = [];
                     for tt = 1:this.nRepeat
                         this.validationTrialContrasts = [this.validationTrialContrasts...
                             this.estDomain(randperm(length(this.estDomain)))];
                     end
+                    this.testCrst = this.validationTrialContrasts(1);
                 end
-                this.testCrst = this.validationTrialContrasts(1);
             end
         end
         

@@ -176,8 +176,15 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
             
             % Update the psychometric function with data point for this contrast level
             psychometricFunction(parameterLabel) = mean(predictions);
-            
+            if (beVerbose)
+                fprintf('computeParamterThreshold: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
+            end
         else
+            % Reality check
+            if (estimator.validation & estimator.blocked)
+                error('Should not be repeating any constrast for validation blocked method');
+            end
+            
             % Classifier is already trained, just get predictions
             eStart = tic;
             [predictions, ~, ~] = computePerformanceNWay_OneStimPerTrial(...
@@ -195,6 +202,10 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
             previousData = psychometricFunction(parameterLabel);
             currentData = cat(2,previousData,mean(predictions));
             psychometricFunction(parameterLabel) = currentData;
+
+            if (beVerbose)
+                fprintf('computeParamterThreshold: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
+            end
         end
     
         % Tell QUEST+ what we ran (how many trials at the given normalized param value) and
@@ -247,8 +258,8 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
     end
 
     % Param threshold (log normalized value)
-    [logNormalizedParamValueThreshold, fittedPsychometricParams] = estimator.thresholdMLE('showPlot', false, ...
-        'thresholdCriterion', thresholdCriterion);
+    [logNormalizedParamValueThreshold, fittedPsychometricParams, thresholdDataOut] = estimator.thresholdMLE('showPlot', false, ...
+        'thresholdCriterion', thresholdCriterion, 'returnData', true);
 
     % Convert log normalized param value -> normalized param value
     normalizedParamValueThreshold = 10 ^ logNormalizedParamValueThreshold;
