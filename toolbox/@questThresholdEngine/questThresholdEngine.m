@@ -170,7 +170,7 @@ classdef questThresholdEngine < contrastThresholdEngine
             this.guessRate = p.Results.guessRate;
             this.lapseRate = p.Results.lapseRate;
             this.validation = p.Results.validation;
-            this.blocked = p.Results.validation;
+            this.blocked = p.Results.blocked;
             this.nRepeat = p.Results.nRepeat;
             this.nOutcomes = p.Results.nOutcomes;
             this.qpPF = p.Results.qpPF;
