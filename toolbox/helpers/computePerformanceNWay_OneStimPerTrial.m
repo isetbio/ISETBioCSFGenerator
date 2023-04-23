@@ -186,15 +186,16 @@ else
 
     outOfSampleStimResponsesCell = cell(1, nAlternatives);
     
-    tic
-    for iAlternative = 1:nAlternatives
+    eStart = tic;
+    parfor iAlternative = 1:nAlternatives
         [outOfSampleStimResponsesCell{iAlternative}, ~] = theNeuralEngine.compute(...
             theScenes{iAlternative}, ...
             temporalSupport, ...
             nTestsPerAlternative, ...
             'noiseFlags', {testNoiseFlag});
     end
-    toc
+    e = toc(eStart);
+    fprintf('computePerformanceNWay_OneStimPerTrial: Took %0.1f secs to generate mean responses for all alternatives\n',e);
 
 end
 

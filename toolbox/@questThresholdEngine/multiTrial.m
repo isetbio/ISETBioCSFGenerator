@@ -6,7 +6,7 @@ if (~this.validation & this.nRepeat > 1)
 end
 
 for idx = 1:length(stimVec)
-    if (this.validation & this.nRepeat > 1)
+    if (this.validation & this.blocked & this.nRepeat > 1)
         this.singleTrialValidationBlocked(stimVec(idx), responseVec(idx));
     else
         this.singleTrial(stimVec(idx), responseVec(idx));

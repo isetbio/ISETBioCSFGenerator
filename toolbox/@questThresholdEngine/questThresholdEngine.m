@@ -90,8 +90,16 @@ classdef questThresholdEngine < contrastThresholdEngine
     %   'validation'       - Boolean. If set to true run the entire
     %                        psychometric curve
     %
+    %   'blocked'          - Run trials blocked by contrast.  Set this to true
+    %                        if a block of trials at same contrast will be run.
+    %                        Often true in simulations, rarely true in experiments.
+    %                        Default 0.
+    %
     %   'nRepeat'          - Double. Number of trials per contrast level
-    %                        when running the validation
+    %                        when running in validation mode.  This can be
+    %                        confusing, because it feels a lot the same as
+    %                        the nTest parameter that we use for the
+    %                        classifier engine.
     %
     %   'nOutcomes'    - Double. Number of stimulus alternatives per
     %                        trial. Default 2.
@@ -118,6 +126,7 @@ classdef questThresholdEngine < contrastThresholdEngine
         numEstimator;
         stopCriterion;
         validation;
+        blocked;
         
         slopeRange;
         guessRate;
@@ -151,6 +160,7 @@ classdef questThresholdEngine < contrastThresholdEngine
             p.addParameter('nOutcomes', 2);
             p.addParameter('lapseRate', 0.0);
             p.addParameter('validation', false, @(x)(islogical(x) && numel(x) == 1));
+            p.addParameter('blocked', false, @(x)(islogical(x) && numel(x) == 1));
             p.addParameter('nRepeat', 64, @(x)(isnumeric(x) && numel(x) == 1));
             p.addParameter('qpPF',@qpPFWeibull,@(x) isa(x,'function_handle'));
                         
@@ -209,11 +219,16 @@ classdef questThresholdEngine < contrastThresholdEngine
 
                 % Pre-randomize the contrasts in blocked fashion in this
                 % mode.
-                this.validationTrialContrasts = [];
-                
-                for tt = 1:this.nRepeat
-                    this.validationTrialContrasts = [this.validationTrialContrasts...
-                        this.estDomain(randperm(length(this.estDomain)))];
+                % 
+                % If trials are blocked, just set up one block.
+                if (this.blocked)
+                    this.validationTrialContrasts = this.estDomain(randperm(length(this.estDomain)));
+                else
+                    this.validationTrialContrasts = [];
+                    for tt = 1:this.nRepeat
+                        this.validationTrialContrasts = [this.validationTrialContrasts...
+                            this.estDomain(randperm(length(this.estDomain)))];
+                    end
                 end
                 this.testCrst = this.validationTrialContrasts(1);
             end

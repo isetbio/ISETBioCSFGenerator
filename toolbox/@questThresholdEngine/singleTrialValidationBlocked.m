@@ -8,6 +8,9 @@ end
 if (this.nRepeat <= 1)
     error('singleTrialValidationBlocked is only for nTest > 1');
 end
+if (~this.blocked)
+    error('singleTrialValidationBlocked requires questThresholdEngine blocked parameter set to true');
+end
 
 % Convert from {0, 1} to {1, 2} response encoding for QUEST procedure
 response = response + 1;

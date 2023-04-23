@@ -95,7 +95,7 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
     % Handle quest method.
     if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
         estimator = questThresholdEngine(...
-            'validation', true, 'nRepeat', questEnginePara.nTest, ...
+            'validation', true, 'blocked', true, 'nRepeat', questEnginePara.nTest, ...
             'estDomain',variedParameterEstimationDomain, 'slopeRange', variedParameterSlopeRange, ...
             'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
     else
@@ -125,6 +125,7 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
     % Dictionary to store the measured psychometric function which is returned to the user
     psychometricFunction = containers.Map();
 
+    testCounter = 0;
     while (nextFlag)
         % Convert log normalized param value -> normalized param value
         normalizedParamValue = 10 ^ logNormalizedParamValue;
@@ -133,9 +134,10 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
         paramValue = thresholdPara.maxParamValue*normalizedParamValue;
 
         % Label for pCorrect dictionary
-        parameterLabel = sprintf('param value= %2.4f', paramValue);
+        parameterLabel = sprintf('param value = %2.4f', paramValue);
         if (beVerbose)
-            fprintf('Testing %s\n', parameterLabel);
+            fprintf('computeParameterThreshold: logNormalizedParamValue = %0.2f; linear normalization factor = %0.2f; linear %s\n', ...
+                logNormalizedParamValue, thresholdPara.maxParamValue, parameterLabel);
         end
     
         % Have we already built the classifier for this normalized param value?
@@ -155,23 +157,35 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
             % Train classifier for this parameter value and get predicted
             % correct/incorrect predictions.  This function also computes the
             % neural responses needed to train and predict.
+            eStart = tic;
             [predictions, theTrainedClassifierEngines{testedIndex}, responses] = computePerformanceNWay_OneStimPerTrial(...
                 theTestSceneSequences{testedIndex}, ...
                 theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
                 theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
                 datasavePara.saveMRGCResponses, visualizeAllComponents);
+            testCounter = testCounter + 1;
+            e = toc(eStart);
+            if (beVerbose)
+                fprintf('computeParameterThreshold: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
+            end
             
             % Update the psychometric function with data point for this contrast level
             psychometricFunction(parameterLabel) = mean(predictions);
             
         else
             % Classifier is already trained, just get predictions
+            eStart = tic;
             [predictions, ~, ~] = computePerformanceNWay_OneStimPerTrial(...
                 theTestSceneSequences{testedIndex}, ...
                 theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
                 theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
                 false);
-            
+            testCounter = testCounter + 1;
+            e = toc(eStart);
+            if (beVerbose)
+                fprintf('computeParameterThreshold: Predicting test block %d no training took %0.1f secs\n',testCounter,e);
+            end
+
             % Update the psychometric function with data point for this parameter level
             previousData = psychometricFunction(parameterLabel);
             currentData = cat(2,previousData,mean(predictions));
@@ -180,6 +194,7 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
     
         % Tell QUEST+ what we ran (how many trials at the given normalized param value) and
         % get next normalized param value to run.
+        eStart = tic;
         checkTwoWays = false;
         if (checkTwoWays & ~estimator.validation)
             questEstimatorSave = estimator.estimators{1};
@@ -204,8 +219,20 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
                 error('Two next flags don''t match');
             end
         end
+        e = toc(eStart);
+        if (beVerbose)
+            fprintf('computeParamterThreshold: Updating took %0.1f secs\n',e);
+        end
 
     end  % (while nextFlag)
+
+    if (beVerbose)
+        fprintf('computeParameterThreshold: Ran %d test levels of %d trials per block of tests\n',testCounter,classifierPara.nTest);
+        if (estimator.validation)
+            fprintf('\tValidation mode, nRepeat set to %d\n',estimator.nRepeat);
+        end
+        fprintf('\tRecorded number single trials (%d) divided by number of blocks: %0.1f\n',testCounter,estimator.nTrial/testCounter);
+    end
 
     % Return threshold criterion
     if (~isfield(thresholdPara,'thresholdCriterion'))

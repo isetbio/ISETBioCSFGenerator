@@ -3,6 +3,9 @@ function [nextCrst, nextFlag] = multiTrialQuestBlocked(this, stimVec, responseVe
 if (this.validation)
     error('This function is not for validation method');
 end
+if (~this.blocked)
+    error('Need to set QuestThresholdEngine blocked parameter explicitly to true for blocked Quest method');
+end
 
 % Convert from {0, 1} to {1, 2} response encoding for QUEST procedure
 responseVec = responseVec + 1;
