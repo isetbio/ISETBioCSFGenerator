@@ -1,4 +1,4 @@
-classdef responseClassifierEngineNWay < handle
+classdef responseClassifierEngineNWay < matlab.mixin.Copyable
 % Define a responseClassifierEngineNWay class
 %
 % Syntax:
