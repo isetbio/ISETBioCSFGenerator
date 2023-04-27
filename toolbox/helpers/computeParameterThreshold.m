@@ -146,8 +146,17 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
         end
     
         % Have we already built the classifier for this normalized param value?
+        %
+        % CACHING AND REUSE OF CLASSIFIER NEEDS TO BE FIXED.  
+        %    The classifier engines are handle classes, so just because we
+        %    store it doesn't cause it to stay fixed.  When we come back to
+        %    use it later, it has changed.
+        %
+        %    Fixing for now by simply always retraining.  Loses efficiency,
+        %    but should get the right answer.
         testedIndex = find(normalizedParamValue == testedNormalizedParamValues);
-        if (isempty(testedIndex))
+        %if (isempty(testedIndex))
+        if (true)
             % No.  Save this normalized param value in the list of examined
             % normalized param values
             testedNormalizedParamValues(numel(testedNormalizedParamValues)+1) = normalizedParamValue;
