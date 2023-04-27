@@ -155,8 +155,8 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
         %    Fixing for now by simply always retraining.  Loses efficiency,
         %    but should get the right answer.
         testedIndex = find(normalizedParamValue == testedNormalizedParamValues);
-        %if (isempty(testedIndex))
-        if (true)
+        if (isempty(testedIndex))
+        %if (true)
             % No.  Save this normalized param value in the list of examined
             % normalized param values
             testedNormalizedParamValues(numel(testedNormalizedParamValues)+1) = normalizedParamValue;
@@ -172,11 +172,12 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
             % correct/incorrect predictions.  This function also computes the
             % neural responses needed to train and predict.
             eStart = tic;
-            [predictions, theTrainedClassifierEngines{testedIndex}, responses] = computePerformanceNWay_OneStimPerTrial(...
+            [predictions, tempClassifierEngine, responses] = computePerformanceNWay_OneStimPerTrial(...
                 theTestSceneSequences{testedIndex}, ...
                 theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
                 theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
                 datasavePara.saveMRGCResponses, visualizeAllComponents);
+            theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
             testCounter = testCounter + 1;
             e = toc(eStart);
             if (beVerbose)
