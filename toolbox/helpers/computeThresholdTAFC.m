@@ -61,6 +61,8 @@ function [threshold, questObj, psychometricFunction, para] = computeThresholdTAF
 %  10/23/20  dhb  Added commments.
 %  12/04/20  npc  Added option to run method of constant stimuli. 
 %                 Also added psychometricFunction return argument.
+%  05/01/23  npc  Modifications to use the multiTrialQuestBlocked method
+% 
 
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);
@@ -107,11 +109,17 @@ end
 % Handle quest method.
 if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
     estimator = questThresholdEngine(...
-        'validation', true, 'nRepeat', questEnginePara.nTest, ...
+        'validation', true, 'blocked', true, 'nRepeat', questEnginePara.nTest, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 else
-    estimator = questThresholdEngine(...
+    if (classifierPara.nTest > 1)
+        blockedVal = true;
+    else
+        blockedVal = false;
+    end
+
+    estimator = questThresholdEngine('blocked',blockedVal,...
         'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'numEstimator', questEnginePara.numEstimator, ...
@@ -166,10 +174,22 @@ while (nextFlag)
     end
     
     % Have we already built the classifier for this contrast?
+    %
+    % CACHING AND REUSE OF CLASSIFIER NEEDS TO BE FIXED.  
+    %    The classifier engines are handle classes, so just because we
+    %    store it doesn't cause it to stay fixed.  When we come back to
+    %    use it later, it has changed.
+    %
+    %    Fixing for now by simply always retraining.  Loses efficiency,
+    %    but should get the right answer.
     testedIndex = find(testContrast == testedContrasts);
-    if (isempty(testedIndex))
+    %if (isempty(testedIndex))
+    
+    if (true)
         % No.  Save contrast in list
-        testedContrasts = [testedContrasts testContrast];
+        testedContrasts = [testedContrasts testContrast]; 
+        % Ensure we dont have dublicates
+        testedContrasts = unique(testedContrasts);
         testedIndex = find(testContrast == testedContrasts);
         
         % Generate the TEST scene sequence for the given contrast
@@ -221,12 +241,14 @@ while (nextFlag)
         % Train classifier for this TEST contrast and get predicted
         % correct/incorrect predictions.  This function also computes the
         % neural responses needed to train and predict.
+
         [predictions, theTrainedClassifierEngines{testedIndex}, responses] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
             datasavePara.saveMRGCResponses, visualizeAllComponents);
         
+
         % Update the psychometric function with data point for this contrast level
         psychometricFunction(contrastLabel) = mean(predictions);
         
@@ -253,6 +275,12 @@ while (nextFlag)
             save(responseFileName, 'responses',  '-v7.3');
         end
     else
+
+        % Reality check
+        if (estimator.validation & estimator.blocked)
+             error('Should not be repeating any constrast for validation blocked method');
+        end
+
         % Classifier is already trained, just get predictions
         [predictions, ~, ~] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
@@ -266,13 +294,20 @@ while (nextFlag)
         psychometricFunction(contrastLabel) = currentData;
     end
     
-    
+
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
-    [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, classifierPara.nTest), predictions);
+    if (estimator.validation)
+        % Method of constant stimuli
+        [logContrast, nextFlag] = ...
+            estimator.multiTrial(logContrast * ones( classifierPara.nTest,1), predictions);
+    else
+        % Quest
+        [logContrast, nextFlag] = ...
+          estimator.multiTrialQuestBlocked(logContrast * ones(classifierPara.nTest,1), predictions);
+    end
 
-end
+end  % while (nextFlag)
 
 % Return threshold value. For the mQUESTPlus Weibull PFs, the first
 % parameter of the PF fit is the 0.81606 proportion correct threshold,
