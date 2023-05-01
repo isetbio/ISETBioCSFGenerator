@@ -159,7 +159,11 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
         if (true)
             % No.  Save this normalized param value in the list of examined
             % normalized param values
-            testedNormalizedParamValues(numel(testedNormalizedParamValues)+1) = normalizedParamValue;
+            if (isempty(testedIndex))
+                % Only add to the list of tested values if we have not
+                % tested this value before
+                testedNormalizedParamValues(numel(testedNormalizedParamValues)+1) = normalizedParamValue;
+            end
             testedIndex = find(normalizedParamValue == testedNormalizedParamValues);
             
             % Generate the scenes for each alternative, at the test param value

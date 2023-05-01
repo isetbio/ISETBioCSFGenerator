@@ -184,12 +184,11 @@ while (nextFlag)
     %    but should get the right answer.
     testedIndex = find(testContrast == testedContrasts);
     %if (isempty(testedIndex))
-    
     if (true)
         % No.  Save contrast in list
-        testedContrasts = [testedContrasts testContrast]; 
-        % Ensure we dont have dublicates
-        testedContrasts = unique(testedContrasts);
+        if (isempty(testedIndex))
+            testedContrasts(numel(testedContrasts)+1) = testContrast; 
+        end
         testedIndex = find(testContrast == testedContrasts);
         
         % Generate the TEST scene sequence for the given contrast
