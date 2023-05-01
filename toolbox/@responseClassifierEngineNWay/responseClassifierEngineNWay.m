@@ -45,6 +45,7 @@ classdef responseClassifierEngineNWay < matlab.mixin.Copyable
     properties (SetAccess=private)
         % User-supplied compute function handle to the classifier computation routine
         classifierComputeFunction
+        
         % User-supplied struct with all classifier computation params
         classifierParams
         
