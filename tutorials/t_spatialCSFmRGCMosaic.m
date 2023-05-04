@@ -19,8 +19,10 @@ clear; close all;
 % their direction matters in the specification.
 stimType = 'luminance';
 switch (stimType)
-    case 'luminance'
+    case 'achromatic'
         chromaDir = [1.0, 1.0, 1.0]';
+    case 'luminance'
+        chromaDir = [1.0, 1.0, 0.0]';
     case 'red-green'
         chromaDir = [1.0, -1.0, 0.0]';
     case 'L-isolating'
@@ -64,12 +66,20 @@ neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
 neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
 
 % 4. PRE and POST-CONE SUMMATION NOISE
-% Pre-summation noise (here just the cone mosaic noise)
-neuralResponsePipelineParams.noiseParams.coneMosaicNoiseFlag = 'random';
+% Pre-summation noise (here just the cone mosaic noise)i
+neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'none';
 neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 
 % Post-cone summation noise, additive Gaussian noise with desired sigma
-neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.05;
+% If the input is cone modulations with respect to the background, the max
+% response is 1.0, so the sigma should be scaled appropriate
+% If the input is raw cone excitations, the sigma should be expressed in
+% terms of cone excitations
+% For raw cone excitations
+neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 *0.4 ;
+
+% For cone excitation modulations
+neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.007;
 
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
@@ -79,7 +89,7 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
     chromaDir(1), chromaDir(2), chromaDir(3), ...
-    neuralResponsePipelineParams.noiseParams.coneMosaicNoiseFlag, ...
+    neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
 
 fprintf('Results will be saved in %s.\n', matFileName);
@@ -89,13 +99,13 @@ fprintf('Results will be saved in %s.\n', matFileName);
 % Options:
 %   'idealObserver' - ideal TAFC observer for Poisson limited signals
 %   'computationalObsever' - SVM based learned classifier
-classifierChoice = 'idealObserver';
+classifierChoice = 'computationalObserver';
 
 switch (classifierChoice) 
     case 'idealObserver'
         % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
         % Also set up parameters associated with use of this classifier.
-        classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
         
         
         % Train classifier using 1 noise-free instance, 
@@ -107,7 +117,7 @@ switch (classifierChoice)
     case 'computationalObserver'
         % Instantiate a computational observer consisting of a linear SVM 
         % coupled with a PCA operating on 2 components
-        classifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
+        theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
             struct(...
                 'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
                 'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
@@ -117,8 +127,8 @@ switch (classifierChoice)
 
         % Train SVM classifier using a set of 512 noisy instances, 
         % Test performance using a set of 512 noisy instances
-        nTrain = 512;
-        nTest = 512;
+        nTrain = 1024*4;
+        nTest = 1024*4;
         classifierParams = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
                                 'nTrain', nTest, 'nTest', nTrain);
@@ -132,7 +142,7 @@ end
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
-thresholdParams = struct('logThreshLimitLow', 2.4, ...
+thresholdParams = struct('logThreshLimitLow', 2.0, ...
                        'logThreshLimitHigh', 0.0, ...
                        'logThreshLimitDelta', 0.01, ...
                        'slopeRangeLow', 1, ...
@@ -173,7 +183,7 @@ questEngineParamsDummy = struct(...
     'stopCriterion', 0.5);
 
 % Run the dummy TAFC, just to generate theNeuralEngine and theGratingSceneEngine
-computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, classifierEngine, ...
+computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParamsDummy);
 
 % Make the stimulus envelope equal to the the input cone mosaic size
@@ -192,7 +202,7 @@ theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosa
 theStimulusPixelsNum = 512;
 
 % Now that we have theGratingSceneEngine, use it to compute theNullStimulusScene
-theGratingSceneEngine = createGratingScene(chromaDir, 1.0, ...
+theGratingSceneEngine = createGratingScene(chromaDir, 5.0, ...
         'spatialEnvelope', 'rect', ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
@@ -200,18 +210,26 @@ theGratingSceneEngine = createGratingScene(chromaDir, 1.0, ...
         'pixelsNum', theStimulusPixelsNum);
 
 nullContrast = 0.0;
-theNullStimulusScene = theGratingSceneEngine.compute(nullContrast);
+theNullStimulusSceneSequence = theGratingSceneEngine.compute(nullContrast);
 
 % Save theNullStimulusScene in the passed neuralResponsePipelineParams, so
 % that the neural engine can use it to compute mRGCmosaic responses
 % operating on cone contrast (modulation) responses, instead of operating
 % on raw cone excitation responses
-neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusScene;
+neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusSceneSequence{1};
+
+% Re-instantiate theNeuralEngine so we can pass the updated
+% neuralResponsePipelineParams (which now contains the null stimulus
+% scene). This in turn, enables computation of mRGC mosaic responses based
+% on the modulation of cone mosaic responses with respec to the cone mosaic
+% response to the null stimulus.
+theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 
 
 %% Ready to compute thresholds at different spatial frequencies
-% Choose the minSF so that it contains 1 full cycle within theStimulusFOVdegs
-minSF = 1/(theStimulusFOVdegs);
+% Choose the minSF so that it contains 1 full cycle within the smallest
+% dimension of the input cone mosaic
+minSF = 1/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
 maxSF = 20;
 
 % List of spatial frequencies to be tested.
@@ -229,7 +247,7 @@ dataFig = figure();
 for iSF = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    gratingScene = createGratingScene(chromaDir, spatialFreqs(iSF), ...
+    theGratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(iSF), ...
         'spatialEnvelope', 'rect', ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
@@ -237,7 +255,7 @@ for iSF = 1:length(spatialFreqs)
         'pixelsNum', theStimulusPixelsNum);
     
     [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
+        computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParams);
     
     % Plot stimulus
@@ -245,13 +263,14 @@ for iSF = 1:length(spatialFreqs)
     subplot(4, 6, iSF * 2 - 1);
     
     visualizationContrast = 1.0;
-    [theSceneSequence] = gratingScene.compute(visualizationContrast);
-    gratingScene.visualizeStaticFrame(theSceneSequence);
+    [theSceneSequence] = theGratingSceneEngine.compute(visualizationContrast);
+    theGratingSceneEngine.visualizeStaticFrame(theSceneSequence);
 
     % Plot data and psychometric curve 
     % with a marker size of 2.5
     subplot(4, 6, iSF * 2);
     questObj.plotMLE(2.5);
+    drawnow;
 
     % Save for visualizing
     theComputedQuestObjects{iSF} = questObj;

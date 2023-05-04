@@ -1,7 +1,7 @@
 function dataOut = nreMidgetRGCMosaicSingleShot(...
     neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
     sceneSequenceTemporalSupport, instancesNum, varargin)
-% Compute function for computation of midget RGC activationswitout eye movements 
+% Compute function for computation of midgetRGCMosaic activations witout eye movements 
 %
 
     % Check input arguments. If called with zero input arguments, just return the default params struct
@@ -19,12 +19,10 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     
     % Retrieve the response noiseFlag labels and validate them.
     noiseFlags = p.Results.noiseFlags;
-    rngSeed = p.Results.rngSeed;
+    passedRngSeed = p.Results.rngSeed;
     neuralEngineOBJ.validateNoiseFlags(noiseFlags);
   
-    % Retrieve the null stimulus scene
-    theNullStimulusScene = neuralResponseParamsStruct.theNullStimulusScene;
-
+    
     % For each noise flag we generate a corresponing neural response, and all 
     % neural responses are stored in a dictionary indexed by the noiseFlag label.
     % Setup theNeuralResponses dictionary, loading empty responses for now
@@ -50,10 +48,8 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         theMRGCmosaic.inputConeMosaic.integrationTime = ...
             neuralResponseParamsStruct.mRGCMosaicParams.coneIntegrationTimeSeconds;
 
-        % Set the input cone mosaic noise flag
-        theMRGCmosaic.setNoiseFlags(...
-            'noiseFlag', neuralResponseParamsStruct.noiseParams.mRGCMosaicNoiseFlag, ...
-            'inputConeMosaicNoiseFlag', neuralResponseParamsStruct.noiseParams.coneMosaicNoiseFlag);
+        % Set the mRGCMosaic noise flag
+        theMRGCmosaic.noiseFlag = neuralResponseParamsStruct.noiseParams.mRGCMosaicNoiseFlag;
 
         % Set the mRGCMosaic noise
         theMRGCmosaic.vMembraneGaussianNoiseSigma = ...
@@ -92,13 +88,17 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
     % Generate an @oiSequence object containing the list of computed optical images
     theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
-    
+
+    % Retrieve the null stimulus scene
+    theNullStimulusScene = neuralResponseParamsStruct.theNullStimulusScene;
+
+    % If we have a null stimulus scene, compute theConeMosaicNullResponse 
     if (~isempty(theNullStimulusScene))
         % Compute the optical image of the null scene
         theNullSceneOI = oiCompute(theNullStimulusScene, theOptics);
 
         % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
-        theConeMosaicNullResponse = theMRGCmosaic.inputConeMosaic.inputConeMosaic.compute(...
+        theConeMosaicNullResponse = theMRGCmosaic.inputConeMosaic.compute(...
             theNullSceneOI, ...
             'nTrials', 1);
 
@@ -112,216 +112,124 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     end
 
      % Set rng seed if one was passed. 
-    if (~isempty(rngSeed))
-        oldSeed = rng(rngSeed);
+    if (~isempty(passedRngSeed))
+        oldSeed = rng(passedRngSeed);
+    end
+
+    % Compute cone mosaic responses depending on theMRGCmosaic.inputConeMosaic.noiseFlag
+    % Save the current coneMosaic noiseFlag so we can restore edit it later
+    lastInputConeMosaicNoiseFlag = theMRGCmosaic.inputConeMosaic.noiseFlag;
+
+    switch (neuralResponseParamsStruct.noiseParams.inputConeMosaicNoiseFlag)
+        case 'none'
+            fprintf('\tComputing noise-free cone mosaic responses\n');
+            % Compute noise-free cone mosaic response instances
+            [theNoiseFreeConeMosaicResponses, ~, ~, ~, coneMosaicRemporalSupportSeconds] = ...
+                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+                        'nTrials', 1 ...
+            );
+
+            % Repmat so we have instancesNum identical copies of noise-free
+            % cone mosaic responses
+            theConeMosaicResponses = repmat(theNoiseFreeConeMosaicResponses, [instancesNum 1 1]);
+
+        case 'frozen'
+            if (~isempty(passedRngSeed))
+                fprintf('\tComputing noisy cone mosaic responses with a frozen seed (%d)\n', passedRngSeed);
+                % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
+                [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
+                        theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+                            'nTrials', instancesNum, ...
+                            'seed', passedRngSeed ...        % the passed random seed
+                );
+            else
+               error('The input cone mosaic has a frozen noise specification, but no rngSeed was passed')
+            end
+
+        case 'random'
+            % 1 in a million
+            useSeed = randi(1e6,1,1);
+    
+            fprintf('\tComputing noisy cone mosaic responses with a random seed (%d)\n', useSeed);
+            % Compute input cone mosaic noisy response instances with a  random noise seed
+            [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
+                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+                        'nTrials', instancesNum, ...
+                        'seed', useSeed ...        % random seed
+                );
+        otherwise
+            error('Unknown inputConeMosaic noise flag: ''%s''.\n', theMRGCmosaic.inputConeMosaic.noiseFlag);
+    end
+
+    % Restore the original cone mosaic noise flag
+    theMRGCmosaic.inputConeMosaic.noiseFlag = lastInputConeMosaicNoiseFlag;
+
+    % Transform the cone excitation responses to cone modulation responses
+    if (~isempty(theConeMosaicNullResponse))
+        % Transform the noise-free cone mosaic response modulation to a contrast response
+        % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus. 
+        % This mimics the photocurrent response which is normalized with respect to the 
+        % mean cone activation
+        theConeMosaicResponses = ...
+                    bsxfun(@times, bsxfun(@minus, theConeMosaicResponses, theConeMosaicNullResponse), ...
+                    coneMosaicNormalizingResponse);
     end
 
 
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
 
-        if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
+        mRGCMosaicNoiseFlagToSet = ieParamFormat(noiseFlags{idx});
 
-             % Compute theConeMosaicResponses
-            if (strcmp(theMRGCmosaic.inputConeMosaic.noiseFlag, 'none'))
-                % To do so, first save the current noiseFlags
-                lastInputConeMosaicNoiseFlag = theMRGCmosaic.inputConeMosaic.noiseFlag;
+        if (~strcmp(theMRGCmosaic.noiseFlag,  mRGCMosaicNoiseFlagToSet))
+            fprintf(2, 'Overriding mRGCMosaic noiseFlag from ''%s'' to ''%s''.\n', mRGCMosaicNoiseFlagToSet, theMRGCmosaic.noiseFlag)
+            mRGCMosaicNoiseFlagToSet = theMRGCmosaic.noiseFlag;
+        end
+
+        % Save the current the mRGC mosaic noiseFlag
+        lastMRGCMosaicNoiseFlag = theMRGCmosaic.noiseFlag;
     
-                % Set the inputConeMosaic.noiseFlag to 'none';
-                theMRGCmosaic.setNoiseFlags(...
-                    'inputConeMosaicNoiseFlag', 'none');
-                
-                % Compute noise-free cone mosaic response instances
-                [theNoiseFreeConeMosaicResponses, ~, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                        'nTrials', 1 ...
-                );
-                theConeMosaicResponses = repmat(theNoiseFreeConeMosaicResponses, [instancesNum 1 1]);
+        % Set the mRGC mosaic noiseFlag to the tested value
+        theMRGCmosaic.noiseFlag = mRGCMosaicNoiseFlagToSet;
 
-
-                % Restore the original noise flag
-                theMRGCmosaic.setNoiseFlags(...
-                    'inputConeMosaicNoiseFlag', lastInputConeMosaicNoiseFlag);
-            
-            elseif (strcmp(theMRGCmosaic.inputConeMosaic.noiseFlag, 'frozen'))
-                if (~isempty(rngSeed))
-                    % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
-                    [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                        theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                            'nTrials', instancesNum, ...
-                            'seed', rngSeed ...        % random seed
+        % Compute the mRGC mosaic response
+        switch (mRGCMosaicNoiseFlagToSet)
+            case 'none'
+                fprintf('\tComputing noise-free mRGC responses \n');
+                [theNeuralResponses(noiseFlags{idx}), ~, temporalSupportSeconds] = theMRGCmosaic.compute( ...
+                    theConeMosaicResponses, coneMosaicRemporalSupportSeconds);
+            case 'frozen'
+                if (~isempty(passedRngSeed))
+                    fprintf('\tComputing noisy mRGC responses with a frozen seed (%d)\n', passedRngSeed);
+                    [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
+                        theConeMosaicResponses, coneMosaicRemporalSupportSeconds, ...
+                        'seed', passedRngSeed ...  % the passed random seed
                     );
                 else
-                    error('The input cone mosaic has a frozen noise specification, but no rngSeed was passed')
+                     error('The mRGCmosaic has a frozen noise specification, but no rngSeed was passed')
                 end
-            else
-                % Because computeForOISequence freezes noise, if we want
-                % unfrozen noise (which is the case if we are here), 
-                % we have to pass it a randomly chosen seed.
-                useSeed = randi(32000,1,1);
-    
-                % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
-                [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                        'nTrials', instancesNum, ...
-                        'seed', useSeed ...        % random seed
-                );
-            end
 
+            case 'random'
+                % 1 in a million
+                useSeed = randi(1e6,1,1);
+                fprintf('\tComputing noisy mRGC responses with a random seed (%d)\n', useSeed);
+                % Compute noisy mRGC mosaic response instances
+                [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
+                    theConeMosaicResponses, coneMosaicRemporalSupportSeconds, ...
+                    'seed', useSeed ...
+                 );
 
-            % Transform to contrast responses
-            if (~isempty(theConeMosaicNullResponse))
-                % Transform the noise-free cone mosaic response modulation to a contrast response
-                % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus. 
-                % This mimics the photocurrent response which is normalized with respect to the 
-                % mean cone activation
-                theConeMosaicResponses = ...
-                    bsxfun(@times, bsxfun(@minus, theConeMosaicResponses, theConeMosaicNullResponse), ...
-                    coneMosaicNormalizingResponse);
-            end
-
-            % To do so, first save the current noiseFlags
-            lastMRGCMosaicNoiseFlag = theMRGCmosaic.noiseFlag;
-
-            % Set the mRGCMosaic noise flag to 'none';
-            theMRGCmosaic.setNoiseFlags(...
-                'noiseFlag', 'none');
-
-            % Compute the mRGC mosaic response
-            [theNeuralResponses(noiseFlags{idx}), ~, temporalSupportSeconds] = theMRGCmosaic.compute( ...
-                theConeMosaicResponses, coneMosaicRemporalSupportSeconds);
-
-            % Restore the original noise flags
-            theMRGCmosaic.setNoiseFlags(...
-                'noiseFlag', lastMRGCMosaicNoiseFlag);
-            
-
-        elseif (~isempty(rngSeed))
-
-             % Compute theConeMosaicResponses
-            if (strcmp(theMRGCmosaic.inputConeMosaic.noiseFlag, 'none'))
-                % To do so, first save the current noiseFlags
-                lastInputConeMosaicNoiseFlag = theMRGCmosaic.inputConeMosaic.noiseFlag;
-    
-                % Set the inputConeMosaic.noiseFlag to 'none';
-                theMRGCmosaic.setNoiseFlags(...
-                    'inputConeMosaicNoiseFlag', 'none');
-                
-                % Compute noise-free cone mosaic response instances
-                [theNoiseFreeConeMosaicResponses, ~, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                        'nTrials', 1 ...
-                );
-                theConeMosaicResponses = repmat(theNoiseFreeConeMosaicResponses, [instancesNum 1 1]);
-
-                % Restore the original noise flag
-                theMRGCmosaic.setNoiseFlags(...
-                    'inputConeMosaicNoiseFlag', lastInputConeMosaicNoiseFlag);
-            
-                
-            elseif (strcmp(theMRGCmosaic.inputConeMosaic.noiseFlag, 'frozen'))
-                % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
-                [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                        'nTrials', instancesNum, ...
-                        'seed', rngSeed ...        % random seed
-                );
-            else
-                % Because computeForOISequence freezes noise, if we want
-                % unfrozen noise (which is the case if we are here), 
-                % we have to pass it a randomly chosen seed.
-                useSeed = randi(32000,1,1);
-    
-                % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
-                [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                        'nTrials', instancesNum, ...
-                        'seed', useSeed ...        % random seed
-                );
-            end
-
-
-            % Transform to contrast responses
-            if (~isempty(theConeMosaicNullResponse))
-                % Transform the noise-free cone mosaic response modulation to a contrast response
-                % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus. 
-                % This mimics the photocurrent response which is normalized with respect to the 
-                % mean cone activation
-                theConeMosaicResponses = ...
-                    bsxfun(@times, bsxfun(@minus, theConeMosaicResponses, theConeMosaicNullResponse), ...
-                    coneMosaicNormalizingResponse);
-            end
-
-            % Compute the mRGC mosaic response
-            [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
-                theConeMosaicResponses, coneMosaicRemporalSupportSeconds, ...
-                'seed', rngSeed ...
-            );
-        
-
-        elseif (contains(ieParamFormat(noiseFlags{idx}), 'random'))
-            
-            % Compute theConeMosaicResponses
-            if (strcmp(theMRGCmosaic.inputConeMosaic.noiseFlag, 'none'))
-                % To do so, first save the current noiseFlags
-                lastInputConeMosaicNoiseFlag = theMRGCmosaic.inputConeMosaic.noiseFlag;
-    
-                % Set the inputConeMosaic.noiseFlag to 'none';
-                theMRGCmosaic.setNoiseFlags(...
-                    'inputConeMosaicNoiseFlag', 'none');
-                
-                % Compute noise-free cone mosaic response instances
-                [theNoiseFreeConeMosaicResponses, ~, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                        'nTrials', 1 ...
-                );
-                theConeMosaicResponses = repmat(theNoiseFreeConeMosaicResponses, [instancesNum 1 1]);
-
-                % Restore the original noise flag
-                theMRGCmosaic.setNoiseFlags(...
-                    'inputConeMosaicNoiseFlag', lastInputConeMosaicNoiseFlag);
-            
-            else
-                % Because computeForOISequence freezes noise, if we want
-                % unfrozen noise (which is the case if we are here), 
-                % we have to pass it a randomly chosen seed.
-                useSeed = randi(32000,1,1);
-    
-                % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
-                [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                        'nTrials', instancesNum, ...
-                        'seed', useSeed ...        % random seed
-                );
-            end
-
-            
-            % Transform to contrast responses
-            if (~isempty(theConeMosaicNullResponse))
-                % Transform the noise-free cone mosaic response modulation to a contrast response
-                % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus. 
-                % This mimics the photocurrent response which is normalized with respect to the 
-                % mean cone activation
-                theConeMosaicResponses = ...
-                    bsxfun(@times, bsxfun(@minus, theConeMosaicResponses, theConeMosaicNullResponse), ...
-                    coneMosaicNormalizingResponse);
-            end
-
-           
-            useSeed = randi(32000,1,1);
-            % Compute the noise mRGC mosaic response instances
-            [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
-                theConeMosaicResponses, coneMosaicRemporalSupportSeconds, ...
-                'seed', useSeed ...
-            );
-
+            otherwise
+                error('Unknown mRGCMosaic noise flag: ''%s''.\n', mRGCMosaicNoiseFlagToSet);
         end
+
+        % Restore the mRGC mosaic noiseFlag
+        theMRGCmosaic.noiseFlag = lastMRGCMosaicNoiseFlag;
     end
 
 
-
     % Restore rng seed if we set it
-    if (~isempty(rngSeed))
+    if (~isempty(passedRngSeed))
         rng(oldSeed);
     end
     
@@ -379,7 +287,7 @@ function p = generateDefaultParams()
 
     % Noise params
     noiseParams = struct(...
-        'coneMosaicNoiseFlag', 'random', ...
+        'inputConeMosaicNoiseFlag', 'random', ...
         'mRGCMosaicNoiseFlag', 'random', ...
         'mRGCMosaicVMembraneGaussianNoiseSigma', 0.15 ...
         );
