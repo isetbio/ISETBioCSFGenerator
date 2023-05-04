@@ -74,12 +74,19 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 % If the input is cone modulations with respect to the background, the max
 % response is 1.0, so the sigma should be scaled appropriate
 % If the input is raw cone excitations, the sigma should be expressed in
-% terms of cone excitations
-% For raw cone excitations
-neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 *0.4 ;
+% terms of cone excitations. If the input is cone excitation modulations
+% (which range from [-1 .. 1], the sigma should be scaled within this
+% range. 
+% neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 *0.4 ;
 
 % For cone excitation modulations
 neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.007;
+
+% To simulate no noise in the mRGCMosaic, the mRGCMosaicVMembraneGaussianNoiseSigma
+% can be set to 0.0
+if (strcmp(neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag, 'none'))
+    neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.0;
+end
 
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
