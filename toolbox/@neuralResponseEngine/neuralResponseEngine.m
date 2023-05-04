@@ -77,6 +77,11 @@ classdef neuralResponseEngine < handle
         [neuralResponses, temporalSupportSeconds] = compute(obj, ...
                 theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin);
         
+        function updateParamsStruct(obj, paramsStruct)
+            % Set the neural params
+            obj.neuralParams = paramsStruct;
+        end
+
         % Method to validate the passed noiseFlags
         validateNoiseFlags(obj,noiseFlags);
     end
