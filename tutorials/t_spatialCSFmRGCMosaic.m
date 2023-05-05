@@ -2,7 +2,8 @@ function t_spatialCSFmRGCMosaic
 % Compute spatial CSF in different color directions, using the ON-center mRGCMosaics
 %
 % Description:
-%    Use ISETBioCSFGenerator to run out CSFs in different color directions.
+%    Use ISETBioCSFGenerator to run out CSFs in different color directions 
+%    using mRGCMosaic neural respone engines.
 %
 % See also: t_spatialCSFCMosaic, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
@@ -17,7 +18,7 @@ clear; close all;
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'luminance';
+stimType = 'red-green';
 switch (stimType)
     case 'achromatic'
         chromaDir = [1.0, 1.0, 1.0]';
@@ -32,8 +33,7 @@ end
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
 % exceed the gamut of the monitor, so we are conservative and set this at a
 % value that is within gamut of typical monitors and don't worry about it
-% further for this tutorial.  A vector length contrast of 0.08 should be
-% OK.
+% further for this tutorial.  A vector length contrast of 0.08 should be OK.
 rmsContrast = 0.08;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
@@ -49,9 +49,8 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicSingleShot;
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
 
 % Modify certain params of interest
-% 1. Crop the mRGCmosaic to size. Passing [] for size will not crop/.
-% Passing an empty value for eccentricityDegs will crop
-% the mosaic at its center.
+% 1. We can crop the mRGCmosaic to some desired size. Passing [] for size will not crop.
+% Passing an empty value for eccentricityDegs will crop the mosaic at its center.
 neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
     'sizeDegs', [], ...
     'eccentricityDegs', [] ...
@@ -66,15 +65,17 @@ neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
 neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
 
 % 4. PRE and POST-CONE SUMMATION NOISE
-% Pre-summation noise (here just the cone mosaic noise)i
-neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'none';
+% Pre- cone summation noise (ie Poisson noise)
+neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
+
+% Post-cone summation noise (Gaussian noise)
 neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 
-% Post-cone summation noise, additive Gaussian noise with desired sigma
-% If the input is cone modulations with respect to the background, the max
-% response is 1.0, so the sigma should be scaled appropriate
-% If the input is raw cone excitations, the sigma should be expressed in
-% terms of cone excitations/integration time.
+% Post-cone summation noise is additive Gaussian noise with a desired
+% sigma. When the input is raw cone excitations, the sigma should be expressed in
+% terms of cone excitations/integration time. 
+% When the input to mRGCs is cone modulations with respect to the background,
+% which have a max amplitude of 1.0, the sigma should be scaled appropriately. 
 
 % Post-cone summation noise when mRGCs are integrating raw cone excitation signals
 % neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.4;
@@ -126,8 +127,8 @@ switch (classifierChoice)
                 'classifierType', 'svm' ...         % binary SVM classifier
             ));
 
-        % Train SVM classifier using a set of 512 noisy instances, 
-        % Test performance using a set of 512 noisy instances
+        % Train SVM classifier using a set of 4K noisy instances, 
+        % Test performance using a set of 4K noisy instances
         nTrain = 1024*4;
         nTest = 1024*4;
         classifierParams = struct('trainFlag', 'random', ...
@@ -144,16 +145,18 @@ end
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
 thresholdParams = struct('logThreshLimitLow', 2.5, ...
-                       'logThreshLimitHigh', 0.0, ...
+                       'logThreshLimitHigh', 0.5, ...
                        'logThreshLimitDelta', 0.01, ...
                        'slopeRangeLow', 1, ...
                        'slopeRangeHigh', 50, ...
-                       'slopeDelta', 2.0);
+                       'slopeDelta', 1.0);
 
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
+% Sample the contrast-response psychometric curve at 5 contrast levels
 contrastLevelsSampled = 5;
+
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
     'maxTrial', contrastLevelsSampled*nTest, ...
@@ -161,11 +164,11 @@ questEngineParams = struct(...
     'stopCriterion', 0.05);
 
 
-% We need the neuralResponseEngine to determine a stimulus FOV that is matched
+% We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
 % to the size of the inputConeMosaic. We also need theGratingSceneEngine to
 % compute the theNullStimulusScene (which is used by the midgetRGCMosaic 
 % neural response engine to compute mRGC responses based on cone mosaic contrast responses)
-% To obtain these 2 engines, we call computeThresholdTAFC as follows:
+% To obtain these 2 engines, we call computeThresholdTAFC as with some dummy params as follows:
 
 % Just some dummy params for the grating.
 dummySpatialFrequencyCPD = 4.0;
@@ -187,11 +190,14 @@ questEngineParamsDummy = struct(...
 computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParamsDummy);
 
-% Make the stimulus envelope equal to the the input cone mosaic size
+% Having run the computeThresholdTAFC() function, theNeuralEngine is now generated,
+% so we can retrieve the size of the inputConeMosaic, and therefore match
+% the stimulus spatial params to it as follows.
+% The stimulus spatial envelope radius = 1/2 the inputConeMosaic size
 theStimulusSpatialEnvelopeRadiusDegs = 0.5*max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs);
 
-% Make the stimulusFOV 25% larger than the input cone mosaic size
-% to avoid OI artifacts which arise when the test image has a mean radiance that is
+% The stimulusFOV 25% larger than the input cone mosaic size
+% to avoid OI artifacts that arise when the test image has a mean radiance that is
 % different than the mean radiance of the null stimulus, and which can
 % result in the test stimulus being discriminable from the null stimulus
 % just because of differences in the value with which the OI is padded at
@@ -201,33 +207,29 @@ theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosa
 % Enough pixels so that the cone mosaic object does not complain that the
 % OI resolution is too low compared to the cone aperture.
 theStimulusPixelsNum = 512;
+minPixelsNumPerCycle = 12;
 
-% Now that we have theGratingSceneEngine, use it to compute theNullStimulusScene
+% With access to theGratingSceneEngine, we can compute theNullStimulusScene
+nullContrast = 0.0;
 theGratingSceneEngine = createGratingScene(chromaDir, 5.0, ...
         'spatialEnvelope', 'rect', ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
-        'minPixelsNumPerCycle', 5, ...
+        'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
         'pixelsNum', theStimulusPixelsNum);
-
-nullContrast = 0.0;
 theNullStimulusSceneSequence = theGratingSceneEngine.compute(nullContrast);
 
-% Save theNullStimulusScene in the passed neuralResponsePipelineParams, so
+% Save theNullStimulusScene in the neuralResponsePipelineParams, so
 % that the neural engine can use it to compute mRGCmosaic responses
 % operating on cone contrast (modulation) responses, instead of operating
 % on raw cone excitation responses
 neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusSceneSequence{1};
 
-% Re-instantiate theNeuralEngine so we can pass the updated
-% neuralResponsePipelineParams (which now contains the null stimulus
-% scene). This in turn, enables computation of mRGC mosaic responses based
-% on the modulation of cone mosaic responses with respec to the cone mosaic
-% response to the null stimulus.
+% Update theNeuralEngine with the new neuralResponsePipelineParams
 theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 
 
-%% Ready to compute thresholds at different spatial frequencies
+%% Ready to compute thresholds at a set of examined spatial frequencies
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone mosaic
 minSF = 1/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
@@ -252,7 +254,7 @@ for iSF = 1:length(spatialFreqs)
         'spatialEnvelope', 'rect', ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
-        'minPixelsNumPerCycle', 5, ...
+        'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
         'pixelsNum', theStimulusPixelsNum);
     
     [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
