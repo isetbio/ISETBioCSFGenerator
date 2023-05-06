@@ -1,42 +1,40 @@
-function t_spatialCSFmRGCMosaic
-% Compute spatial CSF in different color directions, using the ON-center mRGCMosaics
+function t_chromaticThresholdContourmRGCMosaic
+% Compute isothreshold contour in different color directions, using the ON-center mRGCMosaics
 %
 % Description:
-%    Use ISETBioCSFGenerator to run out CSFs in different color directions 
-%    using mRGCMosaic neural respone engines.
+%    Use ISETBioCSFGenerator to run out an isothreshold contour in the LM
+%    contrast plane using mRGCMosaic neural respone engines.
 %
 % See also: t_spatialCSFCMosaic, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
 %
 
 % History:
-%   05/03/23  NPC   Wrote it
+%   05/05/23  NPC   Wrote it
+
 
 % Clear and close
 clear; close all;
 
-% Choose stimulus chromatic direction specified as a 1-by-3 vector
-% of L, M, S cone contrast.  These vectors get normalized below, so only
-% their direction matters in the specification.
-stimType = 'luminance';
-switch (stimType)
-    case 'achromatic'
-        chromaDir = [1.0, 1.0, 1.0]';
-    case 'luminance'
-        chromaDir = [1.0, 1.0, 0.0]';
-    case 'red-green'
-        chromaDir = [1.0, -1.0, 0.0]';
-    case 'L-isolating'
-        chromaDir = [1.0, 0.0, 0.0]';
-end
+% Choose stimulus spatial frequency, orientation, and spatial phase
+theStimulusSpatialFrequencyCPD = 0;
+theStimulusSpatialPhaseDegs = 0;
+theStimulusOrientationDegs = 0;
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
 % exceed the gamut of the monitor, so we are conservative and set this at a
 % value that is within gamut of typical monitors and don't worry about it
 % further for this tutorial.  A vector length contrast of 0.08 should be OK.
 rmsContrast = 0.08;
-chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
-assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
+
+% List of LM chromatic directions to be tested 
+nChromaticDirections = 16;
+for ii = 1:nChromaticDirections
+    theta = (ii-1)/nDirs*2*pi;
+    theChromaticDirections(:,ii) = [cos(theta) sin(theta) 0]';
+    theChromaticDirections(:,ii) = theChromaticDirections(:,ii) / norm(theChromaticDirections(:,ii)) * rmsContrast;
+    assert(abs(norm(theChromaticDirections(:,ii)) - rmsContrast) <= 1e-10);
+end
 
 
 %% Create an mRGCMosaic-based neural response engine
@@ -55,7 +53,6 @@ neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
     'sizeDegs', [], ...
     'eccentricityDegs', [] ...
 );
-
 
 % 2. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here.
@@ -135,6 +132,7 @@ switch (classifierChoice)
         error('Unknown classifier: ''%s''.', classifierChoice);
 end
 
+
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
@@ -159,7 +157,6 @@ questEngineParams = struct(...
     'maxTrial', contrastLevelsSampled*nTest, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
-
 
 % We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
 % to the size of the inputConeMosaic. We also need theGratingSceneEngine to
@@ -187,6 +184,7 @@ questEngineParamsDummy = struct(...
 computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParamsDummy);
 
+
 % Having ran the computeThresholdTAFC() function, theNeuralEngine has been generated,
 % so we can retrieve from it the size of the inputConeMosaic, and therefore match
 % the stimulus spatial params to it as follows.
@@ -206,16 +204,14 @@ theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosa
 theStimulusPixelsNum = 512;
 minPixelsNumPerCycle = 12;
 
-% Grating orientation
-theStimulusOrientationDegs = 90;
-
 % With access to theGratingSceneEngine, we can compute theNullStimulusScene
 nullContrast = 0.0;
-theGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD, ...
+theGratingSceneEngine = createGratingScene(chromaDir, theStimulusSpatialFrequencyCPD, ...
         'spatialEnvelope', 'rect', ...
         'orientation', theStimulusOrientationDegs, ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
+        'spatialPhase', theStimulusSpatialPhaseDegs, ...
         'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
         'pixelsNum', theStimulusPixelsNum);
 theNullStimulusSceneSequence = theGratingSceneEngine.compute(nullContrast);
@@ -230,29 +226,19 @@ neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusSceneSequence
 theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 
 % Generate Matlab filename for saving computed data
-matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
+matFileName = sprintf('mRGCMosaicIsothresholdContour_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_SpatialFrequencyCPD_%2.1f_OrientationDegs_%d_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
     chromaDir(1), chromaDir(2), chromaDir(3), ...
+    theStimulusSpatialFrequencyCPD, ...
     theStimulusOrientationDegs, ...
     neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
 
 fprintf('Results will be saved in %s.\n', matFileName);
 
-%% Ready to compute thresholds at a set of examined spatial frequencies
-% Choose the minSF so that it contains 1 full cycle within the smallest
-% dimension of the input cone mosaic
-minSF = 1/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
-maxSF = 20;
-spatialFrequenciesSampled = 16;
-
-% List of spatial frequencies to be tested.
-spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
-
-%% Compute threshold for each spatial frequency
-% 
-logThreshold = zeros(1, length(spatialFreqs));
+%% Ready to compute threshold for each chromatic direction
+logThreshold = zeros(1, nChromaticDirections );
 theComputedQuestObjects = cell(1, length(spatialFreqs));
 thePsychometricFunctions = cell(1, length(spatialFreqs));
 theFittedPsychometricParams = cell(1, length(spatialFreqs));
@@ -261,27 +247,28 @@ theStimulusScenes = cell(1, length(spatialFreqs));
 dataFig = figure();
 plotRows = 4;
 plotCols = 8;
-for iSF = 1:length(spatialFreqs)
+for iChromaDir = 1:nChromaticDirections
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, orientation, FOV, and size
-    theGratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(iSF), ...
+    theGratingSceneEngine = createGratingScene(theChromaticDirections(:,iChromaDir), theStimulusSpatialFrequencyCPD, ...
         'spatialEnvelope', 'rect', ...
         'orientation', theStimulusOrientationDegs, ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
+        'spatialPhase', theStimulusSpatialPhaseDegs, ...
         'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
         'pixelsNum', theStimulusPixelsNum);
-    
+   
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.
-    [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
+    [logThreshold(iChromaDir), questObj, psychometricFunction, fittedPsychometricParams] = ...
         computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParams);
-    
+
     % Plot stimulus
     figure(dataFig);
-    subplot(plotRows, plotCols, iSF * 2 - 1);
-    
+    subplot(plotRows, plotCols, iChromaDir * 2 - 1);
+
     visualizationContrast = 1.0;
     [theSceneSequence] = theGratingSceneEngine.compute(visualizationContrast);
     theGratingSceneEngine.visualizeStaticFrame(theSceneSequence);
@@ -289,15 +276,15 @@ for iSF = 1:length(spatialFreqs)
     % Plot data and psychometric curve 
     % with a marker size of 2.5
     figure(dataFig);
-    subplot(plotRows, plotCols, iSF * 2);
+    subplot(plotRows, plotCols, iChromaDir * 2);
     questObj.plotMLE(2.5);
     drawnow;
 
     % Save data for off-line visualizations
-    theComputedQuestObjects{iSF} = questObj;
-    thePsychometricFunctions{iSF} = psychometricFunction;
-    theFittedPsychometricParams{iSF}  = fittedPsychometricParams;
-    theStimulusScenes{iSF} = theSceneSequence(1);
+    theComputedQuestObjects{iChromaDir} = questObj;
+    thePsychometricFunctions{iChromaDir} = psychometricFunction;
+    theFittedPsychometricParams{iChromaDir}  = fittedPsychometricParams;
+    theStimulusScenes{iChromaDir} = theSceneSequence(1);
 end
 
 set(dataFig, 'Position',  [0, 0, 800, 800]);
@@ -305,17 +292,52 @@ set(dataFig, 'Position',  [0, 0, 800, 800]);
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
 
-%% Plot Contrast Sensitivity Function
-theCsfFig = figure();
-loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
-xlabel('Spatial Frequency (cyc/deg)');
-ylabel('Sensitivity');
-set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+% Threshold cone contrasts
+thresholdConeContrasts = [threshold.*theChromaticDirections(1,:) ; threshold.*theChromaticDirections(2,:) ; threshold.*theChromaticDirections(3,:)];
+
+%% Fit an ellipse to the data.  See EllipseTest and FitEllipseQ.
+%
+% The use of scaleFactor to scale up the data and scale down the fit by the
+% same amount is fmincon black magic.  Doing this puts the objective
+% function into a better range for the default size of search steps.
+%
+% We constrain the ellipse to line up with the x and y axes.  Change flag
+% below to relax this.  Doesn't make very much difference inthis case.
+scaleFactor = 1/(max(abs(thresholdConeContrasts(:))));
+[fitEllParams,fitA,fitAinv,fitQ] = FitEllipseQ(scaleFactor*thresholdConeContrasts(1:2,:),'lockAngleAt0',true);
+nThetaEllipse = 200;
+circleIn2D = UnitCircleGenerate(nThetaEllipse);
+fitEllipse = PointsOnEllipseQ(fitQ,circleIn2D)/scaleFactor;
+
+%% Plot the fitted ellipse
+contrastLim = 0.02;
+theContourFig = figure; clf; hold on
+plot(thresholdConeContrasts(1,:), thresholdConeContrasts(2,:), 'ok', 'MarkerFaceColor','k', 'MarkerSize',12);
+plot(fitEllipse(1,:),fitEllipse(2,:),'r','LineWidth',3);
+plot([-contrastLim contrastLim],[0 0],'k:','LineWidth',1);
+plot([0 0],[-contrastLim contrastLim],'k:','LineWidth',1);
+xlabel('L Cone Contrast');
+ylabel('M Cone Contrsast');
+set(theContourFig, 'Position',  [800, 0, 600, 800]);
+xlim([-contrastLim contrastLim]); ylim([-contrastLim contrastLim]);
+axis('square');
+
 
 % Export computed data
-save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
+save(matFileName, 'theChromaticDirections', 'threshold', ...
+    'theStimulusSpatialFrequencyCPD', 'theStimulusSpatialPhaseDegs', 'theStimulusOrientationDegs', ...
     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
     'classifierChoice', 'classifierParams', 'thresholdParams', ...
     'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams');
+
 end
+
+
+
+
+
+
+
+
+
