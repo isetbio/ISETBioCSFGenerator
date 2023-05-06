@@ -18,7 +18,7 @@ clear; close all;
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'red-green';
+stimType = 'luminance';
 switch (stimType)
     case 'achromatic'
         chromaDir = [1.0, 1.0, 1.0]';
@@ -86,15 +86,7 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma =
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
 
-% Matlab filename for saving computed data
-matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
-    neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
-    neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
-    chromaDir(1), chromaDir(2), chromaDir(3), ...
-    neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
-    neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
 
-fprintf('Results will be saved in %s.\n', matFileName);
 
 %% Instantiate a PoissonTAFC or a PcaSVMTAFC responseClassifierEngine
 %
@@ -209,10 +201,25 @@ theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosa
 theStimulusPixelsNum = 512;
 minPixelsNumPerCycle = 12;
 
+% Grating orientation
+theStimulusOrientationDegs = 90;
+
+% Matlab filename for saving computed data
+matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
+    neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
+    neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
+    chromaDir(1), chromaDir(2), chromaDir(3), ...
+    theStimulusOrientationDegs, ...
+    neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
+    neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
+
+fprintf('Results will be saved in %s.\n', matFileName);
+
 % With access to theGratingSceneEngine, we can compute theNullStimulusScene
 nullContrast = 0.0;
 theGratingSceneEngine = createGratingScene(chromaDir, 5.0, ...
         'spatialEnvelope', 'rect', ...
+        'orientation', theStimulusOrientationDegs, ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
         'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
@@ -234,9 +241,10 @@ theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 % dimension of the input cone mosaic
 minSF = 1/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
 maxSF = 20;
+spatialFrequenciesSampled = 16;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = logspace(log10(minSF), log10(maxSF), 10);
+spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
 
 %% Compute threshold for each spatial frequency
 % 
@@ -247,11 +255,14 @@ theFittedPsychometricParams = cell(1, length(spatialFreqs));
 theStimulusScenes = cell(1, length(spatialFreqs));
 
 dataFig = figure();
+plotRows = 4;
+plotCols = 8;
 for iSF = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
     theGratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(iSF), ...
         'spatialEnvelope', 'rect', ...
+        'orientation', theStimulusOrientationDegs, ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
         'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
@@ -263,7 +274,7 @@ for iSF = 1:length(spatialFreqs)
     
     % Plot stimulus
     figure(dataFig);
-    subplot(4, 6, iSF * 2 - 1);
+    subplot(plotRows, plotCols, iSF * 2 - 1);
     
     visualizationContrast = 1.0;
     [theSceneSequence] = theGratingSceneEngine.compute(visualizationContrast);
@@ -271,7 +282,8 @@ for iSF = 1:length(spatialFreqs)
 
     % Plot data and psychometric curve 
     % with a marker size of 2.5
-    subplot(4, 6, iSF * 2);
+    figure(dataFig);
+    subplot(plotRows, plotCols, iSF * 2);
     questObj.plotMLE(2.5);
     drawnow;
 

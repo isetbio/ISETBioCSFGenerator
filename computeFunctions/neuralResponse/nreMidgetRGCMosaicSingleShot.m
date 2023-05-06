@@ -133,6 +133,9 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     % Make it 2 c/deg
     gratingParams.spatialFrequencyCyclesPerDeg = 2.0;
 
+    % Make it a horizontally oriented grating
+    gratingParams.orientationDegs = 0;
+
     % Make it 5x5 degs wide
     gratingParams.fovDegs = 5
     gratingParams.spatialEnvelopeRadiusDegs = gratingParams.fovDegs/6;
