@@ -30,7 +30,7 @@ rmsContrast = 0.08;
 % List of LM chromatic directions to be tested 
 nChromaticDirections = 16;
 for ii = 1:nChromaticDirections
-    theta = (ii-1)/nDirs*2*pi;
+    theta = (ii-1)/nChromaticDirections*2*pi;
     theChromaticDirections(:,ii) = [cos(theta) sin(theta) 0]';
     theChromaticDirections(:,ii) = theChromaticDirections(:,ii) / norm(theChromaticDirections(:,ii)) * rmsContrast;
     assert(abs(norm(theChromaticDirections(:,ii)) - rmsContrast) <= 1e-10);
@@ -61,12 +61,18 @@ neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
 % 3. Set the input cone mosaic integration time
 neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
 
-% 4. PRE and POST-CONE SUMMATION NOISE
+% 4. mRGCs operating either on 'cone_excitations' or on 'cone_modulations'
+%    If 'cone modulations' is selected, you must provide the null scen.
+%    This is done later on.
+neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType = 'cone_modulations';
+neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType = 'cone_excitations';
+
+% 5. PRE and POST-CONE SUMMATION NOISE
 % Pre- cone summation noise (ie Poisson noise)
-neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
+    neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
 
 % Post-cone summation noise (Gaussian noise)
-neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
+neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'none';
 
 % Post-cone summation noise is additive Gaussian noise with a desired
 % sigma. When the input is raw cone excitations, the sigma should be expressed in
@@ -75,10 +81,39 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 % which have a max amplitude of 1.0, the sigma should be scaled appropriately. 
 
 % Post-cone summation noise when mRGCs are integrating raw cone excitation signals
-% neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.4;
+neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.2;
 
 % Post-cone summation noise when mRGCs are integrating  cone excitation modulations
-neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.007;
+%neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.007;
+
+
+% Sanity check
+switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
+    case 'cone_modulations'
+        % Ensure specificed mRGCVmembraneGaussianNoiseSigma is
+        % appropriately scaled for cone modulations which are in the range
+        % of [-1 1]
+        if (neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma > 1)
+            error('mRGC vMembrane Gaussian noise sigma (%f) is too large when operating on ''%s''.', ...
+                neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma,...
+                neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType);
+        end
+
+    case 'cone_excitations'
+        % Ensure specificed mRGCVmembraneGaussianNoiseSigma is
+        % appropriately scaled for cone excitations
+        if (neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma < 1)
+            error('mRGC vMembrane Gaussian noise sigma (%f) is too small when operating on ''%s''.', ...
+                neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma,...
+                neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType);
+        end
+
+    otherwise
+        error('Unknown input signal type specified: ''%s''.', neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
+
+end
+
+
 
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
@@ -138,7 +173,7 @@ end
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
-thresholdParams = struct('logThreshLimitLow', 2.5, ...
+thresholdParams = struct('logThreshLimitLow', 3.0, ...
                        'logThreshLimitHigh', 0.5, ...
                        'logThreshLimitDelta', 0.01, ...
                        'slopeRangeLow', 1, ...
@@ -165,9 +200,10 @@ questEngineParams = struct(...
 % To obtain these 2 engines, we call computeThresholdTAFC as with some dummy params as follows:
 
 % Just some dummy params for the grating.
-dummySpatialFrequencyCPD = 4.0;
+
 dummyFOVdegs = 2.0;
-theGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD , ...
+dummyChromaDir = theChromaticDirections(:,1);
+theGratingSceneEngine = createGratingScene(dummyChromaDir, theStimulusSpatialFrequencyCPD , ...
         'spatialEnvelope', 'rect', ...
         'fovDegs', dummyFOVdegs, ...
         'minPixelsNumPerCycle', 5, ...
@@ -204,45 +240,59 @@ theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosa
 theStimulusPixelsNum = 512;
 minPixelsNumPerCycle = 12;
 
-% With access to theGratingSceneEngine, we can compute theNullStimulusScene
-nullContrast = 0.0;
-theGratingSceneEngine = createGratingScene(chromaDir, theStimulusSpatialFrequencyCPD, ...
-        'spatialEnvelope', 'rect', ...
-        'orientation', theStimulusOrientationDegs, ...
-        'fovDegs', theStimulusFOVdegs, ...
-        'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
-        'spatialPhase', theStimulusSpatialPhaseDegs, ...
-        'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
-        'pixelsNum', theStimulusPixelsNum);
-theNullStimulusSceneSequence = theGratingSceneEngine.compute(nullContrast);
 
-% Save theNullStimulusScene in the neuralResponsePipelineParams, so
-% that the neural engine can use it to compute mRGCmosaic responses
-% operating on cone contrast (modulation) responses, instead of operating
-% on raw cone excitation responses
-neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusSceneSequence{1};
+% Neural response engine updating
+switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
+    case 'cone_modulations'
+        % To compute cone modulations, theNeuralEngine must be provided with theNullStimulusScene
+        nullContrast = 0.0;
+        theGratingSceneEngine = createGratingScene(dummyChromaDir, theStimulusSpatialFrequencyCPD, ...
+            'spatialEnvelope', 'rect', ...
+            'orientation', theStimulusOrientationDegs, ...
+            'fovDegs', theStimulusFOVdegs, ...
+            'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
+            'spatialPhase', theStimulusSpatialPhaseDegs, ...
+            'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
+            'pixelsNum', theStimulusPixelsNum);
 
-% Update theNeuralEngine with the new neuralResponsePipelineParams
-theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
+        theNullStimulusSceneSequence = theGratingSceneEngine.compute(nullContrast);
+    
+        % Save theNullStimulusScene in the neuralResponsePipelineParams, so
+        % that the neural engine can use it to compute mRGCmosaic responses
+        % operating on cone contrast (modulation) responses, instead of operating
+        % on raw cone excitation responses
+        neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusSceneSequence{1};
+    
+        % Update theNeuralEngine with the new neuralResponsePipelineParams
+        theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
+
+    case 'cone_excitations'
+        % No updating of theNeuralEngine's neuralResponsePipelineParams is needed
+
+    otherwise
+        error('Unknown input signal type specified: ''%s''.', neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
+
+end
 
 % Generate Matlab filename for saving computed data
-matFileName = sprintf('mRGCMosaicIsothresholdContour_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_SpatialFrequencyCPD_%2.1f_OrientationDegs_%d_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
+matFileName = sprintf('mRGCMosaicIsothresholdContour_eccDegs_%2.1f_%2.1f_SpatialFrequencyCPD_%2.1f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s_vMembraneSigma_%2.3f.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
-    chromaDir(1), chromaDir(2), chromaDir(3), ...
     theStimulusSpatialFrequencyCPD, ...
     theStimulusOrientationDegs, ...
+    regexprep(neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType, '_+(\w)', '${upper($1)}'), ...
     neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
-    neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
+    neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag, ...
+    neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma);
 
 fprintf('Results will be saved in %s.\n', matFileName);
 
 %% Ready to compute threshold for each chromatic direction
 logThreshold = zeros(1, nChromaticDirections );
-theComputedQuestObjects = cell(1, length(spatialFreqs));
-thePsychometricFunctions = cell(1, length(spatialFreqs));
-theFittedPsychometricParams = cell(1, length(spatialFreqs));
-theStimulusScenes = cell(1, length(spatialFreqs));
+theComputedQuestObjects = cell(1,nChromaticDirections);
+thePsychometricFunctions = cell(1,nChromaticDirections);
+theFittedPsychometricParams = cell(1,nChromaticDirections);
+theStimulusScenes = cell(1, nChromaticDirections);
 
 dataFig = figure();
 plotRows = 4;

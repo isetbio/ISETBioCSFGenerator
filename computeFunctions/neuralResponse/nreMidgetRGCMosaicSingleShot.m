@@ -269,11 +269,16 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     % Generate an @oiSequence object containing the list of computed optical images
     theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
 
-    % Retrieve the null stimulus scene
-    theNullStimulusScene = neuralResponseParamsStruct.theNullStimulusScene;
+    
+    % Compute theConeMosaicNullResponse if the inputSignalType is set to
+    % 'cone modulations' and if we have theNullStimulusScene
+    if (strcmp(neuralResponseParamsStruct.mRGCMosaicParams.inputSignalType, 'cone_modulations')) && ...
+       (~isempty(neuralResponseParamsStruct.theNullStimulusScene))
+        
+        fprintf('Operating on cone modulations\n');
+        % Retrieve the null stimulus scene
+        theNullStimulusScene = neuralResponseParamsStruct.theNullStimulusScene;
 
-    % If we have a null stimulus scene, compute theConeMosaicNullResponse 
-    if (~isempty(theNullStimulusScene))
         % Compute the optical image of the null scene
         theNullSceneOI = oiCompute(theNullStimulusScene, theOptics);
 
@@ -289,6 +294,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         coneMosaicNormalizingResponse = reshape(coneMosaicNormalizingResponse, [1 1 numel(coneMosaicNormalizingResponse)]);
     else
         theConeMosaicNullResponse = [];
+         fprintf('Operating on cone excitations\n');
     end
 
      % Set rng seed if one was passed. 
@@ -343,6 +349,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
     % Restore the original cone mosaic noise flag
     theMRGCmosaic.inputConeMosaic.noiseFlag = lastInputConeMosaicNoiseFlag;
+
 
     % Transform the cone excitation responses to cone modulation responses
     if (~isempty(theConeMosaicNullResponse))
@@ -445,12 +452,14 @@ function p = generateDefaultParams()
         'sizeDegs', [], ...
         'eccentricityDegs', []);
 
+    
     mRGCMosaicParams = struct(...
         'eccDegs', [7 0], ...
         'sizeDegs',  [6 3], ...
         'rgcType', 'ONcenterMidgetRGC', ...
         'cropParams', cropParams, ...
         'retinalRFmodelParams', retinalRFmodelParams, ...
+        'inputSignalType', 'cone_modulations', ...
         'coneIntegrationTimeSeconds', 10/1000);
 
     % If opticsToEmploy is [], we use the optics that were used to optimize
