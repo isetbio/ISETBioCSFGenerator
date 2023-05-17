@@ -49,22 +49,29 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicSingleShot;
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
 
 % Modify certain params of interest
-% 1. We can crop the mRGCmosaic to some desired size. Passing [] for size will not crop.
-% Passing an empty value for eccentricityDegs will crop the mosaic at its center.
+% 1. Select one of the pre-computed mRGC mosaics by specifying its
+% eccentricityDegs & sizeDegs asnd its center type
+neuralResponsePipelineParams.eccDegs = [0 0];
+neuralResponsePipelineParams.sizeDegs =  [2 2];
+neuralResponsePipelineParams.rgcType = 'ONcenterMidgetRGC';
+
+% 2. We can crop the mRGCmosaic to some desired size. 
+%     Passing [] for sizeDegs will not crop.
+%     Passing [] for eccentricityDegs will crop the mosaic at its center.
 neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
     'sizeDegs', [], ...
     'eccentricityDegs', [] ...
 );
 
 
-% 2. If we want to use custom optics (not the optics that were used to optimize
+% 3. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here.
 %neuralResponsePipelineParams.customOpticsToEmploy = oiCreate();
 
-% 3. Set the input cone mosaic integration time
+% 4. Set the input cone mosaic integration time
 neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
 
-% 4. PRE and POST-CONE SUMMATION NOISE
+% 5. PRE and POST-CONE SUMMATION NOISE
 % Pre- cone summation noise (ie Poisson noise)
 neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
 
@@ -206,6 +213,11 @@ theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosa
 theStimulusPixelsNum = 512;
 minPixelsNumPerCycle = 12;
 
+stimPixelSize = theStimulusFOVdegs/theStimulusPixelsNum
+shortestPeriodDegs = minPixelsNumPerCycle * stimPixelSize
+maxSFCyclesPerDegree = 1/shortestPeriodDegs
+pause
+
 % Grating orientation
 theStimulusOrientationDegs = 90;
 
@@ -253,7 +265,7 @@ maxSF = 20;
 spatialFrequenciesSampled = 16;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
+spatialFreqs = logspace(log10(minSF), log10(maxSFCyclesPerDegree), spatialFrequenciesSampled);
 
 %% Compute threshold for each spatial frequency
 % 
