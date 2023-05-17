@@ -81,13 +81,13 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'none';
 % which have a max amplitude of 1.0, the sigma should be scaled appropriately. 
 
 % Post-cone summation noise when mRGCs are integrating raw cone excitation signals
-neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.2;
+neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.1;
 
 % Post-cone summation noise when mRGCs are integrating  cone excitation modulations
-%neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.007;
+%neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.015;
 
-
-% Sanity check
+% Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
+% the specified neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType 
 switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
     case 'cone_modulations'
         % Ensure specificed mRGCVmembraneGaussianNoiseSigma is
@@ -110,9 +110,7 @@ switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
 
     otherwise
         error('Unknown input signal type specified: ''%s''.', neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
-
 end
-
 
 
 % Instantiate theNeuralEngine!

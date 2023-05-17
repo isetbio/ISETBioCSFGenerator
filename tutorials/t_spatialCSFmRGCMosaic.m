@@ -85,10 +85,36 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 % which have a max amplitude of 1.0, the sigma should be scaled appropriately. 
 
 % Post-cone summation noise when mRGCs are integrating raw cone excitation signals
-% neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.4;
+% neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.1;
 
 % Post-cone summation noise when mRGCs are integrating  cone excitation modulations
-neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.007;
+neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.015;
+
+% Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
+% the specified neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType 
+switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
+    case 'cone_modulations'
+        % Ensure specificed mRGCVmembraneGaussianNoiseSigma is
+        % appropriately scaled for cone modulations which are in the range
+        % of [-1 1]
+        if (neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma > 1)
+            error('mRGC vMembrane Gaussian noise sigma (%f) is too large when operating on ''%s''.', ...
+                neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma,...
+                neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType);
+        end
+
+    case 'cone_excitations'
+        % Ensure specificed mRGCVmembraneGaussianNoiseSigma is
+        % appropriately scaled for cone excitations
+        if (neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma < 1)
+            error('mRGC vMembrane Gaussian noise sigma (%f) is too small when operating on ''%s''.', ...
+                neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma,...
+                neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType);
+        end
+
+    otherwise
+        error('Unknown input signal type specified: ''%s''.', neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
+end
 
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
