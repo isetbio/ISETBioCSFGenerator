@@ -242,7 +242,7 @@ theStimulusSpatialEnvelopeRadiusDegs = 0.5*theStimulusFOVdegs;
 % Enough pixels so that the cone mosaic object does not complain that the
 % OI resolution is too low compared to the cone aperture.
 theStimulusPixelsNum = 512;
-minPixelsNumPerCycle = 12;
+minPixelsNumPerCycle = 8;
 
 % Grating orientation
 theStimulusOrientationDegs = 90;
@@ -268,7 +268,7 @@ neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusSceneSequence
 
 % Dynamic stimulus parameters
 thePresentationMode = 'drifted';
-theTemporalFrequencyHz = 2.5;
+theTemporalFrequencyHz = 5.0;
 
 % Match the frame duration to the cone integration time
 theFrameDurationSeconds = coneIntegrationTimeSeconds;
@@ -354,8 +354,8 @@ for iSF = 1:length(spatialFreqs)
     subplot(plotRows, plotCols, iSF * 2 - 1);
     
     visualizationContrast = 1.0;
-    [theSceneSequence] = theGratingSceneEngine.compute(visualizationContrast);
-    theGratingSceneEngine.visualizeStaticFrame(theSceneSequence);
+    [theSceneSequence,theSceneSequenceTemporalSupportSeconds] = theDynamicGratingSceneEngine.compute(visualizationContrast);
+    theDynamicGratingSceneEngine.visualizeStaticFrame(theSceneSequence);
 
     % Plot data and psychometric curve 
     % with a marker size of 2.5
@@ -364,12 +364,18 @@ for iSF = 1:length(spatialFreqs)
     questObj.plotMLE(2.5);
     drawnow;
 
+
+    % Also visualize the entire scene sequence
+    theDynamicGratingSceneEngine.visualizeSceneSequence(...
+        theSceneSequence, theSceneSequenceTemporalSupportSeconds, ...
+        'videoFilename', sprintf('stimulus_%2.2fcpd', spatialFreqs(iSF)));
+
     % Save data for off-line visualizations
     theComputedQuestObjects{iSF} = questObj;
     thePsychometricFunctions{iSF} = psychometricFunction;
     theFittedPsychometricParams{iSF}  = fittedPsychometricParams;
     theStimulusScenes{iSF} = theSceneSequence(1);
-end
+end % iSF
 
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 
