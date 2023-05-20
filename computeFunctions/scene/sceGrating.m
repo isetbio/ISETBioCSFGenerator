@@ -138,11 +138,12 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally
-                frameContrastSequence(frameIndex) = testContrast * sin(360*(frameIndex-1)*deltaTemporalPhaseDegs);
+                frameContrastSequence(frameIndex) = testContrast * sind((frameIndex-1)*deltaTemporalPhaseDegs);
                 % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
             end
-            
+            frameContrastSequence
+            frameSpatialPhaseSequence
         otherwise
             error('Unknown temporal modulation: ''%s''.\n', gratingParams.temporalModulation);
     end
