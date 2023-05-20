@@ -1,11 +1,11 @@
-function dataOut = nreMidgetRGCMosaicSingleShot(...
+function dataOut = nreMidgetRGCMosaicOISequence(...
     neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
     sceneSequenceTemporalSupport, instancesNum, varargin)
 % Compute function for computation of mRGCMosaic activations witout eye
-% movements and a static stimulus (1 frame)
+% movements for a dynamic stimulus (multiple frames)
 %
 % Syntax:
-%   dataOut = nreMidgetRGCMosaicSingleShot(...
+%   dataOut = nreMidgetRGCMosaicOISequence(...
 %    neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
@@ -81,16 +81,16 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 % Examples:
 %{
     % Usage case #1. Just return the default neural response params
-    defaultParams = nreMidgetRGCMosaicSingleShot()
+    defaultParams = nreMidgetRGCMosaicOISequence()
 
     % Usage case #2. Compute noise free, noisy, and repeatable noisy response instances
-    % using a parent @neuralResponseEngine object and the default neural response params
+    % using a parent @neuralResponseEngine object and the custom neural response params
 
     % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicSingleShot);
+    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicOISequence);
 
     % Retrieve the default params
-    defaultNeuralEnginePipelineParams = nreMidgetRGCMosaicSingleShot();
+    defaultNeuralEnginePipelineParams = nreMidgetRGCMosaicOISequence();
 
     % Modify certain params of interest
     neuralResponsePipelineParams = defaultNeuralEnginePipelineParams;
@@ -99,9 +99,10 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     % the mRGCMosaic). We can pass the optics here.
     % neuralResponsePipelineParams.customOpticsToEmploy = oiCreate();
 
-    % Perhaps we want to set the input cone mosaic integration time. 
-    % Here, we set it to 200 msec
-    neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
+    % Set the input cone mosaic integration time to match the duration of a
+    % single stimulus frame, here 50 mseconds.
+    frameDurationSeconds = 50/1000;
+    neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = frameDurationSeconds;
 
     % Perhaps we want to manipulate noise in the input cone mosaic as well
     % as the mRGC mosaic. Here we set no (Poisson) noise for input cone mosaic
@@ -109,19 +110,22 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     % with a standard deviation of 400. The units of the Gaussian noise
     % must be appropriate to the units of the inputConeMosaic response. By
     % default, the inputConeMosaic response is excitations/integration time
-    % So here, we set the noise sigma to 400 excitations/integration time
-    neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
+    % So here, we set the noise sigma to 100 excitations/integration time
+    neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'none';
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
-    neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 500;
+    neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 100;
 
     % Perhaps we want to compute mRGCMosaic responses not on the raw cone
     % mosaic excitation responses, but on their modulation with respect to
-    % the cone excitation response to a null stimulus. This can be done as follows:
+    % the cone excitation response to a null stimulus. This can be done as
+    % follows. Note that we are also setting the vMemberaneGaussianNoiseSigma to be in units of modulation (0..1)
     % neuralResponsePipelineParams.theNullStimulusScene = nullStimulusScene;
+    % neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.15; 
     % See t_spatialCSFmRGCMosaic.m to see exactly how to do this
 
-    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicSingleShot, neuralResponsePipelineParams);
+    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicOISequence, neuralResponsePipelineParams);
 
+    
     % Instantiate a @sceneEngine object
     defaultGratingParams = sceGrating();
 
@@ -138,13 +142,18 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     gratingParams.orientationDegs = 0;
 
     % Make it 5x5 degs wide
-    gratingParams.fovDegs = 5
-    gratingParams.spatialEnvelopeRadiusDegs = gratingParams.fovDegs/6;
+    gratingParams.fovDegs = 1;
+    gratingParams.pixelsNum = 512;
+    gratingParams.spatialEnvelope = 'rect';
+    gratingParams.spatialEnvelopeRadiusDegs = inf;
 
-    % Make the grating a single-frame stimulus
-    gratingParams.temporalModulationParams.stimDurationFramesNum = 1;
-    gratingParams.temporalModulationParams.stimOnFrameIndices = 1;
+    % Make it a 2 Hz stimulus, being modulated for 1 temporal period
+    gratingParams.frameDurationSeconds = frameDurationSeconds;
+    gratingParams.temporalModulation = 'counter phase modulated';  % or 'counter phase modulated'; 'drifted'
+    gratingParams.temporalModulationParams.temporalFrequencyHz = 2;
+    gratingParams.temporalModulationParams.stimDurationTemporalCycles = 1;
     theSceneEngineOBJ = sceneEngine(@sceGrating, gratingParams);
+
     testContrast = 1.0;
     [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
         theSceneEngineOBJ.compute(testContrast);
@@ -311,11 +320,12 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         case 'none'
             fprintf('\tComputing noise-free cone mosaic responses\n');
             % Compute noise-free cone mosaic response instances
-            [theNoiseFreeConeMosaicResponses, ~, ~, ~, coneMosaicTemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            [theNoiseFreeConeMosaicResponses, ~, ~, ~, coneMosaicRemporalSupportSeconds] = ...
+                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence, ...
                         'nTrials', 1 ...
             );
 
+            size(theNoiseFreeConeMosaicResponses)
             % Repmat so we have instancesNum identical copies of noise-free
             % cone mosaic responses
             theConeMosaicResponses = repmat(theNoiseFreeConeMosaicResponses, [instancesNum 1 1]);
@@ -324,8 +334,8 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
             if (~isempty(passedRngSeed))
                 fprintf('\tComputing noisy cone mosaic responses with a frozen seed (%d)\n', passedRngSeed);
                 % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
-                [~, theConeMosaicResponses, ~, ~, coneMosaicTemporalSupportSeconds] = ...
-                        theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+                [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
+                        theMRGCmosaic.inputConeMosaic.compute(theOIsequence, ...
                             'nTrials', instancesNum, ...
                             'seed', passedRngSeed ...        % the passed random seed
                 );
@@ -339,8 +349,8 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     
             fprintf('\tComputing noisy cone mosaic responses with a random seed (%d)\n', useSeed);
             % Compute input cone mosaic noisy response instances with a  random noise seed
-            [~, theConeMosaicResponses, ~, ~, coneMosaicTemporalSupportSeconds] = ...
-                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            [~, theConeMosaicResponses, ~, ~, coneMosaicRemporalSupportSeconds] = ...
+                    theMRGCmosaic.inputConeMosaic.compute(theOIsequence, ...
                         'nTrials', instancesNum, ...
                         'seed', useSeed ...        % random seed
                 );
@@ -364,7 +374,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     end
 
 
-    % Compute responses for each type of noise flag requested
+    % Compute mRGCmosaic responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
         % Save the current the mRGC mosaic noiseFlag
         lastMRGCMosaicNoiseFlag = theMRGCmosaic.noiseFlag;
@@ -377,12 +387,12 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
             case 'none'
                 fprintf('\tComputing noise-free mRGC responses \n');
                 [theNeuralResponses(noiseFlags{idx}), ~, temporalSupportSeconds] = theMRGCmosaic.compute( ...
-                    theConeMosaicResponses, coneMosaicTemporalSupportSeconds);
+                    theConeMosaicResponses, coneMosaicRemporalSupportSeconds);
             case 'frozen'
                 if (~isempty(passedRngSeed))
                     fprintf('\tComputing noisy mRGC responses with a frozen seed (%d)\n', passedRngSeed);
                     [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
-                        theConeMosaicResponses, coneMosaicTemporalSupportSeconds, ...
+                        theConeMosaicResponses, coneMosaicRemporalSupportSeconds, ...
                         'seed', passedRngSeed ...  % the passed random seed
                     );
                 else
@@ -395,7 +405,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
                 fprintf('\tComputing noisy mRGC responses with a random seed (%d)\n', useSeed);
                 % Compute noisy mRGC mosaic response instances
                 [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
-                    theConeMosaicResponses, coneMosaicTemporalSupportSeconds, ...
+                    theConeMosaicResponses, coneMosaicRemporalSupportSeconds, ...
                     'seed', useSeed ...
                  );
 
