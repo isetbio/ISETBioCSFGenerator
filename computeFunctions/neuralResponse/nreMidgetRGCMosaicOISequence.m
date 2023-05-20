@@ -325,7 +325,6 @@ function dataOut = nreMidgetRGCMosaicOISequence(...
                         'nTrials', 1 ...
             );
 
-            size(theNoiseFreeConeMosaicResponses)
             % Repmat so we have instancesNum identical copies of noise-free
             % cone mosaic responses
             theConeMosaicResponses = repmat(theNoiseFreeConeMosaicResponses, [instancesNum 1 1]);
