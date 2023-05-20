@@ -268,7 +268,7 @@ neuralResponsePipelineParams.theNullStimulusScene = theNullStimulusSceneSequence
 
 % Dynamic stimulus parameters
 thePresentationMode = 'drifted';
-theTemporalFrequencyHz = 2.0;
+theTemporalFrequencyHz = 2.5;
 
 % Match the frame duration to the cone integration time
 theFrameDurationSeconds = coneIntegrationTimeSeconds;
