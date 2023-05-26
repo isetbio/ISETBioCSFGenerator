@@ -16,6 +16,9 @@ function t_spatialCSFmRGCMosaicOISequence
 % Clear and close
 clear; close all;
 
+% Grating orientation
+theStimulusOrientationDegs = 90;
+
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
@@ -64,7 +67,7 @@ neuralResponsePipelineParams.rgcType = 'ONcenterMidgetRGC';
 %     Passing [] for sizeDegs will not crop.
 %     Passing [] for eccentricityDegs will crop the mosaic at its center.
 neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
-    'sizeDegs', [], ...
+    'sizeDegs', [1.5 1.5], ...
     'eccentricityDegs', [] ...
 );
 
@@ -155,7 +158,7 @@ switch (classifierChoice)
         % coupled with a PCA operating on 16 components
         theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
             struct(...
-                'PCAComponentsNum', 16, ...         % number of PCs used for feature set dimensionality reduction
+                'PCAComponentsNum', 4, ...         % number of PCs used for feature set dimensionality reduction
                 'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
                 'kernelFunction', 'linear', ...     % linear
                 'classifierType', 'svm' ...         % binary SVM classifier
@@ -179,11 +182,11 @@ end
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
 thresholdParams = struct('logThreshLimitLow', 2.5, ...
-                       'logThreshLimitHigh', 0.5, ...
+                       'logThreshLimitHigh', 0.0, ...
                        'logThreshLimitDelta', 0.01, ...
                        'slopeRangeLow', 1, ...
-                       'slopeRangeHigh', 50, ...
-                       'slopeDelta', 1.0);
+                       'slopeRangeHigh', 200, ...
+                       'slopeDelta', 0.25);
 
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
@@ -244,8 +247,7 @@ theStimulusSpatialEnvelopeRadiusDegs = 0.5*theStimulusFOVdegs;
 theStimulusPixelsNum = 512;
 minPixelsNumPerCycle = 8;
 
-% Grating orientation
-theStimulusOrientationDegs = 90;
+
 
 % Compute theNullStimulusScene (so we can express cone responses in terms
 % of cone modulations)
@@ -300,9 +302,9 @@ fprintf('Results will be saved in %s.\n', matFileName);
 %% Ready to compute thresholds at a set of examined spatial frequencies
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone mosaic
-minSF = 1/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
+minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
 maxSF = 60;
-spatialFrequenciesSampled = 15;
+spatialFrequenciesSampled = 16;
 
 % List of spatial frequencies to be tested.
 spatialFreqs = [0 logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled)];
@@ -316,8 +318,9 @@ theFittedPsychometricParams = cell(1, length(spatialFreqs));
 theStimulusScenes = cell(1, length(spatialFreqs));
 
 dataFig = figure();
-plotRows = 4;
 plotCols = 8;
+plotRows = ceil((length(spatialFreqs)*2) / plotCols);
+
 for iSF = 1:length(spatialFreqs)
 
     if (spatialFreqs(iSF) == 0)
@@ -400,5 +403,5 @@ save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
     'theTemporalFrequencyHz', 'theFrameDurationSeconds',  'theStimulusDurationSeconds', ... 
     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
     'classifierChoice', 'classifierParams', 'thresholdParams', ...
-    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams');
+    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams', '-v7.3');
 end

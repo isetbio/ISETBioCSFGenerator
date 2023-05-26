@@ -48,12 +48,13 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicSingleShot;
 % Retrieve the default params for this engine
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
 
+
 % Modify certain params of interest
 % 1. Select one of the pre-computed mRGC mosaics by specifying its
 % eccentricityDegs & sizeDegs asnd its center type
-neuralResponsePipelineParams.eccDegs = [0 0];
-neuralResponsePipelineParams.sizeDegs =  [2 2];
-neuralResponsePipelineParams.rgcType = 'ONcenterMidgetRGC';
+neuralResponsePipelineParams.mRGCMosaicParams.eccDegs = [0 0];
+neuralResponsePipelineParams.mRGCMosaicParams.sizeDegs =  [2 2];
+neuralResponsePipelineParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
 
 % 2. We can crop the mRGCmosaic to some desired size. 
 %     Passing [] for sizeDegs will not crop.
@@ -73,7 +74,7 @@ neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1
 
 % 5. PRE and POST-CONE SUMMATION NOISE
 % Pre- cone summation noise (ie Poisson noise)
-neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
+neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'none';
 
 % Post-cone summation noise (Gaussian noise)
 neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
@@ -89,6 +90,7 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 
 % Post-cone summation noise when mRGCs are integrating  cone excitation modulations
 neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.015;
+
 
 % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
 % the specified neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType 
@@ -174,7 +176,7 @@ end
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
 thresholdParams = struct('logThreshLimitLow', 2.5, ...
-                       'logThreshLimitHigh', 0.5, ...
+                       'logThreshLimitHigh', 0.0, ...
                        'logThreshLimitDelta', 0.01, ...
                        'slopeRangeLow', 1, ...
                        'slopeRangeHigh', 50, ...
@@ -209,10 +211,10 @@ theGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD ,
         'minPixelsNumPerCycle', 5, ...
         'pixelsNum', 512);
 
-% Some low res quest params to run fast
+% Some low res quest params so it can run fast
 questEngineParamsDummy = struct(...
-    'minTrial', nTest, ...
-    'maxTrial', nTest, ...
+    'minTrial', 16, ...
+    'maxTrial', 16, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.5);
 
@@ -238,11 +240,6 @@ theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosa
 % OI resolution is too low compared to the cone aperture.
 theStimulusPixelsNum = 512;
 minPixelsNumPerCycle = 12;
-
-stimPixelSize = theStimulusFOVdegs/theStimulusPixelsNum
-shortestPeriodDegs = minPixelsNumPerCycle * stimPixelSize
-maxSFCyclesPerDegree = 1/shortestPeriodDegs
-pause
 
 % Grating orientation
 theStimulusOrientationDegs = 90;
@@ -285,13 +282,13 @@ fprintf('Results will be saved in %s.\n', matFileName);
 
 %% Ready to compute thresholds at a set of examined spatial frequencies
 % Choose the minSF so that it contains 1 full cycle within the smallest
-% dimension of the input cone mosaic
-minSF = 1/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
-maxSF = 20;
+% dimension of the input cone  mosaic
+minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
+maxSF = 60;
 spatialFrequenciesSampled = 16;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = logspace(log10(minSF), log10(maxSFCyclesPerDegree), spatialFrequenciesSampled);
+spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
 
 %% Compute threshold for each spatial frequency
 % 
