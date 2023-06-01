@@ -17,7 +17,7 @@ function t_spatialCSFmRGCMosaicOISequence
 clear; close all;
 
 % Grating orientation
-theStimulusOrientationDegs = 90;
+theStimulusOrientationDegs = 0;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -56,13 +56,13 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicOISequence;
 % Retrieve the default params for this engine
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
 
+
 % Modify certain params of interest
 % 1. Select one of the pre-computed mRGC mosaics by specifying its
 % eccentricityDegs & sizeDegs asnd its center type
-neuralResponsePipelineParams.eccDegs = [0 0];
-neuralResponsePipelineParams.sizeDegs =  [2 2];
-neuralResponsePipelineParams.rgcType = 'ONcenterMidgetRGC';
-
+neuralResponsePipelineParams.mRGCMosaicParams.eccDegs = [0 0];
+neuralResponsePipelineParams.mRGCMosaicParams.sizeDegs = [2.0 2.0];
+neuralResponsePipelineParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
 % 2. We can crop the mRGCmosaic to some desired size. 
 %     Passing [] for sizeDegs will not crop.
 %     Passing [] for eccentricityDegs will crop the mosaic at its center.
@@ -215,8 +215,7 @@ theDummyGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequency
         'spatialEnvelope', 'rect', ...
         'fovDegs', dummyFOVdegs, ...
         'minPixelsNumPerCycle', 5, ...
-        'pixelsNum', 64);
-
+        'pixelsNum', 256);
 % Some low res quest params to run fast
 questEngineParamsDummy = struct(...
     'minTrial', 64, ...
@@ -298,6 +297,7 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
 
 fprintf('Results will be saved in %s.\n', matFileName);
+
 
 %% Ready to compute thresholds at a set of examined spatial frequencies
 % Choose the minSF so that it contains 1 full cycle within the smallest
