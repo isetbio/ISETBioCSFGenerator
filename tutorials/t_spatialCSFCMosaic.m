@@ -17,7 +17,7 @@
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = [2, 4, 8, 12, 16, 25];
+spatialFreqs = [2 4 8 12 16 24];
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -43,22 +43,26 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
 %% Create neural response engine
 %
-% This calculations isomerizations in a patch of cone mosaic with Poisson
+% This calculates isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsCmosaicSingleShot();
+theNeuralComputePipelineFunction = @nrePhotopigmentExcitationsCmosaicSingleShot;
+neuralParams = theNeuralComputePipelineFunction();
 % Make the mosaic large enough so that it covers 1 cycle of the lowest
 % spatial frequecy examined
 neuralParams.coneMosaicParams.fovDegs = 1.0/(min(spatialFreqs))*[1 1];
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicSingleShot, neuralParams);
+theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
 classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+nTrain = 1;
+nTest = 512;
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
-                        'nTrain', 1, 'nTest', 512);
+                        'nTrain', nTrain, ...
+                        'nTest', nTest);
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -67,16 +71,20 @@ classifierPara = struct('trainFlag', 'none', ...
 % as 10^-logThreshLimitVal.
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'logThreshLimitHigh', 0.0, ...
-                       'logThreshLimitDelta', 0.02, ...
+                       'logThreshLimitDelta', 0.01, ...
                        'slopeRangeLow', 1, ...
                        'slopeRangeHigh', 50, ...
-                       'slopeDelta', 2.5);
+                       'slopeDelta', 2.0);
 
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
-                         'numEstimator', 1, 'stopCriterion', 0.05);
+contrastLevelsSampled = 10;
+questEnginePara = struct(...
+    'minTrial', contrastLevelsSampled*nTest, ...
+    'maxTrial', contrastLevelsSampled*nTest, ...
+    'numEstimator', 1, ...
+    'stopCriterion', 0.05);
 
 %% Compute threshold for each spatial frequency
 % 

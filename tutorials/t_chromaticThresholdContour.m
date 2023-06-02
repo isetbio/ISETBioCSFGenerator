@@ -79,7 +79,7 @@ questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
 
-%% Compute threshold for each spatial direction
+%% Compute threshold for each chromatic direction
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 dataFig = figure();
