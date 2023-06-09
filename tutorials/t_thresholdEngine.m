@@ -136,7 +136,7 @@ switch (whichNeuralEngine)
         logThreshLimitHigh = 1;
         logThreshLimitDelta = 0.05;
         slopeRangeLow = 1/20;
-        slopeRangeHigh = 100/20;
+        slopeRangeHigh = 10000/20;
         slopeDelta = 5/20;
         
     case 'nreScenePhotonNoise'
@@ -329,10 +329,17 @@ switch questMode
         %
         % Choices (comment in one):
         %stopCriterion = 0.025;
-        stopCriterion = @(threshold, se) se / abs(threshold) < 0.01;
+        stopCriterion = @(threshold, se) se / abs(threshold) < 0.02;
         
+        if (nTest > 1)
+            blockedVal = true;
+        else
+            blockedVal = false;
+        end
+
         % Set up the estimator object.
-        estimator = questThresholdEngine('minTrial', 2e2, 'maxTrial', 5e3, ...
+        estimator = questThresholdEngine('blocked',blockedVal,...
+            'minTrial', 2e2, 'maxTrial', 1e3, ...
             'estDomain', estDomain, 'slopeRange', slopeRange, ...
             'numEstimator', 4, 'stopCriterion', stopCriterion, ...
             'qpPF',@qpPFWeibullLog);
@@ -395,17 +402,28 @@ while (nextFlag)
         %
         % See helper function computePerformanceTAFC for how we use the
         % components to get trial by trial predictions.
-        [predictions, theTrainedClassifierEngines{testedIndex}] = computePerformanceTAFC(...
+
+        %
+        % Note that because the classifer engine is a handle class, we
+        % need to use a copy method to do the caching.  Otherwise the
+        % cached pointer will simply continue to point to the same
+        % object, and be updated by future training.
+
+        [predictions, tempClassifierEngine] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
-            theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag, false, false);
+            theNeuralEngine, theRawClassifierEngine, trainFlag, testFlag, ...
+            false, false);
         
+        % Copy the trained classifier
+        theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
     else
         % Classifier is already trained, just get predictions
         predictions = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, nTrain, nTest, ...
-            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag, false, false);
+            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], testFlag, ...
+            false, false);
     end
     
     % Report what happened
@@ -413,9 +431,16 @@ while (nextFlag)
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
-    [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, nTest), predictions);
-    
+    if (estimator.validation)
+        % Method of constant stimuli
+        [logContrast, nextFlag] = ...
+            estimator.multiTrial(logContrast * ones(1, nTest), predictions);
+    else
+        % Quest
+        [logContrast, nextFlag] = ...
+            estimator.multiTrialQuestBlocked(logContrast * ones(1, nTest), predictions);
+    end
+
     % Get current threshold estimate
     [threshold, stderr] = estimator.thresholdEstimate();
     fprintf('Current threshold estimate: %g, stderr: %g \n', 10 ^ threshold, stderr);

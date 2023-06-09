@@ -179,11 +179,7 @@ while (nextFlag)
     testedIndex = find(testContrast == testedContrasts);
     if (isempty(testedIndex))
         % No.  Save contrast in list
-        if (isempty(testedIndex))
-            % Only add to the list of tested values if we have not
-            % tested this value before
-            testedContrasts(numel(testedContrasts)+1) = testContrast; 
-        end
+        testedContrasts(numel(testedContrasts)+1) = testContrast;
         testedIndex = find(testContrast == testedContrasts);
         
         % Generate the TEST scene sequence for the given contrast
@@ -299,7 +295,7 @@ while (nextFlag)
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
-            false);
+            false, false);
         
         testCounter = testCounter + 1;
         e = toc(eStart);
