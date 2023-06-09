@@ -177,7 +177,10 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
                 theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
                 theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
                 datasavePara.saveMRGCResponses, visualizeAllComponents);
+
+            % Copy the trained classifier
             theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
+
             testCounter = testCounter + 1;
             e = toc(eStart);
             if (beVerbose)
@@ -187,7 +190,7 @@ function [paramValueThreshold, questObj, psychometricFunction, fittedPsychometri
             % Update the psychometric function with data point for this contrast level
             psychometricFunction(parameterLabel) = mean(predictions);
             if (beVerbose)
-                fprintf('computeParamterThreshold: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
+                fprintf('computeParameterThreshold: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
             end
         else
             % Reality check

@@ -1,4 +1,4 @@
-classdef responseClassifierEngine < handle
+classdef responseClassifierEngine < matlab.mixin.Copyable
 % Define a responseClassifierEngine class
 %
 % Syntax:
@@ -36,6 +36,7 @@ classdef responseClassifierEngine < handle
 % History:
 %    9/20/2020  NPC Wrote it
 %   12/03/2021  dhb Comments.
+%   06/08/2023  npc Copyable engine
 
     %% Public properties
     properties

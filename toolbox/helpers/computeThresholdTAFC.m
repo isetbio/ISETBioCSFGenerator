@@ -1,9 +1,9 @@
-function [threshold, questObj, psychometricFunction, para] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, ...
+function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThresholdTAFC(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
 % Syntax:
-%    [threshold, questObj, psychometricFunction, para] = computeThresholdTAFC( ...
+%    [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThresholdTAFC( ...
 %        theSceneEngine, theNeuralEngine, classifierEngine, ...
 %        classifierPara, thresholdPara, questEnginePara)  
 %
@@ -29,13 +29,13 @@ function [threshold, questObj, psychometricFunction, para] = computeThresholdTAF
 %   questEnginePara       - Parameter struct for running the questThresholdEngine
 %
 % Outputs:
-%   threshold             - Estimated threshold value
-%   questObj              - questThresholdEngine object, which
-%                           contains information about all the trials run.
-%   psychometricFunction  - Dictionary (indexed by contrast level) with the 
-%                           psychometric function.
-%   para                  - Parameters of psychometric function fit,
-%                           matched to PF used in the questThresholdEngine object
+%   logThreshold              - Estimated threshold value (log)
+%   questObj                  - questThresholdEngine object, which
+%                               contains information about all the trials run.
+%   psychometricFunction      - Dictionary (indexed by contrast level) with the 
+%                               psychometric function.
+%   fittedPsychometricParams  - Parameters of psychometric function fit,
+%                               matched to PF used in the questThresholdEngine object
 %
 % Optional key/value pairs:
 %   'beVerbose'           - Logical. Provide some printout? Default true.
@@ -62,7 +62,8 @@ function [threshold, questObj, psychometricFunction, para] = computeThresholdTAF
 %  12/04/20  npc  Added option to run method of constant stimuli. 
 %                 Also added psychometricFunction return argument.
 %  05/01/23  npc  Modifications to use the multiTrialQuestBlocked method
-% 
+%  06/08/23  npc  Modifications to run under the BetterCaching branch
+%                 (copyable responseClassifierEngine)
 
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);
@@ -163,6 +164,7 @@ end
 % Dictionary to store the measured psychometric function which is returned to the user
 psychometricFunction = containers.Map();
 
+testCounter = 0;
 while (nextFlag)
     % Convert log contrast -> contrast
     testContrast = 10 ^ logContrast;
@@ -174,19 +176,12 @@ while (nextFlag)
     end
     
     % Have we already built the classifier for this contrast?
-    %
-    % CACHING AND REUSE OF CLASSIFIER NEEDS TO BE FIXED.  
-    %    The classifier engines are handle classes, so just because we
-    %    store it doesn't cause it to stay fixed.  When we come back to
-    %    use it later, it has changed.
-    %
-    %    Fixing for now by simply always retraining.  Loses efficiency,
-    %    but should get the right answer.
     testedIndex = find(testContrast == testedContrasts);
-    %if (isempty(testedIndex))
-    if (true)
+    if (isempty(testedIndex))
         % No.  Save contrast in list
         if (isempty(testedIndex))
+            % Only add to the list of tested values if we have not
+            % tested this value before
             testedContrasts(numel(testedContrasts)+1) = testContrast; 
         end
         testedIndex = find(testContrast == testedContrasts);
@@ -241,16 +236,34 @@ while (nextFlag)
         % correct/incorrect predictions.  This function also computes the
         % neural responses needed to train and predict.
 
-        [predictions, theTrainedClassifierEngines{testedIndex}, responses] = computePerformanceTAFC(...
+        %
+        % Note that because the classifer engine is a handle class, we
+        % need to use a copy method to do the caching.  Otherwise the
+        % cached pointer will simply continue to point to the same
+        % object, and be updated by future training.
+        eStart = tic;
+        [predictions, tempClassifierEngine, responses] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
             datasavePara.saveMRGCResponses, visualizeAllComponents);
         
+        % Copy the trained classifier
+        theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
+
+        testCounter = testCounter + 1;
+        e = toc(eStart);
+        if (beVerbose)
+                fprintf('computeThresholdTAFC: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
+        end
 
         % Update the psychometric function with data point for this contrast level
         psychometricFunction(contrastLabel) = mean(predictions);
         
+        if (beVerbose)
+            fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
+        end
+
         % Save computed responses only the first time we test this contrast
         if (datasavePara.saveMRGCResponses)
             theMRGCmosaic = theNeuralEngine.neuralPipeline.mRGCmosaic;
@@ -281,21 +294,33 @@ while (nextFlag)
         end
 
         % Classifier is already trained, just get predictions
+        eStart = tic;
         [predictions, ~, ~] = computePerformanceTAFC(...
             theNullSceneSequence, theTestSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
             false);
         
+        testCounter = testCounter + 1;
+        e = toc(eStart);
+        if (beVerbose)
+            fprintf('computeThresholdTAFC: Predicting test block %d no training took %0.1f secs\n',testCounter,e);
+        end
+
         % Update the psychometric function with data point for this contrast level
         previousData = psychometricFunction(contrastLabel);
         currentData = cat(2,previousData,mean(predictions));
         psychometricFunction(contrastLabel) = currentData;
+
+        if (beVerbose)
+           fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
+        end
     end
     
 
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
+    eStart = tic;
     if (estimator.validation)
         % Method of constant stimuli
         [logContrast, nextFlag] = ...
@@ -306,7 +331,21 @@ while (nextFlag)
           estimator.multiTrialQuestBlocked(logContrast * ones(classifierPara.nTest,1), predictions);
     end
 
+    e = toc(eStart);
+    if (beVerbose)
+            fprintf('computeThresholdTAFC: Updating took %0.1f secs\n',e);
+    end
+
 end  % while (nextFlag)
+
+
+if (beVerbose)
+   fprintf('computeThresholdTAFC: Ran %d test levels of %d trials per block of tests\n',testCounter,classifierPara.nTest);
+   if (estimator.validation)
+            fprintf('\tValidation mode, nRepeat set to %d\n',estimator.nRepeat);
+   end
+   fprintf('\tRecorded number single trials (%d) divided by number of blocks: %0.1f\n',testCounter,estimator.nTrial/testCounter);
+end
 
 % Return threshold value. For the mQUESTPlus Weibull PFs, the first
 % parameter of the PF fit is the 0.81606 proportion correct threshold,
@@ -318,13 +357,17 @@ if (~isfield(thresholdPara,'thresholdCriterion'))
 else
     thresholdCriterion = thresholdPara.thresholdCriterion;
 end
-[threshold, para] = estimator.thresholdMLE('showPlot', false, ...
-    'thresholdCriterion', thresholdCriterion);
+
+% Param threshold (log value)
+[logThreshold, fittedPsychometricParams, thresholdDataOut] = estimator.thresholdMLE('showPlot', false, ...
+    'thresholdCriterion', thresholdCriterion, 'returnData', true);
+
+
 if (beVerbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
-        para(1), para(2), para(3), para(4));
+            fittedPsychometricParams(1), fittedPsychometricParams(2), fittedPsychometricParams(3), fittedPsychometricParams(4));
     fprintf('Threshold (criterion proportion correct %0.4f: %0.2f (log10 units)\n', ...
-        thresholdCriterion,threshold);
+        thresholdCriterion,logThreshold);
 end
 
 % Return the quest+ object wrapper for plotting and/or access to data
