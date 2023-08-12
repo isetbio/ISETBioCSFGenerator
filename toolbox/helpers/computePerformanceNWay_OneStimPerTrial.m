@@ -103,16 +103,40 @@ if (~isempty(trainNoiseFlag))
         if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
             diffResponse = inSampleStimResponses(trainNoiseFlag); % - inSampleNullStimResponses(trainNoiseFlag);
             hFig = figure(998);
-            set(hFig, 'Position', [10 10 1200 600]);
+            set(hFig, 'Position', [10 10 1600 400]);
+
             for aa = 1:nAlternatives
+
+                % Contrast response
                 tmp = diffResponse{aa};
-                diffResponse{aa} = diffResponse{aa} - mean(tmp(:));
-                ax = subplot(1, nAlternatives,aa);
+                idx = theNeuralEngine.neuralPipeline.coneMosaic.lConeIndices;
+                meanLconeActivation = mean(tmp(idx(:)));
+                tmp(idx) = (tmp(idx)-meanLconeActivation)/meanLconeActivation;
+                idx = theNeuralEngine.neuralPipeline.coneMosaic.mConeIndices;
+                meanMconeActivation = mean(tmp(idx(:)));
+                tmp(idx) = (tmp(idx)-meanMconeActivation)/meanMconeActivation;
+                idx = theNeuralEngine.neuralPipeline.coneMosaic.sConeIndices;
+                if (~isempty(idx))
+                    meanSconeActivation = mean(tmp(idx(:)));
+                    tmp(idx) = (tmp(idx)-meanSconeActivation)/meanSconeActivation;
+                end
+                diffResponse{aa} = tmp;
+
+                if (aa == 1)
+                    ax = subplot(1, nAlternatives+1,1);
+                    % Visualize the activation
+                    theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
+                        'figureHandle', hFig, ...
+                        'axesHandle', ax);
+                end
+
+                ax = subplot(1, nAlternatives+1,aa+1);
                 % Visualize the activation
                 theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
                     'figureHandle', hFig, ...
                     'axesHandle', ax, ...
                     'activation', squeeze(diffResponse{aa}), ...
+                    'activationRange', prctile(squeeze(diffResponse{aa}),[1 99]), ...
                     'verticalActivationColorBarInside', true);
             end
 
