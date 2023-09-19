@@ -333,6 +333,17 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
                 (abs(Y) < gratingParams.spatialEnvelopeRadiusDegs));
             envelope = Xp * 0;
             envelope(idx) = 1;
+        %09/18/2023 Fangfang added the following to make a matching
+        %stimulus in Cottaris et al 2019
+        case 'halfcos'
+            %the following code follows the logic in imageHarmonic.m
+            Xp = X.* (pi/gratingParams.fovDegs);
+            Yp = Y.* (pi/gratingParams.fovDegs);
+            envelope = cos(Xp).* cos(Yp);
+            index = find(Xp < -pi / 2 | Xp > pi / 2 ...
+                 | Yp < -pi/2 | Yp > pi / 2);
+            envelope(index) = 0;
+            envelope = envelope / max(envelope(:));
         case 'none'
             envelope = Xp * 0 + 1;
         otherwise
@@ -387,7 +398,7 @@ function validateParams(gratingParamsStruct)
     % Further validations
     % spatialEnvelope
     if (isfield(gratingParamsStruct, 'spatialEnvelope'))
-        assert(ismember(gratingParamsStruct.spatialEnvelope, {'none', 'disk', 'rect', 'soft'}), ...
+        assert(ismember(gratingParamsStruct.spatialEnvelope, {'none', 'disk', 'rect', 'soft','halfcos'}), ...
             sprintf('>> Invalid value for spatialEnvelope: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
             gratingParamsStruct.spatialEnvelope, mfilename()));
     end
