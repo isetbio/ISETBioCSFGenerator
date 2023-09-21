@@ -336,13 +336,12 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
         %09/18/2023 Fangfang added the following to make a matching
         %stimulus in Cottaris et al 2019
         case 'halfcos'
-            %the following code follows the logic in imageHarmonic.m
-            Xp = X.* (pi/gratingParams.fovDegs);
-            Yp = Y.* (pi/gratingParams.fovDegs);
+            Xp = X.* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
+            Yp = Y.* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
             envelope = cos(Xp).* cos(Yp);
-            index = find(Xp < -pi / 2 | Xp > pi / 2 ...
+            idx = find(Xp < -pi / 2 | Xp > pi / 2 ...
                  | Yp < -pi/2 | Yp > pi / 2);
-            envelope(index) = 0;
+            envelope(idx) = 0;
             envelope = envelope / max(envelope(:));
         case 'none'
             envelope = Xp * 0 + 1;
