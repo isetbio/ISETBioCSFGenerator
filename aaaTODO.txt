@@ -4,5 +4,7 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 
 2) Can we delete ComputeParameterThreshold.m?
 
+3) There are a lot of versions of different nre's that use the cMosaic.  Rationalize.  Perhaps all the specific ones should be implemented as calls into the most general one?
 
+4) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
