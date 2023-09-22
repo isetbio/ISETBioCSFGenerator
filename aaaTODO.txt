@@ -1,0 +1,8 @@
+1) The transition from coneMosaicHex is not complete.  We need to ablate this from the main thread.
+
+To find what needs to be done, global search on ConeMosaicHex will get you most of them.
+
+2) Can we delete ComputeParameterThreshold.m?
+
+
+
