@@ -76,7 +76,7 @@ function dataOut = nrePhotocurrentsCmosaicEyeMovements(...
 %     t_neuralResponseCompute
 
 % History:
-%    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsWithNoEyeMovements
+%    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements
 
 % Examples:
 %{

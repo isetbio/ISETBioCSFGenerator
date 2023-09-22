@@ -40,7 +40,7 @@ function t_responseClassifier
     theSceneEngine = sceneEngine(sceneComputeFunction);
     
     % Configure the function handle and the params for the @neuralResponseEnginey
-    neuralComputeFunction = @nrePhotopigmentExcitationsWithNoEyeMovements;
+    neuralComputeFunction = @nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
 
     % Instantiate a neuralResponseEngine. No responseParams passed, so we
     % are using the default params specified in the neuralComputeFunction

@@ -117,17 +117,17 @@ end
 % The use of two example neural response engines is illustrated below.
 %
 % Choices are:
-%   'nrePhotopigmentExcitationsWithNoEyeMovements'
+%   'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements'
 %   'nreScenePhotonNoise'
-whichNeuralEngine = 'nrePhotopigmentExcitationsWithNoEyeMovements';
+whichNeuralEngine = 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements';
 switch (whichNeuralEngine)
-    case 'nrePhotopigmentExcitationsWithNoEyeMovements'
+    case 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements'
         % Basic retinal image formation and sampling by the cone mosaic.
         % Note use of neural engine to get its own default parameters and
         % adjust them.  Smaller field of view speeds things up.
-        neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
+        neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
         neuralParams.coneMosaicParams.fovDegs = 0.1;
-        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements,neuralParams);
+        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements,neuralParams);
         
         % The actual threshold varies enough with the different engines that we
         % need to adjust the contrast range that Quest+ searches over, as well as

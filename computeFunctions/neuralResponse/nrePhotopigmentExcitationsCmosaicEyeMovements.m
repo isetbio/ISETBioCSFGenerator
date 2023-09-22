@@ -4,7 +4,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
 % Compute function for computation of cone excitations witout eye movements 
 %
 % Syntax:
-%   dataOut = nrePhotopigmentExcitationsWithNoEyeMovements(...
+%   dataOut = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements(...
 %    neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
@@ -13,7 +13,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
 %    object using the new @cMosaic object. There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
-%           dataOut = nrePhotopigmentExcitationsWithNoEyeMovements()
+%           dataOut = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements()
 %       it does not compute anything and simply returns a struct with the 
 %       defaultParams (optics and coneMosaic params) that define the neural 
 %       compute pipeline for this computation.
@@ -76,7 +76,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
 %     t_neuralResponseCompute
 
 % History:
-%    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsWithNoEyeMovements
+%    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements
 
 % Examples:
 %{

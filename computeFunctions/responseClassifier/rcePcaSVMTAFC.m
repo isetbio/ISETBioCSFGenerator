@@ -83,7 +83,7 @@ function dataOut = rcePcaSVMTAFC(responseClassifierOBJ, operationMode, classifie
     % @responseClassifierEngine object and the default classifier params
 
     % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements);
+    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements);
 
     % Instantiate a @sceneEngine object and generate a test scene sequence
     theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);

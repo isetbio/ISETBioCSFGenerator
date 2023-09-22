@@ -25,7 +25,7 @@ classdef neuralResponseEngine < handle
 %
 %
 % See Also:
-%    t_neuralResponseCompute.m, nrePhotopigmentExcitationsWithNoEyeMovements.m
+%    t_neuralResponseCompute.m, nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements.m
 %
 
 % History:

@@ -42,10 +42,10 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
+neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.005;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements, neuralParams);
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %

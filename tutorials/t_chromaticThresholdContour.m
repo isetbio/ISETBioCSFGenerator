@@ -47,9 +47,9 @@ end
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsWithNoEyeMovements;
+neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsWithNoEyeMovements, neuralParams);
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
