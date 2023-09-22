@@ -186,7 +186,7 @@ end
 %
 % Choices are:
 %   'rcePoissonTAFC'
-%   'rceTemplateTAFC'
+%   'rceTemplateDistanceTAFC'
 %   'rcePcaSVMTAFC'
 whichObserver = 'rcePoissonTAFC';
 switch whichObserver
@@ -211,9 +211,9 @@ switch whichObserver
         trainFlag = 'none'; testFlag = 'random';
         nTrain = 1; nTest = 120;
     
-    case 'rceTemplateTAFC'
+    case 'rceTemplateDistanceTAFC'
         % Template matching (nearest neighbor) classifier for TAFC
-        theRawClassifierEngine = responseClassifierEngine(@rceTemplateTAFC);
+        theRawClassifierEngine = responseClassifierEngine(@rceTemplateDistanceTAFC);
         
         % Below we use a wrapper routine to train the classifier and to
         % predict trial-by-trial responses.  Because that routine is

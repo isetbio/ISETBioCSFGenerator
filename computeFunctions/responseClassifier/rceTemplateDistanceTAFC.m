@@ -1,8 +1,8 @@
-function dataOut = rceTemplateTAFC(obj, operationMode, ~, nullResponses, testResponses)
+function dataOut = rceTemplateDistanceTAFC(obj, operationMode, ~, nullResponses, testResponses)
 % Compute function for ideal signal-known Poisson noise classifier for TAFC
 %
 % Syntax:
-%     dataOut = rceTemplateTAFC(obj, operationMode, classifierParamsStruct, nullResponses, testResponses)
+%     dataOut = rceTemplateDistanceTAFC(obj, operationMode, classifierParamsStruct, nullResponses, testResponses)
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a
