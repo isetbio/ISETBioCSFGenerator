@@ -23,7 +23,9 @@ switch (gratingParams.temporalModulation), case 'flashed', 'drifted', 'counter p
 
 Fixed bugs
 1) t_modulatedGratingsSceneGeneration.m
-Stimulus #5
+Stimulus #5: the original stimulus was out of the display gamut.
+To fix it, I added customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
+Or I could reduce the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, -0.1])
 
 
 

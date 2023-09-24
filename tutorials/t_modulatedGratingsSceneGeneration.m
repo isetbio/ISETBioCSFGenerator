@@ -169,6 +169,9 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.temporalModulationParams =  struct(...                        
             'temporalFrequencyHz', 2, ...           
             'stimDurationTemporalCycles', 4);
+    % Avoid error message just in case the drifting stimulus is out of the
+    % display gamut 
+    customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
