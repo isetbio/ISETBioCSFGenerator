@@ -148,7 +148,8 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
 
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
-                frameContrastSequence(frameIndex) = testContrast * sind((frameIndex-1)*deltaTemporalPhaseDegs);
+                contrastModulator = sind((frameIndex-1)*deltaTemporalPhaseDegs);
+                frameContrastSequence(frameIndex) = testContrast * contrastModulator;
                 % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
             end

@@ -8,3 +8,23 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 
 4) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
+=================================================================================================
+Notes (need further discussion before making any changes)
+1) computeFunctions/scene/sceGrating.m
+There is a helper function inside this function, called generatePresentationDisplay. It assumes a default screen display 'LCD-Apple', which cannot be changed. Perhaps we can add a field 'screenDisplay' to the struct gratingParams to have more flexibility.
+
+Questions 
+1) computeFunctions/scene/sceGrating.m: line 377
+Why is desired peak luminance equal to mean luminance * 2.1? Where does 2.1 come from? Is it just a convention?
+
+Added comments
+1) computeFunctions/scene/sceGrating.m
+switch (gratingParams.temporalModulation), case 'flashed', 'drifted', 'counter phase modulated'
+
+Fixed bugs
+1) t_modulatedGratingsSceneGeneration.m
+Stimulus #5
+
+
+
+
