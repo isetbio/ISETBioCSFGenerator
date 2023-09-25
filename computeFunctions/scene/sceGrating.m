@@ -383,7 +383,13 @@ function presentationDisplay = generatePresentationDisplay(gratingParams)
     % Set the gamma table
     presentationDisplay = displaySet(presentationDisplay, 'gTable', gTable);
     
-    % Adjust display SPDs so we can gemerate desired mean luminance
+    % Adjust display SPDs so we can generate desired mean luminance.
+    %
+    % Why the factor of 2.1 here?  What we (DHB/FH) think is that this
+    % means is that when the mean luminance is set, we can present a 100%
+    % contrast luminance grating in gamut, with a little headroom.  To put
+    % it another way, you need the factor of 2, and the factor of 2.1
+    % provides a little bit of safety margin.
     desiredPeakLuminance = gratingParams.meanLuminanceCdPerM2 * 2.1;
     peakLuminance = displayGet(presentationDisplay, 'peak luminance');
     scalingFactor = desiredPeakLuminance / peakLuminance;
