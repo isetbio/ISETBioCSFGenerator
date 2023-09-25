@@ -13,7 +13,7 @@ Notes (need further discussion before making any changes)
 1) computeFunctions/scene/sceGrating.m
 There is a helper function inside this function, called generatePresentationDisplay. It assumes a default screen display 'LCD-Apple', which cannot be changed. Perhaps we can add a field 'screenDisplay' to the struct gratingParams to have more flexibility.
 2) rename 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
-3) there is a bug in t_NWay_OneStimPerTrial.m (can't run). The bug is it calls computeThresholdNWay_OneStimulusPerTrial -> computePerformanceNWay_OneStimulusPerTrial -> combineContainersMat. It breaks at the last step because the input is only for 1 frame of a stimulus (i.e., dimension < 3).
+3) there is a bug in t_NWay_OneStimPerTrial.m (can't run). The bug is it calls computeThresholdNWay_OneStimulusPerTrial -> computePerformanceNWay_OneStimulusPerTrial -> combineContainersMat. It breaks at the last step because the input is only for 1 frame of a stimulus (i.e., dimension < 3). To fix it, we could either add temporalModulation as a varargin or replace createGratingScene with sceGrating.
 
 Questions 
 1) computeFunctions/scene/sceGrating.m: line 377
