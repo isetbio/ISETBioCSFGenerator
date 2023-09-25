@@ -309,8 +309,10 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     Yp = -X * sind(gratingParams.orientationDegs) + Y * cosd(gratingParams.orientationDegs);
     
     switch (gratingParams.spatialModulationDomain)
+        % Make the sinusoidal grating in the cartesian coordinate system
         case 'cartesian'
             contrastPattern = cosd(360*gratingParams.spatialFrequencyCyclesPerDeg*Yp + frameSpatialPhaseDegs);
+        % Make the sinusoidal grating in the polar coordinate system
         case 'polar'
             R = sqrt(Xp.^2+Yp.^2);
             contrastPattern = cosd(360*gratingParams.spatialFrequencyCyclesPerDeg*R + frameSpatialPhaseDegs);
@@ -331,21 +333,25 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     % Envelope
     switch (gratingParams.spatialEnvelope)
         case 'disk'
+            % select all the indices that are within the circle
             idx = find(sqrt(Xp.^2 + Yp.^2) < gratingParams.spatialEnvelopeRadiusDegs);
+            % make what's within the circle 1 and everywhere else 0
+            % this leads to sharp edges
             envelope = X * 0;
             envelope(idx) = 1;
         case 'soft'
+            % soft Gaussian envelope
             envelope = exp(-(0.5*(Xp/gratingParams.spatialEnvelopeRadiusDegs).^2)) .* ...
                        exp(-(0.5*(Yp/gratingParams.spatialEnvelopeRadiusDegs).^2));
         case 'rect'
+            % rectangular envelope with sharp edges
             idx = find(...
                 (abs(X) < gratingParams.spatialEnvelopeRadiusDegs) & ...
                 (abs(Y) < gratingParams.spatialEnvelopeRadiusDegs));
             envelope = Xp * 0;
             envelope(idx) = 1;
-        %09/18/2023 Fangfang added the following to make a matching
-        %stimulus in Cottaris et al 2019
         case 'halfcos'
+            % the positive half of cosine wave is selected (-pi/2 to pi/2)
             Xp = X.* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
             Yp = Y.* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
             envelope = cos(Xp).* cos(Yp);
