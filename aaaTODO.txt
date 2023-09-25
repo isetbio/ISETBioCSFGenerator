@@ -13,6 +13,7 @@ Notes (need further discussion before making any changes)
 1) computeFunctions/scene/sceGrating.m
 There is a helper function inside this function, called generatePresentationDisplay. It assumes a default screen display 'LCD-Apple', which cannot be changed. Perhaps we can add a field 'screenDisplay' to the struct gratingParams to have more flexibility.
 	DHB: Yes, good.  Make default 'LCD-Apple' so the default behavior is unchanged.
+	FH: Done.
 
 2) rename 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
 	DHB: Yes.
@@ -33,6 +34,7 @@ Stimulus #5: the original stimulus was out of the display gamut.
 To fix it, I added customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
 Or I could reduce the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, -0.1])
 	DHB: Make it as high as you can within gamut.
+	FH: Done.
 
 
 

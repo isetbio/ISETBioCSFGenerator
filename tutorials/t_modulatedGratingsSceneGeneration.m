@@ -159,7 +159,7 @@ function t_modulatedGratingsSceneGeneration
     % A L+M-S isolating polar sinusoid grating, drifting at 2 Hz
     %
     customGratingParams = defaultGratingParams;
-    customGratingParams.coneContrastModulation = [0.7 0.7 -0.7];
+    customGratingParams.coneContrastModulation = [0.5 0.5 -0.5];
     customGratingParams.spatialFrequencyCyclesPerDeg = 4;
     customGratingParams.spatialPositionDegs =  [00.1 -0.05];
     customGratingParams.spatialEnvelope = 'soft';
@@ -169,9 +169,6 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.temporalModulationParams =  struct(...                        
             'temporalFrequencyHz', 2, ...           
             'stimDurationTemporalCycles', 4);
-    % Avoid error message just in case the drifting stimulus is out of the
-    % display gamut 
-    customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);

@@ -371,7 +371,7 @@ end
 
 function presentationDisplay = generatePresentationDisplay(gratingParams)
     % Generic LCD display
-    presentationDisplay = displayCreate('LCD-Apple', ...
+    presentationDisplay = displayCreate(gratingParams.screenDisplay, ...
         'viewing distance', gratingParams.viewingDistanceMeters, ...
         'wave', gratingParams.spectralSupport ...        % Custom spectral support
         );
@@ -442,6 +442,7 @@ end
 function p = generateDefaultParams()
 
     p = struct(...
+        'screenDisplay', 'LCD-Apple',...                % display: the screen display type
         'viewingDistanceMeters', 0.57, ...              % display: viewing distance
         'bitDepth', 20, ...                             % display: length of LUT
         'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear

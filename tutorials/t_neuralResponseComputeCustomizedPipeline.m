@@ -1,8 +1,8 @@
-function t_neuralResponseComputeExternalPipeline
+function t_neuralResponseComputeCustomizedPipeline
 % Use the @neuralResponseEngine object with an externally generated pipeline
 %
 % Syntax:
-%    t_neuralResponseComputeExternalPipeline
+%    t_neuralResponseComputeCustomizedPipeline
 %
 % Description:
 %    Demonstrates how to use a neuralEngine with an externally-generate neural pipeline.
