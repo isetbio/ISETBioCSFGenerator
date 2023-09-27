@@ -10,6 +10,8 @@ nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m: why do we need to compute
 
 nrePhotopigmentExcitationsCmosaic.m: Size of theNeuralResponses(noiseFlags{idx}) = #trials x #timeSamples x #cones. All the oiSequence is passed into theConeMosaic.compute function unlike the function above. nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m is more like a special case, and it's suitable when the optical image does not differ across all time samples. 
 
+nrePhotopigmentExcitationsSingleShot.m: Size of theNeuralResponses(noiseFlags{idx}) = #trials x 1 x #cones. This can totally be replaced by nrePhotopigmentExcitationsCmosaic.m without even specifying there is only one frame.
+
 
 4) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
@@ -30,9 +32,10 @@ There is a helper function inside this function, called generatePresentationDisp
 
 4) computeThresholdTAFC calls a function called spatioTemporalPoolingWeights.m when the inference engine needs to compute a template. The computation in the function is the same when we choose either 'linear' or 'quadratureEnergy'. It's not needed to get the template for phase-shifted stimuli when 'linear' is selected, so we can edit spatioTemporalPoolingWeights.m to speed up things a bit for the linear template. 
 
-5) the example in rcePoolingSVMTAFC.m is probably not the best example because all that is done by computePerformanceTAFC.m. Perhaps we can put a better example here that calls computePerformanceTAFC.m instead of computing from scratch.  
+5) if we set 'visualizeAllComponents' to be true when calling computePerformanceTAFC.m, then we can visualize the plot for cone responses. Perhaps we can also add a plotting function to visualize the trained classifier (line 131-133; theClassifierEngine.trainedClassifier) when 'visualizeAllComponents' is set to true. 
 
-6) if we set 'visualizeAllComponents' to be true when calling computePerformanceTAFC.m, then we can visualize the plot for cone responses. Perhaps we can also add a plotting function to visualize the trained classifier (line 131-133; theClassifierEngine.trainedClassifier) when 'visualizeAllComponents' is set to true. 
+6) when we compute templates by calling spatioTemporalPoolingWeights.m, it first computes the noise-free cone responses (size = 1 x #timeSamples x #cones), and then it selects the last time sample as the template. This could be problematic if someone creates a temporally modulated stimulus. 
+
 
 Added comments
 1) computeFunctions/scene/sceGrating.m
