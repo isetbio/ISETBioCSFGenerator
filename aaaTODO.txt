@@ -6,6 +6,11 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 
 3) There are a lot of versions of different nre's that use the cMosaic.  Rationalize.  Perhaps all the specific ones should be implemented as calls into the most general one?
 
+nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m: why do we need to compute the OIsequence at all time samples even though only the oi of the first frame is used (line 209-250)? Size of theNeuralResponses(noiseFlags{idx}) = #trials x #timeSamples x #cones
+
+nrePhotopigmentExcitationsCmosaic.m: Size of theNeuralResponses(noiseFlags{idx}) = #trials x #timeSamples x #cones. All the oiSequence is passed into theConeMosaic.compute function unlike the function above. nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m is more like a special case, and it's suitable when the optical image does not differ across all time samples. 
+
+
 4) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
 =================================================================================================
@@ -27,7 +32,7 @@ There is a helper function inside this function, called generatePresentationDisp
 
 5) the example in rcePoolingSVMTAFC.m is probably not the best example because all that is done by computePerformanceTAFC.m. Perhaps we can put a better example here that calls computePerformanceTAFC.m instead of computing from scratch.  
 
-6) 
+6) if we set 'visualizeAllComponents' to be true when calling computePerformanceTAFC.m, then we can visualize the plot for cone responses. Perhaps we can also add a plotting function to visualize the trained classifier (line 131-133; theClassifierEngine.trainedClassifier) when 'visualizeAllComponents' is set to true. 
 
 Added comments
 1) computeFunctions/scene/sceGrating.m
@@ -44,5 +49,9 @@ Or I could reduce the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, 
 	FH: Done.
 
 
+Questions
+1) I thought that there is only one classifier that segregates the responses to all null stimuli and the responses to all test stimuli, but I think this understanding is not correct. Based on the code, there is one classifier for every level of contrast. Should there be N classifiers where N denotes the number of contrast, or just one single classifier?
+
+2) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a warning:Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 
 
 
