@@ -24,10 +24,6 @@ There is a helper function inside this function, called generatePresentationDisp
 	DHB: Yes, good.  Make default 'LCD-Apple' so the default behavior is unchanged.
 	FH: Done.
 
-2) rename 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
-	DHB: Yes.
-	FH: Done.
-
 3) there is a bug in t_NWay_OneStimPerTrial.m (can't run). The bug is it calls computeThresholdNWay_OneStimulusPerTrial -> computePerformanceNWay_OneStimulusPerTrial -> combineContainersMat. It breaks at the last step because the input is only for 1 frame of a stimulus (i.e., dimension < 3). To fix it, we could either add temporalModulation as a varargin or replace createGratingScene with sceGrating.
 	DHB: If we can make this work by special casing 2D inputs to treat them as one frame, that would be best. We think
 	this problem arises because Matlab now squeezes trailing singleton dimensions of matrices, for better or worse.
@@ -47,21 +43,6 @@ There is a helper function inside this function, called generatePresentationDisp
 7) @DHB: document quest 'blockedVal'
 
 8) Figure out quest engine stopping rule and document (find out where minTrial & maxTrial is used)
-
-
-Added comments
-1) computeFunctions/scene/sceGrating.m
-switch (gratingParams.temporalModulation), case 'flashed', 'drifted', 'counter phase modulated'
-switch (gratingParams.spatialModulationDomain), case 'cartesian', 'polar'
-switch (gratingParams.spatialEnvelope), case 'disk', 'soft', 'rect', 'halfcos'
-
-Fixed bugs
-1) t_modulatedGratingsSceneGeneration.m
-Stimulus #5: the original stimulus was out of the display gamut.
-To fix it, I added customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
-Or I could reduce the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, -0.1])
-	DHB: Make it as high as you can within gamut.
-	FH: Done.
 
 
 Questions
