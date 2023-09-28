@@ -23,7 +23,7 @@
 clear; close all;
 
 %% Set number of alternatives
-nAlternativesList = [2 4 8 16];
+nAlternativesList = [2];% 4 8 16];
 
 % Run just one spatial frequency.
 spatialFreq = 2;
@@ -42,10 +42,10 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
+neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.005;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements, neuralParams);
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %

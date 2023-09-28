@@ -116,7 +116,12 @@ if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 else
-    estimator = questThresholdEngine(...
+    if (classifierPara.nTest > 1)
+        blockedVal = true;
+    else
+        blockedVal = false;
+    end
+    estimator = questThresholdEngine('blocked',blockedVal,...
         'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'numEstimator', questEnginePara.numEstimator, ...
@@ -194,8 +199,15 @@ while (nextFlag)
     
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
-    [logContrast, nextFlag] = ...
-        estimator.multiTrial(logContrast * ones(1, classifierPara.nTest), predictions);
+    if (estimator.validation)
+        % Method of constant stimuli
+        [logContrast, nextFlag] = ...
+            estimator.multiTrial(logContrast * ones(1, classifierPara.nTest), predictions);
+    else
+        % Quest
+        [logContrast, nextFlag] = ...
+          estimator.multiTrialQuestBlocked(logContrast * ones(1, classifierPara.nTest), predictions);
+    end
 
 end
 

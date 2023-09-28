@@ -29,6 +29,8 @@ There is a helper function inside this function, called generatePresentationDisp
 3) there is a bug in t_NWay_OneStimPerTrial.m (can't run). The bug is it calls computeThresholdNWay_OneStimulusPerTrial -> computePerformanceNWay_OneStimulusPerTrial -> combineContainersMat. It breaks at the last step because the input is only for 1 frame of a stimulus (i.e., dimension < 3). To fix it, we could either add temporalModulation as a varargin or replace createGratingScene with sceGrating.
 	DHB: If we can make this work by special casing 2D inputs to treat them as one frame, that would be best. We think
 	this problem arises because Matlab now squeezes trailing singleton dimensions of matrices, for better or worse.
+	FH: this bug has been fixed by using nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m instead of nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements.m. I guess the former returns a 3-d matrix (#trials x #timeSamples x #cones).
+	There are some other bugs in the code (e.g., in computeThresholdNWay_OneStimulusPerTrial.m, I added line 119-123). The code can run now, but it seems like it's stuck in a weird loop. More debugging is required.
 
 4) computeThresholdTAFC calls a function called spatioTemporalPoolingWeights.m when the inference engine needs to compute a template. The computation in the function is the same when we choose either 'linear' or 'quadratureEnergy'. It's not needed to get the template for phase-shifted stimuli when 'linear' is selected, so we can edit spatioTemporalPoolingWeights.m to speed up things a bit for the linear template. 
 
