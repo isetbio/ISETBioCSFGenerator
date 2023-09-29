@@ -1,7 +1,10 @@
-function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
+function dataOut = nrePhotopigmentExcitationsCmosaicSingleShot(...
     neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
     sceneSequenceTemporalSupport, instancesNum, varargin)
-% Compute function for computation of cone excitations witout eye movements 
+% Compute function for computation of cone excitations witout eye movements. 
+% This function is only suitable for scene that has one frame. Since this
+% is a special case, it's recommended to switch to a more general function
+% nrePhotopigmentExcitationsCmosaic.m.
 %
 % Syntax:
 %   dataOut = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements(...
@@ -10,7 +13,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
 %
 % Description:
 %    Function serving as the computeFunctionHandle for a @neuralResponseEngine
-%    object. There are 2 ways to use this function.
+%    object using the new @cMosaic object. There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
 %           dataOut = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements()
@@ -36,6 +39,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
 %    instancesNum                   - the number of response instances to compute
 %
 % Optional key/value input arguments:
+%
 %    'noiseFlags'                   - Cell array of strings containing labels
 %                                     that encode the type of noise to be included
 %                                     Valid values are: 
@@ -71,42 +75,25 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
 %       and are arranged in a matrix of:
 %           [instancesNum x mCones x tTimeBins] 
 %
-%       NOTE: MATLAB always drops the last dimension of an matrix if that  is 1. 
-%             So if tBins is 1, the returned array will be [instancesNum x  mCones], 
-%             NOT [instancesNum x mCones x 1].
-%
-%
 % See Also:
 %     t_neuralResponseCompute
 
 % History:
-%    09/26/2020  npc  Wrote it.
-%    10/05/2020  dhb  Apply ieParamFormat to varargin for all keys.
-%    10/05/2020  dhb  Rename. Work on comments.
-%    10/05/2020  dhb  Rewrite to use 'rngSeed' key/value pair.
-%    10/17/2020  dhb  Use randomly chosen seed for mosaic compute operation
-%                     if rngSeed is set to [].  Save/restore rng state when
-%                     an explicit seed is passed.
-%                dhb  Just return one response instance in the no noise
-%                     case.
-%    10/19/2020  dhb  Fix comment to reflect fact that we now return
-%                     instancesNum instances in noise free case.
-%    03/14/2023  mw   Switch from using coneMosaicHex to cMosaic. Add
-%                     control of eccentricity.
+%    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements
 %    09/28/2023  fh   Move this function to the deprecated file. Check if 
-%                     all the scene sequences do not differ. If so, send 
-%                     out error messages. 
-%
+%                     all the scene sequence has only one frame. If not, 
+%                     send out an error message. 
+
 % Examples:
 %{
     % Usage case #1. Just return the default neural response params
-    defaultParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements()
+    defaultParams = nrePhotopigmentExcitationsCmosaicNoEyeMovements()
 
     % Usage case #2. Compute noise free, noisy, and repeatable (seed: 346) noisy response instances
     % using a parent @neuralResponseEngine object and the default neural response params
 
     % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements);
+    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicNoEyeMovements);
 
     % Instantiate a @sceneEngine object and generate a test scene
     theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
@@ -128,6 +115,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
     noiseFreeResponses = theResponses('none');
     randomNoiseResponseInstances = theResponses('random');
 %}
+
     persistent str_callingMasterFunc;
     if isempty(str_callingMasterFunc)
         str_callingMasterFunc = [];
@@ -153,37 +141,14 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
             sceneSequenceTemporalSupport, instancesNum, varargin);
     %do it old way
     elseif strcmp(str_callingMasterFunc,'no')
-        %check if all sceneSequences are the same
-
         %the total number of frames
         total_seq = length(sceneSequence);
-        %get the first scene (use it as reference)
-        scenePhotons_ref = sceneSequence{1}.data.photons(:);
-        %initialize the flag to be 0 for detecting any difference between 
-        % scene sequences
-        flag_detectDiff = 0; 
-        %initialize the counter for the comparison scene
-        counter_seq = 2;
-        
-        %select how many elements we'd like to randomly check
-        nSamples    = 10;
-        idx_samples = randi(length(scenePhotons_ref), [1,nSamples]);
-        while (~flag_detectDiff) && (counter_seq <= total_seq)
-            %check if all randomly selected elements are equal
-            scenePhotons_comp = sceneSequence{counter_seq}.data.photons(:);
-            if sum(abs(scenePhotons_ref(idx_samples)-scenePhotons_comp(idx_samples)) < 1e-14) ~= nSamples
-                flag_detectDiff = 1;
-            end
-            counter_seq = counter_seq+1;
+        %if the scene is not single shot, then send a warning
+        if total_seq ~=1
+            error(['The input scene is not a single shot! Consider',...
+                'calling nrePhotopigmentExcitationsCmosaic.m']);
         end
-
-        %Send a warning if any difference has been detected across
-        %scene sequences
-        if flag_detectDiff
-            warning(['The input scene is different across time samples, ',...
-                'but this function only selects the first frame!']);
-        end
-        
+    
         % Parse the input arguments
         p = inputParser;
         p.addParameter('noiseFlags', {'random'});
@@ -205,14 +170,9 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
         end
         
         if (isempty(neuralEngineOBJ.neuralPipeline))
-            % Generate the optics
-    %         theOptics = oiCreate(neuralResponseParamsStruct.opticsParams.type, neuralResponseParamsStruct.opticsParams.pupilDiameterMM);  
-    
-            % Generate the cone mosaic
-            % Modified by Mengxin 2023/03/14: switched from using coneMosaicHex
-            % to cMosaic; eccentricity added
+            % Generate the @cMosaic object
             theConeMosaic = cMosaic(...
-                'sizeDegs', neuralResponseParamsStruct.coneMosaicParams.sizeDegs, ... 
+                'sizeDegs', neuralResponseParamsStruct.coneMosaicParams.sizeDegs, ...
                 'eccentricityDegs', neuralResponseParamsStruct.coneMosaicParams.eccDegs, ...
                 'integrationTime', neuralResponseParamsStruct.coneMosaicParams.timeIntegrationSeconds ...
                 );
@@ -231,20 +191,9 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
             theConeMosaic = neuralEngineOBJ.neuralPipeline.coneMosaic;
             returnTheNeuralPipeline =  false;
         end
-    
+        
         % Compute the sequence of optical images corresponding to the sequence of scenes
-        framesNum = numel(sceneSequence);
-        theListOfOpticalImages = cell(1, framesNum);
-        for frame = 1:framesNum
-            theListOfOpticalImages{frame} = oiCompute(sceneSequence{frame}, theOptics);
-        end
-        
-        % Generate an @oiSequence object containing the list of computed optical images
-        theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
-        
-        % Zero eye movements
-        eyeMovementsNum = theOIsequence.maxEyeMovementsNumGivenIntegrationTime(theConeMosaic.integrationTime);
-        emPaths = zeros(instancesNum, eyeMovementsNum, 2);
+        theOIsequence = oiCompute(sceneSequence{1}, theOptics);
         
         % Set rng seed if one was passed. Not clear we need to do this because
         % all the randomness is in the @coneMosaic compute object, but it
@@ -254,10 +203,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
             oldSeed = rng(rngSeed);
         end
         
-        timeSamplesNum = eyeMovementsNum;
-        
         % Compute responses for each type of noise flag requested
-        % Modified by Mengxin 2023/03/14: from computeForOISequence to compute
         for idx = 1:length(noiseFlags)
             if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
                 % Compute the noise-free response
@@ -269,9 +215,8 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
                 
                 % Compute noise-free response instances
                 [theNeuralResponses(noiseFlags{idx}), ~, ~, ~, temporalSupportSeconds] = ...
-                    theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                    'nTrials', instancesNum, ...
-                    'nTimePoints', timeSamplesNum ...
+                    theConeMosaic.compute(theOIsequence, ...
+                    'nTrials', instancesNum ...
                 );
             
                 % Restore the original noise flag
@@ -280,10 +225,8 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
             elseif (~isempty(rngSeed))
                 % Compute noisy response instances with a specified random noise seed for repeatability
                 [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
-                    theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+                    theConeMosaic.compute(theOIsequence, ...
                     'nTrials', instancesNum, ...
-                    'nTimePoints', timeSamplesNum, ...
-                    'withFixationalEyeMovements', flase, ...
                     'seed', rngSeed ...        % random seed
                 );
             
@@ -294,11 +237,9 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
                 useSeed = randi(32000,1,1);
                 
                 % Compute noisy response instances
-                [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
-                    theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+                [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
+                    theConeMosaic.compute(theOIsequence, ...
                     'nTrials', instancesNum, ...
-                    'nTimePoints', timeSamplesNum, ...
-                    'withFixationalEyeMovements', false, ...
                     'seed', useSeed ...        % random seed
                 );
             end
@@ -309,13 +250,11 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
             rng(oldSeed);
         end
         
-        % Temporal support for the neural response
-    %     temporalSupportSeconds = theConeMosaic.timeAxis; 
-        
         % Assemble the dataOut struct
         dataOut = struct(...
             'neuralResponses', theNeuralResponses, ...
     	    'temporalSupport', temporalSupportSeconds);
+        
         if (returnTheNeuralPipeline)
             dataOut.neuralPipeline.optics = theOptics;
             dataOut.neuralPipeline.coneMosaic = theConeMosaic;
@@ -327,7 +266,6 @@ end
 
 function p = generateDefaultParams()
     % Default params for this compute function
-    % Modified by Mengxin 2023/03/14 to match the parameters for cMosaic
     p = struct(...
         'opticsParams', struct(...
             'PolansSubject', 10, ...
