@@ -145,16 +145,19 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
         if isempty(str_callingMasterFunc)
             warning('This function has been deprecated and replaced by nrePhotopigmentExcitationsCmosaic.m!');
             str_callingMasterFunc = input(sprintf(['If you''d like to ',...
-                'resume the computations using the new function, type ''yes'',',...
+                'resume the computations using the NEW function, type ''yes'',',...
                 'otherwise, type ''no'':']), 's');
         end
     end
 
     %call the new master function
     if strcmp(str_callingMasterFunc,'yes')
+        %redefine the neural computational function
+        neuralEngineOBJ.neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
+        %call the master function 
         dataOut = nrePhotopigmentExcitationsCmosaic(neuralEngineOBJ,...
             neuralResponseParamsStruct, sceneSequence,  ...
-            sceneSequenceTemporalSupport, instancesNum, varargin);
+            sceneSequenceTemporalSupport, instancesNum, varargin{:});
     %do it old way
     elseif strcmp(str_callingMasterFunc,'no')
         %check if all sceneSequences are the same

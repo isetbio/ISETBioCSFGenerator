@@ -129,23 +129,26 @@ function dataOut = nrePhotopigmentExcitationsCmosaicSingleShot(...
         if isempty(str_callingMasterFunc)
             warning('This function has been deprecated and replaced by nrePhotopigmentExcitationsCmosaic.m!');
             str_callingMasterFunc = input(sprintf(['If you''d like to ',...
-                'resume the computations using the new function, type ''yes'',',...
+                'resume the computations using the NEW function, type ''yes'',',...
                 'otherwise, type ''no'':']), 's');
         end
     end
 
     %call the new master function
     if strcmp(str_callingMasterFunc,'yes')
+        %redefine the neural computational function
+        neuralEngineOBJ.neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
+        %call the master function 
         dataOut = nrePhotopigmentExcitationsCmosaic(neuralEngineOBJ,...
             neuralResponseParamsStruct, sceneSequence,  ...
-            sceneSequenceTemporalSupport, instancesNum, varargin);
+            sceneSequenceTemporalSupport, instancesNum, varargin{:});
     %do it old way
     elseif strcmp(str_callingMasterFunc,'no')
         %the total number of frames
         total_seq = length(sceneSequence);
         %if the scene is not single shot, then send a warning
         if total_seq ~=1
-            error(['The input scene is not a single shot! Consider',...
+            error(['The input scene is not a single shot! Consider ',...
                 'calling nrePhotopigmentExcitationsCmosaic.m']);
         end
     

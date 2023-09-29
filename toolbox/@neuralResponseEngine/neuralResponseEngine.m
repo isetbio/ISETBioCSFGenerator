@@ -33,14 +33,12 @@ classdef neuralResponseEngine < handle
 
     %% Public properties
     properties
-
+        % User-supplied compute function handle to the neural computation routine
+        neuralComputeFunction
     end
     
     %% Private properties
-    properties (SetAccess=private)
-        % User-supplied compute function handle to the neural computation routine
-        neuralComputeFunction
-        
+    properties (SetAccess=private)        
         % User-supplied struct with all neural computation params
         neuralParams
         

@@ -162,13 +162,17 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     
     % Compute the sequence of optical images corresponding to the sequence of scenes
     framesNum = numel(sceneSequence);
-    theListOfOpticalImages = cell(1, framesNum);
-    for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(sceneSequence{frame}, theOptics);
+    if framesNum == 1
+        theOIsequence = oiCompute(sceneSequence{1}, theOptics);
+    else
+        theListOfOpticalImages = cell(1, framesNum);
+        for frame = 1:framesNum
+            theListOfOpticalImages{frame} = oiCompute(sceneSequence{frame}, theOptics);
+        end
+        
+        % Generate an @oiSequence object containing the list of computed optical images
+        theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
     end
-    
-    % Generate an @oiSequence object containing the list of computed optical images
-    theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
     
     % Set rng seed if one was passed. Not clear we need to do this because
     % all the randomness is in the @coneMosaic compute object, but it

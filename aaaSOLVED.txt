@@ -25,6 +25,8 @@ nrePhotopigmentExcitationsCmosaic.m: Size of theNeuralResponses(noiseFlags{idx})
 
 nrePhotopigmentExcitationsSingleShot.m: Size of theNeuralResponses(noiseFlags{idx}) = #trials x 1 x #cones. This can totally be replaced by nrePhotopigmentExcitationsCmosaic.m without even specifying there is only one frame.
 
-DHB: change the comments in nrePhotopigmentExcitationsSingleShot.m, nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m to describe what they do, and to indicate that they are special cases of nrePhotopigmentExcitationsCmosaic.m; keep the first two functions, but when called, direct to nrePhotopigmentExcitationsCmosaic.m (backward compatibility) and +error message ('this is a better way to call the function ... ). Add a check that the oiSequence satisfies that either it has one frame or all the frames are the same (oiGet(oi, 'photons') returns 3d matrix).  
+DHB: change the comments in nrePhotopigmentExcitationsCmosaicSingleShot.m, nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m to describe what they do, and to indicate that they are special cases of nrePhotopigmentExcitationsCmosaic.m; keep the first two functions, but when called, direct to nrePhotopigmentExcitationsCmosaic.m (backward compatibility) and +error message ('this is a better way to call the function ... ). Add a check that the oiSequence satisfies that either it has one frame or all the frames are the same (oiGet(oi, 'photons') returns 3d matrix).  
 
-FH: Done. 
+FH: I had to change one of the properties ('neuralComputeFunction') in the neuralResponseEngine.m, otherwise I couldn't make the switch to nrePhotopigmentExcitationsCmosaic.m if the other two functions are called. 
+Validation: 
+I tested calling nrePhotopigmentExcitationsCmosaicSingleShot.m and then either sticking with the deprecated function (responded 'no') or switching to nrePhotopigmentExcitationsCmosaic.m. I compared the measured contrast sensitivities for several spatial frequencies. They matched. 
