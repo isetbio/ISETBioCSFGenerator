@@ -1,8 +1,8 @@
-function dataOut = rcePoissonNWay_OneStimPerTrial(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
+function dataOut = rcePoissonNWay_OneStimulusPerTrial(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
 % Compute function for ideal signal-known Poisson noise classifier for N-way forced choice.
 %
 % Syntax:
-%     dataOut = rcePoissonNWay_OneStimPerTrial(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
+%     dataOut = rcePoissonNWay_OneStimulusPerTrial(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a

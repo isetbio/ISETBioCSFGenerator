@@ -138,11 +138,13 @@ if (p.Results.extraVerbose)
     theFrame = 1;
     index = find(theNullSceneSequence{theFrame}.spectrum.wave == theWl);
     temp = theNullSceneSequence{theFrame}.data.photons(:,:,index);
-    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',...
+        theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
     theWl = 550;
     index = find(theNullSceneSequence{theFrame}.spectrum.wave == theWl);
     temp = theNullSceneSequence{theFrame}.data.photons(:,:,index);
-    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',...
+        theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
 end
 
 
@@ -191,16 +193,19 @@ while (nextFlag)
             theFrame = 1;
             index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
             temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
-            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
+            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',...
+                theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
             theWl = 550;
             index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
             temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
-            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
+            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',...
+                theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
         end
         
         % Visualize the drifting sequence
         if (visualizeStimulus)
-            theSceneEngine.visualizeSceneSequence(theTestSceneSequences{testedIndex}, theSceneTemporalSupportSeconds);
+            theSceneEngine.visualizeSceneSequence(...
+                theTestSceneSequences{testedIndex}, theSceneTemporalSupportSeconds);
         end
         
         
@@ -214,18 +219,26 @@ while (nextFlag)
             switch (classifierEngine.classifierParams.pooling.type)
                 case 'linear'
                    [poolingWeights.direct, ~, ...
-                       noiseFreeNullResponse, noiseFreeTestResponse] = spatioTemporalPoolingWeights(theNeuralEngine,theTestSceneSequences{testedIndex},theNullSceneSequence, theSceneTemporalSupportSeconds);
+                       noiseFreeNullResponse, noiseFreeTestResponse] = ...
+                       spatioTemporalPoolingWeights(theNeuralEngine,...
+                       theTestSceneSequences{testedIndex},...
+                       theNullSceneSequence, theSceneTemporalSupportSeconds);
                    
                 case 'quadratureEnergy'
                    [poolingWeights.direct, poolingWeights.quadrature, ...
-                       noiseFreeNullResponse, noiseFreeTestResponse] = spatioTemporalPoolingWeights(theNeuralEngine,theTestSceneSequences{testedIndex},theNullSceneSequence, theSceneTemporalSupportSeconds);
+                       noiseFreeNullResponse, noiseFreeTestResponse] = ...
+                       spatioTemporalPoolingWeights(theNeuralEngine,...
+                       theTestSceneSequences{testedIndex},...
+                       theNullSceneSequence, theSceneTemporalSupportSeconds);
                    
                 otherwise
-                    error('Unknown classifier engine pooling type: ''%s''.', classifierEngine.classifierParams.pooling.type)
+                    error('Unknown classifier engine pooling type: ''%s''.',...
+                        classifierEngine.classifierParams.pooling.type)
             end
             
             % Update the classifier engine's pooling weights
-            classifierEngine.updateSpatioTemporalPoolingWeightsAndNoiseFreeResponses(poolingWeights,noiseFreeNullResponse, noiseFreeTestResponse);
+            classifierEngine.updateSpatioTemporalPoolingWeightsAndNoiseFreeResponses(...
+                poolingWeights,noiseFreeNullResponse, noiseFreeTestResponse);
         end
         
         % Train classifier for this TEST contrast and get predicted
@@ -257,7 +270,8 @@ while (nextFlag)
         psychometricFunction(contrastLabel) = mean(predictions);
         
         if (beVerbose)
-            fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
+            fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',...
+                length(psychometricFunction),testCounter);
         end
 
         % Save computed responses only the first time we test this contrast
@@ -309,7 +323,8 @@ while (nextFlag)
         psychometricFunction(contrastLabel) = currentData;
 
         if (beVerbose)
-           fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',length(psychometricFunction),testCounter);
+           fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',...
+               length(psychometricFunction),testCounter);
         end
     end
     
@@ -336,11 +351,13 @@ end  % while (nextFlag)
 
 
 if (beVerbose)
-   fprintf('computeThresholdTAFC: Ran %d test levels of %d trials per block of tests\n',testCounter,classifierPara.nTest);
+   fprintf('computeThresholdTAFC: Ran %d test levels of %d trials per block of tests\n',...
+       testCounter,classifierPara.nTest);
    if (estimator.validation)
             fprintf('\tValidation mode, nRepeat set to %d\n',estimator.nRepeat);
    end
-   fprintf('\tRecorded number single trials (%d) divided by number of blocks: %0.1f\n',testCounter,estimator.nTrial/testCounter);
+   fprintf('\tRecorded number single trials (%d) divided by number of blocks: %0.1f\n',...
+       testCounter,estimator.nTrial/testCounter);
 end
 
 % Return threshold value. For the mQUESTPlus Weibull PFs, the first
@@ -355,13 +372,15 @@ else
 end
 
 % Param threshold (log value)
-[logThreshold, fittedPsychometricParams, thresholdDataOut] = estimator.thresholdMLE('showPlot', false, ...
+[logThreshold, fittedPsychometricParams, thresholdDataOut] = ...
+    estimator.thresholdMLE('showPlot', false, ...
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
 
 
 if (beVerbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
-            fittedPsychometricParams(1), fittedPsychometricParams(2), fittedPsychometricParams(3), fittedPsychometricParams(4));
+            fittedPsychometricParams(1), fittedPsychometricParams(2),...
+            fittedPsychometricParams(3), fittedPsychometricParams(4));
     fprintf('Threshold (criterion proportion correct %0.4f: %0.2f (log10 units)\n', ...
         thresholdCriterion,logThreshold);
 end

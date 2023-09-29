@@ -52,7 +52,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoE
 %
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngineNWay(@rcePoissonNWay_OneStimPerTrial);
+classifierEngine = responseClassifierEngineNWay(@rcePoissonNWay_OneStimulusPerTrial);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);

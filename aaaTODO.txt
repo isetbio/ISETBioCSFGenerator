@@ -31,3 +31,5 @@ Questions
 1) I thought that there is only one classifier that segregates the responses to all null stimuli and the responses to all test stimuli, but I think this understanding is not correct. Based on the code, there is one classifier for every level of contrast. Should there be N classifiers where N denotes the number of contrast, or just one single classifier?
 
 2) How is the level of contrast determined given the range of slope and threshold? It is not super clear how that's derived.
+
+3) In spatioTemporalPoolingWeights.m, why is the de-meaned cone responses then multiplied by a Gaussian envelope to make a template?

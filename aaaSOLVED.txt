@@ -1,5 +1,6 @@
 Renaming
-1) rename 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
+1) 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
+2) 'rcePoissonNWay_OneStimPerTrial' -> 'rcePoissonNWay_OneStimulusPerTrial.m'
 
 Answered questions
 1) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a warning:Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 

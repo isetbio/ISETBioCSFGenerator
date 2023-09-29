@@ -64,7 +64,8 @@ function [poolingWeights,quadraturePoolingWeights, ...
     
     % Compute the differential response and use this to derive the linear
     % pooling kernel
-    diffResponse = noiseFreeSpatioTemporalResponseTestStimulus - noiseFreeSpatioTemporalResponseNullStimulus;
+    diffResponse = noiseFreeSpatioTemporalResponseTestStimulus - ...
+        noiseFreeSpatioTemporalResponseNullStimulus;
     diffResponse = diffResponse / max(abs(diffResponse(:)));
     
     
