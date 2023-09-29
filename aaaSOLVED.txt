@@ -1,12 +1,12 @@
 Renaming
 1) rename 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
 
-Added comments
-1) computeFunctions/scene/sceGrating.m
-switch (gratingParams.temporalModulation), case 'flashed', 'drifted', 'counter phase modulated'
-switch (gratingParams.spatialModulationDomain), case 'cartesian', 'polar'
-switch (gratingParams.spatialEnvelope), case 'disk', 'soft', 'rect', 'halfcos'
+Answered questions
+1) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a warning:Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 
+	DHB: reduce the field of view instead of increase #pixels. Add a comment explaining the choice of small field of view is just for the purpose of this tutorial, and they have other options.
 
+
+============================================================================================================================
 Fixed bugs
 1) t_modulatedGratingsSceneGeneration.m
 Stimulus #5: the original stimulus was out of the display gamut.
@@ -14,6 +14,14 @@ To fix it, I added customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
 Or I could reduce the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, -0.1])
 	DHB: Make it as high as you can within gamut.
 	FH: Done.
+
+2) there is a bug in t_NWay_OneStimPerTrial.m (can't run). The bug is it calls computeThresholdNWay_OneStimulusPerTrial -> computePerformanceNWay_OneStimulusPerTrial -> combineContainersMat. It breaks at the last step because the input is only for 1 frame of a stimulus (i.e., dimension < 3). To fix it, we could either add temporalModulation as a varargin or replace createGratingScene with sceGrating.
+	DHB: If we can make this work by special casing 2D inputs to treat them as one frame, that would be best. We think
+	this problem arises because Matlab now squeezes trailing singleton dimensions of matrices, for better or worse.
+	FH: this bug has been fixed by using nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m instead of nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements.m. I guess the former returns a 3-d matrix (#trials x #timeSamples x #cones).
+	There are some other bugs in the code (e.g., in computeThresholdNWay_OneStimulusPerTrial.m, I added line 119-123). The code can run now, but it seems like it's stuck in a weird loop. More debugging is required.
+	DHB: rename t_NWay_OneStimPerTrial.m -> t_NWay_OneStimulusPerTrial.m
+	FH: I reduced the fovDegs, fixed some bugs in handling the quest method (e.g., lines 113 - 202). I also changed the threshold criterion for different NWay-1stimulus task, and also fixed the plot. 
 
 ============================================================================================================================
 Merging
@@ -29,4 +37,7 @@ DHB: change the comments in nrePhotopigmentExcitationsCmosaicSingleShot.m, nrePh
 
 FH: I had to change one of the properties ('neuralComputeFunction') in the neuralResponseEngine.m, otherwise I couldn't make the switch to nrePhotopigmentExcitationsCmosaic.m if the other two functions are called. 
 Validation: 
-I tested calling nrePhotopigmentExcitationsCmosaicSingleShot.m and then either sticking with the deprecated function (responded 'no') or switching to nrePhotopigmentExcitationsCmosaic.m. I compared the measured contrast sensitivities for several spatial frequencies. They matched. 
+I tested calling ...SingleShot.m & ...WithNoEyeMovements.m and then either sticking with the deprecated function (responded 'no') or switching to ...Cmosaic.m. I compared the measured contrast sensitivities for several spatial frequencies. They matched.
+
+============================================================================================================================
+Speeding things up

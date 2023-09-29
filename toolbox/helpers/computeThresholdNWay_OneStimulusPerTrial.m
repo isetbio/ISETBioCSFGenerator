@@ -111,7 +111,7 @@ end
 
 % Handle quest method.
 if (isfield(questEnginePara, 'employMethodOfConstantStimuli'))&&(questEnginePara.employMethodOfConstantStimuli)
-    estimator = questThresholdEngine(...
+    estimator = questThresholdEngine('blocked',questEnginePara.blocked,...
         'validation', true, 'nRepeat', questEnginePara.nTest, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
         'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
@@ -202,11 +202,11 @@ while (nextFlag)
     if (estimator.validation)
         % Method of constant stimuli
         [logContrast, nextFlag] = ...
-            estimator.multiTrial(logContrast * ones(1, classifierPara.nTest), predictions);
+            estimator.multiTrial(logContrast * ones(classifierPara.nTest,1), predictions');
     else
         % Quest
         [logContrast, nextFlag] = ...
-          estimator.multiTrialQuestBlocked(logContrast * ones(1, classifierPara.nTest), predictions);
+          estimator.multiTrialQuestBlocked(logContrast * ones(classifierPara.nTest,1), predictions');
     end
 
 end

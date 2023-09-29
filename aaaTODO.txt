@@ -13,13 +13,6 @@ There is a helper function inside this function, called generatePresentationDisp
 	DHB: Yes, good.  Make default 'LCD-Apple' so the default behavior is unchanged.
 	FH: Done.
 
-3) there is a bug in t_NWay_OneStimPerTrial.m (can't run). The bug is it calls computeThresholdNWay_OneStimulusPerTrial -> computePerformanceNWay_OneStimulusPerTrial -> combineContainersMat. It breaks at the last step because the input is only for 1 frame of a stimulus (i.e., dimension < 3). To fix it, we could either add temporalModulation as a varargin or replace createGratingScene with sceGrating.
-	DHB: If we can make this work by special casing 2D inputs to treat them as one frame, that would be best. We think
-	this problem arises because Matlab now squeezes trailing singleton dimensions of matrices, for better or worse.
-	FH: this bug has been fixed by using nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m instead of nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements.m. I guess the former returns a 3-d matrix (#trials x #timeSamples x #cones).
-	There are some other bugs in the code (e.g., in computeThresholdNWay_OneStimulusPerTrial.m, I added line 119-123). The code can run now, but it seems like it's stuck in a weird loop. More debugging is required.
-	DHB: rename t_NWay_OneStimPerTrial.m -> t_NWay_OneStimulusPerTrial.m
-
 4) computeThresholdTAFC calls a function called spatioTemporalPoolingWeights.m when the inference engine needs to compute a template. The computation in the function is the same when we choose either 'linear' or 'quadratureEnergy'. It's not needed to get the template for phase-shifted stimuli when 'linear' is selected, so we can edit spatioTemporalPoolingWeights.m to speed up things a bit for the linear template. 
 	DHB: perhaps we can.
 
@@ -37,6 +30,4 @@ There is a helper function inside this function, called generatePresentationDisp
 Questions
 1) I thought that there is only one classifier that segregates the responses to all null stimuli and the responses to all test stimuli, but I think this understanding is not correct. Based on the code, there is one classifier for every level of contrast. Should there be N classifiers where N denotes the number of contrast, or just one single classifier?
 
-2) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a warning:Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 
-	DHB: reduce the field of view instead of increase #pixels. Add a comment explaining the choice of small field of view is just for the purpose of this tutorial, and they have other options.
-
+2) How is the level of contrast determined given the range of slope and threshold? It is not super clear how that's derived.

@@ -23,10 +23,11 @@
 clear; close all;
 
 %% Set number of alternatives
-nAlternativesList = [2];% 4 8 16];
+nAlternativesList = [2 4 8 16];
+nAList = length(nAlternativesList);
 
 % Run just one spatial frequency.
-spatialFreq = 2;
+spatialFreq = 15;
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
 % exceed the gamut of the monitor, so we are conservative and set this at a
@@ -44,7 +45,7 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 % noise, and includes optical blur.
 neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
-neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.005;
+neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
@@ -73,43 +74,55 @@ classifierPara = struct('trainFlag', 'none', ...
 % There are two separate structures below. The conceptual distinction
 % between them is not entirely clear.  These are interpretted by
 % computeThresholdNWay_OneStimulusPerTrial.
-thresholdPara = struct('logThreshLimitLow', 2.4, ...
-    'logThreshLimitHigh', 0.0, ...
-    'logThreshLimitDelta', 0.02, ...
-    'slopeRangeLow', 1/20, ...
-    'slopeRangeHigh', 100/20, ...
-    'slopeDelta', 5/20, ...
-    'thresholdCriterion', 0.60, ...
-    'guessRate', [], ...
-    'lapseRate', [0 0.02]);
-
-questEnginePara = struct( ...
-    'qpPF',@qpPFWeibullLog, ...
-    'minTrial', 1280, ...
-    'maxTrial', 1280, ...
-    'numEstimator', 1, ...
-    'stopCriterion', 0.05);
+[thresholdPara, questEnginePara] = deal(cell(1, nAList));
+%loop through each NWay alternative choiced choice because the number of
+%alternatives affect the guess rate as well as the threshold criterion.
+for t = 1:nAList
+    thresholdPara{t} = struct('logThreshLimitLow', 2.4, ...
+        'logThreshLimitHigh', 0.0, ...
+        'logThreshLimitDelta', 0.05, ...
+        'slopeRangeLow', 1/20, ...
+        'slopeRangeHigh', 60/20, ...
+        'slopeDelta', 5/20, ...
+        'thresholdCriterion', (1- 1/nAlternativesList(t))/2 + 1/nAlternativesList(t), ...
+        'guessRate', 1/nAlternativesList(t), ...
+        'lapseRate', 1e-4);
+    
+    estDomain = -thresholdPara{t}.logThreshLimitLow:...
+        thresholdPara{t}.logThreshLimitDelta: -thresholdPara{t}.logThreshLimitHigh;
+    slopeRange = thresholdPara{t}.slopeRangeLow: ...
+        thresholdPara{t}.slopeDelta: thresholdPara{t}.slopeRangeHigh; 
+    
+    questEnginePara{t} = struct( ...
+        'employMethodOfConstantStimuli', true,...
+        'nTest', 10,...
+        'validation', true,...
+        'blocked',true,...
+        'estDomain',estDomain,...
+        'slopeRange',slopeRange,...
+        'qpPF',@qpPFWeibullLog, ...
+        'numEstimator', 1, ...
+        'stopCriterion', 0.05);
+end
 
 %% Compute threshold for each number of alternatives specified
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
-logThreshold = zeros(1, length(nAlternativesList));
+logThreshold = zeros(1, nAList);
 dataFig = figure();
-for idx = 1:length(nAlternativesList)
+for idx = 1:nAList
     % Open figure
 
     % Set nAlternatives
     nAlternatives = nAlternativesList(idx);
-    
-    % Set guess rate
-    thresholdPara.guessRate = 1/nAlternatives;
 
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration
     orientations = linspace(0,(nAlternatives-1)*180/nAlternatives,nAlternatives);
     for oo = 1:length(orientations)
-        gratingScenes{oo} = createGratingScene(chromaDir, spatialFreq,'orientation',orientations(oo));
+        gratingScenes{oo} = createGratingScene(chromaDir, spatialFreq,...
+            'orientation',orientations(oo), 'fovDegs', neuralParams.coneMosaicParams.fovDegs);
     end
     
     % Compute the threshold for our grating scene with the previously
@@ -117,24 +130,26 @@ for idx = 1:length(nAlternativesList)
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceNWay_OneStimulusPerTrial.
     [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThresholdNWay_OneStimulusPerTrial(gratingScenes, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara);
+        computeThresholdNWay_OneStimulusPerTrial(gratingScenes,  ...
+        theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara{idx}, questEnginePara{idx});
     
     % Plot stimulus
-    figure(dataFig);
-    subplot(4, 4, idx * 2 - 1);
-    
-%     visualizationContrast = 1.0;
-%     [theSceneSequence] = gratingScenes.compute(visualizationContrast);
-%     gratingScenes.visualizeStaticFrame(theSceneSequence);
+    figure(idx)
+    visualizationContrast = 1.0;
+    for t = 1:nAlternativesList(idx)
+        subplot(8, 4, t);
+        theSceneSequence = gratingScenes{t}.compute(visualizationContrast);
+        gratingScenes{t}.visualizeStaticFrame(theSceneSequence);
+    end
     
     % Plot data and psychometric curve 
     % with a marker size of 2.5
-    subplot(4, 4, idx * 2);
+    subplot(8,4,17:32);
     questObj.plotMLE(2.5,'para',para(idx,:));
     drawnow;
+    set(gcf, 'Units','normalized','Position',  [0, 0, 0.15, 0.5]);
 end
-set(dataFig, 'Position',  [0, 0, 800, 800]);
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;

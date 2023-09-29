@@ -87,6 +87,7 @@ nAlternatives = length(theScenes);
 % Note use of combineContainers to reformat the individual responses the
 % way we need them.
 if (~isempty(trainNoiseFlag))
+    inSampleStimResponsesCell = cell(1,nAlternatives);
     % Generate stimuli for training
     for aa = 1:nAlternatives
         [inSampleStimResponsesCell{aa}, ~] = theNeuralEngine.compute(...
@@ -98,59 +99,9 @@ if (~isempty(trainNoiseFlag))
     inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
 
     % Visualization.
-    %
-    if (visualizeAllComponents)
-        if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
-            diffResponse = inSampleStimResponses(trainNoiseFlag); % - inSampleNullStimResponses(trainNoiseFlag);
-            hFig = figure(998);
-            set(hFig, 'Position', [10 10 1600 400]);
-
-            for aa = 1:nAlternatives
-
-                % Contrast response
-                tmp = diffResponse{aa};
-                idx = theNeuralEngine.neuralPipeline.coneMosaic.lConeIndices;
-                meanLconeActivation = mean(tmp(idx(:)));
-                tmp(idx) = (tmp(idx)-meanLconeActivation)/meanLconeActivation;
-                idx = theNeuralEngine.neuralPipeline.coneMosaic.mConeIndices;
-                meanMconeActivation = mean(tmp(idx(:)));
-                tmp(idx) = (tmp(idx)-meanMconeActivation)/meanMconeActivation;
-                idx = theNeuralEngine.neuralPipeline.coneMosaic.sConeIndices;
-                if (~isempty(idx))
-                    meanSconeActivation = mean(tmp(idx(:)));
-                    tmp(idx) = (tmp(idx)-meanSconeActivation)/meanSconeActivation;
-                end
-                diffResponse{aa} = tmp;
-
-                if (aa == 1)
-                    ax = subplot(1, nAlternatives+1,1);
-                    % Visualize the activation
-                    theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
-                        'figureHandle', hFig, ...
-                        'axesHandle', ax);
-                end
-
-                ax = subplot(1, nAlternatives+1,aa+1);
-                % Visualize the activation
-                theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
-                    'figureHandle', hFig, ...
-                    'axesHandle', ax, ...
-                    'activation', squeeze(diffResponse{aa}), ...
-                    'activationRange', prctile(squeeze(diffResponse{aa}),[1 99]), ...
-                    'verticalActivationColorBarInside', true);
-            end
-
-            % Also visualize the full absorptions density
-            figNo = 999;
-            theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
-        end
-    
-        if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
-            theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
-                responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
-                'stimulusTemporalSupportSeconds', temporalSupport,...
-                'stimulusSceneSequence', testScene);
-        end
+    if visualizeAllComponents
+        visualizeConeResps(theNeuralEngine, inSampleStimResponses,...
+            trainNoiseFlag, nAlternatives);
     end
 
     % Train the classifier. This shows the usage to extact information
@@ -240,4 +191,59 @@ end
 % Taking mean(response) gives fraction correct.
 predictions = dataOut.trialPredictions;
 
+end
+
+function visualizeConeResps(theNeuralEngine, inSampleStimResponses,...
+    trainNoiseFlag, nAlternatives)
+if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
+    diffResponse = inSampleStimResponses(trainNoiseFlag); % - inSampleNullStimResponses(trainNoiseFlag);
+    hFig = figure(998);
+    set(hFig, 'Position', [10 10 1600 400]);
+
+    for aa = 1:nAlternatives
+
+        % Contrast response
+        tmp = diffResponse{aa};
+        idx = theNeuralEngine.neuralPipeline.coneMosaic.lConeIndices;
+        meanLconeActivation = mean(tmp(idx(:)));
+        tmp(idx) = (tmp(idx)-meanLconeActivation)/meanLconeActivation;
+        idx = theNeuralEngine.neuralPipeline.coneMosaic.mConeIndices;
+        meanMconeActivation = mean(tmp(idx(:)));
+        tmp(idx) = (tmp(idx)-meanMconeActivation)/meanMconeActivation;
+        idx = theNeuralEngine.neuralPipeline.coneMosaic.sConeIndices;
+        if (~isempty(idx))
+            meanSconeActivation = mean(tmp(idx(:)));
+            tmp(idx) = (tmp(idx)-meanSconeActivation)/meanSconeActivation;
+        end
+        diffResponse{aa} = tmp;
+
+        if (aa == 1)
+            ax = subplot(1, nAlternatives+1,1);
+            % Visualize the activation
+            theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
+                'figureHandle', hFig, ...
+                'axesHandle', ax);
+        end
+
+        ax = subplot(1, nAlternatives+1,aa+1);
+        % Visualize the activation
+        theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
+            'figureHandle', hFig, ...
+            'axesHandle', ax, ...
+            'activation', squeeze(diffResponse{aa}), ...
+            'activationRange', prctile(squeeze(diffResponse{aa}),[1 99]), ...
+            'verticalActivationColorBarInside', true);
+    end
+
+    % Also visualize the full absorptions density
+    figNo = 999;
+    theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
+end
+
+if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
+    theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
+        responseTemporalSupportSeconds, inSampleTestStimResponses(trainNoiseFlag), ...
+        'stimulusTemporalSupportSeconds', temporalSupport,...
+        'stimulusSceneSequence', testScene);
+end
 end
