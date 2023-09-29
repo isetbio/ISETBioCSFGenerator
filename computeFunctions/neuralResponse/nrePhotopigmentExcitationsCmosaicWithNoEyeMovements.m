@@ -93,6 +93,9 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
 %                     instancesNum instances in noise free case.
 %    03/14/2023  mw   Switch from using coneMosaicHex to cMosaic. Add
 %                     control of eccentricity.
+%    09/28/2023  fh   Move this function to the deprecated file. Check if 
+%                     all the scene sequences do not differ. If so, send 
+%                     out error messages. 
 %
 % Examples:
 %{
@@ -125,12 +128,23 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
     noiseFreeResponses = theResponses('none');
     randomNoiseResponseInstances = theResponses('random');
 %}
+    persistent str_callingMasterFunc;
+    if isempty(str_callingMasterFunc)
+        str_callingMasterFunc = [];
+    end
 
-    str_callingMasterFunc = input(sprintf(['Warning: ',...
-        'this function has been deprecated and replaced by ',...
-        'nrePhotopigmentExcitationsCmosaic.m.\nIf you''d like to ',...
-        'resume the computations using the new function, type ''yes'',',...
-        'otherwise, type ''no'':']), 's');
+    % Check input arguments. If called with zero input arguments, just return the default params struct
+    if (nargin == 0)
+        dataOut = generateDefaultParams();
+        return;
+    else
+        if isempty(str_callingMasterFunc)
+            warning('This function has been deprecated and replaced by nrePhotopigmentExcitationsCmosaic.m!');
+            str_callingMasterFunc = input(sprintf(['If you''d like to ',...
+                'resume the computations using the new function, type ''yes'',',...
+                'otherwise, type ''no'':']), 's');
+        end
+    end
 
     %call the new master function
     if strcmp(str_callingMasterFunc,'yes')
@@ -139,11 +153,35 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
             sceneSequenceTemporalSupport, instancesNum, varargin);
     %do it old way
     elseif strcmp(str_callingMasterFunc,'no')
+        %check if all sceneSequences are the same
 
-        % Check input arguments. If called with zero input arguments, just return the default params struct
-        if (nargin == 0)
-            dataOut = generateDefaultParams();
-            return;
+        %the total number of frames
+        total_seq = length(sceneSequence);
+        %get the first scene (use it as reference)
+        scenePhotons_ref = sceneSequence{1}.data.photons(:);
+        %initialize the flag to be 0 for detecting any difference between 
+        % scene sequences
+        flag_detectDiff = 0; 
+        %initialize the counter for the comparison scene
+        counter_seq = 2;
+        
+        %select how many elements we'd like to randomly check
+        nSamples    = 10;
+        idx_samples = randi(length(scenePhotons_ref), [1,nSamples]);
+        while (~flag_detectDiff) && (counter_seq <= total_seq)
+            %check if all randomly selected elements are equal
+            scenePhotons_comp = sceneSequence{counter_seq}.data.photons(:);
+            if sum(abs(scenePhotons_ref(idx_samples)-scenePhotons_comp(idx_samples)) < 1e-14) ~= nSamples
+                flag_detectDiff = 1;
+            end
+            counter_seq = counter_seq+1;
+        end
+
+        %Send a warning if any difference has been detected across
+        %scene sequences
+        if flag_detectDiff
+            warning(['The input scene is different across time samples, ',...
+                'but this function only selects the first frame!']);
         end
         
         % Parse the input arguments

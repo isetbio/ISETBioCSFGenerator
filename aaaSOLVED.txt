@@ -1,0 +1,30 @@
+Renaming
+1) rename 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
+
+Added comments
+1) computeFunctions/scene/sceGrating.m
+switch (gratingParams.temporalModulation), case 'flashed', 'drifted', 'counter phase modulated'
+switch (gratingParams.spatialModulationDomain), case 'cartesian', 'polar'
+switch (gratingParams.spatialEnvelope), case 'disk', 'soft', 'rect', 'halfcos'
+
+Fixed bugs
+1) t_modulatedGratingsSceneGeneration.m
+Stimulus #5: the original stimulus was out of the display gamut.
+To fix it, I added customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
+Or I could reduce the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, -0.1])
+	DHB: Make it as high as you can within gamut.
+	FH: Done.
+
+============================================================================================================================
+Merging
+1) There are a lot of versions of different nre's that use the cMosaic.  Rationalize.  Perhaps all the specific ones should be implemented as calls into the most general one?
+
+nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m: why do we need to compute the OIsequence at all time samples even though only the oi of the first frame is used (line 209-250)? Size of theNeuralResponses(noiseFlags{idx}) = #trials x #timeSamples x #cones
+
+nrePhotopigmentExcitationsCmosaic.m: Size of theNeuralResponses(noiseFlags{idx}) = #trials x #timeSamples x #cones. All the oiSequence is passed into theConeMosaic.compute function unlike the function above. nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m is more like a special case, and it's suitable when the optical image does not differ across all time samples. 
+
+nrePhotopigmentExcitationsSingleShot.m: Size of theNeuralResponses(noiseFlags{idx}) = #trials x 1 x #cones. This can totally be replaced by nrePhotopigmentExcitationsCmosaic.m without even specifying there is only one frame.
+
+DHB: change the comments in nrePhotopigmentExcitationsSingleShot.m, nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m to describe what they do, and to indicate that they are special cases of nrePhotopigmentExcitationsCmosaic.m; keep the first two functions, but when called, direct to nrePhotopigmentExcitationsCmosaic.m (backward compatibility) and +error message ('this is a better way to call the function ... ). Add a check that the oiSequence satisfies that either it has one frame or all the frames are the same (oiGet(oi, 'photons') returns 3d matrix).  
+
+FH: Done. 
