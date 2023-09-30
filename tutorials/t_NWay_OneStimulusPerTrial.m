@@ -23,7 +23,7 @@
 clear; close all;
 
 %% Set number of alternatives
-nAlternativesList = [2 4 8 16];
+nAlternativesList = [2 4];% 8 16];
 nAList = length(nAlternativesList);
 
 % Run just one spatial frequency.
@@ -109,20 +109,19 @@ end
 % 
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 logThreshold = zeros(1, nAList);
-dataFig = figure();
+para         = NaN(nAList, 4); %4 paramters (lapse rate and guess rate are fixed)
+
 for idx = 1:nAList
-    % Open figure
-
-    % Set nAlternatives
-    nAlternatives = nAlternativesList(idx);
-
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration
-    orientations = linspace(0,(nAlternatives-1)*180/nAlternatives,nAlternatives);
-    for oo = 1:length(orientations)
-        gratingScenes{oo} = createGratingScene(chromaDir, spatialFreq,...
-            'orientation',orientations(oo), 'fovDegs', neuralParams.coneMosaicParams.fovDegs);
+    orientations = linspace(0,(nAlternativesList(idx)-1)*...
+        180/nAlternativesList(idx),nAlternativesList(idx));
+    gratingScenes = cell(1,nAlternativesList(idx));
+    for t = 1:nAlternativesList(idx)
+        gratingScenes{t} = createGratingScene(chromaDir, spatialFreq,...
+            'orientation',orientations(t), 'fovDegs', ...
+            neuralParams.coneMosaicParams.fovDegs);
     end
     
     % Compute the threshold for our grating scene with the previously
