@@ -2,10 +2,6 @@ Renaming
 1) 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
 2) 'rcePoissonNWay_OneStimPerTrial' -> 'rcePoissonNWay_OneStimulusPerTrial.m'
 
-Answered questions
-1) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a warning:Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 
-	DHB: reduce the field of view instead of increase #pixels. Add a comment explaining the choice of small field of view is just for the purpose of this tutorial, and they have other options.
-
 
 ============================================================================================================================
 Fixed bugs
@@ -42,3 +38,19 @@ I tested calling ...SingleShot.m & ...WithNoEyeMovements.m and then either stick
 
 ============================================================================================================================
 Speeding things up
+
+
+
+
+Answered questions
+1) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a warning:Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 
+	DHB: reduce the field of view instead of increase #pixels. Add a comment explaining the choice of small field of view is just for the purpose of this tutorial, and they have other options.
+
+2) I thought that there is only one classifier that segregates the responses to all null stimuli and the responses to all test stimuli, but I think this understanding is not correct. Based on the code, there is one classifier for every level of contrast. Should there be N classifiers where N denotes the number of contrast, or just one single classifier?
+	DHB: Neither is wrong but they make different assumptions about the observer.
+
+
+
+
+
+
