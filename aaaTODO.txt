@@ -6,6 +6,18 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 
 3) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
+computeThresholdNWay_OneStimulusPerTrial.m 
+	inputs: theTestSceneSquences (type: cell, size: 1 x nA; each cell is #trials x #times x #cones)
+	-> computePerformanceNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
+		inputs: inSampleStimResponses (type: container, size: 1 x nA; each cell is #trials x #times x #cones) 
+		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates 
+		outputs: theClassifierEngine.preProcessingConstants (type: cell, size: 1 x nA; each cell is #time x #cones)
+		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
+			inputs: response and template (type: mat, size: 1 x #cones)
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template 
+			outputs: binary responses 
+		outputs: predictions (type: mat, size: 1 x #trials)
+
 =================================================================================================
 Notes (need further discussion before making any changes)
 1) computeFunctions/scene/sceGrating.m
@@ -25,6 +37,7 @@ There is a helper function inside this function, called generatePresentationDisp
 7) @DHB: document quest 'blockedVal'
 
 8) Figure out quest engine stopping rule and document (find out where minTrial & maxTrial is used)
+	FH: questThresholdEngine.m, contrastThresholdEngine.m
 
 
 Questions
