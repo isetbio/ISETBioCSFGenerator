@@ -7,17 +7,17 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 3) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
 computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
-	inputs: theTestSceneSquences (type: cell, size: 1 x nA; each cell is #trials x #times x #cones)
-	-> computePerformanceNWay_OneStimulusPerTrial.m
-		inputs: 
+	inputs: theTestSceneSquences (type: cell, size: 1 x #Alternatives; each cell is a struct)
+	-> computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
 		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
-			inputs: inSampleStimResponses (type: container, [1 x nA] cells, each cell is [#trials x #times x #cones]) 
-			outputs: theClassifierEngine.preProcessingConstants (type: cell, size: 1 x nA; each cell is #time x #cones)
+			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x nA] cells, each cell is [#trials x #times x #cones]) 
+			outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #Alternatives; each cell is [1 x #cones])
 		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
-			inputs: responses and templates (type: mat, size: 1 x #cones)
+			inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; it has a mat with size [#trials x #cones])
+			        theClassifierEngine.preProcessingConstants.theTemplates 
 			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
-			outputs: binary responses 
-		outputs: predictions (type: mat, size: 1 x #trials)
+			outputs: predictions (type: vector, size: #trials)
+		outputs: predictions, theClassifierEngine
 
 computeThresholdTAFC.m
 	inputs: theNullSceneSequence (type: cell, size: 1 x #Times; each cell is a struct)
