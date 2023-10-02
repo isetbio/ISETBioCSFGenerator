@@ -9,24 +9,35 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
 	inputs: theTestSceneSquences (type: cell, size: 1 x nA; each cell is #trials x #times x #cones)
 	-> computePerformanceNWay_OneStimulusPerTrial.m
-		inputs: inSampleStimResponses (type: container, [1 x nA] cells, each cell is [#trials x #times x #cones]) 
+		inputs: 
 		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
-		outputs: theClassifierEngine.preProcessingConstants (type: cell, size: 1 x nA; each cell is #time x #cones)
+			inputs: inSampleStimResponses (type: container, [1 x nA] cells, each cell is [#trials x #times x #cones]) 
+			outputs: theClassifierEngine.preProcessingConstants (type: cell, size: 1 x nA; each cell is #time x #cones)
 		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
 			inputs: responses and templates (type: mat, size: 1 x #cones)
-			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template given the responses
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
 			outputs: binary responses 
 		outputs: predictions (type: mat, size: 1 x #trials)
 
 computeThresholdTAFC.m
-	inputs: theNullSceneSequence, theTestSceneSequences (type: cell, size: 1 x #Times; each cell is a struct)
-	-> computePerformanceTAFC.m: 
-		outputs: inSampleNullStimResponses, inSampleTestStimResponses (type: container, size: 1 x 1; each container has a matrix [#trials x #times x #cones]
+	inputs: theNullSceneSequence (type: cell, size: 1 x #Times; each cell is a struct)
+	        theTestSceneSequences 
+	-> computePerformanceTAFC.m: training & making predictions
 		-> rcePoissonTAFC.m: training, to compute the templates for the null and the test stimuli
-		outputs: theClassifierEngine.preProcessingConstants.nullTemplate, theClassifierEngine.preProcessingConstants.testTemplate (type: mat, size: 1 x #cones]
+			inputs: inSampleNullStimResponses (type: container, size: 1 x 1, key = 'none'; each container has a matrix [1 x #times x #cones]
+			        inSampleTestStimResponses
+			outputs: theClassifierEngine.preProcessingConstants.nullTemplate (type: mat, size: 1 x #cones]
+				 theClassifierEngine.preProcessingConstants.testTemplate 
 		-> rcePoissonTAFC.m: making predictions
-			inputs: responses and templates ()
-			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template
+			inputs: outOfSampleNullStimResponses (type: container, size: 1 x 1, key = 'random'; each container has a matrix [#trials x #times x #cones]
+			        outOfSampleTestStimResponses 
+			        theClassifierEngine.preProcessingConstants.nullTemplate
+			        theClassifierEngine.preProcessingConstants.testTemplate
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of test/null template given test/null responses, and vice versa 
+			outputs: predictions (type: vector, size: #trials)
+	outputs: predictions, theClassifierEngine
+
+Thoughts for merging the two: 
 
 
 

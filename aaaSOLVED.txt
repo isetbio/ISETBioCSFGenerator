@@ -37,11 +37,6 @@ Validation:
 I tested calling ...SingleShot.m & ...WithNoEyeMovements.m and then either sticking with the deprecated function (responded 'no') or switching to ...Cmosaic.m. I compared the measured contrast sensitivities for several spatial frequencies. They matched.
 
 ============================================================================================================================
-Speeding things up
-
-
-
-
 Answered questions
 1) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a warning:Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 
 	DHB: reduce the field of view instead of increase #pixels. Add a comment explaining the choice of small field of view is just for the purpose of this tutorial, and they have other options.
