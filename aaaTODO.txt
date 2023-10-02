@@ -6,24 +6,36 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 
 3) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
-computeThresholdNWay_OneStimulusPerTrial.m 
+computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
 	inputs: theTestSceneSquences (type: cell, size: 1 x nA; each cell is #trials x #times x #cones)
-	-> computePerformanceNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
-		inputs: inSampleStimResponses (type: container, size: 1 x nA; each cell is #trials x #times x #cones) 
-		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates 
+	-> computePerformanceNWay_OneStimulusPerTrial.m
+		inputs: inSampleStimResponses (type: container, [1 x nA] cells, each cell is [#trials x #times x #cones]) 
+		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
 		outputs: theClassifierEngine.preProcessingConstants (type: cell, size: 1 x nA; each cell is #time x #cones)
 		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
-			inputs: response and template (type: mat, size: 1 x #cones)
-			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template 
+			inputs: responses and templates (type: mat, size: 1 x #cones)
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template given the responses
 			outputs: binary responses 
 		outputs: predictions (type: mat, size: 1 x #trials)
+
+computeThresholdTAFC.m
+	inputs: theNullSceneSequence, theTestSceneSequences (type: cell, size: 1 x #Times; each cell is a struct)
+	-> computePerformanceTAFC.m: 
+		outputs: inSampleNullStimResponses, inSampleTestStimResponses (type: container, size: 1 x 1; each container has a matrix [#trials x #times x #cones]
+		-> rcePoissonTAFC.m: training, to compute the templates for the null and the test stimuli
+		outputs: theClassifierEngine.preProcessingConstants.nullTemplate, theClassifierEngine.preProcessingConstants.testTemplate (type: mat, size: 1 x #cones]
+		-> rcePoissonTAFC.m: making predictions
+			inputs: responses and templates ()
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template
+
+
 
 =================================================================================================
 Notes (need further discussion before making any changes)
 1) computeFunctions/scene/sceGrating.m
 There is a helper function inside this function, called generatePresentationDisplay. It assumes a default screen display 'LCD-Apple', which cannot be changed. Perhaps we can add a field 'screenDisplay' to the struct gratingParams to have more flexibility.
 	DHB: Yes, good.  Make default 'LCD-Apple' so the default behavior is unchanged.
-	FH: Done.
+	FH: Done. Need to double check if all the tutorials make the corresponding changes.
 
 4) computeThresholdTAFC calls a function called spatioTemporalPoolingWeights.m when the inference engine needs to compute a template. The computation in the function is the same when we choose either 'linear' or 'quadratureEnergy'. It's not needed to get the template for phase-shifted stimuli when 'linear' is selected, so we can edit spatioTemporalPoolingWeights.m to speed up things a bit for the linear template. 
 	DHB: perhaps we can.
