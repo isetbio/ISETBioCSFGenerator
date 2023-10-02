@@ -23,7 +23,7 @@
 clear; close all;
 
 %% Set number of alternatives
-nAlternativesList = [2 4];% 8 16];
+nAlternativesList = [2 4 8 16];
 nAList = length(nAlternativesList);
 
 % Run just one spatial frequency.
@@ -52,10 +52,10 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 %
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngineNWay(@rcePoisson);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
+classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -109,7 +109,7 @@ logThreshold = zeros(1, nAList);
 para         = NaN(nAList, 4); %4 paramters (lapse rate and guess rate are fixed)
 taskDesign   = 'NWay_OneStimulusPerTrial';
 
-for idx = 2:nAList
+for idx = 1:nAList
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration

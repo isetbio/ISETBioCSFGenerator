@@ -133,12 +133,6 @@ else
         'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 end
 
-% Generate the NULL stimulus (zero contrast)
-if strcmp(task,'TAFC')
-    nullContrast = 0.0;
-    [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
-end
-
 % Some diagnosis
 if (p.Results.extraVerbose)
     theWl = 400;
@@ -161,6 +155,12 @@ end
 
 % Loop over trials.
 testedContrasts = [];
+
+% Generate the NULL stimulus (zero contrast)
+if strcmp(task,'TAFC')
+    nullContrast = 0.0;
+    [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
+end
 
 if ((isstruct(datasavePara)) && isfield(datasavePara, 'saveMRGCResponses') && (datasavePara.saveMRGCResponses) && ...
         (isfield(datasavePara, 'destDir')) && (ischar(datasavePara.destDir)) && ...
@@ -191,12 +191,13 @@ while (nextFlag)
         testedContrasts(numel(testedContrasts)+1) = testContrast;
         testedIndex = find(testContrast == testedContrasts);
 
-        % Generate the scenes for each alternative, at the test contrast
+        % NWay: Generate the scenes for each alternative, at the test contrast
         if length(theSceneEngine) >= 2
             for oo = 1:length(theSceneEngine)
                 [theSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine{oo}.compute(testContrast);
             end
+        % TAFC: Generate the test scene and the null scene
         else
             [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine.compute(testContrast);
@@ -270,11 +271,6 @@ while (nextFlag)
         % cached pointer will simply continue to point to the same
         % object, and be updated by future training.
         eStart = tic;
-        % [predictions, tempClassifierEngine, responses] = computePerformanceTAFC(...
-        %     theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
-        %     classifierPara.nTrain, classifierPara.nTest, theNeuralEngine,...
-        %     classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
-        %     datasavePara.saveMRGCResponses, visualizeAllComponents);
         [predictions, tempClassifierEngine, responses] = computePerformance(...
             task, theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
             classifierPara.nTrain, classifierPara.nTest, theNeuralEngine,...
@@ -287,14 +283,14 @@ while (nextFlag)
         testCounter = testCounter + 1;
         e = toc(eStart);
         if (beVerbose)
-                fprintf('computeThresholdTAFC: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
+                fprintf('computeThreshold: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
         end
 
         % Update the psychometric function with data point for this contrast level
         psychometricFunction(contrastLabel) = mean(predictions);
         
         if (beVerbose)
-            fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',...
+            fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
                 length(psychometricFunction),testCounter);
         end
 
@@ -337,7 +333,7 @@ while (nextFlag)
         testCounter = testCounter + 1;
         e = toc(eStart);
         if (beVerbose)
-            fprintf('computeThresholdTAFC: Predicting test block %d no training took %0.1f secs\n',testCounter,e);
+            fprintf('computeThreshold: Predicting test block %d no training took %0.1f secs\n',testCounter,e);
         end
 
         % Update the psychometric function with data point for this contrast level
@@ -346,7 +342,7 @@ while (nextFlag)
         psychometricFunction(contrastLabel) = currentData;
 
         if (beVerbose)
-           fprintf('computeThresholdTAFC: Length of psychometric function %d, test counter %d\n',...
+           fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
                length(psychometricFunction),testCounter);
         end
     end
@@ -367,14 +363,14 @@ while (nextFlag)
 
     e = toc(eStart);
     if (beVerbose)
-            fprintf('computeThresholdTAFC: Updating took %0.1f secs\n',e);
+            fprintf('computeThreshold: Updating took %0.1f secs\n',e);
     end
 
 end  % while (nextFlag)
 
 
 if (beVerbose)
-   fprintf('computeThresholdTAFC: Ran %d test levels of %d trials per block of tests\n',...
+   fprintf('computeThreshold: Ran %d test levels of %d trials per block of tests\n',...
        testCounter,classifierPara.nTest);
    if (estimator.validation)
             fprintf('\tValidation mode, nRepeat set to %d\n',estimator.nRepeat);

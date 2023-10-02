@@ -152,7 +152,7 @@ for n = 1:nScenes
         'noiseFlags', {testNoiseFlag});
 end
 e = toc(eStart);
-fprintf('computePerformanceNWay_OneStimPerTrial: Took %0.1f secs to generate mean responses for all alternatives\n',e);
+fprintf('computePerformance: Took %0.1f secs to generate mean responses for all alternatives\n',e);
 outOfSampleStimResponses = combineContainersMat(outOfSampleStimResponsesCell);
 
 switch task

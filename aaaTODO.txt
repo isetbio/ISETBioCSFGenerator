@@ -10,8 +10,8 @@ computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast valu
 	inputs: theTestSceneSquences (type: cell, size: 1 x #Alternatives; each cell is a struct)
 	-> computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
 		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
-			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x nA] cells, each cell is [#trials x #times x #cones]) 
-			outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #Alternatives; each cell is [1 x #cones])
+			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
+			outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x #cones])
 		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
 			inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; it has a mat with size [#trials x #cones])
 			        theClassifierEngine.preProcessingConstants.theTemplates 
@@ -37,8 +37,16 @@ computeThresholdTAFC.m
 			outputs: predictions (type: vector, size: #trials)
 	outputs: predictions, theClassifierEngine
 
-Thoughts for merging the two: we could merge everything but still have people specify whether it's NWAY_oneStimulus or TAFC, which will influence how log likelihood is computed. 
-
+Thoughts for merging the two: 
+computeThreshold.m: it requires an extra argument compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
+	extra arg: taskDesign ('TAFC', 'NWay_OneStimulusPerTrial')
+	inputs: theSceneSequences (type: cell, size: 1 x #A or 1 x 2)
+	-> computePerformance.m: training & making predictions
+		-> rcePoisson.m: training, to compute the templates for different scenes
+			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] or [1 x 2] cells, each cell is [#trials x #times x #cones]) 
+			outputs: theClassifierEngine.preProcessingConstants (type: cell, size: 1 x #A or 1 x 2; each cell is [1 x #cones])
+		-> rcePoisson.m: making predictions
+			inputs: out
 
 
 =================================================================================================
