@@ -37,7 +37,7 @@ computeThresholdTAFC.m
 			outputs: predictions (type: vector, size: #trials)
 	outputs: predictions, theClassifierEngine
 
-Thoughts for merging the two: 
+Thoughts for merging the two: we could merge everything but still have people specify whether it's NWAY_oneStimulus or TAFC, which will influence how log likelihood is computed. 
 
 
 
@@ -64,9 +64,16 @@ There is a helper function inside this function, called generatePresentationDisp
 
 
 Questions
-2) How is the level of contrast determined given the range of slope and threshold? It is not super clear how that's derived. 
+1) How is the level of contrast determined given the range of slope and threshold? It is not super clear how that's derived. 
 Observation 1: In classifierEngine, when defining classifier parameters, 'nTest' means the number of test trials for each given contrast level. 
 Observation 2: When defining questEnginePara, the number of contrast level is largely affected by how fine estDomain & slopeRange are (with 'nTest' being fixed).
 Observation 3: When estDomain & slopeRange are fixed, 'nTest' also affects the number of test contrast levels.
 
-3) In spatioTemporalPoolingWeights.m, why is the de-meaned cone responses then multiplied by a Gaussian envelope to make a template?
+2) In spatioTemporalPoolingWeights.m, why is the de-meaned cone responses then multiplied by a Gaussian envelope to make a template?
+
+3) why do we have a separate engine (contrastThresholdEngine.m) for min max trials? Can we merge contrastThresholdEngine.m and questThresholdEngine.m? There are two methods in contrastThresholdEngine.m, but they don't seem to be ever used. 
+
+
+
+
+

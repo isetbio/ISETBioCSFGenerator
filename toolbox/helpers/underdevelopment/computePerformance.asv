@@ -1,12 +1,12 @@
-function [predictions, theClassifierEngine, responses] = computePerformanceNWay_OneStimulusPerTrial(theScenes, ...
+function [predictions, theClassifierEngine, responses] = computePerformance(task, theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     saveResponses, visualizeAllComponents)
 % Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses] = ...
-%        computePerformanceNWay_OneStimPerTrial(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
-%           theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
+%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, ...
+%       theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
 %
 % Description:
 %     Train a classifier on a discrimination and report back a vector of
@@ -18,7 +18,8 @@ function [predictions, theClassifierEngine, responses] = computePerformanceNWay_
 %     these scenes, and the classifer.
 %
 % Inputs:
-%     theScenes             - Cell array of the scene sequences for each alternative.
+%     nullScene             - Null scene sequence.
+%     testScene             - Test scene sequence.
 %     temporalSupport       - Temporal support vector (in seconds) for
 %                             scene sequences.
 %     nTrain                - Number of null and test response instances
@@ -49,8 +50,8 @@ function [predictions, theClassifierEngine, responses] = computePerformanceNWay_
 %                             theNeuralEngine to generate the test
 %                             response instances. Typically 'random'.
 %     saveResponses         - Logical. Whether to return the computed
-%                             response instances.
-%     visualAllComponentrs  - Logical. Whether to visualize or not.
+%                             response instances
+%     visualAllComponents   - Logical. Whether to visualize or not.
 %
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
@@ -65,7 +66,7 @@ function [predictions, theClassifierEngine, responses] = computePerformanceNWay_
 %     None.
 %
 % See also
-%   t_thresholdEngineNWay_OneStimPerTrial
+%   t_thresholdEngine, t_spatialCsf, computeThresholdTAFC
 %
 
 % History:
@@ -73,9 +74,9 @@ function [predictions, theClassifierEngine, responses] = computePerformanceNWay_
 
 % Empty responses
 responses = [];
-
-% Number of alternatives
-nAlternatives = length(theScenes);
+nScenes = length(theScenes);
+%nScenes = 2 if the input task is 'TAFC'
+%nScenes = #alternatives if the input task is 'NWay_OneStimulusPerTrial'
 
 % Train the classifier.
 %
@@ -83,15 +84,13 @@ nAlternatives = length(theScenes);
 % and training is skipped.  Otherwise trainFlag is passed to the stimulus
 % generation routine to indicate what type of noise (typically 'none' or
 % 'random') should be used in the training.
-%
-% Note use of combineContainers to reformat the individual responses the
-% way we need them.
+
 if (~isempty(trainNoiseFlag))
-    inSampleStimResponsesCell = cell(1,nAlternatives);
+    inSampleStimResponsesCell = cell(1,nScenes);
     % Generate stimuli for training
-    for aa = 1:nAlternatives
-        [inSampleStimResponsesCell{aa}, ~] = theNeuralEngine.compute(...
-            theScenes{aa}, ...
+    for n = 1:nScenes
+        [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.compute(...
+            theScenes{n}, ...
             temporalSupport, ...
             nTrain, ...
             'noiseFlags', {trainNoiseFlag});
@@ -101,9 +100,9 @@ if (~isempty(trainNoiseFlag))
     % Visualization.
     if visualizeAllComponents
         visualizeConeResps(theNeuralEngine, inSampleStimResponses,...
-            trainNoiseFlag, nAlternatives);
+            trainNoiseFlag, nScenes);
     end
-
+    
     % Train the classifier. This shows the usage to extact information
     % from the container retrned as the first return value from the neural
     % response engine - we index the responses by the string contained in
@@ -115,7 +114,7 @@ if (~isempty(trainNoiseFlag))
     %   instancesNum   - number of response instances
     %   mNeuralDim     - dimension of neural response at one timepoint
     %   tTimeBins      - number of time points in stimulus sequence.
-    theClassifierEngine.compute('train', inSampleStimResponses(trainNoiseFlag));
+    theClassifierEngine.compute('train', inSampleStimResponses(trainNoiseFlag),[]);
 
     % Save computed response instances
     if (saveResponses)
@@ -128,111 +127,63 @@ end
 % Generate stimulus for prediction, NULL stimulus.  The variable testFlag
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
-%
-% Note that for compatibility, put all the instances into a single
-% matrix in a single container at the end.
-
-
-useOldImplementation = false;
-if (useOldImplementation)
-    whichAlternatives = randi(nAlternatives,1,nTest);
-    outOfSampleStimResponsesCell = cell(1,nTest);
-    tic
-    for tt = 1:nTest
-        % Get responses for scene for this trial
-        [outOfSampleStimResponsesCell{tt}, ~] = theNeuralEngine.compute(...
-            theScenes{whichAlternatives(tt)}, ...
-            temporalSupport, ...
-            1, ...
-            'noiseFlags', {testNoiseFlag});
-    end
-    toc
-
-else
-    % Alternative implementation here ...
-    assert(mod(nTest, nAlternatives) == 0, 'The number of test trials must be an integer multiple of the number of alternative choices');
-    nTestsPerAlternative = nTest/nAlternatives;
-    
-    whichAlternatives = [];
-    for theAlternative = 1:nAlternatives
-        tmp = repmat(theAlternative, [nTestsPerAlternative 1]);
-        whichAlternatives = cat(1, whichAlternatives, tmp);
-    end
-
-    outOfSampleStimResponsesCell = cell(1, nAlternatives);
-    
-    eStart = tic;
-    for iAlternative = 1:nAlternatives
-        [outOfSampleStimResponsesCell{iAlternative}, ~] = theNeuralEngine.compute(...
-            theScenes{iAlternative}, ...
-            temporalSupport, ...
-            nTestsPerAlternative, ...
-            'noiseFlags', {testNoiseFlag});
-    end
-    e = toc(eStart);
-    fprintf('computePerformanceNWay_OneStimPerTrial: Took %0.1f secs to generate mean responses for all alternatives\n',e);
-
+switch task
+    case 'TAFC'
+        nTests_eachScene = nTest;
+    case 'NWay_OneStimulusPerTrial'
+        % Alternative implementation here ...
+        nTests_eachScene = nTest/nScenes;
+        assert(mod(nTest, nScenes) == 0, 'The number of test trials must be an integer multiple of the number of alternative choices');
+        whichAlternatives = repmat(1:nScenes,[nTests_eachScene, 1]);
+        whichAlternatives = whichAlternatives(:);
+    otherwise 
+        %technically this would not happen because if the following error is true, 
+        % computeThreshold.m would throw an error already
+        error('Invalid task name! You can either input ''TAFC'' or ''NWay_OneStimulusPerTrial''');
 end
 
+outOfSampleStimResponsesCell = cell(1, nScenes);
+eStart = tic;
+for n = 1:nScenes
+    [outOfSampleStimResponsesCell{n}, ~] = theNeuralEngine.compute(...
+        theScenes{n}, ...
+        temporalSupport, ...
+        nTests_eachScene, ...
+        'noiseFlags', {testNoiseFlag});
+end
+e = toc(eStart);
+fprintf('computePerformanceNWay_OneStimPerTrial: Took %0.1f secs to generate mean responses for all alternatives\n',e);
 outOfSampleStimResponses = combineContainersMat(outOfSampleStimResponsesCell);
 
-
-% Do the prediction
-dataOut = theClassifierEngine.compute('predict', ...
-    outOfSampleStimResponses(testNoiseFlag),whichAlternatives);
+switch task
+    case 'TAFC'
+        % Do the prediction
+        dataOut = theClassifierEngine.compute('predict', ...
+            outOfSampleStimResponses(testNoiseFlag),[]);
+    case 'NWay_OneStimulusPerTrial'
+        dataOut = theClassifierEngine.compute('predict', ...
+            outOfSampleStimResponses(testNoiseFlag),whichAlternatives);
+end
 
 % Save computed response instances
 if (saveResponses)
-    responses.outOfSampleStimResponses = outOfSampleStimResponse;
+    responses.outOfSampleStimResponses = outOfSampleStimResponses;
 end
-
+    
 % Set return variable.  For each trial 0 means wrong and 1 means right.
 % Taking mean(response) gives fraction correct.
 predictions = dataOut.trialPredictions;
 
 end
 
-function visualizeConeResps(theNeuralEngine, inSampleStimResponses,...
-    trainNoiseFlag, nAlternatives)
+function visualizeConeResps(theNeuralEngine, inSampleTestStimResponses, ...
+    inSampleNullStimResponses, trainNoiseFlag)
 if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
-    diffResponse = inSampleStimResponses(trainNoiseFlag); % - inSampleNullStimResponses(trainNoiseFlag);
-    hFig = figure(998);
-    set(hFig, 'Position', [10 10 1600 400]);
-
-    for aa = 1:nAlternatives
-
-        % Contrast response
-        tmp = diffResponse{aa};
-        idx = theNeuralEngine.neuralPipeline.coneMosaic.lConeIndices;
-        meanLconeActivation = mean(tmp(idx(:)));
-        tmp(idx) = (tmp(idx)-meanLconeActivation)/meanLconeActivation;
-        idx = theNeuralEngine.neuralPipeline.coneMosaic.mConeIndices;
-        meanMconeActivation = mean(tmp(idx(:)));
-        tmp(idx) = (tmp(idx)-meanMconeActivation)/meanMconeActivation;
-        idx = theNeuralEngine.neuralPipeline.coneMosaic.sConeIndices;
-        if (~isempty(idx))
-            meanSconeActivation = mean(tmp(idx(:)));
-            tmp(idx) = (tmp(idx)-meanSconeActivation)/meanSconeActivation;
-        end
-        diffResponse{aa} = tmp;
-
-        if (aa == 1)
-            ax = subplot(1, nAlternatives+1,1);
-            % Visualize the activation
-            theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
-                'figureHandle', hFig, ...
-                'axesHandle', ax);
-        end
-
-        ax = subplot(1, nAlternatives+1,aa+1);
-        % Visualize the activation
-        theNeuralEngine.neuralPipeline.coneMosaic.visualize(...
-            'figureHandle', hFig, ...
-            'axesHandle', ax, ...
-            'activation', squeeze(diffResponse{aa}), ...
-            'activationRange', prctile(squeeze(diffResponse{aa}),[1 99]), ...
-            'verticalActivationColorBarInside', true);
-    end
+    diffResponse = inSampleTestStimResponses(trainNoiseFlag) - ...
+        inSampleNullStimResponses(trainNoiseFlag);
+    % Visualize the activation
+    theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', ...
+        squeeze(diffResponse), 'verticalActivationColorBarInside', true);
 
     % Also visualize the full absorptions density
     figNo = 999;
