@@ -139,10 +139,6 @@ switch task
         assert(mod(nTest, nScenes) == 0, 'The number of test trials must be an integer multiple of the number of alternative choices');
         whichAlternatives = repmat(1:nScenes,[nTests_eachScene, 1]);
         whichAlternatives = whichAlternatives(:);
-    otherwise 
-        %technically this would not happen because if the following error is true, 
-        % computeThreshold.m would throw an error already
-        error('Invalid task name! You can either input ''TAFC'' or ''NWay_OneStimulusPerTrial''');
 end
 
 outSampleStimResponsesCell = cell(1, nScenes);

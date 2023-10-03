@@ -40,16 +40,16 @@ computeThresholdTAFC.m
 
 Merging the two: 
 computeThreshold.m: it requires an extra argument compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
-	extra arg: taskDesign ('TAFC', 'NWay_OneStimulusPerTrial')
-	inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
-	-> computePerformance.m: training & making predictions
+	(line 69, 160) extra arg: taskDesign ('TAFC', 'NWay_OneStimulusPerTrial')
+	(line 195) inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
+	-> (line 280) computePerformance.m: training & making predictions
 		-> rcePoisson.m: training, to compute the templates for different scenes
-			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] or [1 x 2] cells, each cell is [#trials x #times x #cones]) 
-			outputs: theClassifierEngine.preProcessingConstants (type: cell, size: [1 x #A] or [1 x 2]; each cell is [1 x (#times x #cones)])
+			(line 91) inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] or [1 x 2] cells, each cell is [#trials x #times x #cones]) 
+			(line 119) outputs: theClassifierEngine.preProcessingConstants (type: cell, size: [1 x #A] or [1 x 2]; each cell is [1 x (#times x #cones)])
 		extra arg: whichAlternatives (type: column vec, size: #testTrials), which is only valid for 'NWay'. For 'TAFC', set to [].
 		-> rcePoisson.m: making predictions
-			inputs: outSampleStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
-			-> PoissonDecisionLogLikelihood.m: how this is called depends on whether whichAlternatives is empty
+			(line 144) inputs: outSampleStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
+			-> PoissonDecisionLogLikelihoood.m: how this is called depends on whether whichAlternatives is empty
 			outputs: predictions (type: vector, size #trials)
 	outputs: predictions, theClassifierEngine
 
