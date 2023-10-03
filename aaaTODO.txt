@@ -57,6 +57,7 @@ computeThreshold.m: it requires an extra argument compared to computeThresholdNW
 Unfinished things:
 (1) add/change comments 
 (2) change tutorials that call computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
+(3) move computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m to /deprecated and give people options whether stick to them or the new function
 
 
 =================================================================================================

@@ -227,8 +227,10 @@ while (nextFlag)
         % Visualize the drifting sequence
         if (visualizeStimulus)
             theStim = 1; %TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
-            theSceneEngine{theStim}.visualizeSceneSequence(...
-                theSceneSequences{testedIndex}{theStim}, theSceneTemporalSupportSeconds);
+            if length(theSceneEngine) > 1; sE = theSceneEngine{theStim};
+            else; sE = theSceneEngine; end
+            sE.visualizeSceneSequence(theSceneSequences{testedIndex}{theStim},...
+                theSceneTemporalSupportSeconds);
         end
         
         % The following if ... end is only applicable to TAFC data
