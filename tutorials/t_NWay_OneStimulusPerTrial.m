@@ -43,10 +43,12 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsCmosaic;
+% neuralParams = nrePhotopigmentExcitationsCmosaic;
+neuralParams = nrePhotopigmentExcitationsCmosaicSingleShot;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+% theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicSingleShot, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
@@ -55,6 +57,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
+% classifierEngine = responseClassifierEngine(@rcePoissonNWay_OneStimPerTrial, classifierPara);
 classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 
 %% Parameters for threshold estimation/quest engine
@@ -77,10 +80,10 @@ classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
     'logThreshLimitHigh', 0.0, ...
-    'logThreshLimitDelta', 0.05, ...
+    'logThreshLimitDelta', 0.02, ...
     'slopeRangeLow', 1/20, ...
     'slopeRangeHigh', 60/20, ...
-    'slopeDelta', 5/20, ...
+    'slopeDelta', 3/20, ...
     'thresholdCriterion', 0.75, ... %will be respecified in the loop below
     'guessRate', 0.5, ... %will be respecified in the loop below
     'lapseRate', 1e-4);

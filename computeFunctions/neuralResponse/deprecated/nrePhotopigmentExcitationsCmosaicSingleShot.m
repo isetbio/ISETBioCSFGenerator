@@ -148,6 +148,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicSingleShot(...
         total_seq = length(sceneSequence);
         %if the scene is not single shot, then send a warning
         if total_seq ~=1
+            clear str_callingMasterFunc
             error(['The input scene is not a single shot! Consider ',...
                 'calling nrePhotopigmentExcitationsCmosaic.m']);
         end
@@ -263,6 +264,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicSingleShot(...
             dataOut.neuralPipeline.coneMosaic = theConeMosaic;
         end
     else
+        clear str_callingMasterFunc
         error('Unrecognized command. Please type either ''yes'' or ''no'''); 
     end
 end

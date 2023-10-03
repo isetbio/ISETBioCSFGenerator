@@ -7,15 +7,15 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 3) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
 computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
-	inputs: theTestSceneSquences (type: cell, size: [1 x #A]; each cell has a size of [1 x #times]; each cell is a struct)
-	-> computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
+	(line 168) inputs: theTestSceneSquences (type: cell, size: [1 x #A]; each cell has a size of [1 x #times]; each cell is a struct)
+	-> (line 177) computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
 		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
-			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
-			outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
+			(line 92) inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
+			(line 118) outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
 		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
-			inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; the container has a matrix [#testTrials x (#times x #cones)])
+			(line 141) inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; the container has a matrix [#testTrials x (#times x #cones)])
 			        theClassifierEngine.preProcessingConstants.theTemplates 
-			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
+			-> (line 181) PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
 			outputs: predictions (type: vector, size: #trials)
 	outputs: predictions, theClassifierEngine
 

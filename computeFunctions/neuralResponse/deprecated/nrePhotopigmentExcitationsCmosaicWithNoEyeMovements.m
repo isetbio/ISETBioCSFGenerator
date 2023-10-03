@@ -328,6 +328,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
             dataOut.neuralPipeline.coneMosaic = theConeMosaic;
         end
     else
+        clear str_callingMasterFunc
         error('Unrecognized command. Please type either ''yes'' or ''no'''); 
     end
 end

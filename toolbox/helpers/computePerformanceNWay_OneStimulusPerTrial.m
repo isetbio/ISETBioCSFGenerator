@@ -115,7 +115,7 @@ if (~isempty(trainNoiseFlag))
     %   instancesNum   - number of response instances
     %   mNeuralDim     - dimension of neural response at one timepoint
     %   tTimeBins      - number of time points in stimulus sequence.
-    theClassifierEngine.compute('train', inSampleStimResponses(trainNoiseFlag));
+    theClassifierEngine.compute('train', inSampleStimResponses(trainNoiseFlag),[]);
 
     % Save computed response instances
     if (saveResponses)
