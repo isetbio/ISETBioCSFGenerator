@@ -52,6 +52,7 @@ computeThreshold.m: it requires an extra argument compared to computeThresholdNW
 			-> PoissonDecisionLogLikelihoood.m: how this is called depends on whether whichAlternatives is empty
 			outputs: predictions (type: vector, size #trials)
 	outputs: predictions, theClassifierEngine
+ DHB: make a key value pair ('TAFC': false'), delete rcePoissonTAFC.m and stuff 
 
 
 Unfinished things:

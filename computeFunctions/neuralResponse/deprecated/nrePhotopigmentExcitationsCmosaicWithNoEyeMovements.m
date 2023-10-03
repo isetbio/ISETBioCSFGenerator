@@ -153,7 +153,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
     %call the new master function
     if strcmp(str_callingMasterFunc,'yes')
         %redefine the neural computational function
-        neuralEngineOBJ.neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
+%         neuralEngineOBJ.neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
         %call the master function 
         dataOut = nrePhotopigmentExcitationsCmosaic(neuralEngineOBJ,...
             neuralResponseParamsStruct, sceneSequence,  ...
@@ -173,7 +173,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
         counter_seq = 2;
         
         %select how many elements we'd like to randomly check
-        nSamples    = 10;
+        nSamples    = 100;
         idx_samples = randi(length(scenePhotons_ref), [1,nSamples]);
         while (~flag_detectDiff) && (counter_seq <= total_seq)
             %check if all randomly selected elements are equal
