@@ -90,12 +90,8 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, Respon
 
 % For consistency with the interface
 if (nargin == 0)
-    dataOut = struct('Classifier', 'Poisson 2AFC Ideal Observer');
+    dataOut = struct('Classifier', 'Poisson Ideal Observer');
     return;
-end
-
-if nargin < 5
-    Labels = [];
 end
 
 % Check operation mode
@@ -124,7 +120,6 @@ if (strcmp(operationMode, 'predict'))
     
     % Make sure number of null and test instances matches.
     nTrials = classifierParamsStruct.nTest;
-    % assert(nTrials == size(testResponses, 1));
     
     % Compute response {0, 1} with log likelihood ratio.  Assume without
     % loss of generality that alternative order on each trial is null/test,
@@ -133,10 +128,14 @@ if (strcmp(operationMode, 'predict'))
     % vectors is an indendent Poisson observation, we can just sum the log
     % likelihood of the null and test components of the TAFC response.
     response = zeros(1, nTrials);
-    if isempty(Labels)
+    if isempty(Labels) %TAFC
         for idx = 1:nTrials
-            llhdCr = PoissonDecisionLogLikelihoood(Responses(nTrials+idx, :), theTemplates{2}) + PoissonDecisionLogLikelihoood(Responses(idx, :), theTemplates{1});
-            llhdIc = PoissonDecisionLogLikelihoood(Responses(nTrials+idx, :), theTemplates{1}) + PoissonDecisionLogLikelihoood(Responses(idx, :), theTemplates{2});
+            %from 1:nTrials stores the responses given the test stimulus
+            %from (nTrials+1):end stores the responses given the null stimulus
+            llhdCr = PoissonDecisionLogLikelihoood(Responses(nTrials+idx, :), theTemplates{2}) +...
+                PoissonDecisionLogLikelihoood(Responses(idx, :), theTemplates{1});
+            llhdIc = PoissonDecisionLogLikelihoood(Responses(nTrials+idx, :), theTemplates{1}) +...
+                PoissonDecisionLogLikelihoood(Responses(idx, :), theTemplates{2});
             
             % For likelihood ratio extremely close to 1, do a coin flip
             threshold = 1e-10;
@@ -146,7 +145,7 @@ if (strcmp(operationMode, 'predict'))
                 response(idx) = ((llhdCr - llhdIc) > 0);
             end
         end
-    else
+    else %NWay_OneStimulusPerTrial'
         nScenes = length(theTemplates);
         trialDecisionLikelihoods = zeros(nTrials, nScenes);
         for tt = 1:nTrials

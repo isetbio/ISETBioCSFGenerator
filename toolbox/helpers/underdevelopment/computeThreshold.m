@@ -192,7 +192,7 @@ while (nextFlag)
         testedIndex = find(testContrast == testedContrasts);
 
         % NWay: Generate the scenes for each alternative, at the test contrast
-        if length(theSceneEngine) >= 2
+        if strcmp(task, 'NWay_OneStimulusPerTrial')
             for oo = 1:length(theSceneEngine)
                 [theSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine{oo}.compute(testContrast);
@@ -210,27 +210,30 @@ while (nextFlag)
         % Some diagnosis
         if (p.Results.extraVerbose)
             theWl = 400;
+            theStim = 1; %TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
             theFrame = 1;
-            index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
-            temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
-            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',...
-                theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
+            Wl_vec = theSceneSequences{testedIndex}{theStim}{theFrame}.spectrum.wave;
+            [~, index] = min(abs(Wl_vec - theWl));
+            temp = theSceneSequences{testedIndex}{theStim}{theFrame}.data.photons(:,:,index);
+            fprintf('At %d nm, frame %d, test scene %d, mean, min, max: %g, %g, %g\n',...
+                Wl_vec(index),theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
             theWl = 550;
-            index = find(theTestSceneSequences{testedIndex}{theFrame}.spectrum.wave == theWl);
-            temp = theTestSceneSequences{testedIndex}{theFrame}.data.photons(:,:,index);
-            fprintf('At %d nm, frame %d, test scene %d mean, min, max: %g, %g, %g\n',...
-                theWl,theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
+            [~, index] = min(abs(Wl_vec - theWl));
+            temp = theSceneSequences{testedIndex}{theStim}{theFrame}.data.photons(:,:,index);
+            fprintf('At %d nm, frame %d, test scene %d, mean, min, max: %g, %g, %g\n',...
+                Wl_vec(index),theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
         end
         
         % Visualize the drifting sequence
         if (visualizeStimulus)
-            theSceneEngine.visualizeSceneSequence(...
-                theSceneSequences{testedIndex}{1}, theSceneTemporalSupportSeconds);
+            theStim = 1; %TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
+            theSceneEngine{theStim}.visualizeSceneSequence(...
+                theSceneSequences{testedIndex}{theStim}, theSceneTemporalSupportSeconds);
         end
         
-        
+        % The following if ... end is only applicable to TAFC data
         % Update the classifier engine pooling params for this particular test contrast
-        if (isfield(classifierEngine.classifierParams, 'pooling')) && ...
+        if (strcmp(task,'TAFC')) && (isfield(classifierEngine.classifierParams, 'pooling')) && ...
            (~strcmp(classifierEngine.classifierParams.pooling, 'none'))
             
             fprintf('Computing pooling kernels for contrast %f\n', testContrast*100);
@@ -241,15 +244,17 @@ while (nextFlag)
                    [poolingWeights.direct, ~, ...
                        noiseFreeNullResponse, noiseFreeTestResponse] = ...
                        spatioTemporalPoolingWeights(theNeuralEngine,...
-                       theTestSceneSequences{testedIndex},...
-                       theNullSceneSequence, theSceneTemporalSupportSeconds);
+                       theSceneSequences{testedIndex}{1},... %test
+                       theSceneSequences{testedIndex}{2},... %null
+                       theSceneTemporalSupportSeconds);
                    
                 case 'quadratureEnergy'
                    [poolingWeights.direct, poolingWeights.quadrature, ...
                        noiseFreeNullResponse, noiseFreeTestResponse] = ...
                        spatioTemporalPoolingWeights(theNeuralEngine,...
-                       theTestSceneSequences{testedIndex},...
-                       theNullSceneSequence, theSceneTemporalSupportSeconds);
+                       theSceneSequences{testedIndex}{1},... %test
+                       theSceneSequences{testedIndex}{2},... %null
+                       theSceneTemporalSupportSeconds);
                    
                 otherwise
                     error('Unknown classifier engine pooling type: ''%s''.',...
@@ -354,7 +359,7 @@ while (nextFlag)
     if (estimator.validation)
         % Method of constant stimuli
         [logContrast, nextFlag] = ...
-            estimator.multiTrial(logContrast * ones( classifierPara.nTest,1), predictions);
+            estimator.multiTrial(logContrast * ones(classifierPara.nTest,1), predictions);
     else
         % Quest
         [logContrast, nextFlag] = ...

@@ -7,17 +7,17 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 3) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
 computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
-	inputs: theTestSceneSquences (type: cell, size: 1 x #Alternatives; each cell is a struct)
+	inputs: theTestSceneSquences (type: cell, size: [1 x #A]; each cell has a size of [1 x #times]; each cell is a struct)
 	-> computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
 		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
 			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
-			outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x #cones])
+			outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
 		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
-			inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; it has a mat with size [#trials x #cones])
+			inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; the container has a matrix [#testTrials x (#times x #cones)])
 			        theClassifierEngine.preProcessingConstants.theTemplates 
 			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
 			outputs: predictions (type: vector, size: #trials)
-		outputs: predictions, theClassifierEngine
+	outputs: predictions, theClassifierEngine
 
 computeThresholdTAFC.m
 	inputs: theNullSceneSequence (type: cell, size: 1 x #Times; each cell is a struct)
@@ -26,10 +26,10 @@ computeThresholdTAFC.m
 		-> rcePoissonTAFC.m: training, to compute the templates for the null and the test stimuli
 			inputs: inSampleNullStimResponses (type: container, size: 1 x 1, key = 'none'; each container has a matrix [1 x #times x #cones]
 			        inSampleTestStimResponses
-			outputs: theClassifierEngine.preProcessingConstants.nullTemplate (type: mat, size: 1 x #cones]
+			outputs: theClassifierEngine.preProcessingConstants.nullTemplate (type: mat, size: [1 x (#times x #cones)]]
 				 theClassifierEngine.preProcessingConstants.testTemplate 
 		-> rcePoissonTAFC.m: making predictions
-			inputs: outOfSampleNullStimResponses (type: container, size: 1 x 1, key = 'random'; each container has a matrix [#trials x #times x #cones]
+			inputs: outOfSampleNullStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
 			        outOfSampleTestStimResponses 
 			        theClassifierEngine.preProcessingConstants.nullTemplate
 			        theClassifierEngine.preProcessingConstants.testTemplate
@@ -37,16 +37,26 @@ computeThresholdTAFC.m
 			outputs: predictions (type: vector, size: #trials)
 	outputs: predictions, theClassifierEngine
 
-Thoughts for merging the two: 
+
+Merging the two: 
 computeThreshold.m: it requires an extra argument compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
 	extra arg: taskDesign ('TAFC', 'NWay_OneStimulusPerTrial')
-	inputs: theSceneSequences (type: cell, size: 1 x #A or 1 x 2)
+	inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
 	-> computePerformance.m: training & making predictions
 		-> rcePoisson.m: training, to compute the templates for different scenes
 			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] or [1 x 2] cells, each cell is [#trials x #times x #cones]) 
-			outputs: theClassifierEngine.preProcessingConstants (type: cell, size: 1 x #A or 1 x 2; each cell is [1 x #cones])
+			outputs: theClassifierEngine.preProcessingConstants (type: cell, size: [1 x #A] or [1 x 2]; each cell is [1 x (#times x #cones)])
+		extra arg: whichAlternatives (type: column vec, size: #testTrials), which is only valid for 'NWay'. For 'TAFC', set to [].
 		-> rcePoisson.m: making predictions
-			inputs: out
+			inputs: outSampleStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
+			-> PoissonDecisionLogLikelihood.m: how this is called depends on whether whichAlternatives is empty
+			outputs: predictions (type: vector, size #trials)
+	outputs: predictions, theClassifierEngine
+
+
+Unfinished things:
+(1) add/change comments 
+(2) change tutorials that call computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
 
 
 =================================================================================================

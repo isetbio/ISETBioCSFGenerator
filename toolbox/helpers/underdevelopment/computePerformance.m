@@ -74,7 +74,7 @@ function [predictions, theClassifierEngine, responses] = computePerformance(task
 
 % Empty responses
 responses = [];
-nScenes = length(theScenes);
+nScenes   = length(theScenes);
 %nScenes = 2 if the input task is 'TAFC'
 %nScenes = #alternatives if the input task is 'NWay_OneStimulusPerTrial'
 
@@ -97,10 +97,12 @@ if (~isempty(trainNoiseFlag))
     end
     inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
 
-    % Visualization.
+    % Visualization the cone excitation for selected stimulus
     if visualizeAllComponents
+        %TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
+        theStim = 1; 
         visualizeConeResps(theNeuralEngine, inSampleStimResponses,...
-            trainNoiseFlag, nScenes);
+            trainNoiseFlag, theStim);
     end
     
     % Train the classifier. This shows the usage to extact information
@@ -130,6 +132,7 @@ end
 switch task
     case 'TAFC'
         nTests_eachScene = nTest;
+        whichAlternatives = [];
     case 'NWay_OneStimulusPerTrial'
         % Alternative implementation here ...
         nTests_eachScene = nTest/nScenes;
@@ -142,10 +145,10 @@ switch task
         error('Invalid task name! You can either input ''TAFC'' or ''NWay_OneStimulusPerTrial''');
 end
 
-outOfSampleStimResponsesCell = cell(1, nScenes);
+outSampleStimResponsesCell = cell(1, nScenes);
 eStart = tic;
 for n = 1:nScenes
-    [outOfSampleStimResponsesCell{n}, ~] = theNeuralEngine.compute(...
+    [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.compute(...
         theScenes{n}, ...
         temporalSupport, ...
         nTests_eachScene, ...
@@ -153,21 +156,15 @@ for n = 1:nScenes
 end
 e = toc(eStart);
 fprintf('computePerformance: Took %0.1f secs to generate mean responses for all alternatives\n',e);
-outOfSampleStimResponses = combineContainersMat(outOfSampleStimResponsesCell);
+outSampleStimResponses = combineContainersMat(outSampleStimResponsesCell);
 
-switch task
-    case 'TAFC'
-        % Do the prediction
-        dataOut = theClassifierEngine.compute('predict', ...
-            outOfSampleStimResponses(testNoiseFlag),[]);
-    case 'NWay_OneStimulusPerTrial'
-        dataOut = theClassifierEngine.compute('predict', ...
-            outOfSampleStimResponses(testNoiseFlag),whichAlternatives);
-end
+% Do the prediction
+dataOut = theClassifierEngine.compute('predict', ...
+    outSampleStimResponses(testNoiseFlag),whichAlternatives);
 
 % Save computed response instances
 if (saveResponses)
-    responses.outOfSampleStimResponses = outOfSampleStimResponses;
+    responses.outSampleStimResponses = outSampleStimResponses;
 end
     
 % Set return variable.  For each trial 0 means wrong and 1 means right.
@@ -177,13 +174,13 @@ predictions = dataOut.trialPredictions;
 end
 
 function visualizeConeResps(theNeuralEngine, inSampleTestStimResponses, ...
-    inSampleNullStimResponses, trainNoiseFlag)
+    trainNoiseFlag, selectedScene)
 if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
-    diffResponse = inSampleTestStimResponses(trainNoiseFlag) - ...
-        inSampleNullStimResponses(trainNoiseFlag);
+    Responses = inSampleTestStimResponses(trainNoiseFlag);
+    Responses_slc = Responses{selectedScene};
     % Visualize the activation
     theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', ...
-        squeeze(diffResponse), 'verticalActivationColorBarInside', true);
+        squeeze(Responses_slc), 'verticalActivationColorBarInside', true);
 
     % Also visualize the full absorptions density
     figNo = 999;
