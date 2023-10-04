@@ -40,7 +40,7 @@ computeThresholdTAFC.m
 
 Merging the two: 
 computeThreshold.m: it requires an extra argument compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
-	(line 69, 160) extra arg: taskDesign ('TAFC', 'NWay_OneStimulusPerTrial')
+	(line 69, 160) varargin: 'TAFC', false
 	(line 195) inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
 	-> (line 280) computePerformance.m: training & making predictions
 		-> rcePoisson.m: training, to compute the templates for different scenes
@@ -52,7 +52,8 @@ computeThreshold.m: it requires an extra argument compared to computeThresholdNW
 			-> PoissonDecisionLogLikelihoood.m: how this is called depends on whether whichAlternatives is empty
 			outputs: predictions (type: vector, size #trials)
 	outputs: predictions, theClassifierEngine
- DHB: make a key value pair ('TAFC': false'), delete rcePoissonTAFC.m and stuff 
+DHB: make a key value pair ('TAFC': false'), delete rcePoissonTAFC.m and stuff 
+FH: 
 
 
 Unfinished things:

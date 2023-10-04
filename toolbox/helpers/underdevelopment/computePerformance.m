@@ -1,7 +1,7 @@
-function [predictions, theClassifierEngine, responses] = computePerformance(task, theScenes, ...
+function [predictions, theClassifierEngine, responses] = computePerformance(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
-    saveResponses, visualizeAllComponents)
-% Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
+    varargin)
+% Compute performance of a classifier given different scenes, a neural engine, and a classifier engine.
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses] = ...
@@ -49,9 +49,16 @@ function [predictions, theClassifierEngine, responses] = computePerformance(task
 %                             evaluating performance. This flag are passed to
 %                             theNeuralEngine to generate the test
 %                             response instances. Typically 'random'.
+%
+%
+% Optional key/value pairs:
+%     TAFC                  - logical. Whether this is a two-interval 
+%                             forced-choice task or N-way one-stimulus-per
+%                             -trial task. Default false.
 %     saveResponses         - Logical. Whether to return the computed
 %                             response instances
 %     visualAllComponents   - Logical. Whether to visualize or not.
+%
 %
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
@@ -66,11 +73,25 @@ function [predictions, theClassifierEngine, responses] = computePerformance(task
 %     None.
 %
 % See also
-%   t_thresholdEngine, t_spatialCsf, computeThresholdTAFC
+%   t_thresholdEngine, t_spatialCsf, computeThreshold
 %
 
 % History:
 %   10/23/20  dhb  Comments.
+%   04/10/24  fh   Merged computePerformanceTAFC.m and
+%                   computePerformanceNWay_OneStimulusPerTrial.m by adding 
+%                   a key/pair pair specifying whether the task is TAFC or 
+%                   NWay_OneStimulusPerTrial.
+
+p = inputParser;
+p.addParameter('TAFC',  false, @islogical);
+p.addParameter('saveResponses',false, @islogical);
+p.addParameter('visualizeAllComponents', false, @islogical);
+
+parse(p, varargin{:});
+isTAFC = p.Results.TAFC;
+saveResponses = p.Results.saveResponses;
+visualizeAllComponents = p.Results.visualizeAllComponents;
 
 % Empty responses
 responses = [];
@@ -95,7 +116,18 @@ if (~isempty(trainNoiseFlag))
             nTrain, ...
             'noiseFlags', {trainNoiseFlag});
     end
-    inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
+
+    %If the task is TAFC, then we need to do the following reorganization
+    %of the data
+    if isTAFC
+        %concatenate them along the 3rd dimension (cones)
+        cat1 = cat(3, inSampleStimResponsesCell{1}, inSampleStimResponsesCell{2});
+        cat2 = cat(3, inSampleStimResponsesCell{2}, inSampleStimResponsesCell{1});
+        %nicely put the concatenated cells back to the container
+        inSampleStimResponses = containers.Map(trainNoiseFlag, {cat1, cat2});
+    else %NWay_OneStimulusPerTrial
+        inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
+    end
 
     % Visualization the cone excitation for selected stimulus
     if visualizeAllComponents
@@ -104,7 +136,7 @@ if (~isempty(trainNoiseFlag))
         visualizeConeResps(theNeuralEngine, inSampleStimResponses,...
             trainNoiseFlag, theStim);
     end
-    
+
     % Train the classifier. This shows the usage to extact information
     % from the container retrned as the first return value from the neural
     % response engine - we index the responses by the string contained in
@@ -129,16 +161,16 @@ end
 % Generate stimulus for prediction, NULL stimulus.  The variable testFlag
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
-switch task
-    case 'TAFC'
-        nTests_eachScene = nTest;
-        whichAlternatives = [];
-    case 'NWay_OneStimulusPerTrial'
-        % Alternative implementation here ...
-        nTests_eachScene = nTest/nScenes;
-        assert(mod(nTest, nScenes) == 0, 'The number of test trials must be an integer multiple of the number of alternative choices');
-        whichAlternatives = repmat(1:nScenes,[nTests_eachScene, 1]);
-        whichAlternatives = whichAlternatives(:);
+if isTAFC
+    nTests_eachScene = nTest;
+    whichAlternatives = ones(nTests_eachScene, 1);
+else
+    % Alternative implementation here ...
+    nTests_eachScene = nTest/nScenes;
+    assert(mod(nTest, nScenes) == 0, ['The number of test trials must be an',...
+        ' integer multiple of the number of alternative choices']);
+    whichAlternatives = repmat(1:nScenes,[nTests_eachScene, 1]);
+    whichAlternatives = whichAlternatives(:);
 end
 
 outSampleStimResponsesCell = cell(1, nScenes);
@@ -152,7 +184,24 @@ for n = 1:nScenes
 end
 e = toc(eStart);
 fprintf('computePerformance: Took %0.1f secs to generate mean responses for all alternatives\n',e);
-outSampleStimResponses = combineContainersMat(outSampleStimResponsesCell);
+
+%If the task is TAFC, then we need to do the following reorganization
+%of the data
+if isTAFC
+    %get the responses given the test stimulus
+    outSampleTestStimResponses = outSampleStimResponsesCell{1}(testNoiseFlag);
+    %combine the 2nd (time) and the 3rd dimensions (cones)
+    outSampleTestStimResponses = outSampleTestStimResponses(:,:);
+    %get the responses given the null stimulus
+    outSampleNullStimResponses = outSampleStimResponsesCell{2}(testNoiseFlag);
+    outSampleNullStimResponses = outSampleNullStimResponses(:,:);
+    %concatenate them together along the 2nd dimension (cones)
+    cat_resp = cat(2, outSampleTestStimResponses, outSampleNullStimResponses);
+    %nicely put them back to the container
+    outSampleStimResponses = containers.Map(testNoiseFlag, cat_resp);
+else
+    outSampleStimResponses = combineContainersMat(outSampleStimResponsesCell);
+end
 
 % Do the prediction
 dataOut = theClassifierEngine.compute('predict', ...

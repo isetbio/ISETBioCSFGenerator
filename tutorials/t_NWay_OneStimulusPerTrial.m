@@ -57,8 +57,8 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
-% classifierEngine = responseClassifierEngine(@rcePoissonNWay_OneStimPerTrial, classifierPara);
 classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
+% classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -110,7 +110,6 @@ questEnginePara = struct( ...
 % See toolbox/helpers for functions createGratingScene computeThresholdTAFC
 logThreshold = zeros(1, nAList);
 para         = NaN(nAList, 4); %4 paramters (lapse rate and guess rate are fixed)
-taskDesign   = 'NWay_OneStimulusPerTrial';
 
 for idx = 1:nAList
     % Create grating scenes with a particular chromatic direction for each
@@ -139,8 +138,8 @@ for idx = 1:nAList
     %     theNeuralEngine, classifierEngine, classifierPara, thresholdPara,...
     %     questEnginePara);
     [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
-        taskDesign, gratingScenes, theNeuralEngine, classifierEngine,...
-        classifierPara, thresholdPara, questEnginePara);
+        gratingScenes, theNeuralEngine, classifierEngine,...
+        classifierPara, thresholdPara, questEnginePara, 'TAFC', false);
     
     % Plot stimulus
     figure(idx)

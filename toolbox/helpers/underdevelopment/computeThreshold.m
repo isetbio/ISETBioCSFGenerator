@@ -1,4 +1,4 @@
-function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(task, theSceneEngine, theNeuralEngine, classifierEngine, ...
+function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
@@ -52,9 +52,11 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           Right now, the only accepted field is
 %                           'saveMRGCResponses' which saved responses of
 %                           the mRGC mosaic attached to an MRGC neural engine
+%   'TAFC'                - logical. Whether this is a two-interval forced-choice task
+%                           or N-way one-stimulus-per-trial task. Default false.
 %
 % See also:
-%    t_spatialCSF, t_thresholdEngine, computePerformanceTAFC
+%    t_spatialCSF, t_thresholdEngine, computePerformance
 %  
 
 % History: 
@@ -65,23 +67,20 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %  06/08/23  npc  Modifications to run under the BetterCaching branch
 %                 (copyable responseClassifierEngine)
 
-%check if the input task name is valid
-if ~strcmp(task, 'TAFC') && ~strcmp(task,'NWay_OneStimulusPerTrial')
-    error('Invalid task name! You can either input ''TAFC'' or ''NWay_OneStimulusPerTrial''');
-end
-
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);
 p.addParameter('extraVerbose',false, @islogical);
 p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
+p.addParameter('TAFC', false, @islogical);
 
 parse(p, varargin{:});
 beVerbose = p.Results.beVerbose;
 visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
+isTAFC = p.Results.TAFC;
 
 % Construct a QUEST threshold estimator estimate threshold
 %
@@ -156,8 +155,8 @@ end
 % Loop over trials.
 testedContrasts = [];
 
-% Generate the NULL stimulus (zero contrast)
-if strcmp(task,'TAFC')
+% Generate the NULL stimulus (zero contrast) if this is a TAFC task
+if isTAFC
     nullContrast = 0.0;
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 end
@@ -192,7 +191,7 @@ while (nextFlag)
         testedIndex = find(testContrast == testedContrasts);
 
         % NWay: Generate the scenes for each alternative, at the test contrast
-        if strcmp(task, 'NWay_OneStimulusPerTrial')
+        if ~isTAFC
             for oo = 1:length(theSceneEngine)
                 [theSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine{oo}.compute(testContrast);
@@ -235,7 +234,7 @@ while (nextFlag)
         
         % The following if ... end is only applicable to TAFC data
         % Update the classifier engine pooling params for this particular test contrast
-        if (strcmp(task,'TAFC')) && (isfield(classifierEngine.classifierParams, 'pooling')) && ...
+        if isTAFC && (isfield(classifierEngine.classifierParams, 'pooling')) && ...
            (~strcmp(classifierEngine.classifierParams.pooling, 'none'))
             
             fprintf('Computing pooling kernels for contrast %f\n', testContrast*100);
@@ -279,10 +278,11 @@ while (nextFlag)
         % object, and be updated by future training.
         eStart = tic;
         [predictions, tempClassifierEngine, responses] = computePerformance(...
-            task, theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
+            theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
             classifierPara.nTrain, classifierPara.nTest, theNeuralEngine,...
             classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
-            datasavePara.saveMRGCResponses, visualizeAllComponents);
+            'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
+            'visualizeAllComponents', visualizeAllComponents);
         
         % Copy the trained classifier
         theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
@@ -332,10 +332,10 @@ while (nextFlag)
 
         % Classifier is already trained, just get predictions
         eStart = tic;
-        [predictions, ~, ~] = computePerformance(task, theSceneSequences{testedIndex}, ...
+        [predictions, ~, ~] = computePerformance(theSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
-            false, false);
+            'TAFC', isTAFC, 'saveResponses', false, 'visualizeAllComponents', false);
         
         testCounter = testCounter + 1;
         e = toc(eStart);
