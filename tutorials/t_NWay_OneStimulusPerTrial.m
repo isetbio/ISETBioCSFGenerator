@@ -13,11 +13,13 @@
 %    and the subject indicates which.
 %
 % See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_spatialCSF, t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
+%           t_spatialCSF, t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 
 % History:
 %    12/07/21  dhb  Wrote it from t_spatialCSF.
+%    05/10/23  fh   Edited it to call the new functions computeThreshold.m
+%                       & computePerformance.m & rcePossion.m
 
 %% Clear and close
 clear; close all;
@@ -57,8 +59,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
-% classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
-classifierEngine = responseClassifierEngine(@rcePoissonNWay_OneStimulusPerTrial, classifierPara);
+classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -111,7 +112,7 @@ questEnginePara = struct( ...
 logThreshold = zeros(1, nAList);
 para         = NaN(nAList, 4); %4 paramters (lapse rate and guess rate are fixed)
 
-for idx = 1:nAList
+for idx = 1:1
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration
@@ -134,13 +135,9 @@ for idx = 1:nAList
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceNWay_OneStimulusPerTrial.
 
-    [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThresholdNWay_OneStimulusPerTrial(gratingScenes,  ...
-        theNeuralEngine, classifierEngine, classifierPara, thresholdPara,...
-        questEnginePara);
-    % [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
-    %     gratingScenes, theNeuralEngine, classifierEngine,...
-    %     classifierPara, thresholdPara, questEnginePara, 'TAFC', false);
+    [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
+        gratingScenes, theNeuralEngine, classifierEngine,...
+        classifierPara, thresholdPara, questEnginePara, 'TAFC', false);
     
     % Plot stimulus
     figure(idx)
