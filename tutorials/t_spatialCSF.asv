@@ -118,8 +118,8 @@ for idx = 1:length(spatialFreqs)
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformance.
     [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara);
+        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara,'beVerbose',true,'extraVerbose',false);% 'TAFC', true);
     
     % Plot stimulus
     figure(dataFig);
