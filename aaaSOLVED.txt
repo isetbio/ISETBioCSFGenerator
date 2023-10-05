@@ -102,9 +102,8 @@ FH: Validation:
 (c) Run t_spatialCSF.m using {computeThresholdTAFC.m, computePerformanceTAFC.m, rcePoissonTAFC.m}, given a single-frame scene and enough trials for Quest, compared to the results simulated by {computeThreshold.m, computePerformance.m, rcePoisson.m}. The simulated sensitivities match closely (logThreshold = [-1.07, -0.86, -0.52, -0.00], = [-1.08, -0.86, -0.56, -0.00]). 
 (d) Repeat (c) but the stimuli now have 2 frames. The stimulated sensitivities do match closely (logThreshold = [-1.23, -0.97, -0.70, -0.10], = [-1.25, -0.95, -0.69, -0.09])
 
-Add/change comments:
-(2) change tutorials that call computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
-(3) move ..._OneStimulusPerTrial.m & ...TAFC.m to /deprecated and direct people to the more general functions
+Edited and moved computeThreshold_OneStimulusPerTrial.m & computeThresholdTAFC.m, and validated by testing the cleaned up versions.
+Edited and moved computePerformance_OneStimulusPerTrial.m & computePerformanceTAFC.m and validated by running t_thresholdEngine.m
 
 ============================================================================================================================
 Answered questions

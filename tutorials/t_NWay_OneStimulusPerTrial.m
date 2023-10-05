@@ -112,7 +112,7 @@ questEnginePara = struct( ...
 logThreshold = zeros(1, nAList);
 para         = NaN(nAList, 4); %4 paramters (lapse rate and guess rate are fixed)
 
-for idx = 1:1
+for idx = 1:nAList
     % Create grating scenes with a particular chromatic direction for each
     % alternative. 
     % spatial frequency, and temporal duration
@@ -135,9 +135,9 @@ for idx = 1:1
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformance.
 
-    [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
+    [logThreshold(idx), questObj, ~, para(idx,:)] = computeThresholdNWay_OneStimulusPerTrial(...
         gratingScenes, theNeuralEngine, classifierEngine,...
-        classifierPara, thresholdPara, questEnginePara, 'TAFC', false);
+        classifierPara, thresholdPara, questEnginePara);
     
     % Plot stimulus
     figure(idx)

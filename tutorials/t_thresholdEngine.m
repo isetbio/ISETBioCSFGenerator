@@ -69,7 +69,9 @@ switch (whichSceneEngine)
         % struct, and adjustment of size to make it small.  This speeds
         % things up for this demo.
         sceneParams = sceUniformFieldTemporalModulation;
-        sceneParams.sizePixels = 5;
+        sceneParams.stimDurationFramesNum = 1;
+        sceneParams.stimOnsetFramesIndices = 1;
+        sceneParams.frameDurationSeconds = 0.1;
         
         % Instantiate the sceneEngine object
         theSceneEngine = sceneEngine(@sceUniformFieldTemporalModulation,sceneParams);
@@ -116,18 +118,16 @@ end
 %
 % The use of two example neural response engines is illustrated below.
 %
-% Choices are:
-%   'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements'
-%   'nreScenePhotonNoise'
-whichNeuralEngine = 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements';
+whichNeuralEngine = 'nrePhotopigmentExcitationsCmosaic';
 switch (whichNeuralEngine)
-    case 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements'
+    case 'nrePhotopigmentExcitationsCmosaic'
         % Basic retinal image formation and sampling by the cone mosaic.
         % Note use of neural engine to get its own default parameters and
         % adjust them.  Smaller field of view speeds things up.
-        neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
-        neuralParams.coneMosaicParams.fovDegs = 0.1;
-        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements,neuralParams);
+        neuralParams = nrePhotopigmentExcitationsCmosaic;
+        neuralParams.coneMosaicParams.fovDegs = 0.15;
+        neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
+        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic,neuralParams);
         
         % The actual threshold varies enough with the different engines that we
         % need to adjust the contrast range that Quest+ searches over, as well as
@@ -185,15 +185,15 @@ end
 % predictions, then large nTest will be better.
 %
 % Choices are:
-%   'rcePoissonTAFC'
+%   'rcePoisson'
 %   'rceTemplateDistanceTAFC'
 %   'rcePcaSVMTAFC'
-whichObserver = 'rcePoissonTAFC';
+whichObserver = 'rcePoisson';
 switch whichObserver
-    case 'rcePoissonTAFC'
+    case 'rcePoisson'
         % The ideal observer for a TAFC task limited by Poisson noise.
         % This classifier doesn't take any parameters.
-        theRawClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        theRawClassifierEngine = responseClassifierEngine(@rcePoisson);
         
         % Below we use a wrapper routine to train the classifier and to
         % predict trial-by-trial responses.  Because that routine is
