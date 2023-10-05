@@ -2,11 +2,11 @@
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.
-%    This example uses an ideal Poisson TAFC observer and circularly
+%    This example uses an ideal Poisson observer and circularly
 %    windowed gratings of constant size.
 %
 % See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
+%           t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 
 % History:
@@ -16,13 +16,14 @@
 %   10/23/20  dhb   More commments.
 %   10/25/20  dhb   Change contrast vectors to column vectors.  This is PTB
 %                   convention, and also the convention of my brain.
-%   12/13/21  dhb   
+%   05/10/3   fh    Edited it to call the new functions computeThreshold.m
+%                       & computePerformance.m & rcePossion.m
 
 % Clear and close
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = [0.5, 1, 2, 4, 8, 12, 16, 25];
+spatialFreqs = 2.^(2:5); %[4, 8, 16, 32]
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -40,9 +41,8 @@ end
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
 % exceed the gamut of the monitor, so we are conservative and set this at a
 % value that is within gamut of typical monitors and don't worry about it
-% further for this tutorial.  A vector length contrast of 0.08 should be
-% OK.
-rmsContrast = 0.08;
+% further for this tutorial.  A vector length contrast of 0.1 should be OK.
+rmsContrast = 0.1;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
@@ -50,15 +50,18 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
+% neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
+neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements, neuralParams);
+neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
+% theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements, neuralParams);
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
 
-%% Instantiate the PoissonTAFC responseClassifierEngine
+%% Instantiate the Poisson responseClassifierEngine
 %
-% PoissonTAFC makes decision by performing the Poisson likelihood ratio test
+% rcePoisson makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+classifierEngine = responseClassifierEngine(@rcePoisson);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
@@ -79,7 +82,7 @@ classifierPara = struct('trainFlag', 'none', ...
 %
 % There are two separate structures below. The conceptual distinction
 % between them is not entirely clear.  These are interpretted by
-% computeThresholdTAFC.
+% computeThreshold.
 %
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
@@ -100,25 +103,27 @@ questEnginePara = struct( ...
 
 %% Compute threshold for each spatial frequency
 % 
-% See toolbox/helpers for functions createGratingScene computeThresholdTAFC
+% See toolbox/helpers for functions createGratingScene computeThreshold
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx));
+    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx),...
+        'fovDegs', neuralParams.coneMosaicParams.fovDegs,'duration',...
+            neuralParams.coneMosaicParams.timeIntegrationSeconds);
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
-    % function computePerformanceTAFC.
+    % function computePerformance.
     [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara);
+        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
     
     % Plot stimulus
     figure(dataFig);
-    subplot(4, 4, idx * 2 - 1);
+    subplot(4, 2, idx * 2 - 1);
     
     visualizationContrast = 1.0;
     [theSceneSequence] = gratingScene.compute(visualizationContrast);
@@ -126,7 +131,7 @@ for idx = 1:length(spatialFreqs)
     
     % Plot data and psychometric curve 
     % with a marker size of 2.5
-    subplot(4, 4, idx * 2);
+    subplot(4, 2, idx * 2);
     questObj.plotMLE(2.5,'para',para(idx,:));
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);

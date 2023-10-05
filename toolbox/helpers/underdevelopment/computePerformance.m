@@ -124,8 +124,8 @@ if (~isempty(trainNoiseFlag))
     %of the data
     if isTAFC
         %concatenate them along the 3rd dimension (cones)
-        cat1 = cat(3, inSampleStimResponsesCell{1}, inSampleStimResponsesCell{2});
-        cat2 = cat(3, inSampleStimResponsesCell{2}, inSampleStimResponsesCell{1});
+        cat1 = cat(3, inSampleStimResponsesCell{1}(trainNoiseFlag), inSampleStimResponsesCell{2}(trainNoiseFlag));
+        cat2 = cat(3, inSampleStimResponsesCell{2}(trainNoiseFlag), inSampleStimResponsesCell{1}(trainNoiseFlag));
         %nicely put the concatenated cells back to the container
         inSampleStimResponses = containers.Map(trainNoiseFlag, {cat1, cat2});
     else %NWay_OneStimulusPerTrial

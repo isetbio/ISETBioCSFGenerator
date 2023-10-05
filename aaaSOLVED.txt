@@ -96,8 +96,12 @@ computeThreshold.m: it has one more varargin key/value pair compared to computeT
 			outputs: predictions (type: vector, size: #trials)
 	outputs: predictions, theClassifierEngine
 DHB: make a key value pair ('TAFC': false'), delete rcePoissonTAFC.m and stuff 
-FH: 
-Validation: (a) Run t_NWay_OneStimulusPerTrial.m using {computeThresholdNWay_OneStimulusPerTrial.m, computePerformanceNWay_OneStimulusPerTrial.m, rcePoissonNWay_OneStimulusPerTrial.m}, given a single-frame scene and enough trials per contrast level, compared the results simulated by {computeThreshold.m, computePerformance.m, rcePoisson.m}. The simulated sensitivities do match (logThreshold = [-1.58, -1.46, -1.35. -1.22], = [-1.55, -1.43, -1.35, -1.24]). (b) Repeat (a) but the stimuli now have 2 frames. The stimulated sensitivities do match (logThreshold = [-1.72, 1.62, 1.47, 1.37], = [-1.74, 1.61, 1.49, 1.39]).
+FH: Validation: 
+(a) Run t_NWay_OneStimulusPerTrial.m using {computeThresholdNWay_OneStimulusPerTrial.m, computePerformanceNWay_OneStimulusPerTrial.m, rcePoissonNWay_OneStimulusPerTrial.m}, given a single-frame scene and enough trials per contrast level, compared to the results simulated by {computeThreshold.m, computePerformance.m, rcePoisson.m}. The simulated sensitivities match closely (logThreshold = [-1.58, -1.46, -1.35. -1.22], = [-1.55, -1.43, -1.35, -1.24]). 
+(b) Repeat (a) but the stimuli now have 2 frames. The stimulated sensitivities do match (logThreshold = [-1.72, 1.62, 1.47, 1.37], = [-1.74, 1.61, 1.49, 1.39]). 
+(c) Run t_spatialCSF.m using {computeThresholdTAFC.m, computePerformanceTAFC.m, rcePoissonTAFC.m}, given a single-frame scene and enough trials for Quest, compared to the results simulated by {computeThreshold.m, computePerformance.m, rcePoisson.m}. The simulated sensitivities match closely (logThreshold = [-1.07, -0.86, -0.52, -0.00], = [-1.08, -0.86, -0.56, -0.00]). 
+(d) Repeat (c) but the stimuli now have 2 frames. The stimulated sensitivities do match closely (logThreshold = [-1.23, -0.97, -0.70, -0.10], = [-1.25, -0.95, -0.69, -0.09])
+
 Add/change comments:
 (2) change tutorials that call computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
 (3) move ..._OneStimulusPerTrial.m & ...TAFC.m to /deprecated and direct people to the more general functions

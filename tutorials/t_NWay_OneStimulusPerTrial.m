@@ -77,7 +77,7 @@ classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 %
 % There are two separate structures below. The conceptual distinction
 % between them is not entirely clear.  These are interpretted by
-% computeThresholdNWay_OneStimulusPerTrial.
+% computeThreshold.
 
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
     'logThreshLimitHigh', 0.0, ...
@@ -133,7 +133,7 @@ for idx = 1:1
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
-    % function computePerformanceNWay_OneStimulusPerTrial.
+    % function computePerformance.
 
     [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
         gratingScenes, theNeuralEngine, classifierEngine,...
