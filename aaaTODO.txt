@@ -4,64 +4,6 @@ To find what needs to be done, global search on ConeMosaicHex will get you most 
 
 2) Can we delete ComputeParameterThreshold.m?
 
-3) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
-
-computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
-	(line 168) inputs: theTestSceneSquences (type: cell, size: [1 x #A]; each cell has a size of [1 x #times]; each cell is a struct)
-	-> (line 177) computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
-		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
-			(line 92) inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
-			(line 118) outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
-		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
-			(line 141) inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; the container has a matrix [#testTrials x (#times x #cones)])
-			        theClassifierEngine.preProcessingConstants.theTemplates 
-			-> (line 181) PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
-			outputs: predictions (type: vector, size: #trials)
-	outputs: predictions, theClassifierEngine
-
-computeThresholdTAFC.m
-	inputs: theNullSceneSequence (type: cell, size: 1 x #Times; each cell is a struct)
-	        theTestSceneSequences 
-	-> computePerformanceTAFC.m: training & making predictions
-		-> rcePoissonTAFC.m: training, to compute the templates for the null and the test stimuli
-			inputs: inSampleNullStimResponses (type: container, size: 1 x 1, key = 'none'; each container has a matrix [1 x #times x #cones]
-			        inSampleTestStimResponses
-			outputs: theClassifierEngine.preProcessingConstants.nullTemplate (type: mat, size: [1 x (#times x #cones)]]
-				 theClassifierEngine.preProcessingConstants.testTemplate 
-		-> rcePoissonTAFC.m: making predictions
-			inputs: outOfSampleNullStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
-			        outOfSampleTestStimResponses 
-			        theClassifierEngine.preProcessingConstants.nullTemplate
-			        theClassifierEngine.preProcessingConstants.testTemplate
-			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of test/null template given test/null responses, and vice versa 
-			outputs: predictions (type: vector, size: #trials)
-	outputs: predictions, theClassifierEngine
-
-
-Merging the two: 
-computeThreshold.m: it requires an extra argument compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
-	(line 69, 160) varargin: 'TAFC', false
-	(line 195) inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
-	-> (line 280) computePerformance.m: training & making predictions
-		-> rcePoisson.m: training, to compute the templates for different scenes
-			(line 91) inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] or [1 x 2] cells, each cell is [#trials x #times x #cones]) 
-			(line 119) outputs: theClassifierEngine.preProcessingConstants (type: cell, size: [1 x #A] or [1 x 2]; each cell is [1 x (#times x #cones)])
-		extra arg: whichAlternatives (type: column vec, size: #testTrials), which is only valid for 'NWay'. For 'TAFC', set to [].
-		-> rcePoisson.m: making predictions
-			(line 144) inputs: outSampleStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
-			-> PoissonDecisionLogLikelihoood.m: how this is called depends on whether whichAlternatives is empty
-			outputs: predictions (type: vector, size #trials)
-	outputs: predictions, theClassifierEngine
-DHB: make a key value pair ('TAFC': false'), delete rcePoissonTAFC.m and stuff 
-FH: 
-
-
-Unfinished things:
-(1) add/change comments 
-(2) change tutorials that call computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
-(3) move computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m to /deprecated and give people options whether stick to them or the new function
-
-
 =================================================================================================
 Notes (need further discussion before making any changes)
 1) computeFunctions/scene/sceGrating.m

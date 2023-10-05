@@ -2,13 +2,11 @@ Renaming
 1) 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
 2) 'rcePoissonNWay_OneStimPerTrial' -> 'rcePoissonNWay_OneStimulusPerTrial.m'
 
-
 ============================================================================================================================
 Fixed bugs
 1) t_modulatedGratingsSceneGeneration.m
 Stimulus #5: the original stimulus was out of the display gamut.
-To fix it, I added customGratingParams.warningInsteadOfErrorOnOutOfGamut = true;
-Or I could reduce the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, -0.1])
+To fix it, I reduced the 'conContrastModulation' to lower values (e.g., [0.1, 0.1, -0.1])
 	DHB: Make it as high as you can within gamut.
 	FH: Done.
 
@@ -39,7 +37,64 @@ I tested calling ...SingleShot.m & ...WithNoEyeMovements.m and then either stick
 
 DHB: Key value pair in the general routine; e.g., 'useFirstScene', 'amputate nre... CmosaicWithNoEyements', false: doesn't amputate; keep the warning... ; get rid of all the old code after line 195. Move all the checking code (whether frames are the same to the new function). line 181, scale the difference (consider if the mean is 0, then don't even bother to divide). Delete comments in those two old functions, refer comments in the general new function.
 
-FH: did all the above.
+FH: did all the above. NEED TO TEST IF THE BEHAVIOR OF nrePhotopigmentExcitationsCmosaic.m is the same as nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m if 'amputateScenes' is set to true. 
+
+
+2) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
+
+computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
+	inputs: theTestSceneSquences (type: cell, size: [1 x #A]; each cell has a size of [1 x #times]; each cell is a struct)
+	-> computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
+		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
+			inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
+			outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
+		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
+			inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; the container has a matrix [#testTrials x (#times x #cones)])
+			        theClassifierEngine.preProcessingConstants.theTemplates 
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
+			outputs: predictions (type: vector, size: #trials)
+	outputs: predictions, theClassifierEngine
+
+computeThresholdTAFC.m
+	inputs: theNullSceneSequence (type: cell, size: 1 x #Times; each cell is a struct)
+	        theTestSceneSequences 
+	-> computePerformanceTAFC.m: training & making predictions
+		-> rcePoissonTAFC.m: training, to compute the templates for the null and the test stimuli
+			inputs: inSampleNullStimResponses (type: container, size: 1 x 1, key = 'none'; each container has a matrix [1 x #times x #cones]
+			        inSampleTestStimResponses
+			outputs: theClassifierEngine.preProcessingConstants.nullTemplate (type: mat, size: [1 x (#times x #cones)]]
+				 theClassifierEngine.preProcessingConstants.testTemplate 
+		-> rcePoissonTAFC.m: making predictions
+			inputs: outOfSampleNullStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
+			        outOfSampleTestStimResponses 
+			        theClassifierEngine.preProcessingConstants.nullTemplate
+			        theClassifierEngine.preProcessingConstants.testTemplate
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of test/null template given test/null responses, and vice versa 
+			outputs: predictions (type: vector, size: #trials)
+	outputs: predictions, theClassifierEngine
+
+
+Merging the two: 
+computeThreshold.m: it has one more varargin key/value pair compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
+	(line 69, 160) varargin: 'TAFC', default: false
+	(line 195) inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
+	-> (line 280) computePerformance.m: training & making predictions
+		-> rcePoisson.m (almost the same as rcePoissonNWay_OneStimulusPerTrial.m): training, to compute the templates for different scenes
+			inputs: inSampleStimResponses 
+				'TAFC', true: (type: container, size: 1 x 1, key: 'none'; it has [1 x 2] cells, 1st: test, 2nd: null, each cell is [#trials x #times x (#cones x 2)])
+				'TAFC', false: (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
+			outputs: theClassifierEngine.preProcessingConstants.theTemplates
+				'TAFC', true: (type: cell, size: 1 x #A; each cell is [1 x (#times x (#cones x 2))])
+				'TAFC', false: (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
+		-> rcePoisson.m (almost the same as rcePoissonNWay_OneStimulusPerTrial.m): making predictions
+			-> PoissonDecisionLogLikelihoood.m
+	outputs: predictions, theClassifierEngine
+DHB: make a key value pair ('TAFC': false'), delete rcePoissonTAFC.m and stuff 
+FH: 
+Validation: (a) Run t_NWay_OneStimulusPerTrial.m using {computeThresholdNWay_OneStimulusPerTrial.m, computePerformanceNWay_OneStimulusPerTrial.m, rcePoissonNWay_OneStimulusPerTrial.m}, given a single-frame scene and enough trials per contrast level, compared the results simulated by {computeThreshold.m, computePerformance.m, rcePoisson.m}. The simulated sensitivities do match (logThreshold = [-1.58, -1.46, -1.35. -1.22], = [-1.55, -1.43, -1.35, -1.24]). (b) Repeat (a) but the stimuli now have 2 frames. The stimulated sensitivities do match (logThreshold = [-1.72, 1.62, 1.47, 1.37], = [-1.66, 1.61, 1.49, 1.39]).
+Add/change comments:
+(2) change tutorials that call computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
+(3) move ..._OneStimulusPerTrial.m & ...TAFC.m to /deprecated and direct people to the more general functions
 
 ============================================================================================================================
 Answered questions

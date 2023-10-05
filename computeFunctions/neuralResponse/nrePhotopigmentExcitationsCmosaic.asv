@@ -205,7 +205,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     end
     
     % Compute responses for each type of noise flag requested
-    for idx = 1:length(noiseFlags)
+    cfor idx = 1:length(noiseFlags)
         if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
             % Compute the noise-free response
             % To do so, first save the current mosaic noiseFlag
