@@ -91,7 +91,7 @@ switch (p.Results.presentationMode)
         gratingParams.frameDurationSeconds = p.Results.duration;
         gratingParams.temporalModulation = 'flashed';
         gratingParams.temporalModulationParams =  struct(...
-            'stimOnFrameIndices', 1:2, 'stimDurationFramesNum', 2);
+            'stimOnFrameIndices', 1, 'stimDurationFramesNum', 1);
         
     case 'drifted'
         gratingParams.temporalModulation = 'drifted';

@@ -12,42 +12,39 @@ function dataOut = rcePoissonTAFC(obj, operationMode, classifierParamsStruct, nu
 %                   function rcePoisson.m and moved this to the deprecated
 %                   folder
 
-% For consistency with the interface
 if (nargin == 0)
     warning(['This function has been deprecated. Consider using a more ',...
         'general function rcePoisson.m. ']);
-    dataOut = struct('Classifier', 'Poisson Ideal Observer');
+    dataOut = struct('Classifier', 'Poisson Forced Choice Ideal Observer');
     return;
-end
-
-% Check operation mode
-if (~strcmp(operationMode,'train') && ~strcmp(operationMode,'predict'))
-    error('Unknown operation mode passed.  Must be ''train'' or ''predict''');
 end
 
 %reorganize the null and the test responses
 if strcmp(operationMode, 'train')
-    %concatenate them along the 3rd dimension (cones)
-    cat1 = cat(3, testResponses, nullResponses);
-    cat2 = cat(3, nullResponses, testResponses);
-    %nicely put the concatenated cells back to the container
-    theResponses = containers.Map(trainNoiseFlag, {cat1, cat2});
+    %This method / function will only be called in computePerformance.m,
+    %which already reorganizes the data by concatenating the cone responses
+    %given the test and the null stimuli. So when this function is called
+    %inside computePerformance.m, passed 'nullResponses' is actually the
+    %concatenated test + null responses.
+    theResponses = nullResponses;
     dataOut = rcePoisson(obj, operationMode, classifierParamsStruct,...
         theResponses,[]);
 else
-    %combine the 2nd (time) and the 3rd dimensions (cones)
-    outSampleTestStimResponses = testResponses(:,:);
-    outSampleNullStimResponses = nullResponses(:,:);
-    %concatenate them together along the 2nd dimension (cones)
-    cat_resp = cat(2, outSampleTestStimResponses, outSampleNullStimResponses);
-    %nicely put them back to the container
-    theResponses = containers.Map(testNoiseFlag, cat_resp);
-    %define the label for correct responses
-    whichAlternatives = ones(size(theResponses,1),1);
+    %Analogously, when this function is called inside computePerformance.m
+    %and it's 'predict' mode, then passed 'nullResponses' is actually the
+    %concatenated test + null responses, and 'testResponses' is actually
+    %the label (correct answer)
+    theResponses = nullResponses;
+    whichAlternatives = testResponses;
     dataOut = rcePoisson(obj, operationMode, classifierParamsStruct,...
         theResponses,whichAlternatives);
 end
 
+% if (nargin == 0)
+%     dataOut = struct('Classifier', 'Poisson Forced Choice Ideal Observer');
+%     return;
+% end
+%
 % % Check operation mode
 % if (~strcmp(operationMode,'train') && ~strcmp(operationMode,'predict'))
 %     error('Unknown operation mode passed.  Must be ''train'' or ''predict''');

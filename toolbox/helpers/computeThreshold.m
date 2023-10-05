@@ -67,6 +67,10 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %  05/01/23  npc  Modifications to use the multiTrialQuestBlocked method
 %  06/08/23  npc  Modifications to run under the BetterCaching branch
 %                 (copyable responseClassifierEngine)
+%  04/10/24  fh   Merged computeThresholdTAFC.m and
+%                   computeThresholdNWay_OneStimulusPerTrial.m by adding 
+%                   a key/pair pair specifying whether the task is TAFC or 
+%                   NWay_OneStimulusPerTrial.
 
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);

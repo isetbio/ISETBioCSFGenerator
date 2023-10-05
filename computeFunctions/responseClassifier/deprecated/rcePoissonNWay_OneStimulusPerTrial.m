@@ -10,17 +10,21 @@ function dataOut = rcePoissonNWay_OneStimulusPerTrial(obj, operationMode, classi
 %                   function rcePoisson.m and moved this to the deprecated
 %                   folder
 
-% For consistency with the interface
 if (nargin == 0)
     warning(['This function has been deprecated. Consider using a more ',...
         'general function rcePoisson.m. ']);
-    dataOut = struct('Classifier', 'Poisson Ideal Observer');
+    dataOut = struct('Classifier', 'Poisson Forced Choice Ideal Observer');
     return;
 end
 
-dataOut = rcePoisson(obj, operationMode, classifierParamsStruct,...
-    theResponses, whichAlternatives);
+dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives);
 
+
+% if (nargin == 0)
+%     dataOut = struct('Classifier', 'Poisson Forced Choice Ideal Observer');
+%     return;
+% end
+%
 % % Check operation mode
 % if (~strcmp(operationMode,'train') && ~strcmp(operationMode,'predict'))
 %     error('Unknown operation mode passed.  Must be ''train'' or ''predict''');

@@ -61,7 +61,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoisson);
+classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
@@ -122,8 +122,8 @@ for idx = 1:length(spatialFreqs)
     %     classifierPara, thresholdPara, questEnginePara);
 
     [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara);
+        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
     
     % Plot stimulus
     figure(dataFig);

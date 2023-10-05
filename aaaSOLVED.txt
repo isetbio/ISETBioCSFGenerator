@@ -104,6 +104,7 @@ FH: Validation:
 
 Edited and moved computeThreshold_OneStimulusPerTrial.m & computeThresholdTAFC.m, and validated by testing the cleaned up versions.
 Edited and moved computePerformance_OneStimulusPerTrial.m & computePerformanceTAFC.m and validated by running t_thresholdEngine.m
+Edited and moved rcePoissonTAFC.m & rcePoissonNWay_OneStimulusPerTrial.m, and validated by running t_spatialCSF.m and t_thresholdEngine.m 
 
 ============================================================================================================================
 Answered questions
