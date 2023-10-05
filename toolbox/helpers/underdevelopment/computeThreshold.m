@@ -1,4 +1,5 @@
-function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
+function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = ...
+    computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
 % Compute contrast threshold for a given scene, neural response engine, and classifier engine
 %
@@ -74,6 +75,7 @@ p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
+p.addParameter('amputateScenes', false, @islogical);
 
 parse(p, varargin{:});
 beVerbose = p.Results.beVerbose;
@@ -81,6 +83,7 @@ visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 isTAFC = p.Results.TAFC;
+amputateScenes = p.Results.amputateScenes;
 
 % Construct a QUEST threshold estimator estimate threshold
 %
@@ -282,7 +285,8 @@ while (nextFlag)
             classifierPara.nTrain, classifierPara.nTest, theNeuralEngine,...
             classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
             'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
-            'visualizeAllComponents', visualizeAllComponents);
+            'visualizeAllComponents', visualizeAllComponents,...
+            'amputateScenes', amputateScenes);
         
         % Copy the trained classifier
         theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;

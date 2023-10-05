@@ -36,7 +36,10 @@ DHB: change the comments in nrePhotopigmentExcitationsCmosaicSingleShot.m, nrePh
 FH: I had to change one of the properties ('neuralComputeFunction') in the neuralResponseEngine.m, otherwise I couldn't make the switch to nrePhotopigmentExcitationsCmosaic.m if the other two functions are called. 
 Validation: 
 I tested calling ...SingleShot.m & ...WithNoEyeMovements.m and then either sticking with the deprecated function (responded 'no') or switching to ...Cmosaic.m. I compared the measured contrast sensitivities for several spatial frequencies. They matched.
-DhB: Key value pair in the general routine; e.g., 'useFirstScene', 'amulate nre... CmosaicWithNoEyements', false: doesn't amulate; keep the warning... ; get rid of all the old code after line 195. Move all the checking code (whether frames are the same to the new function). line 181, scale the difference (consider if the mean is 0, then don't even bother to divide). Delete comments in those two old functions, refer comments in the general new function.
+
+DHB: Key value pair in the general routine; e.g., 'useFirstScene', 'amputate nre... CmosaicWithNoEyements', false: doesn't amputate; keep the warning... ; get rid of all the old code after line 195. Move all the checking code (whether frames are the same to the new function). line 181, scale the difference (consider if the mean is 0, then don't even bother to divide). Delete comments in those two old functions, refer comments in the general new function.
+
+FH: did all the above.
 
 ============================================================================================================================
 Answered questions

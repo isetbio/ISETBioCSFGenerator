@@ -87,11 +87,13 @@ p = inputParser;
 p.addParameter('TAFC',  false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
+p.addParameter('amputateScenes', false, @islogical);
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
 saveResponses = p.Results.saveResponses;
 visualizeAllComponents = p.Results.visualizeAllComponents;
+amputateScenes = p.Results.amputateScenes;
 
 % Empty responses
 responses = [];
@@ -114,7 +116,8 @@ if (~isempty(trainNoiseFlag))
             theScenes{n}, ...
             temporalSupport, ...
             nTrain, ...
-            'noiseFlags', {trainNoiseFlag});
+            'noiseFlags', {trainNoiseFlag}, ...
+            'amputateScenes', amputateScenes);
     end
 
     %If the task is TAFC, then we need to do the following reorganization
