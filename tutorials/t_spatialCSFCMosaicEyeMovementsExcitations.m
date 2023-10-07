@@ -26,7 +26,7 @@ meanLuminanceCdM2 = 34;
 spatialFreqs = [30]; % [2, 4, 8, 12, 16, 25];
 
 % Achromatic color direction specified as a 1-by-3 vector
-chromaDir = 0.7*[1.0, 1.0, 1.0]';
+chromaDir = [0.1, -0.1, 0];%0.7*[1.0, 1.0, 1.0]';
 
 
 %% Create neural response engine

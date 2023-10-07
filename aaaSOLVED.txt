@@ -106,6 +106,11 @@ Edited and moved computeThreshold_OneStimulusPerTrial.m & computeThresholdTAFC.m
 Edited and moved computePerformance_OneStimulusPerTrial.m & computePerformanceTAFC.m and validated by running t_thresholdEngine.m
 Edited and moved rcePoissonTAFC.m & rcePoissonNWay_OneStimulusPerTrial.m, and validated by running t_spatialCSF.m and t_thresholdEngine.m 
 
+Edited computePerformance.m further: no concatenation of theNullStimSequences & theTestStimSequences when classifiers other than rcePoisson.m are called (e.g., rcePoolingSVMTAFC.m)
+Edited the order of nullResponses & testResponses in computeThreshold.m & computePerformance.m & spatioTemporalPoolingWeights.m so that the order is consistent with all the classifiers (e.g., rcePoolingSVMTAFC).
+
+
+
 ============================================================================================================================
 Answered questions
 1) When I call nrePhotopigmentsExcitationsCMosaicWithNoEyeMovements.m, I got a Warning: "The optical image resolution (4.20 microns) is too low relative to the cone aperture (3.36 microns) for accurate computation of cone blur. Skipping blur by cone aperture. Consider increasing the # of pixels in the stimulus or decrease the stimulus FOV." What is a reasonable value for # of pixels? 

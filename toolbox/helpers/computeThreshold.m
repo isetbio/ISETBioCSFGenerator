@@ -207,16 +207,15 @@ while (nextFlag)
         else
             [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine.compute(testContrast);
-            %concatenate theTestSceneSequences and theNullSceneSequences
-            %together
-            theSceneSequences{testedIndex} = {theSceneSequence{testedIndex},...
-                theNullSceneSequence};
+            %concatenate theNullSceneSequences and theTestSceneSequences 
+            theSceneSequences{testedIndex} = {theNullSceneSequence,...
+                theSceneSequence{testedIndex}};
         end
         
         % Some diagnosis
         if (p.Results.extraVerbose)
             theWl = 400;
-            theStim = 1; %TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
+            theStim = 2; %TAFC: 2nd stim is the test
             theFrame = 1;
             Wl_vec = theSceneSequences{testedIndex}{theStim}{theFrame}.spectrum.wave;
             [~, index] = min(abs(Wl_vec - theWl));
@@ -232,7 +231,7 @@ while (nextFlag)
         
         % Visualize the drifting sequence
         if (visualizeStimulus)
-            theStim = 1; %TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
+            theStim = 2; %TAFC: 2nd stim is the test
             if length(theSceneEngine) > 1; sE = theSceneEngine{theStim};
             else; sE = theSceneEngine; end
             sE.visualizeSceneSequence(theSceneSequences{testedIndex}{theStim},...
@@ -252,16 +251,16 @@ while (nextFlag)
                    [poolingWeights.direct, ~, ...
                        noiseFreeNullResponse, noiseFreeTestResponse] = ...
                        spatioTemporalPoolingWeights(theNeuralEngine,...
-                       theSceneSequences{testedIndex}{1},... %test
-                       theSceneSequences{testedIndex}{2},... %null
+                       theNullSceneSequence,... %null
+                       theSceneSequence{testedIndex},... %test
                        theSceneTemporalSupportSeconds);
                    
                 case 'quadratureEnergy'
                    [poolingWeights.direct, poolingWeights.quadrature, ...
                        noiseFreeNullResponse, noiseFreeTestResponse] = ...
                        spatioTemporalPoolingWeights(theNeuralEngine,...
-                       theSceneSequences{testedIndex}{1},... %test
-                       theSceneSequences{testedIndex}{2},... %null
+                       theNullSceneSequence,... %null
+                       theSceneSequence{testedIndex},... %test
                        theSceneTemporalSupportSeconds);
                    
                 otherwise

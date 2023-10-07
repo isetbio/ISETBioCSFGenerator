@@ -28,7 +28,7 @@ spatialFreqs = 2.^(2:5); %[4, 8, 16, 32]
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'luminance';
+stimType = 'red-green';
 switch (stimType)
     case 'luminance'
         chromaDir = [1.0, 1.0, 1.0]';
@@ -61,7 +61,12 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+useOldWay = false;
+if useOldWay
+    classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+else
+    classifierEngine = responseClassifierEngine(@rcePoisson);
+end
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
@@ -117,13 +122,15 @@ for idx = 1:length(spatialFreqs)
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformance.
-    % [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-    %     computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-    %     classifierPara, thresholdPara, questEnginePara);
-
-    [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
+    if useOldWay
+        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
+            computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
+            classifierPara, thresholdPara, questEnginePara);
+    else
+        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
+            computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
+            classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
+    end
     
     % Plot stimulus
     figure(dataFig);

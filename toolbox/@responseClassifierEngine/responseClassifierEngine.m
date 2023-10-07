@@ -88,12 +88,10 @@ classdef responseClassifierEngine < matlab.mixin.Copyable
             obj.classifierParams.pooling.weights = poolingWeights;
             obj.classifierParams.pooling.noiseFreeNullResponse = noiseFreeNullResponse;
             obj.classifierParams.pooling.noiseFreeTestResponse = noiseFreeTestResponse;
-        end
-        
+        end   
         
         % Compute method
         dataOut = compute(obj, operationMode, nullResponses, testResponses);
-
     end
     
     % Private methods

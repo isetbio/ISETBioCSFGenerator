@@ -1,12 +1,12 @@
 function [poolingWeights,quadraturePoolingWeights, ...
     noiseFreeSpatioTemporalResponseNullStimulus, ...
-    noiseFreeSpatioTemporalResponseTestStimulus] = spatioTemporalPoolingWeights(theNeuralEngine,theScene,theNullScene, temporalSupport)
+    noiseFreeSpatioTemporalResponseTestStimulus] = spatioTemporalPoolingWeights(theNeuralEngine, theNullScene, theScene, temporalSupport)
 % Compute spatiotemporal pooling weights for a given scene 
 %
 % Syntax:
 %   [poolingWeights,quadraturePoolingWeights, ...
 %    noiseFreeSpatioTemporalResponseNullStimulus, ...
-%    noiseFreeSpatioTemporalResponseTestStimulus] = spatioTemporalPoolingWeights(theNeuralEngine,theScene,theNullScene, temporalSupport)
+%    noiseFreeSpatioTemporalResponseTestStimulus] = spatioTemporalPoolingWeights(theNeuralEngine, theNullScene, theScene, temporalSupport)
 %
 % Description:
 %    Given a neural engine, a test scene (or a scene sequence) and the 
@@ -36,6 +36,9 @@ function [poolingWeights,quadraturePoolingWeights, ...
 
 % History:
 %   8/28/21  npc  Wrote it.
+%   6/10/23  fh   Swap the order of theNullScene and theScene in the
+%                   argument so that it's consistent with all classifier
+%                   functions.
 
     % Compute the noise-free response to the NULL stimulus
     fprintf('Computing noise-free response to the NULL stimulus\n');
