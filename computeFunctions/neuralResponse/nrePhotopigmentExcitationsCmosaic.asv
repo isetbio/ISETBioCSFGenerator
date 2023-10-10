@@ -324,9 +324,7 @@ function flag_detectDiff = checkSceneSequences_isidentical(sceneSequence)
         scenePhotons_comp = sceneSequence{counter_seq}.data.photons(:);
         %compute the mean absolute difference
         meanAbsDiff = mean(abs(scenePhotons_ref(:) - scenePhotons_comp(:)));
-        %if it's already 0, then return no difference detected
-        %otherwise, compare the mean absolute difference with a scaled tiny
-        %number
+        %if it's alre
         if any(meanAbsDiff) && (sum(abs(scenePhotons_ref(idx_samples)-...
                 scenePhotons_comp(idx_samples)) < 1e-20*meanAbsDiff) ~= nSamples)
             flag_detectDiff = 1;

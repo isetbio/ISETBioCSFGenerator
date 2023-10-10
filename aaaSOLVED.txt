@@ -37,7 +37,8 @@ I tested calling ...SingleShot.m & ...WithNoEyeMovements.m and then either stick
 
 DHB: Key value pair in the general routine; e.g., 'useFirstScene', 'amputate nre... CmosaicWithNoEyements', false: doesn't amputate; keep the warning... ; get rid of all the old code after line 195. Move all the checking code (whether frames are the same to the new function). line 181, scale the difference (consider if the mean is 0, then don't even bother to divide). Delete comments in those two old functions, refer comments in the general new function.
 
-FH: did all the above. NEED TO TEST IF THE BEHAVIOR OF nrePhotopigmentExcitationsCmosaic.m is the same as nrePhotopigmentExcitationsCmosaicWithNoEyeMovements.m if 'amputateScenes' is set to true. 
+FH: ComputeThreshold.m now has a key 'amputateScenes', which gets carried to computePerformance.m and nrePhotopigmentExcitationsCmosaic.m. In nrePhotopigmentExcitationsCmosaic.m (lines 144-156), check if all scenes are the same by calling a function checkSceneSequences_isidentical.m. Ask @David if the scaled difference is correct. 
+Validation: run t_spatialCSF.m 
 
 
 2) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
