@@ -1,4 +1,4 @@
-% Compute spatial CSF in the achromatic direction in the presence of fEM
+edit % Compute spatial CSF in the achromatic direction in the presence of fEM
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in the achromatic color direction

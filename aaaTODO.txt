@@ -25,6 +25,8 @@ There is a helper function inside this function, called generatePresentationDisp
 8) Figure out quest engine stopping rule and document (find out where minTrial & maxTrial is used)
 	FH: questThresholdEngine.m, contrastThresholdEngine.m
 
+9) Perhaps we can add a tutorial to work through how to visualize cone excitations, templates, classifiers and etc without having to do it within computeThreshold.m? If we do it within the function, that would generate so many figures and slowing down the computation. 
+
 
 Questions
 1) How is the level of contrast determined given the range of slope and threshold? It is not super clear how that's derived. 
