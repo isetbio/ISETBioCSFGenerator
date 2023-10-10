@@ -28,7 +28,7 @@ spatialFreqs = 2.^(2:5); %[4, 8, 16, 32]
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'red-green';
+stimType = 'luminance';
 switch (stimType)
     case 'luminance'
         chromaDir = [1.0, 1.0, 1.0]';
@@ -51,7 +51,7 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
 neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
-neuralParams = nrePhotopigmentExcitationsCmosaic;
+% neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
@@ -129,7 +129,7 @@ for idx = 1:length(spatialFreqs)
     else
         [logThreshold(idx), questObj, ~, para(idx,:)] = ...
             computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-            classifierPara, thresholdPara, questEnginePara, 'TAFC',true); %true,'amputateScenes',true
+            classifierPara, thresholdPara, questEnginePara, 'TAFC',true, 'amputateScenes',false);
     end
     
     % Plot stimulus
