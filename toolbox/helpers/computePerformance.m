@@ -121,7 +121,8 @@ if (~isempty(trainNoiseFlag))
     end
 
     %if the classifier is either rcePoisson or rcePoissonTAFC or 
-    % rcePoissonNWay_OneStimulusPerTrial
+    % rcePoissonNWay_OneStimulusPerTrial, those are the only classifiers
+    % that currently can be used for NWay_OneStimulusPerTrial
     if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',10)
         %If the task is TAFC, then we need to do the following 
         % reorganization of the data

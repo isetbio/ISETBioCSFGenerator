@@ -40,6 +40,8 @@ DHB: Key value pair in the general routine; e.g., 'useFirstScene', 'amputate nre
 FH: ComputeThreshold.m now has a key 'amputateScenes', which gets carried to computePerformance.m and nrePhotopigmentExcitationsCmosaic.m. In nrePhotopigmentExcitationsCmosaic.m (lines 144-156), check if all scenes are the same by calling a function checkSceneSequences_isidentical.m. Ask @David if the scaled difference is correct. 
 Validation: run t_spatialCSF.m 
 
+DH: leave the warning for amputateScenes for a little while, but in the long run, change it to error.
+
 
 2) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
 
@@ -110,7 +112,9 @@ Edited and moved rcePoissonTAFC.m (TRICKY... NEED DISCUSSION) & rcePoissonNWay_O
 Edited computePerformance.m further: no concatenation of theNullStimSequences & theTestStimSequences when classifiers other than rcePoisson.m are called (e.g., rcePoolingSVMTAFC.m)
 Edited the order of nullResponses & testResponses in computeThreshold.m & computePerformance.m & spatioTemporalPoolingWeights.m so that the order is consistent with all the classifiers (e.g., rcePoolingSVMTAFC).
 
+DB: Eventually we want to have all the classifier engines to take concatenated responses (switch from TAFC branch to general branch). We think the only place we need to change anything else is computePerformance.m as we might change classifier engine to take either concatenated or N responses.
 
+Throw an error if one calls computeThreshold.m and rcePoissonTAFC.m, and fix the tutorials that have this special case.
 
 ============================================================================================================================
 Answered questions

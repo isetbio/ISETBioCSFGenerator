@@ -146,7 +146,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     % the first scene, then we need to check if all the scenes are 
     % identical
     if framesNum ~= 1 && amputateScenes
-        flag_detectDiff = checkSceneSequences_isidentical(sceneSequence);
+        flag_detectDiff = checkSceneSequences_allFramesIdentical(sceneSequence);
         % if not, throw a warning
         if flag_detectDiff 
             warning(['The input scenes are temporally modulated. Thus, ',...
@@ -304,7 +304,7 @@ function p = generateDefaultParams()
     );
 end
 
-function flag_detectDiff = checkSceneSequences_isidentical(sceneSequence)
+function flag_detectDiff = checkSceneSequences_allFramesIdentical(sceneSequence)
     %the total number of frames
     total_seq = length(sceneSequence);
     %get the first scene (use it as reference)
