@@ -101,14 +101,15 @@ if ((p.Results.showPlot) || (p.Results.returnData))
         figure();
     end
     stimVal = unique(stimVec);
-    pCorrect = zeros(1,length(stimVal));
+    [nTrials, pCorrect] = deal(zeros(1,length(stimVal)));
     
     for idx = 1:length(stimVal)
         prop = responseVec(stimVec == stimVal(idx));
-        pCorrect(idx) = sum(prop) / length(prop);
+        nTrials(idx) = length(prop);
+        pCorrect(idx) = sum(prop) / nTrials(idx);
         
         if (p.Results.showPlot)
-            scatter(stimVal(idx), pCorrect(idx), p.Results.pointSize * 100 / length(stimVec) * length(prop), ...
+            scatter(stimVal(idx), pCorrect(idx), p.Results.pointSize * 100 / length(stimVec) * nTrials(idx), ...
             'MarkerEdgeColor', zeros(1, 3), 'MarkerFaceColor', ones(1, 3) * 0.5, 'MarkerFaceAlpha', 0.5);
             hold on;
         end
@@ -132,6 +133,7 @@ if ((p.Results.showPlot) || (p.Results.returnData))
         dataOut.pCorrect = pCorrect;
         dataOut.examinedContrastsFit = stimSpace;
         dataOut.pCorrectFit = fitCurve(:,2);
+        dataOut.nTrials = nTrials;
     else 
         dataOut = [];
     end
