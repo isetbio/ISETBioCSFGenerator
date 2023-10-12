@@ -35,7 +35,7 @@ Observation 2: When defining questEnginePara, the number of contrast level is la
 Observation 3: When estDomain & slopeRange are fixed, 'nTest' also affects the number of test contrast levels.
 
 2) In spatioTemporalPoolingWeights.m, why is the difference of cone responses (test-null) then multiplied by a Gaussian envelope to make a template? This script needs more comments.
-	FH: after subtracting the cone responses given the null stimulus, the differences look like a sinusoidal grating without a window, that's why a Gaussian envelope is then multiplied. This is not described in the paper though, and what if the envelope of the stimulus is not Gaussian?
+	FH: after subtracting the cone responses given the null stimulus, the differences look like a sinusoidal grating without a window, that's why a Gaussian envelope is then multiplied. This is not described in the paper though, and what if the envelope of the stimulus is not Gaussian? Also, why first interpolate from cones to grids, and then back to cones, again?
 
 3) why do we have a separate engine (contrastThresholdEngine.m) for min max trials? Can we merge contrastThresholdEngine.m and questThresholdEngine.m? There are two methods in contrastThresholdEngine.m, but they don't seem to be ever used. 
 
