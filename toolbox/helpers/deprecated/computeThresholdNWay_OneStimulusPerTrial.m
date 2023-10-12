@@ -16,10 +16,10 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 
 warning(['This function has been deprecated. Consider using a more ',...
         'general function computeThreshold.m. ']);
-%we do not need to specify 'TAFC' to be false because that's the default
+varargin_appended = [varargin, 'TAFC', false];
 [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = ...
     computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
-    classifierPara, thresholdPara, questEnginePara, varargin{:});
+    classifierPara, thresholdPara, questEnginePara, varargin_appended{:});
 
 % % Parse
 % p = inputParser;

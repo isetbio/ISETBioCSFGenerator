@@ -59,7 +59,12 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
-classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
+useOldWay = true;
+if useOldWay
+    classifierEngine = responseClassifierEngine(@rcePoissonNWay_OneStimulusPerTrial, classifierPara);
+else
+    classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
+end
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -135,9 +140,16 @@ for idx = 1:nAList
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformance.
 
-    [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
-        gratingScenes, theNeuralEngine, classifierEngine,...
-        classifierPara, thresholdPara, questEnginePara);
+    if useOldWay
+        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
+            computeThresholdNWay_OneStimulusPerTrial(...
+            gratingScenes, theNeuralEngine, classifierEngine,...
+            classifierPara, thresholdPara, questEnginePara);
+    else
+        [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
+            gratingScenes, theNeuralEngine, classifierEngine,...
+            classifierPara, thresholdPara, questEnginePara,'TAFC',false);
+    end
     
     % Plot stimulus
     figure(idx)

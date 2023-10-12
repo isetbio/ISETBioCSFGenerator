@@ -77,7 +77,7 @@ computeThresholdTAFC.m
 
 Merging the two: 
 computeThreshold.m: it has one more varargin key/value pair compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
-	(line 69, 160) varargin: 'TAFC', default: false
+	(line 89, 160) varargin: 'TAFC', default: false
 	(line 195) inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
 	-> (line 280) computePerformance.m: training & making predictions
 		-> rcePoisson.m (almost the same as rcePoissonNWay_OneStimulusPerTrial.m): training, to compute the templates for different scenes
@@ -85,7 +85,7 @@ computeThreshold.m: it has one more varargin key/value pair compared to computeT
 					'TAFC', true: (type: container, size: 1 x 1, key: 'none'; it has [1 x 2] cells, 1st: test, 2nd: null, each cell is [#trials x #times x (#cones x 2)])
 					'TAFC', false: (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
 			outputs: theClassifierEngine.preProcessingConstants.theTemplates
-					'TAFC', true: (type: cell, size: 1 x #A; each cell is [1 x (#times x (#cones x 2))])
+					'TAFC', true: (type: cell, size: 1 x 2; each cell is [1 x (#times x (#cones x 2))])
 					'TAFC', false: (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
 		-> rcePoisson.m (almost the same as rcePoissonNWay_OneStimulusPerTrial.m): making predictions
 			inputs: outOfSampleStimResponses 
@@ -103,9 +103,9 @@ FH: Validation:
 (c) Run t_spatialCSF.m using {computeThresholdTAFC.m, computePerformanceTAFC.m, rcePoissonTAFC.m}, given a single-frame scene and enough trials for Quest, compared to the results simulated by {computeThreshold.m, computePerformance.m, rcePoisson.m}. The simulated sensitivities match closely (logThreshold = [-1.07, -0.86, -0.52, -0.00], = [-1.08, -0.86, -0.56, -0.00]). 
 (d) Repeat (c) but the stimuli now have 2 frames. The stimulated sensitivities do match closely (logThreshold = [-1.23, -0.97, -0.70, -0.10], = [-1.25, -0.95, -0.69, -0.09])
 
-Edited and moved computeThreshold_OneStimulusPerTrial.m & computeThresholdTAFC.m, and validated by testing the cleaned up versions.
-Edited and moved computePerformance_OneStimulusPerTrial.m & computePerformanceTAFC.m and validated by running t_thresholdEngine.m
-Edited and moved rcePoissonTAFC.m & rcePoissonNWay_OneStimulusPerTrial.m, and validated by running t_spatialCSF.m and t_thresholdEngine.m 
+Edited and moved computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m, and validated by testing the cleaned up versions.
+Edited and moved computePerformanceNWay_OneStimulusPerTrial.m & computePerformanceTAFC.m and validated by running t_thresholdEngine.m
+Edited and moved rcePoissonTAFC.m (TRICKY... NEED DISCUSSION) & rcePoissonNWay_OneStimulusPerTrial.m, and validated by running t_spatialCSF.m and t_thresholdEngine.m 
 
 Edited computePerformance.m further: no concatenation of theNullStimSequences & theTestStimSequences when classifiers other than rcePoisson.m are called (e.g., rcePoolingSVMTAFC.m)
 Edited the order of nullResponses & testResponses in computeThreshold.m & computePerformance.m & spatioTemporalPoolingWeights.m so that the order is consistent with all the classifiers (e.g., rcePoolingSVMTAFC).

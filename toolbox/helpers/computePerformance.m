@@ -120,9 +120,11 @@ if (~isempty(trainNoiseFlag))
             'amputateScenes', amputateScenes);
     end
 
-    %If the task is TAFC, then we need to do the following reorganization
-    %of the data
-    if strcmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson')
+    %if the classifier is either rcePoisson or rcePoissonTAFC or 
+    % rcePoissonNWay_OneStimulusPerTrial
+    if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',10)
+        %If the task is TAFC, then we need to do the following 
+        % reorganization of the data
         if isTAFC
             %concatenate them along the 3rd dimension (cones)
             cat1 = cat(3, inSampleStimResponsesCell{1}(trainNoiseFlag), ...
@@ -196,7 +198,9 @@ end
 e = toc(eStart);
 fprintf('computePerformance: Took %0.1f secs to generate mean responses for all alternatives\n',e);
 
-if strcmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson')
+%if the classifier is either rcePoisson or rcePoissonTAFC or
+%rcePoissonNWay_OneStimulusPerTrial
+if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',10)
     %If the task is TAFC, then we need to do the following reorganization
     %of the data
     if isTAFC
