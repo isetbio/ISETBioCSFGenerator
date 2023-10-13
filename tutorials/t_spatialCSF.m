@@ -61,7 +61,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoE
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-useOldWay = true;
+useOldWay = false;
 if useOldWay
     classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
 else
@@ -107,7 +107,7 @@ questEnginePara = struct( ...
     'stopCriterion', 0.05);
 
 %% Compute threshold for each spatial frequency
-useOldWay = true;
+useOldWay = false;
 % See toolbox/helpers for functions createGratingScene computeThreshold
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
