@@ -1,12 +1,14 @@
 function [predictions, theClassifierEngine, responses] = computePerformance(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     varargin)
-% Compute performance of a classifier given different scenes, a neural engine, and a classifier engine.
+% Compute performance of a classifier given different scenes, a neural 
+% engine, and a classifier engine. This function is suitable for both TAFC 
+% and N-alternative forced-choice tasks. 
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses] = ...
-%        computePerformanceTAFC(nullScene, testScene, temporalSupport, nTrain, nTest, theNeuralEngine, ...
-%       theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
+%        computePerformance(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
+%       theClassifierEngine, trainNoiseFlag, testNoiseFlag, varargin)
 %
 % Description:
 %     Train a classifier on a discrimination and report back a vector of
@@ -18,8 +20,13 @@ function [predictions, theClassifierEngine, responses] = computePerformance(theS
 %     these scenes, and the classifer.
 %
 % Inputs:
-%     nullScene             - Null scene sequence.
-%     testScene             - Test scene sequence.
+%     theScenes             - A collection of scenes (type: cell)
+%                             If the task is TAFC, then the cell has a size
+%                             of 1 x 2, the first for the null stimulus,
+%                             and the second for the test stimulus.
+%                             If the task is NWay_OneStimulusPerTrial, then
+%                             the cell has a size of 1 x #alternative
+%                             stimuli.
 %     temporalSupport       - Temporal support vector (in seconds) for
 %                             scene sequences.
 %     nTrain                - Number of null and test response instances
@@ -58,7 +65,9 @@ function [predictions, theClassifierEngine, responses] = computePerformance(theS
 %     saveResponses         - Logical. Whether to return the computed
 %                             response instances
 %     visualizeAllComponents - Logical. Whether to visualize or not.
-%
+%     amputateScenes        - Logical. Whether we want to just select the 
+%                               first scene and generate cone excitations 
+%                               and amputate the rest. Default: false.
 %
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)

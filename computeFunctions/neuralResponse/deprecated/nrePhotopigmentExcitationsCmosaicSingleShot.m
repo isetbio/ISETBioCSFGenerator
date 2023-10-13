@@ -1,10 +1,10 @@
 function dataOut = nrePhotopigmentExcitationsCmosaicSingleShot(...
     neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
     sceneSequenceTemporalSupport, instancesNum, varargin)
-% Compute function for computation of cone excitations witout eye movements. 
-% This function is only suitable for scene that has one frame. Since this
-% is a special case, we just direct to a more general function
-% nrePhotopigmentExcitationsCmosaic.m when this is called.
+% Calculates cone excitations without considering fixational eye movements.
+% This function is designed for scenes with a single frame only. It has
+% been deprecated, so when called, it automatically redirects to a more
+% general function, nrePhotopigmentExcitationsCmosaic.m.
 %
 % Syntax:
 %   dataOut = nrePhotopigmentExcitationsConeMosaicSingleShot(...

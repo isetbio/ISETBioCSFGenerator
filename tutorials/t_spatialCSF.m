@@ -50,12 +50,12 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-% neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
-neuralParams = nrePhotopigmentExcitationsCmosaic;
+neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
+% neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
-% theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
+% theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
 
 %% Instantiate the Poisson responseClassifierEngine
 %
@@ -107,7 +107,7 @@ questEnginePara = struct( ...
     'stopCriterion', 0.05);
 
 %% Compute threshold for each spatial frequency
-useOldWay = false;
+useOldWay = true;
 % See toolbox/helpers for functions createGratingScene computeThreshold
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
@@ -129,7 +129,7 @@ for idx = 1:length(spatialFreqs)
     else
         [logThreshold(idx), questObj, ~, para(idx,:)] = ...
             computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-            classifierPara, thresholdPara, questEnginePara, 'TAFC',true, 'amputateScenes',false);
+            classifierPara, thresholdPara, questEnginePara, 'TAFC',true);
     end
     
     % Plot stimulus

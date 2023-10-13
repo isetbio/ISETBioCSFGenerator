@@ -1,20 +1,21 @@
 function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
     neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
     sceneSequenceTemporalSupport, instancesNum, varargin)
-% Compute function for computation of cone excitations witout eye movements. 
+% Calculates cone excitations without considering fixational eye movements.
 % This function allows an input of a sequence of scene, but it only
 % computes cone excitations given the first scene and neglects the rest. 
-% Since this is a special case, it's recommended to switch to a more 
-% general function nrePhotopigmentExcitationsCmosaic.m.
+% Since this is a special case, it has been deprecated, and when it's 
+% called, it automatically redirects to a more general function 
+% nrePhotopigmentExcitationsCmosaic.m.
 %
 % Syntax:
 %   dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
 %    neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
-% See Also:
-%     t_neuralResponseCompute
-
+% See: 
+%   nrePhotopigmentExcitationsCmosaic.m
+%
 % History:
 %    09/26/2020  npc  Wrote it.
 %    10/05/2020  dhb  Apply ieParamFormat to varargin for all keys.
@@ -31,22 +32,25 @@ function dataOut = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements(...
 %                     control of eccentricity.
 %    09/28/2023  fh   Moved this function to the deprecated file.  
 %
-% Examples:
-%   See nrePhotopigmentExcitationsCmosaic.m
 
-
-% Check input arguments. If called with zero input arguments, just return the default params struct
+% Check input arguments. If called with zero input arguments, just return 
+% the default params struct
 if (nargin == 0)
     warning(['This function has been deprecated. Consider using a more ',...
-        'general function nrePhotopigmentExcitationsCmosaic.m. If you ',...
-        'want to keep only the first scene, which this deprecated function ',...
-        'does, you could set ''amputateScenes'' to true when calling the ',...
-        'general function.']);
+        'general function nrePhotopigmentExcitationsCmosaic.m. If there are ',...
+        'more than one scene, and you would like to keep only the first scene,',...
+        ' like how this deprecated function does, you could set ',...
+        '''amputateScenes'' to true when calling the general function.']);
     dataOut = nrePhotopigmentExcitationsCmosaic();
     return;
 end
 
-varargin_extended = [varargin, 'amputateScenes',true];
+%if there is only one scene, then we do not need to amputate
+if length(sceneSequence) == 1; amputateScenes = false;
+else; amputateScenes = true; end
+%add the extra key value pair
+varargin_extended = [varargin, 'amputateScenes', amputateScenes];
+%redirect to the general function
 dataOut = nrePhotopigmentExcitationsCmosaic(neuralEngineOBJ,...
     neuralResponseParamsStruct, sceneSequence,  ...
     sceneSequenceTemporalSupport, instancesNum, varargin_extended{:});

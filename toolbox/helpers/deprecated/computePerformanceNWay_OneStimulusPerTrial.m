@@ -1,79 +1,28 @@
 function [predictions, theClassifierEngine, responses] = computePerformanceNWay_OneStimulusPerTrial(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     saveResponses, visualizeAllComponents)
-% Compute performance of a classifier given a null and test scene, a neural engine, and a classifier engine.
+% Compute performance of a classifier given multiple scenes, one for each 
+% alternative choice, a neural engine, and a classifier engine. This 
+% function should be called when the task is N-alternative forced-choice 
+% given one stimulus per trial. This function has been merged with
+% computePerformanceTAFC.m, and when it's called, it automatically
+% redirects to a more general function, computePerformance.m. 
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses] = ...
 %        computePerformanceNWay_OneStimPerTrial(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
 %           theClassifierEngine, trainNoiseFlag, testNoiseFlag, saveResponses, visualizeAllComponents)
 %
-% Description:
-%     Train a classifier on a discrimination and report back a vector of
-%     1's and 0's indicating correct and incorrect trials respectively.
+% See: 
+%   computePerformance.m
 %
-%     This uses the ISETBioCSFGeneratorFramework and works because the uers
-%     passes a set of objects with standardized API.  These describe the
-%     two scenes to be discriminated, the neural pipeline that processes
-%     these scenes, and the classifer.
-%
-% Inputs:
-%     theScenes             - Cell array of the scene sequences for each alternative.
-%     temporalSupport       - Temporal support vector (in seconds) for
-%                             scene sequences.
-%     nTrain                - Number of null and test response instances
-%                             used in classifer training.  The two types of
-%                             instances are paired and a nTrain TAFC task is
-%                             simulated.
-%     nTest                 - Number of null and test response instances
-%                             used in classifer training.  The two types of
-%                             instances are paired and nTest TAFC
-%                             trials are simulated for evaluating
-%                             performance.
-%     theNeuralEngine       - @neuralResponseEngine object to compute
-%                             neural responses.
-%     theClassifierEngine   - @responseClassifierEngine object that
-%                             implements observer decision model.  This is
-%                             assumed untrained if trainedNoiseFlag
-%                             contains a string, and trained if
-%                             trainedNoiseFlag is empty.
-%     trainNoiseFlag        - String.  Type of noise to be used in training
-%                             the classifier. This flag are passed to
-%                             theNeuralEngine to generate the training
-%                             response instances. Typically either 'none' or
-%                             'random' depending on whether the desired
-%                             classifier is signal known exactly ('none')
-%                             or signal known statistically ('random').
-%     testNoiseFlag          - String. Type of noise to be used in
-%                             evaluating performance. This flag are passed to
-%                             theNeuralEngine to generate the test
-%                             response instances. Typically 'random'.
-%     saveResponses         - Logical. Whether to return the computed
-%                             response instances.
-%     visualAllComponentrs  - Logical. Whether to visualize or not.
-%
-% Outputs:
-%     predictions            - Vector of 1's (correct) and 0's (incorrect)
-%                              that gives trial by trial performance of the
-%                              tested classifier in the TAFC task.
-%                              Contains nTest entries.
-%     theClassifierEngine    - Trained version of passed classifier object.
-%
-%     responses              - Neural responses computed
-%
-% Optional key/value pairs:
-%     None.
-%
-% See also
-%   t_thresholdEngineNWay_OneStimPerTrial
-%
-
 % History:
 %   10/23/20  dhb  Comments.
 %   05/10/23  fh   Added a warning and moved the file to the deprecated
 %                   folder
 
-warning('This function has been deprecated. Please consider using a more general function computePerformance.m!');
+warning(['This function has been deprecated. Please consider using a more ',...
+    'general function computePerformance.m!']);
 
 %direct to the general function
 [predictions, theClassifierEngine, responses] = computePerformance(theScenes, ...

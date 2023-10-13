@@ -1,10 +1,12 @@
 function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = ...
     computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
-% Compute contrast threshold for a given scene, neural response engine, and classifier engine
+% Compute contrast threshold for different scenes, neural response engine, 
+% and classifier engine. This function is suitable for both TAFC and 
+% N-alternative forced-choice tasks. 
 %
 % Syntax:
-%    [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThresholdTAFC( ...
+%    [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold( ...
 %        theSceneEngine, theNeuralEngine, classifierEngine, ...
 %        classifierPara, thresholdPara, questEnginePara)  
 %
@@ -55,6 +57,9 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           the mRGC mosaic attached to an MRGC neural engine
 %   'TAFC'                - logical. Whether this is a two-interval forced-choice task
 %                           or N-way one-stimulus-per-trial task. Default false.
+%   'amputateScenes'      - Logical. Whether we want to just select the first 
+%                           scene and generate cone excitations and amputate the
+%                           rest. Default: false.
 %
 % See also:
 %    t_spatialCSF, t_thresholdEngine, computePerformance

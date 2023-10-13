@@ -304,7 +304,12 @@ function p = generateDefaultParams()
     );
 end
 
-function flag_detectDiff = checkSceneSequences_allFramesIdentical(sceneSequence)
+function flag_detectDiff = checkSceneSequences_allFramesIdentical(...
+    sceneSequence, nSamples)
+    %nSamples is the number of randomly selected photons we'd like to
+    %compare
+    if nargin < 2; nSamples = 100; end
+
     %the total number of frames
     total_seq = length(sceneSequence);
     %get the first scene (use it as reference)
@@ -315,20 +320,23 @@ function flag_detectDiff = checkSceneSequences_allFramesIdentical(sceneSequence)
     %initialize the counter for the comparison scene
     counter_seq = 2;
     
-    %select how many elements we'd like to randomly check
-    nSamples    = 100;
-    idx_samples = randi(length(scenePhotons_ref), [1,nSamples]);
+    %just in case the length of scene photons is less than the default
+    %value, here we take the minimum between that and nSamples
+    nSamples_min = min([length(scenePhotons_ref), nSamples]);
+    %randomly generate indices 
+    idx_samples  = randi(length(scenePhotons_ref), [1,nSamples_min]);
 
+    %check if all randomly selected elements are equal
     while (~flag_detectDiff) && (counter_seq <= total_seq)
-        %check if all randomly selected elements are equal
+        %grab the reference scene photons
         scenePhotons_comp = sceneSequence{counter_seq}.data.photons(:);
         %compute the mean absolute difference
-        meanAbsDiff = mean(abs(scenePhotons_ref(:) - scenePhotons_comp(:)));
+        scaleVal = mean(abs(scenePhotons_ref(idx_samples) - scenePhotons_comp(idx_samples)));
+        if scaleVal < 1e-20, scaleVal = 1e-20; end
         %if it's already 0, then return no difference detected
         %otherwise, compare the mean absolute difference with a scaled tiny
         %number
-        if any(meanAbsDiff) && (sum(abs(scenePhotons_ref(idx_samples)-...
-                scenePhotons_comp(idx_samples)) < 1e-20*meanAbsDiff) ~= nSamples)
+        if max(abs(scenePhotons_ref(idx_samples)- scenePhotons_comp(idx_samples))./scaleVal) > 1e-6
             flag_detectDiff = 1;
         end
         counter_seq = counter_seq+1;
