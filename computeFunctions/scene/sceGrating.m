@@ -352,8 +352,8 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
             envelope(idx) = 1;
         case 'halfcos'
             % the positive half of cosine wave is selected (-pi/2 to pi/2)
-            Xp = X.* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
-            Yp = Y.* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
+            Xp = (X + gratingParams.spatialPositionDegs(1)).* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
+            Yp = (Y + gratingParams.spatialPositionDegs(2)).* (pi/(2*gratingParams.spatialEnvelopeRadiusDegs));
             envelope = cos(Xp).* cos(Yp);
             idx = find(Xp < -pi / 2 | Xp > pi / 2 ...
                  | Yp < -pi/2 | Yp > pi / 2);
