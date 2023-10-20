@@ -127,7 +127,7 @@ theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralR
 % Since we are using a contrast-modulation based input to the mRGCmosaic,
 % the Poisson noise is not valid. So we use a computationalObserver (SVM
 % based)
-classifierChoice = 'computationalObserver';
+classifierChoice = 'idealObserver';
 
 switch (classifierChoice) 
     case 'idealObserver'
