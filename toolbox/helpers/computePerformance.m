@@ -97,12 +97,14 @@ p.addParameter('TAFC',  false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('amputateScenes', false, @islogical);
+p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
 saveResponses = p.Results.saveResponses;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 amputateScenes = p.Results.amputateScenes;
+theBackgroundRetinalImage = p.Results.theBackgroundRetinalImage;
 
 % Empty responses
 responses = [];
@@ -133,7 +135,8 @@ if (~isempty(trainNoiseFlag))
                 theScenes{n}, ...
                 temporalSupport, ...
                 nTrain, ...
-                'noiseFlags', {trainNoiseFlag});
+                'noiseFlags', {trainNoiseFlag},...
+                'theBackgroundRetinalImage',theBackgroundRetinalImage);
         end
     end
 
@@ -219,7 +222,8 @@ for n = 1:nScenes
             theScenes{n}, ...
             temporalSupport, ...
             nTests_eachScene, ...
-            'noiseFlags', {testNoiseFlag});
+            'noiseFlags', {testNoiseFlag},...
+            'theBackgroundRetinalImage',theBackgroundRetinalImage);
     end
 end
 e = toc(eStart);

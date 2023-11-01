@@ -85,6 +85,7 @@ p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
 p.addParameter('amputateScenes', false, @islogical);
+p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
 
 parse(p, varargin{:});
 beVerbose = p.Results.beVerbose;
@@ -92,6 +93,7 @@ visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 isTAFC = p.Results.TAFC;
+theBackgroundRetinalImage = p.Results.theBackgroundRetinalImage;
 amputateScenes = p.Results.amputateScenes;
 
 % Construct a QUEST threshold estimator estimate threshold
@@ -294,7 +296,8 @@ while (nextFlag)
             classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
             'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
             'visualizeAllComponents', visualizeAllComponents,...
-            'amputateScenes', amputateScenes);
+            'amputateScenes', amputateScenes,'theBackgroundRetinalImage',...
+            theBackgroundRetinalImage);
         
         % Copy the trained classifier
         theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
@@ -347,7 +350,8 @@ while (nextFlag)
         [predictions, ~, ~] = computePerformance(theSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
-            'TAFC', isTAFC, 'saveResponses', false, 'visualizeAllComponents', false);
+            'TAFC', isTAFC, 'theBackgroundRetinalImage',theBackgroundRetinalImage,...
+            'saveResponses', false, 'visualizeAllComponents', false);
         
         testCounter = testCounter + 1;
         e = toc(eStart);
