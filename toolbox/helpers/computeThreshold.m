@@ -260,7 +260,8 @@ while (nextFlag)
                        spatioTemporalPoolingWeights(theNeuralEngine,...
                        theNullSceneSequence,... %null
                        theSceneSequence{testedIndex},... %test
-                       theSceneTemporalSupportSeconds);
+                       theSceneTemporalSupportSeconds,...
+                       'theBackgroundRetinalImage',theBackgroundRetinalImage);
                    
                 case 'quadratureEnergy'
                    [poolingWeights.direct, poolingWeights.quadrature, ...
@@ -268,7 +269,8 @@ while (nextFlag)
                        spatioTemporalPoolingWeights(theNeuralEngine,...
                        theNullSceneSequence,... %null
                        theSceneSequence{testedIndex},... %test
-                       theSceneTemporalSupportSeconds);
+                       theSceneTemporalSupportSeconds,...
+                       'theBackgroundRetinalImage',theBackgroundRetinalImage);
                    
                 otherwise
                     error('Unknown classifier engine pooling type: ''%s''.',...
