@@ -18,7 +18,7 @@ clear; close all;
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'luminance';
+stimType = 'achromatic';
 switch (stimType)
     case 'achromatic'
         chromaDir = [1.0, 1.0, 1.0]';
@@ -34,7 +34,7 @@ end
 % exceed the gamut of the monitor, so we are conservative and set this at a
 % value that is within gamut of typical monitors and don't worry about it
 % further for this tutorial.  A vector length contrast of 0.08 should be OK.
-rmsContrast = 0.08;
+rmsContrast = 0.1;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
@@ -244,10 +244,10 @@ minPixelsNumPerCycle = 12;
 % Grating orientation
 theStimulusOrientationDegs = 90;
 
-% With access to theGratingSceneEngine, we can compute theNullStimulusScene
+%% With access to theGratingSceneEngine, we can compute theNullStimulusScene
 nullContrast = 0.0;
 theGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD, ...
-        'spatialEnvelope', 'rect', ...
+        'spatialEnvelope', 'soft', ...
         'orientation', theStimulusOrientationDegs, ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
