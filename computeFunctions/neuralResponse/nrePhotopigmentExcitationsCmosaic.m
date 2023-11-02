@@ -131,6 +131,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     p.addParameter('noiseFlags', {'random'});
     p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
     p.addParameter('amputateScenes', false, @islogical);
+    p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     
@@ -209,10 +210,10 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
+        % Compute the noise-free response
+        % To do so, first save the current mosaic noiseFlag
+        lastConeMosaicNoiseFlag = theConeMosaic.noiseFlag;
         if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
-            % Compute the noise-free response
-            % To do so, first save the current mosaic noiseFlag
-            lastConeMosaicNoiseFlag = theConeMosaic.noiseFlag;
             
             % Set the coneMosaic.noiseFlag to 'none';
             theConeMosaic.noiseFlag = 'none';
@@ -230,11 +231,11 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
                     'withFixationalEyeMovements', false, ...
                     'nTimePoints', framesNum);
             end
-        
-            % Restore the original noise flag
-            theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
             
-        elseif (~isempty(rngSeed))
+        elseif (~isempty(rngSeed))            
+            % Set the coneMosaic.noiseFlag to 'none';
+            theConeMosaic.noiseFlag = 'random';
+
             % Compute noisy response instances with a specified random noise seed for repeatability
             if ~amputateScenes
                 [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
@@ -250,11 +251,16 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
                     'nTimePoints', framesNum,...
                     'seed', rngSeed);        % random seed
             end
+
         elseif (contains(ieParamFormat(noiseFlags{idx}), 'random'))
             % Because computeForOISequence freezes noise, if we want
             % unfrozen noise (which is the case if we are here), 
             % we have to pass it a randomly chosen seed.
             useSeed = randi(32000,1,1);
+            
+            % Set the coneMosaic.noiseFlag to 'none';
+            theConeMosaic.noiseFlag = 'random';
+
             % Compute noisy response instances
             if ~amputateScenes
                 [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
@@ -271,6 +277,9 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
                     'seed', useSeed);        % random seed
             end
         end
+        
+        % Restore the original noise flag
+        theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
     end
     
     % Restore rng seed if we set it
