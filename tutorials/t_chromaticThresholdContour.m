@@ -23,7 +23,7 @@ clear; close all;
 % Using 90 degree (sine phase) makes the stimulus symmetric in terms of
 % balanced incremental and decremental components, so that the isothreshold
 % contour is also symmetric.
-spatialFreq = 0;
+spatialFreq = 1;
 gratingPhaseDeg = 0;
 
 % Set up a set of chromatic directions. Passing elevation = 90 puts these
@@ -142,6 +142,6 @@ plot([0 0],[-contrastLim contrastLim],'k:','LineWidth',1);
 xlabel('L Cone Contrast');
 ylabel('M Cone Contrsast');
 set(theContourFig, 'Position',  [800, 0, 600, 800]);
-xlim([-contrastLim contrastLim]); ylim([-contrastLim contrastLim]);
+% xlim([-contrastLim contrastLim]); ylim([-contrastLim contrastLim]);
 axis('square');
 

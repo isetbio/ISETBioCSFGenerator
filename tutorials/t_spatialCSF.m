@@ -23,12 +23,12 @@
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = 2.^(2:5); %[4, 8, 16, 32]
+spatialFreqs = 2.^(1:5); %[4, 8, 16, 32]
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'luminance';
+stimType = 'red-green';
 switch (stimType)
     case 'luminance'
         chromaDir = [1.0, 1.0, 1.0]';
@@ -54,14 +54,14 @@ neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
 % neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
-% theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+% theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
+theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
 
 %% Instantiate the Poisson responseClassifierEngine
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-useOldWay = false;
+useOldWay = true;
 if useOldWay
     classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
 else
@@ -107,7 +107,6 @@ questEnginePara = struct( ...
     'stopCriterion', 0.05);
 
 %% Compute threshold for each spatial frequency
-useOldWay = false;
 % See toolbox/helpers for functions createGratingScene computeThreshold
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
@@ -134,7 +133,7 @@ for idx = 1:length(spatialFreqs)
     
     % Plot stimulus
     figure(dataFig);
-    subplot(4, 2, idx * 2 - 1);
+    subplot(length(spatialFreqs), 2, idx * 2 - 1);
     
     visualizationContrast = 1.0;
     [theSceneSequence] = gratingScene.compute(visualizationContrast);
@@ -142,7 +141,7 @@ for idx = 1:length(spatialFreqs)
     
     % Plot data and psychometric curve 
     % with a marker size of 2.5
-    subplot(4, 2, idx * 2);
+    subplot(length(spatialFreqs), 2, idx * 2);
     questObj.plotMLE(2.5,'para',para(idx,:));
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
@@ -153,6 +152,8 @@ threshold = 10 .^ logThreshold;
 %% Plot Contrast Sensitivity Function
 theCsfFig = figure();
 loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
+xticks(spatialFreqs); xlim([spatialFreqs(1), spatialFreqs(end)]);
+yticks([2,5,10,20,50]); ylim([1, 50]);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
