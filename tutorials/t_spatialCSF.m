@@ -28,7 +28,7 @@ spatialFreqs = 2.^(1:5); %[4, 8, 16, 32]
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'red-green';
+stimType = 'luminance';
 switch (stimType)
     case 'luminance'
         chromaDir = [1.0, 1.0, 1.0]';
@@ -52,7 +52,7 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 % noise, and includes optical blur.
 neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
 % neuralParams = nrePhotopigmentExcitationsCmosaic;
-neuralParams.coneMosaicParams.fovDegs = 0.25;
+neuralParams.coneMosaicParams.fovDegs = 0.5; 
 neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
 % theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicWithNoEyeMovements, neuralParams);
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);

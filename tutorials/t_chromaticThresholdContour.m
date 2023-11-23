@@ -23,7 +23,7 @@ clear; close all;
 % Using 90 degree (sine phase) makes the stimulus symmetric in terms of
 % balanced incremental and decremental components, so that the isothreshold
 % contour is also symmetric.
-spatialFreq = 1;
+spatialFreq = 4;
 gratingPhaseDeg = 0;
 
 % Set up a set of chromatic directions. Passing elevation = 90 puts these
@@ -34,7 +34,7 @@ gratingPhaseDeg = 0;
 % conservative and set this at a value that is within gamut of typical
 % monitors and don't worry about it further for this tutorial.  A vector
 % length contrast of 0.08 should be OK.
-rmsContrast = 0.08;
+rmsContrast = 0.1;
 nDirs = 16;
 for ii = 1:nDirs
     theta = (ii-1)/nDirs*2*pi;
@@ -75,7 +75,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 % Parameter for running the QUEST+
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-questEnginePara = struct('minTrial', 1280, 'maxTrial', 1280, ...
+questEnginePara = struct('minTrial', 1280*2, 'maxTrial', 1280*2, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
 
@@ -143,5 +143,6 @@ xlabel('L Cone Contrast');
 ylabel('M Cone Contrsast');
 set(theContourFig, 'Position',  [800, 0, 600, 800]);
 % xlim([-contrastLim contrastLim]); ylim([-contrastLim contrastLim]);
-axis('square');
+%axis('square'); 
+axis equal
 
