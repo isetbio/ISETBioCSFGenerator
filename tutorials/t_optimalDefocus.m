@@ -1,16 +1,16 @@
-function [defocus_adj, defocus_adj_micons] = t_optimalDefocus(emmetropes_subj,...
+function [defocus_adj, defocus_adj_microns] = t_optimalDefocus(PolansSubj,...
     varargin)
 %{
 The goal of this script is to find the amount of defocus that can lead
-to the most compact PSF. Specifically,
-1. We pick a in-focus wavelength (550 nm) and set it to be the calculate 
-    wavelength 
+to the most compact PSF at the FOVEA. Specifically,
+1. We pick a in-focus wavelength (e.g., 550 nm) and set it to be the 
+    calculate wavelength 
 2. Vary the amount of defocus and convert it to microns
 3. Loop through all the defocus
     Add it to the 5th Zernike polynomial
     Compute the PSF
     Find the peak of the PSF / compute the Strehl ratio
-4. Find the LCA that corresponds to the highest peak of the PSF / the 
+4. Find the defocus that corresponds to the highest peak of the PSF / the 
     largest Strehl ratio
 5. Validation
     Add the optimal defocus to the 5th Zernike polynomial 
@@ -36,9 +36,11 @@ p.addParameter('measuredPupilMM', 4,@isscalar);  %measured pupil size (mm)
 p.addParameter('calcPupilMM', 3, @isscalar);     %pupil size for calculation (mm)
 p.addParameter('measuredWvl', 550, @(x)(isscalar(x) && floor(x)==ceil(x))); %measured wavelength (nm)
 p.addParameter('infocusWvl', 550, @(x)(isscalar(x) && floor(x)==ceil(x)));  %select one in-focus wavelength for visualization
-p.addParameter('defocus_lb', -1.5, @isnumber);   %the lower bound of defocus
-p.addParameter('defocus_ub', 1.5, @isnumber);    %the upper bound of defocus
+p.addParameter('defocus_lb', -1.5, @isscalar);   %the lower bound of defocus
+p.addParameter('defocus_ub', 1.5, @isscalar);    %the upper bound of defocus
 p.addParameter('whichEye', 'right', @(x)(ischar(x) && (ismember(x, {'left', 'right'}))));  
+p.addParameter('zernike_jIndex', 3:14, @(x)(isnumeric(x) && (max(x) <= 15) && (min(x) >= 1)));
+p.addParameter('verbose', true, @islogical);
 p.addParameter('visualization',true, @islogical);
 
 parse(p, varargin{:});
@@ -49,6 +51,8 @@ infocusWvl_slc  = p.Results.infocusWvl;
 addedDefocus_lb = p.Results.defocus_lb;
 addedDefocus_ub = p.Results.defocus_ub;
 whichEye        = p.Results.whichEye;
+jIndex          = p.Results.zernike_jIndex;
+verbose         = p.Results.verbose; 
 visualization   = p.Results.visualization; 
 
 %do some basic checks for the inputs
@@ -60,55 +64,49 @@ assert(addedDefocus_ub > addedDefocus_lb, ['The upper bound has to be ',...
 
 %% first pick a subject's optics
 %have a range of in-focus wavelength and set them to calc wvl
-infocusWvl   = 450:1:650;
+infocusWvl   = 450:10:650;
 calcWvl      = infocusWvl; 
 lenCalcWvl   = length(calcWvl);
-%select one in-focus wavelength for visualization
+%find the index corresponding to the selected in-focus wavelength
 idx_wvl      = find(calcWvl == infocusWvl_slc);
 %have a range of defocus value (diopters)
 lenDefocus   = 101;
 addedDefocus = linspace(addedDefocus_lb,addedDefocus_ub,lenDefocus);
-%select one defocus for visualizing PSF's with different calc wvls
-defocus_slc  = 0;
-%convert it to microns
-lcaMicrons   = wvfDefocusDioptersToMicrons(-addedDefocus, measuredPupilMM);
 
 %the goal is to find the amount of defocus that makes the PSF as compact as
 %possible. Initialize the variable that stores it.
-optDefocus_wvl550 = NaN; %for in-focus wavelength = 550 nm
-
-%if we'd like to make an adjustment (i.e., add the amount of defocus to the
-%5th zernike polynomial) after we update the variable optDefocus_wvl550
-flag_adjustment   = true;
+[optDefocus_diopters_gridSearch, optDefocus_diopters_fmincon] = deal(NaN(1,3));
 
 %% Load the data from the selected subject
-% wvf_0 = wvfLoadWavefrontOpticsData(...
-%     'wvfZcoefsSource', 'JaekenArtal2012', 'jIndex', 3:14, ...
-%     'whichEye', 'right', 'eccentricity', [0,0], ...
-%     'whichGroup', emmetropes_subj, 'verbose', false);
 wvf_0 = wvfLoadWavefrontOpticsData(...
-    'wvfZcoefsSource', 'Polans2015', 'jIndex', 3:14, ...
+    'wvfZcoefsSource', 'Polans2015', 'jIndex', jIndex, ...
     'whichEye', whichEye, 'eccentricity', [0,0], ...
-    'whichGroup', emmetropes_subj, 'verbose', false);
+    'whichGroup', PolansSubj, 'verbose', false);
 %grab the zernike polynomial corresponding to defocus
 defocus_wvf0 = wvfGet(wvf_0, 'zcoeffs', {'defocus'});
 
 % get the diffraction-limited optics
 wvf_diffractionLimited = wvfCreate(...
-    'zcoeffs',zeros(1,15), ...
+    'zcoeffs', zeros(1,15), ...
     'measured pupil', measuredPupilMM,...
     'measured wavelength', measuredWvl, ...
     'calc pupil size', calcPupilMM,...
     'calc wavelengths', infocusWvl_slc);
-wvf_diffractionLimited = wvfComputePSF(wvf_diffractionLimited,[],'nolca',false);
+wvf_diffractionLimited = wvfComputePSF(wvf_diffractionLimited);
 % get the psf given the diffraction-limited optics
 psf_diffractionLimited = wvf_diffractionLimited.psf;
 
 %% Main code starts here
-while flag_adjustment     
+%We need to loop through the code twice. In the 1st time, we find the
+%optimal amount of defocus using both grid search and fmincon. In the
+%2n time, we add the optimal amount of defocus we just calculated and
+%repeat the same thing. This serves as a sanity check. If the code is doing
+%what it is supposed to do, then the optimal defocus we find in the 2nd
+%time should be 0.
+for counter = 1:2
     % save all the point spread functions with varying in-focus wavelength
     % and added amount of defocus
-    psf = cell(lenCalcWvl, lenDefocus);    
+    psf = cell(lenCalcWvl, lenDefocus);  
     for l = 1:lenCalcWvl
         %copy the wavefront parameter structure
         wvf_l = wvf_0;
@@ -120,19 +118,14 @@ while flag_adjustment
         %loop through each defocus
         for m = 1:lenDefocus
             %if we haven't found the optimal defocus that leads to the
-            %sharpest PSF
-            if ~isnan(optDefocus_wvl550)
-                %then we do the adjustment by adding the defocus
-                defocus_added = addedDefocus(m) + optDefocus_wvl550;
-                flag_adjustment_temp = false;
-            %if we have found the optimal defocus
-            else
-                %then we just add the defocus (microns)
-                defocus_added = addedDefocus(m);
-                flag_adjustment_temp = true;
-            end
+            %sharpest PSF, we make no adjustment because
+            %optDefocus_diopters_gridSearch(1) = NaN
+            %if we have found that, optDefocus_diopters_gridSearch(2) will
+            %not be NaN.
+            addedDefocus_updated = nansum([addedDefocus(m),...
+                optDefocus_diopters_gridSearch(counter)]);
             %compute the psf with added defocus
-            [~, psf{l,m}] = psf_addedDefocus(defocus_added, ...
+            [~, psf{l,m}] = psf_addedDefocus(addedDefocus_updated, ...
                 defocus_wvf0, wvf_l, measuredPupilMM);
         end
     end 
@@ -149,52 +142,76 @@ while flag_adjustment
     
     %We do not vary in-focus wavelength here, but instead just fix it at
     %550nm since it's a reasonable choice
-    [maxPSF_wvl550, ~, optDefocus_wvl550, maxPSFVal_wvl550] = ...
+    [maxPSF_wvl550, ~, optDefocus_diopters_gridSearch(counter+1), maxPSFVal_wvl550] = ...
         compactness_maxVal([calcWvl(idx_wvl)], addedDefocus, psf(idx_wvl,:));
-    
+
     [strehlRatio_wvl550, ~, ~, maxStrehlRatio_wvl550] = ...
         compactness_StrehlRatio([calcWvl(idx_wvl)], addedDefocus, ...
         psf(idx_wvl,:), psf_diffractionLimited);
 
-    %update the flag 
-    %if we have already done adjustment by adding the defocus, then we can
-    %exit out of the loop by switching flag_adjustment to false
-    flag_adjustment = flag_adjustment_temp;
-
     %Or we could call fmincon and have it to find the defocus that
     %leads to the most compact PSF
-    if flag_adjustment; defocus_adj = 0; 
-    else; defocus_adj = optDefocus_fmincon; 
-        defocus_adj_micons = wvfDefocusDioptersToMicrons(-defocus_adj, measuredPupilMM);
-    end
-    [optDefocus_fmincon, ~] = findOptDefocus_fmincon(...
-        defocus_wvf0, defocus_adj, wvf_550, measuredPupilMM, ...
+    defocus_adj_temp = nansum([0, optDefocus_diopters_fmincon(counter)]);
+    [optDefocus_diopters_fmincon(counter+1), ~] = findOptDefocus_fmincon(...
+        defocus_wvf0, defocus_adj_temp, wvf_550, measuredPupilMM, ...
         addedDefocus_lb, addedDefocus_ub);
 
     %% display the results and compare
-    if flag_adjustment; disp('Before adjustment:'); 
-    else; disp('After adjustment:'); end
-    fprintf(['The amount of defocus that leads to the most compact PSF is:\n',...
-        '%.3f diopters (by grid search); %.3f diopters (by fmincon)\n'],...
-        optDefocus_wvl550, optDefocus_fmincon);
+    if verbose
+        if counter == 1; disp('Before adjustment:'); 
+        else; disp('After adjustment:'); end
+        fprintf(['The amount of defocus that leads to the most compact PSF is:\n',...
+            '%.3f diopters (by grid search); %.3f diopters (by fmincon)\n'],...
+            optDefocus_diopters_gridSearch(counter+1), ...
+            optDefocus_diopters_fmincon(counter+1));
+    end
     
     %% VISUALIZATION
     if visualization
         % Visualize the peak of PSF
-        plotMaxPSF(calcWvl, addedDefocus, lcaMicrons,maxPSF, maxPSF_wvl550,...
-            strehlRatio_wvl550, optDefocus_wvl550,maxPSFVal_wvl550,...
-            maxStrehlRatio_wvl550, emmetropes_subj, flag_adjustment)
+        plotMaxPSF(calcWvl, addedDefocus, maxPSF, maxPSF_wvl550,...
+            strehlRatio_wvl550, optDefocus_diopters_gridSearch(counter+1),...
+            maxPSFVal_wvl550, maxStrehlRatio_wvl550, measuredPupilMM)
         
         %Fix defocus to be 0, and visualize the PSF with selected calc wavelengths 
-        contourPSF(calcWvl, addedDefocus, [500,550,600], defocus_slc, psf,...
-            emmetropes_subj, flag_adjustment)
+        defocus_visualization  = 0;
+        wvl_visualization = [500,550,600];
+        contourPSF(calcWvl, addedDefocus, wvl_visualization, ...
+            defocus_visualization, psf)
     end
 end
+
+%do some simple check
+assert(abs(optDefocus_diopters_gridSearch(end)) <= 1e-2 && ...
+    abs(optDefocus_diopters_fmincon(end)) <= 1e-2, ['After the adjustment, ',...
+    'the psf function should be the most compact when 0 diopter is added.']);
+assert(abs(optDefocus_diopters_gridSearch(end-1) - optDefocus_diopters_fmincon(end-1)) < 1e-2,...
+    ['The two approaches for finding the optimal defocus (grid search and ',...
+    'fmincon) should return almost the same result!']);
+%just return the optimal defocus
+defocus_adj = optDefocus_diopters_fmincon(2); 
+defocus_adj_microns = wvfDefocusDioptersToMicrons(-defocus_adj, measuredPupilMM);
+
 end
 
 %% HELPING FUNCTIONS
 function [maxPSF, optCalcW, optDefocus, maxVal] = compactness_maxVal(...
     calcW, defocus, PSF)
+    %{
+    This function finds the optimal amount of added defocus that would lead
+    to the most compact PSF.
+    ---- Inputs ----
+    calcW: a range of in-focus wavelengths
+    defocus: a range of added defocus
+    PSF: the point spread function 
+    ---- Outputs ----
+    maxPSF: the peak psf for each given calcW and defocus
+    optCalcW & optDefocus: the optimal combination of calcW and defocus
+        that together leads to the most compact PSF 
+    maxVal: the maximum value of maxPSF (i.e., the read-out value
+        corresponding to optCalcW & optDefocus)
+    %}
+
     %initialize 
     maxPSF = NaN(length(calcW), length(defocus));
     %loop through all the combinations of the in-focus wvl and added
@@ -215,6 +232,22 @@ end
 
 function [strehlRatio, optCalcW, optDefocus, maxStrehlRatio] = ...
     compactness_StrehlRatio(calcW, defocus, PSF, PSF_diffractionLimited)
+    %{
+    This function finds the optimal amount of added defocus that would lead
+    to the biggest strehl ratio.
+    ---- Inputs ----
+    calcW: a range of in-focus wavelengths
+    defocus: a range of added defocus
+    PSF: the point spread function 
+    PSF_diffractionLimited: the psf without aberrations
+    ---- Outputs ----
+    maxPSF: the peak psf for each given calcW and defocus
+    optCalcW & optDefocus: the optimal combination of calcW and defocus
+        that together leads to the biggest strehl ratio
+    maxStrehlRatio: the maximum value of maxPSF (i.e., the read-out value
+        corresponding to optCalcW & optDefocus)
+    %}
+
     %initialize
     strehlRatio = NaN(length(calcW), length(defocus));
     %get the peak of the PSF given diffraction-limited optics
@@ -235,24 +268,41 @@ function [strehlRatio, optCalcW, optDefocus, maxStrehlRatio] = ...
     optDefocus            = defocus(col);
 end
 
-function [peakPSF, psf] = psf_addedDefocus(defocus_added, defocus_wvf0,...
-    wvf_m, measuredPupilMM)
-    lcaMicrons = wvfDefocusDioptersToMicrons(-defocus_added, measuredPupilMM);
+function [peakPSF, psf] = psf_addedDefocus(defocus_added, defocus_wvf,...
+    wvf, measuredPupilMM)
+    %{
+    This function returns the peak of the psf and the whole psf given
+    different defocus. 
+    ---- Inputs ----
+    defocus_added: the amount of defocus (in diopters) we would like to add
+    defocus_wvf0: the original amount of defocus (the 5th zernike
+        polynomial)
+    wvf: the input wavefront parameters
+    measuredPupilMM: The pupil size for the measured wavefront aberration
+    ---- Outputs ----
+    psf: computed psf with added defocus
+    peakPSF: the peak of the psf
+    %}
+
+    %convert diopter to micron
+    lcaMicrons   = wvfDefocusDioptersToMicrons(-defocus_added, measuredPupilMM);
     %then we just add the defocus (microns)
-    defocus_wvf1 = defocus_wvf0 + lcaMicrons;
+    defocus_wvf  = defocus_wvf + lcaMicrons;
     %replace the defocus value with the new one
-    wvf_m = wvfSet(wvf_m, 'zcoeffs', defocus_wvf1, {'defocus'});
+    wvf          = wvfSet(wvf, 'zcoeffs', defocus_wvf, {'defocus'});
     %compute the point spread function
-    wvf_m = wvfComputePSF(wvf_m,[],'nolca',false);
+    wvf          = wvfComputePSF(wvf);
     %get the psf
-    psf = wvf_m.psf{1};
+    psf          = wvf.psf{1};
     %get the peak
-    peakPSF = max(psf(:));
+    peakPSF      = max(psf(:));
 end
 
 function [optDefocus, maxPSF] = findOptDefocus_fmincon(defocus_wvf0, ...
     defocus_adjustment, wvf_m, measuredPupilMM, lb, ub)
-    peakPSF = @(d) -psf_addedDefocus(d + defocus_adjustment, ...
+    %call psf_addedDefocus to get the peak psf
+    %a minus sign is added because fmincon finds the minimum
+    invertedPeakPSF = @(d) -psf_addedDefocus(d + defocus_adjustment, ...
                 defocus_wvf0, wvf_m, measuredPupilMM);
     %have different initial points to avoid fmincon from getting stuck at
     %some places
@@ -261,18 +311,23 @@ function [optDefocus, maxPSF] = findOptDefocus_fmincon(defocus_wvf0, ...
     options = optimoptions(@fmincon, 'MaxIterations', 1e5, 'Display','off');
     [optDefocus_n, minNegPSF_n] = deal(NaN(1, N_runs));
     for n = 1:N_runs
-        [optDefocus_n(n), minNegPSF_n(n)] = fmincon(peakPSF, init(n), ...
+        %use fmincon to search for the optimal defocus
+        [optDefocus_n(n), minNegPSF_n(n)] = fmincon(invertedPeakPSF, init(n), ...
             [],[],[],[],lb,ub,[],options);
     end
+    %find the index that corresponds to the minimum value
     [~,idx_min] = min(minNegPSF_n);
+    %find the corresponding optimal focus that leads to the highest peak of
+    %the psf's
     maxPSF      = -minNegPSF_n(idx_min);
     optDefocus  = optDefocus_n(idx_min);
 end
 
 %% PLOTTING FUNCTIONS
-function plotMaxPSF(calcWvl, addedDefocus, lcaMicrons, maxPSF, ...
-    maxPSF_slc,StrehlR_slc, optDefocus_wvl550,maxPSFVal_slc,...
-    maxStrehlR_slc, sN, flag_adjustment)
+function plotMaxPSF(calcWvl, addedDefocus, maxPSF, maxPSF_slc, StrehlR_slc,...
+    optDefocus_wvl550,maxPSFVal_slc, maxStrehlR_slc, measuredPupilMM)
+    %convert it to microns
+    lcaMicrons = wvfDefocusDioptersToMicrons(-addedDefocus, measuredPupilMM);
     c = [143,188,143]./255;
     cmap = [linspace(c(1), 1, 255)', linspace(c(2), 1, 255)',...
         linspace(c(3), 1,255)'];
@@ -289,7 +344,7 @@ function plotMaxPSF(calcWvl, addedDefocus, lcaMicrons, maxPSF, ...
     xticklabels(strtrim(sprintf('%s\\newline%s\n', xticksArray{:})));
     % xlabel(sprintf('The added defocus (1st row: diopters; 2nd row: microns)'));
     ylabel('In-focus wavelength (nm)'); axis square;
-    title(sprintf('Jaeken & Artal (Subj #%d)',sN));
+    title('The peak of PSF');
     set(gca,'FontSize',15);
     
     subplot(3,1,3)
@@ -316,15 +371,9 @@ function plotMaxPSF(calcWvl, addedDefocus, lcaMicrons, maxPSF, ...
     set(gca,'FontSize',15);
     set(gcf,'Units','normalized','Position',[0,0,0.2,0.65])
     set(gcf,'PaperUnits','centimeters','PaperSize',[20 28]);
-    % if flag_adjustment %before adjustment
-    %     saveas(gcf, ['OptimalDefocus_Polans_subj',num2str(sN),'.pdf']);
-    % else %after adjustment
-    %     saveas(gcf, ['OptimalDefocus_Polans_subj',num2str(sN),'_wAdjustment.pdf']);
-    % end
 end
 
-function contourPSF(calcWvl, addedDefocus, slc_calcWvl, slc_defocus,...
-    psf, sN, flag_adjustment)
+function contourPSF(calcWvl, addedDefocus, slc_calcWvl, slc_defocus, psf)
     lb_idx          = 77;
     ub_idx          = 127;
     lb_adjusted     = ceil((ub_idx - lb_idx)/2);
@@ -345,10 +394,5 @@ function contourPSF(calcWvl, addedDefocus, slc_calcWvl, slc_defocus,...
     end
     set(gcf,'Units','normalized','Position',[0,0, 0.15, 0.65]);
     set(gcf,'PaperUnits','centimeters','PaperSize',[20 28]);
-    % if ~flag_adjustment
-    %     saveas(gcf, ['Optics_Polans_sub',num2str(sN),'.pdf']);
-    % else
-    %     saveas(gcf, ['Optics_Polans_sub',num2str(sN),'_wAdjustment.pdf']);
-    % end
 end
 
