@@ -1,0 +1,100 @@
+1) The transition from coneMosaicHex is not complete.  We need to ablate this from the main thread.
+
+To find what needs to be done, global search on ConeMosaicHex will get you most of them.
+
+2) Can we delete ComputeParameterThreshold.m?
+
+3) Similarly, we need to think about whether we need both TAFC versions of various stuff and the NWay_OneStimulusPerTrial.  Can we make the TAFC versions calls into the NWay_OneSTimulusPerTrial?
+
+computeThresholdNWay_OneStimulusPerTrial.m: use Quest to find test contrast values
+	(line 168) inputs: theTestSceneSquences (type: cell, size: [1 x #A]; each cell has a size of [1 x #times]; each cell is a struct)
+	-> (line 177) computePerformanceNWay_OneStimulusPerTrial.m: training & making predictions
+		-> rcePoissonNWay_OneStimulusPerTrial.m: training, to compute the templates for different alternatives
+			(line 92) inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] cells, each cell is [#trials x #times x #cones]) 
+			(line 118) outputs: theClassifierEngine.preProcessingConstants.theTemplates (type: cell, size: 1 x #A; each cell is [1 x (#times x #cones)])
+		-> rcePoissonNWay_OneStimulusPerTrial.m: making predictions
+			(line 141) inputs: outOfSampleStimResponses (type: container, size: 1 x 1; key: 'random'; the container has a matrix [#testTrials x (#times x #cones)])
+			        theClassifierEngine.preProcessingConstants.theTemplates 
+			-> (line 181) PoissonDecisionLogLikelihoood.m: computing log likelihood of each template for the test and alternatives given the responses
+			outputs: predictions (type: vector, size: #trials)
+	outputs: predictions, theClassifierEngine
+
+computeThresholdTAFC.m
+	inputs: theNullSceneSequence (type: cell, size: 1 x #Times; each cell is a struct)
+	        theTestSceneSequences 
+	-> computePerformanceTAFC.m: training & making predictions
+		-> rcePoissonTAFC.m: training, to compute the templates for the null and the test stimuli
+			inputs: inSampleNullStimResponses (type: container, size: 1 x 1, key = 'none'; each container has a matrix [1 x #times x #cones]
+			        inSampleTestStimResponses
+			outputs: theClassifierEngine.preProcessingConstants.nullTemplate (type: mat, size: [1 x (#times x #cones)]]
+				 theClassifierEngine.preProcessingConstants.testTemplate 
+		-> rcePoissonTAFC.m: making predictions
+			inputs: outOfSampleNullStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
+			        outOfSampleTestStimResponses 
+			        theClassifierEngine.preProcessingConstants.nullTemplate
+			        theClassifierEngine.preProcessingConstants.testTemplate
+			-> PoissonDecisionLogLikelihoood.m: computing log likelihood of test/null template given test/null responses, and vice versa 
+			outputs: predictions (type: vector, size: #trials)
+	outputs: predictions, theClassifierEngine
+
+
+Merging the two: 
+computeThreshold.m: it requires an extra argument compared to computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
+	(line 69, 160) extra arg: taskDesign ('TAFC', 'NWay_OneStimulusPerTrial')
+	(line 195) inputs: theSceneSequences (type: cell, size: [1 x #A] or [1 x 2]; each cell has a size of [1 x #times]; each cell is a struct)
+	-> (line 280) computePerformance.m: training & making predictions
+		-> rcePoisson.m: training, to compute the templates for different scenes
+			(line 91) inputs: inSampleStimResponses (type: container, size: 1 x 1, key: 'none'; it has [1 x #A] or [1 x 2] cells, each cell is [#trials x #times x #cones]) 
+			(line 119) outputs: theClassifierEngine.preProcessingConstants (type: cell, size: [1 x #A] or [1 x 2]; each cell is [1 x (#times x #cones)])
+		extra arg: whichAlternatives (type: column vec, size: #testTrials), which is only valid for 'NWay'. For 'TAFC', set to [].
+		-> rcePoisson.m: making predictions
+			(line 144) inputs: outSampleStimResponses (type: container, size: 1 x 1, key = 'random'; the container has a matrix [#testTrials x (#times x #cones)]
+			-> PoissonDecisionLogLikelihoood.m: how this is called depends on whether whichAlternatives is empty
+			outputs: predictions (type: vector, size #trials)
+	outputs: predictions, theClassifierEngine
+ DHB: make a key value pair ('TAFC': false'), delete rcePoissonTAFC.m and stuff 
+
+
+Unfinished things:
+(1) add/change comments 
+(2) change tutorials that call computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m
+(3) move computeThresholdNWay_OneStimulusPerTrial.m & computeThresholdTAFC.m to /deprecated and give people options whether stick to them or the new function
+
+
+=================================================================================================
+Notes (need further discussion before making any changes)
+1) computeFunctions/scene/sceGrating.m
+There is a helper function inside this function, called generatePresentationDisplay. It assumes a default screen display 'LCD-Apple', which cannot be changed. Perhaps we can add a field 'screenDisplay' to the struct gratingParams to have more flexibility.
+	DHB: Yes, good.  Make default 'LCD-Apple' so the default behavior is unchanged.
+	FH: Done. Need to double check if all the tutorials make the corresponding changes.
+
+4) computeThresholdTAFC calls a function called spatioTemporalPoolingWeights.m when the inference engine needs to compute a template. The computation in the function is the same when we choose either 'linear' or 'quadratureEnergy'. It's not needed to get the template for phase-shifted stimuli when 'linear' is selected, so we can edit spatioTemporalPoolingWeights.m to speed up things a bit for the linear template. 
+	DHB: perhaps we can.
+
+5) if we set 'visualizeAllComponents' to be true when calling computePerformanceTAFC.m, then we can visualize the plot for cone responses. Perhaps we can also add a plotting function to visualize the trained classifier (line 131-133; theClassifierEngine.trainedClassifier) when 'visualizeAllComponents' is set to true. 
+	DHB: perhaps we can.
+
+6) when we compute templates by calling spatioTemporalPoolingWeights.m, it first computes the noise-free cone responses (size = 1 x #timeSamples x #cones), and then it selects the last time sample as the template. This could be problematic if someone creates a temporally modulated stimulus. 
+	DHB: post the question to Nicolas.
+
+7) @DHB: document quest 'blockedVal'
+
+8) Figure out quest engine stopping rule and document (find out where minTrial & maxTrial is used)
+	FH: questThresholdEngine.m, contrastThresholdEngine.m
+
+
+Questions
+1) How is the level of contrast determined given the range of slope and threshold? It is not super clear how that's derived. 
+Observation 1: In classifierEngine, when defining classifier parameters, 'nTest' means the number of test trials for each given contrast level. 
+Observation 2: When defining questEnginePara, the number of contrast level is largely affected by how fine estDomain & slopeRange are (with 'nTest' being fixed).
+Observation 3: When estDomain & slopeRange are fixed, 'nTest' also affects the number of test contrast levels.
+
+2) In spatioTemporalPoolingWeights.m, why is the difference of cone responses (test-null) then multiplied by a Gaussian envelope to make a template? This script needs more comments.
+	FH: after subtracting the cone responses given the null stimulus, the differences look like a sinusoidal grating without a window, that's why a Gaussian envelope is then multiplied. This is not described in the paper though, and what if the envelope of the stimulus is not Gaussian?
+
+3) why do we have a separate engine (contrastThresholdEngine.m) for min max trials? Can we merge contrastThresholdEngine.m and questThresholdEngine.m? There are two methods in contrastThresholdEngine.m, but they don't seem to be ever used. 
+
+
+
+
+
