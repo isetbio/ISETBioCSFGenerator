@@ -38,10 +38,12 @@ p.addParameter('measuredWvl', 550, @(x)(isscalar(x) && floor(x)==ceil(x))); %mea
 p.addParameter('infocusWvl', 550, @(x)(isscalar(x) && floor(x)==ceil(x)));  %select one in-focus wavelength for visualization
 p.addParameter('defocus_lb', -1.5, @isscalar);   %the lower bound of defocus
 p.addParameter('defocus_ub', 1.5, @isscalar);    %the upper bound of defocus
+p.addParameter('num_defocus', 101, @isscalar);   %the number of defocus within the range
 p.addParameter('whichEye', 'right', @(x)(ischar(x) && (ismember(x, {'left', 'right'}))));  
 p.addParameter('zernike_jIndex', 3:14, @(x)(isnumeric(x) && (max(x) <= 15) && (min(x) >= 1)));
 p.addParameter('verbose', true, @islogical);
 p.addParameter('visualization',true, @islogical);
+p.addParameter('saveFigs', false, @islogical);
 
 parse(p, varargin{:});
 measuredPupilMM = p.Results.measuredPupilMM;
@@ -50,10 +52,12 @@ measuredWvl     = p.Results.measuredWvl;
 infocusWvl_slc  = p.Results.infocusWvl;
 addedDefocus_lb = p.Results.defocus_lb;
 addedDefocus_ub = p.Results.defocus_ub;
+lenDefocus      = p.Results.num_defocus;
 whichEye        = p.Results.whichEye;
 jIndex          = p.Results.zernike_jIndex;
 verbose         = p.Results.verbose; 
 visualization   = p.Results.visualization; 
+saveFigs        = p.Results.saveFigs;
 
 %do some basic checks for the inputs
 assert(calcPupilMM < measuredPupilMM, ['The pupil size for calculation ',...
@@ -70,7 +74,6 @@ lenCalcWvl   = length(calcWvl);
 %find the index corresponding to the selected in-focus wavelength
 idx_wvl      = find(calcWvl == infocusWvl_slc);
 %have a range of defocus value (diopters)
-lenDefocus   = 101;
 addedDefocus = linspace(addedDefocus_lb,addedDefocus_ub,lenDefocus);
 
 %the goal is to find the amount of defocus that makes the PSF as compact as
@@ -171,24 +174,26 @@ for counter = 1:2
         % Visualize the peak of PSF
         plotMaxPSF(calcWvl, addedDefocus, maxPSF, maxPSF_wvl550,...
             strehlRatio_wvl550, optDefocus_diopters_gridSearch(counter+1),...
-            maxPSFVal_wvl550, maxStrehlRatio_wvl550, measuredPupilMM)
+            maxPSFVal_wvl550, maxStrehlRatio_wvl550, measuredPupilMM,...
+            saveFigs)
         
         %Fix defocus to be 0, and visualize the PSF with selected calc wavelengths 
-        defocus_visualization  = 0;
-        wvl_visualization = [500,550,600];
-        contourPSF(calcWvl, addedDefocus, wvl_visualization, ...
-            defocus_visualization, psf)
+        contourPSF(calcWvl, addedDefocus, psf, saveFigs)
     end
 end
 
-%do some simple check
+%do some simple checks
+%the optimal amount of defocus (found either by grid search or fmincon)
+% after an adjustment is implemented should be 0
 assert(abs(optDefocus_diopters_gridSearch(end)) <= 1e-2 && ...
     abs(optDefocus_diopters_fmincon(end)) <= 1e-2, ['After the adjustment, ',...
     'the psf function should be the most compact when 0 diopter is added.']);
-assert(abs(optDefocus_diopters_gridSearch(end-1) - optDefocus_diopters_fmincon(end-1)) < 1e-2,...
+%the results returned by grid search and fmincon should be very similar
+assert(abs(optDefocus_diopters_gridSearch(end-1) - ...
+    optDefocus_diopters_fmincon(end-1)) < diff(addedDefocus(1:2)),...
     ['The two approaches for finding the optimal defocus (grid search and ',...
     'fmincon) should return almost the same result!']);
-%just return the optimal defocus
+%return the optimal defocus
 defocus_adj = optDefocus_diopters_fmincon(2); 
 defocus_adj_microns = wvfDefocusDioptersToMicrons(-defocus_adj, measuredPupilMM);
 
@@ -199,7 +204,7 @@ function [maxPSF, optCalcW, optDefocus, maxVal] = compactness_maxVal(...
     calcW, defocus, PSF)
     %{
     This function finds the optimal amount of added defocus that would lead
-    to the most compact PSF.
+    to the most compact PSF using grid search.
     ---- Inputs ----
     calcW: a range of in-focus wavelengths
     defocus: a range of added defocus
@@ -234,7 +239,7 @@ function [strehlRatio, optCalcW, optDefocus, maxStrehlRatio] = ...
     compactness_StrehlRatio(calcW, defocus, PSF, PSF_diffractionLimited)
     %{
     This function finds the optimal amount of added defocus that would lead
-    to the biggest strehl ratio.
+    to the biggest strehl ratio using grid search.
     ---- Inputs ----
     calcW: a range of in-focus wavelengths
     defocus: a range of added defocus
@@ -298,15 +303,33 @@ function [peakPSF, psf] = psf_addedDefocus(defocus_added, defocus_wvf,...
     peakPSF      = max(psf(:));
 end
 
-function [optDefocus, maxPSF] = findOptDefocus_fmincon(defocus_wvf0, ...
-    defocus_adjustment, wvf_m, measuredPupilMM, lb, ub)
+function [optDefocus, maxPSF] = findOptDefocus_fmincon(defocus_wvf, ...
+    defocus_adjustment, wvf, measuredPupilMM, lb, ub)
+    %{
+    This function finds the optimal amount of added defocus that would lead
+    to the most compact PSF using fmincon.
+    ---- Inputs ----
+    defocus_wvf: the original defocus (without any adjustment and any added
+        defocus)
+    defocus_adjustment: the optimal amount of defocus, which is 0 if it has
+        not been found yet.
+    wvf: the wavefront parameters
+    measuredPupilMM: measured pupil size (mm)
+    lb: the lower bound of added defocus
+    ub: the upper bound of added defocus
+    ---- Outputs ----
+    optDefocus: the optimal amount of added defocus 
+    maxPSF: the maximum peak PSF that corresponds to the optiaml amount of
+        added defocus
+    %}
+
     %call psf_addedDefocus to get the peak psf
     %a minus sign is added because fmincon finds the minimum
     invertedPeakPSF = @(d) -psf_addedDefocus(d + defocus_adjustment, ...
-                defocus_wvf0, wvf_m, measuredPupilMM);
+                defocus_wvf, wvf, measuredPupilMM);
     %have different initial points to avoid fmincon from getting stuck at
     %some places
-    N_runs  = 10;
+    N_runs  = 20;
     init    = rand(1,N_runs).*(ub-lb) + lb;
     options = optimoptions(@fmincon, 'MaxIterations', 1e5, 'Display','off');
     [optDefocus_n, minNegPSF_n] = deal(NaN(1, N_runs));
@@ -325,7 +348,7 @@ end
 
 %% PLOTTING FUNCTIONS
 function plotMaxPSF(calcWvl, addedDefocus, maxPSF, maxPSF_slc, StrehlR_slc,...
-    optDefocus_wvl550,maxPSFVal_slc, maxStrehlR_slc, measuredPupilMM)
+    optDefocus_wvl550,maxPSFVal_slc, maxStrehlR_slc, measuredPupilMM, saveFigs)
     %convert it to microns
     lcaMicrons = wvfDefocusDioptersToMicrons(-addedDefocus, measuredPupilMM);
     c = [143,188,143]./255;
@@ -370,21 +393,29 @@ function plotMaxPSF(calcWvl, addedDefocus, maxPSF, maxPSF_slc, StrehlR_slc,...
 
     set(gca,'FontSize',15);
     set(gcf,'Units','normalized','Position',[0,0,0.2,0.65])
-    set(gcf,'PaperUnits','centimeters','PaperSize',[20 28]);
+    if saveFigs
+        set(gcf,'PaperUnits','centimeters','PaperSize',[20 28]);
+        formattedDateTime = string(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
+        saveas(gcf, strcat('peakPSF_optimizingDefocus_', formattedDateTime,'.pdf'))
+    end
 end
 
-function contourPSF(calcWvl, addedDefocus, slc_calcWvl, slc_defocus, psf)
+function contourPSF(calcWvl, addedDefocus, psf, saveFigs)
     lb_idx          = 77;
     ub_idx          = 127;
     lb_adjusted     = ceil((ub_idx - lb_idx)/2);
     ub_adjusted     = ub_idx - lb_idx + 1;
-    idx_slc_calcWvl = arrayfun(@(idx) find(slc_calcWvl(idx) == calcWvl), 1:length(slc_calcWvl));
+    slc_defocus     = 0;
+    slc_calcWvl     = [500,550,600];
+    idx_slc_calcWvl = arrayfun(@(idx) find(slc_calcWvl(idx) == calcWvl),...
+                        1:length(slc_calcWvl));
     idx_slc_defocus = find(addedDefocus == slc_defocus);
     
     figure
     for i = 1:length(slc_calcWvl)
         subplot(length(slc_calcWvl),1,i)
-        contour(psf{idx_slc_calcWvl(i), idx_slc_defocus}(lb_idx:ub_idx, lb_idx: ub_idx)); hold on
+        contour(psf{idx_slc_calcWvl(i), idx_slc_defocus}(lb_idx:ub_idx,...
+            lb_idx: ub_idx)); hold on
         plot([lb_adjusted, lb_adjusted], [0, ub_adjusted],'r-');
         plot([0, ub_adjusted], [lb_adjusted, lb_adjusted],'r-');
         grid on; axis square; 
@@ -394,5 +425,10 @@ function contourPSF(calcWvl, addedDefocus, slc_calcWvl, slc_defocus, psf)
     end
     set(gcf,'Units','normalized','Position',[0,0, 0.15, 0.65]);
     set(gcf,'PaperUnits','centimeters','PaperSize',[20 28]);
+    if saveFigs
+        set(gcf,'PaperUnits','centimeters','PaperSize',[20 28]);
+        formattedDateTime = string(datetime('now', 'Format', 'yyyy-MM-dd_HH-mm-ss'));
+        saveas(gcf, strcat('contourPSF_optimizingDefocus_', formattedDateTime,'.pdf'))
+    end
 end
 
