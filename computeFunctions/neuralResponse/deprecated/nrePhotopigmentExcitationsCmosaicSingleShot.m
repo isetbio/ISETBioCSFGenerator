@@ -92,7 +92,7 @@ end
     % end
     % 
     % % Compute the sequence of optical images corresponding to the sequence of scenes
-    % theOIsequence = oiCompute(sceneSequence{1}, theOptics);
+    % theOIsequence = oiCompute(theOptics, sceneSequence{1});
     % 
     % % Set rng seed if one was passed. Not clear we need to do this because
     % % all the randomness is in the @coneMosaic compute object, but it

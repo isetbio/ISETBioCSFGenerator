@@ -16,7 +16,7 @@ theScene = sceneSequence{frameIndex};
 
 % Compute the optical image of the scene if 'opticalImageInteadOfScene' is set
 if (~isempty(theOI))
-    theOI = oiCompute(theScene, theOI);
+    theOI = oiCompute(theOI, theScene);
 end
 
 if (isempty(obj.presentationDisplay))

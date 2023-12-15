@@ -172,7 +172,7 @@ function dataOut = nreMidgetRGC(...
     framesNum = numel(sceneSequence);
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(sceneSequence{frame}, theOptics);
+        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame});
     end
     
     % Generate an @oiSequence object containing the list of computed optical images

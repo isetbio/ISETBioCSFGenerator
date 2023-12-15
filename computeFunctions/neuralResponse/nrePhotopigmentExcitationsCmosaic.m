@@ -189,11 +189,11 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
 
     % Compute the sequence of optical images corresponding to the sequence of scenes
     if framesNum == 1 
-        theOIsequence = oiCompute(sceneSequence{1}, theOptics);
+        theOIsequence = oiCompute(theOptics, sceneSequence{1});
     else
         theListOfOpticalImages = cell(1, framesNum);
         for frame = 1:framesNum
-            theListOfOpticalImages{frame} = oiCompute(sceneSequence{frame}, theOptics);
+            theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame});
         end
         
         % Generate an @oiSequence object containing the list of computed optical images
