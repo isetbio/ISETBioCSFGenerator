@@ -45,10 +45,10 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         % Linear RGB image
         displayLinearRGBimage = imageLinearTransform(xyzImage, displayXYZToLinearRGB);
         RGBgunTrace(frameIndex,:) = squeeze(displayLinearRGBimage(mo,no,:));
+       
         % Settings RGB image
         displaySettingsImage = (ieLUTLinear(displayLinearRGBimage, displayGet(presentationDisplay, 'inverse gamma'))) / displayGet(presentationDisplay, 'nLevels');
 
-        
         % Render image
         stimProfile = squeeze(sum(displayLinearRGBimage(mo,:,:),3));
         m1 = min(stimProfile);
