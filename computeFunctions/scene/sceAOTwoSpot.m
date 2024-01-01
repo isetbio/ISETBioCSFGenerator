@@ -60,13 +60,13 @@ function dataOut = sceAOTwoSpot(sceneEngineOBJ, testContrast, twoSpotParams)
 %   Examples:
 %{
     % Usage case #1. Just return the default scene params
-    defaultParams = sceTwoSpot()
+    defaultParams = sceAOTwoSpot()
 
     % Usage case #2. Compute a grating sequence using a parent @sceneEngine
     % object and the default scene params
 
     % Instantiate the parent @sceneEngine object
-    theSceneEngineOBJ = sceneEngine(@sceTwoSpot);
+    theSceneEngineOBJ = sceneEngine(@sceAOTwoSpot);
 
     % Generate a test scene sequence
     testContrast = 1.0;
