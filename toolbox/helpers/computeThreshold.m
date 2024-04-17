@@ -15,7 +15,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %    computational observer contrast threshold for a given scene structure.
 %
 %    There is some art to using this function, in that you need to control
-%    thrings such as how many trianing and test instances to use with the
+%    things such as how many trianing and test instances to use with the
 %    classifier, how densely to tell Quest+ to sample the stimulus space
 %    and over what range, etc.  The the three passed parameter structs
 %    provide this control.  See t_thresholdEngine and t_spatialCSF for what
