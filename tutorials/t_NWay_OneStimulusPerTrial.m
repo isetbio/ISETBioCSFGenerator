@@ -20,12 +20,14 @@
 %    12/07/21  dhb  Wrote it from t_spatialCSF.
 %    05/10/23  fh   Edited it to call the new functions computeThreshold.m
 %                       & computePerformance.m & rcePossion.m
+%    04/17/24  dhb  Deep six oldWay option. Ever forward.  Gratings in sine
+%                   phase.
 
 %% Clear and close
 clear; close all;
 
 %% Set number of alternatives
-nAlternativesList = [2 4 8 16];
+nAlternativesList = [2 4 8];
 nAList = length(nAlternativesList);
 
 % Run just one spatial frequency.
@@ -45,11 +47,9 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-% neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams.coneMosaicParams.fovDegs = 0.25;
 neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
-% theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
@@ -59,12 +59,8 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
-useOldWay = true;
-if useOldWay
-    classifierEngine = responseClassifierEngine(@rcePoissonNWay_OneStimulusPerTrial, classifierPara);
-else
-    classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
-end
+classifierEngine = responseClassifierEngine(@rcePoissonNWay_OneStimulusPerTrial, classifierPara);
+classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -83,7 +79,6 @@ end
 % There are two separate structures below. The conceptual distinction
 % between them is not entirely clear.  These are interpretted by
 % computeThreshold.
-
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
     'logThreshLimitHigh', 0.0, ...
     'logThreshLimitDelta', 0.01, ...
@@ -94,7 +89,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
     'guessRate', 0.5, ... %will be respecified in the loop below
     'lapseRate', 1e-4);
 
-%define grids for the threshold and slope
+% Define grids for the threshold and slope
 estDomain = -thresholdPara.logThreshLimitLow:...
     thresholdPara.logThreshLimitDelta: -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: ...
@@ -113,25 +108,27 @@ questEnginePara = struct( ...
 
 %% Compute threshold for each number of alternatives specified
 % 
-% See toolbox/helpers for functions createGratingScene computeThresholdTAFC
+% See toolbox/helpers for functions createGratingScene computeThreshold
 logThreshold = zeros(1, nAList);
 para         = NaN(nAList, 4); %4 paramters (lapse rate and guess rate are fixed)
 
 for idx = 1:nAList
     % Create grating scenes with a particular chromatic direction for each
-    % alternative. 
-    % spatial frequency, and temporal duration
+    % alternative, spatial frequency, and temporal duration.  Use sine
+    % phase gratings to keep mean constant even if some of the grating is
+    % truncated given scene size.
     orientations = linspace(0,(nAlternativesList(idx)-1)*...
         180/nAlternativesList(idx),nAlternativesList(idx));
     gratingScenes = cell(1,nAlternativesList(idx));
     for t = 1:nAlternativesList(idx)
         gratingScenes{t} = createGratingScene(chromaDir, spatialFreq,...
             'orientation',orientations(t), 'fovDegs', ...
-            neuralParams.coneMosaicParams.fovDegs,'duration',...
-            neuralParams.coneMosaicParams.timeIntegrationSeconds);
+            neuralParams.coneMosaicParams.fovDegs, ...
+            'duration', neuralParams.coneMosaicParams.timeIntegrationSeconds, ...
+            'spatialPhase', 90);
     end
     
-    %respecify the threshold and the guess rate
+    % Respecify the threshold and the guess rate
     thresholdPara.thresholdCriterion = (1- 1/nAlternativesList(idx))/2 + 1/nAlternativesList(idx);
     thresholdPara.guessRate = 1/nAlternativesList(idx);
 
@@ -139,17 +136,9 @@ for idx = 1:nAList
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformance.
-
-    if useOldWay
-        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-            computeThresholdNWay_OneStimulusPerTrial(...
-            gratingScenes, theNeuralEngine, classifierEngine,...
-            classifierPara, thresholdPara, questEnginePara);
-    else
-        [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
-            gratingScenes, theNeuralEngine, classifierEngine,...
-            classifierPara, thresholdPara, questEnginePara,'TAFC',false);
-    end
+    [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
+        gratingScenes, theNeuralEngine, classifierEngine,...
+        classifierPara, thresholdPara, questEnginePara,'TAFC',false);
     
     % Plot stimulus
     figure(idx)

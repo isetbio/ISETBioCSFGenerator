@@ -16,14 +16,16 @@
 %   10/23/20  dhb   More commments.
 %   10/25/20  dhb   Change contrast vectors to column vectors.  This is PTB
 %                   convention, and also the convention of my brain.
-%   05/10/3   fh    Edited it to call the new functions computeThreshold.m
+%   05/10/23  fh    Edited it to call the new functions computeThreshold.m
 %                       & computePerformance.m & rcePossion.m
+%   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine
+%                   phase.
 
 % Clear and close
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = 2.^(1:5); %[4, 8, 16, 32]
+spatialFreqs = [4, 8, 16, 32];
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -50,7 +52,7 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsCmosaicWithNoEyeMovements;
+neuralParams = nrePhotopigmentExcitationsCmosaic;
 % neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams.coneMosaicParams.fovDegs = 0.5; 
 neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
@@ -61,12 +63,7 @@ theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neura
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-useOldWay = true;
-if useOldWay
-    classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
-else
-    classifierEngine = responseClassifierEngine(@rcePoisson);
-end
+classifierEngine = responseClassifierEngine(@rcePoisson);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
@@ -112,24 +109,22 @@ dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
-    % spatial frequency, and temporal duration
+    % spatial frequency, and temporal duration.  Put grating in sine phase
+    % becuase that keeps the spatial mean constant across spatial
+    % frequencies.
     gratingScene = createGratingScene(chromaDir, spatialFreqs(idx),...
-        'fovDegs', neuralParams.coneMosaicParams.fovDegs,'duration',...
-            neuralParams.coneMosaicParams.timeIntegrationSeconds);
+        'fovDegs', neuralParams.coneMosaicParams.fovDegs, ...
+        'duration', neuralParams.coneMosaicParams.timeIntegrationSeconds, ...
+        'spatialPhase', 90 ...
+        );
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformance.
-    if useOldWay
-        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-            computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, ...
-            classifierPara, thresholdPara, questEnginePara);
-    else
-        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-            computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-            classifierPara, thresholdPara, questEnginePara, 'TAFC',true);
-    end
+    [logThreshold(idx), questObj, ~, para(idx,:)] = ...
+        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, 'TAFC',true);
     
     % Plot stimulus
     figure(dataFig);
