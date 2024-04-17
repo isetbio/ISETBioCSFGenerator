@@ -45,11 +45,13 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculates isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-theNeuralComputePipelineFunction = @nrePhotopigmentExcitationsCmosaicSingleShot;
+theNeuralComputePipelineFunction = @nrePhotopigmentExcitationsCmosaic;
 neuralParams = theNeuralComputePipelineFunction();
+
 % Make the mosaic large enough so that it covers 1 cycle of the lowest
-% spatial frequecy examined
-neuralParams.coneMosaicParams.fovDegs = 1.0/(min(spatialFreqs))*[1 1];
+% spatial frequecy examined, plus a little extra
+headroomFactor = 1.25;
+neuralParams.coneMosaicParams.fovDegs = headroomFactor*1.0/(min(spatialFreqs))*[1 1];
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
@@ -93,11 +95,16 @@ dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
-    % spatial frequency, and temporal duration
+    % spatial frequency, and temporal duration.  Using a spatial phase
+    % of 90 degrees makes the stimulus symmetric in the scene, and prevents
+    % there from being a DC component that varies as a function of spatial
+    % frequency.  We almost always want to use sine phase for this sort of
+    % calculation, but somehow the defaults are almost always cosine phase.
     gratingScene = createGratingScene(chromaDir, spatialFreqs(idx), ...
         'spatialEnvelope', 'rect', ...
         'fovDegs', max(neuralParams.coneMosaicParams.fovDegs)*1.02, ...
-        'minPixelsNumPerCycle', 5);
+        'minPixelsNumPerCycle', 5, ...
+        'spatialPhase',90);
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
