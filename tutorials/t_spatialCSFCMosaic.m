@@ -17,7 +17,7 @@
 clear; close all;
 
 % List of spatial frequencies to be tested.
-spatialFreqs = [16];%[2 4 8 12 16 24];
+spatialFreqs = [2 4 8 12 16 24];
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
