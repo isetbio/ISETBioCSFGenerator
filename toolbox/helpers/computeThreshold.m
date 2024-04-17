@@ -161,7 +161,6 @@ if (p.Results.extraVerbose)
         theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
 end
 
-
 % Threshold estimation with QUEST+
 % Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
@@ -210,6 +209,7 @@ while (nextFlag)
                 [theSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine{oo}.compute(testContrast);
             end
+            
         % TAFC: Generate the test scene and the null scene
         else
             [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
