@@ -51,7 +51,7 @@ neuralParams = theNeuralComputePipelineFunction();
 % Make the mosaic large enough so that it covers 1 cycle of the lowest
 % spatial frequecy examined, plus a little extra
 headroomFactor = 1.25;
-neuralParams.coneMosaicParams.fovDegs = headroomFactor*1.0/(min(spatialFreqs))*[1 1];
+neuralParams.coneMosaicParams.sizeDegs = headroomFactor*1.0/(min(spatialFreqs))*[1 1];
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine

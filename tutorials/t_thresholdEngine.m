@@ -125,7 +125,7 @@ switch (whichNeuralEngine)
         % Note use of neural engine to get its own default parameters and
         % adjust them.  Smaller field of view speeds things up.
         neuralParams = nrePhotopigmentExcitationsCmosaic;
-        neuralParams.coneMosaicParams.fovDegs = 0.15;
+        neuralParams.coneMosaicParams.sizeDegs = [0.25 0.25];
         neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
         theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic,neuralParams);
         
