@@ -31,7 +31,7 @@
 %% Initialization
 clear; close all;
 
-%% Instantiate a sceneGenerationEngine
+%% Instantiate a sceneEngine
 %
 % The first step is to define the spatial and temporal parameters of a
 % scene.  We do this by instantiating a sceneEngine object, passing it a
@@ -131,7 +131,9 @@ switch (whichNeuralEngine)
         
         % The actual threshold varies enough with the different engines that we
         % need to adjust the contrast range that Quest+ searches over, as well as
-        % the range of psychometric function slopes.
+        % the range of psychometric function slopes.  The threshold values
+        % are specified as the negative log10(threshold), for reasons
+        % beyond knowing.
         logThreshLimitLow = 4;
         logThreshLimitHigh = 1;
         logThreshLimitDelta = 0.05;
