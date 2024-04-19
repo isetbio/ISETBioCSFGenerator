@@ -1,3 +1,10 @@
+Spring 2024
+
+1) Knocking off items from TODO.
+
+Can we delete ComputeParameterThreshold.m? DHB: Not totally sure, but I moved it to a deprecated subdir an put in an error that is thrown on call.
+
+
 Renaming
 1) 't_neuralResponseComputeExternalPipeline' -> 't_neuralResponseComputeCustomizedPipeline'
 2) 'rcePoissonNWay_OneStimPerTrial' -> 'rcePoissonNWay_OneStimulusPerTrial.m'

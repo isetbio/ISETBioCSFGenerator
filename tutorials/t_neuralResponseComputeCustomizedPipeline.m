@@ -36,14 +36,12 @@ function t_neuralResponseComputeCustomizedPipeline
     sceneParams.temporalModulationParams.stimOnFrameIndices = [1];
     sceneParams.temporalModulationParams.stimDurationFramesNum = 1;
     sceneParams.frameDurationSeconds = 20/1000;
-    
-    
-    theSceneEngine = sceneEngine(sceneComputeFunction, sceneParams);
-    
+    theSceneEngine = sceneEngine(sceneComputeFunction, sceneParams);   
 
     % Generate the components of the neural pipeline
     % (1) a @cMosaic object
-    theCMosaic = cMosaic('sizeDegs', [0.5 0.5], 'eccentricityDegs', [1 0]);
+    theCMosaic = cMosaic('sizeDegs', [0.5 0.5], 'eccentricityDegs', [1 0], ...
+        'integrationTime', sceneParams.frameDurationSeconds);
     
     % (2) optics corresponding to the mosaic's eccentricity
     oiEnsemble = theCMosaic.oiEnsembleGenerate(theCMosaic.eccentricityDegs, ...
@@ -54,15 +52,14 @@ function t_neuralResponseComputeCustomizedPipeline
             
     % Instantiate a neural response engine using a desired neural compute
     % function, here nrePhotopigmentExcitationsCmosaicSingleShot().
-    theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaicSingleShot);
+    theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic);
     
     % Install an  an externally-supplied pipeline (here the @cMosaic and
     % the optics object we generated above.
     theNeuralEngine.customNeuralPipeline(struct(...
                     'coneMosaic', theCMosaic, ...
                     'optics', theOptics));
-                
-                
+                        
     % Specify a pedestal luminance with 70% contrast
     testContrast = 0.7;
 

@@ -2,8 +2,6 @@
 
 To find what needs to be done, global search on ConeMosaicHex will get you most of them.
 
-2) Can we delete ComputeParameterThreshold.m?
-
 =================================================================================================
 Notes (need further discussion before making any changes)
 1) computeFunctions/scene/sceGrating.m

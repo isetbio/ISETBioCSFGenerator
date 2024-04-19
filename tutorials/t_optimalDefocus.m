@@ -65,6 +65,13 @@ assert(calcPupilMM < measuredPupilMM, ['The pupil size for calculation ',...
 assert(addedDefocus_ub > addedDefocus_lb, ['The upper bound has to be ',...
     'smaller than the lower bound for the range of added defocus!']);
 
+%% Default subject
+if (~exist('PolansSubj','var'))
+    PolansSubj = 1;
+end
+
+%% We want human lca for this tutorial
+humanlca = true;
 
 %% first pick a subject's optics
 %have a range of in-focus wavelength and set them to calc wvl
@@ -91,7 +98,7 @@ wvf_diffractionLimited = wvfCreate(...
     'measured wavelength', measuredWvl, ...
     'calc pupil size', calcPupilMM,...
     'calc wavelengths', infocusWvl_slc);
-wvf_diffractionLimited = wvfComputePSF(wvf_diffractionLimited);
+wvf_diffractionLimited = wvfCompute(wvf_diffractionLimited,'humanlca',humanlca);
 % get the psf given the diffraction-limited optics
 psf_diffractionLimited = wvf_diffractionLimited.psf;
 
@@ -132,7 +139,7 @@ for counter = 1:2
             end
             %compute the psf with added defocus
             [~, psf{l,m}] = psf_addedDefocus(addedDefocus_updated, ...
-                defocus_wvf0, wvf_l, measuredPupilMM);
+                defocus_wvf0, wvf_l, measuredPupilMM, humanlca);
         end
     end 
     %% Compute the optimal defocus 
@@ -179,10 +186,10 @@ for counter = 1:2
         plotMaxPSF(calcWvl, addedDefocus, maxPSF, maxPSF_wvl550,...
             strehlRatio_wvl550, optDefocus_diopters_gridSearch(counter),...
             maxPSFVal_wvl550, maxStrehlRatio_wvl550, measuredPupilMM,...
-            saveFigs)
+            saveFigs);
         
-        %Fix defocus to be 0, and visualize the PSF with selected calc wavelengths 
-        contourPSF(calcWvl, addedDefocus, psf, saveFigs)
+        % Fix defocus to be 0, and visualize the PSF with selected calc wavelengths 
+        contourPSF(calcWvl, addedDefocus, psf, saveFigs);
     end
 end
 
@@ -278,7 +285,7 @@ function [strehlRatio, optCalcW, optDefocus, maxStrehlRatio] = ...
 end
 
 function [peakPSF, psf] = psf_addedDefocus(defocus_added, defocus_wvf,...
-    wvf, measuredPupilMM)
+    wvf, measuredPupilMM, humanlca)
     %{
     This function returns the peak of the psf and the whole psf given
     different defocus. 
@@ -300,7 +307,7 @@ function [peakPSF, psf] = psf_addedDefocus(defocus_added, defocus_wvf,...
     %replace the defocus value with the new one
     wvf          = wvfSet(wvf, 'zcoeffs', defocus_wvf, {'defocus'});
     %compute the point spread function
-    wvf          = wvfComputePSF(wvf);
+    wvf          = wvfCompute(wvf,'humanlca',humanlca);
     %get the psf
     psf          = wvf.psf{1};
     %get the peak
@@ -329,8 +336,9 @@ function [optDefocus, maxPSF] = findOptDefocus_fmincon(defocus_wvf, ...
 
     %call psf_addedDefocus to get the peak psf
     %a minus sign is added because fmincon finds the minimum
+    humanlca = true;
     invertedPeakPSF = @(d) -psf_addedDefocus(d + defocus_adjustment, ...
-                defocus_wvf, wvf, measuredPupilMM);
+                defocus_wvf, wvf, measuredPupilMM,humanlca);
     %have different initial points to avoid fmincon from getting stuck at
     %some places
     N_runs  = 20;

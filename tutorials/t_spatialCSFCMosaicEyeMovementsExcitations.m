@@ -15,7 +15,6 @@ edit % Compute spatial CSF in the achromatic direction in the presence of fEM
 % History:
 %   8/24/21  NPC   Wrote it
 
-
 % Clear and close
 clear; close all;
 
@@ -27,7 +26,6 @@ spatialFreqs = [30]; % [2, 4, 8, 12, 16, 25];
 
 % Achromatic color direction specified as a 1-by-3 vector
 chromaDir = [0.1, -0.1, 0];%0.7*[1.0, 1.0, 1.0]';
-
 
 %% Create neural response engine
 %
@@ -57,9 +55,8 @@ oiEnsemble = theConeMosaic.oiEnsembleGenerate(theConeMosaic.eccentricityDegs, ..
             );
 theOptics = oiEnsemble{1};      
   
-
 % The neural compute function to employ
-neuralComputeFunction = @nrePhotopigmentExcitationsCmosaicEyeMovements;
+neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
 
 % Obtain default neural response engine params
 neuralParams = neuralComputeFunction();
@@ -67,7 +64,6 @@ neuralParams = neuralComputeFunction();
 % Update the eyeMovementsParams to simulate a different model
 neuralParams.eyeMovementsParams.durationSeconds = 100/1000;
 neuralParams.eyeMovementsParams.driftModel = 'high velocity';    % Choose between {'low velocity', 'high velocity', 'default'}
-
 
 % Instantiate the neural engine with custom optics, custom cone mosaic and
 % custom eye movement parms using cone photocurrents as the output signal
@@ -79,7 +75,7 @@ theNeuralEngine.customNeuralPipeline(struct(...
           'optics', theOptics));
       
 %% Instantiate the PoissonTAFC responseClassifierEngine
-%% Instantiate a computational observer 
+%
 % The computational observer consists of a spatial pooling mechanism combined with 
 % an SVM classifier operating on the output of a quadrature-energy spatial pooling mechanism 
 
@@ -97,16 +93,13 @@ classifierEngineParamsStruct = struct(...
     );
 classifierEngine = responseClassifierEngine(@rcePoolingSVMTAFC, classifierEngineParamsStruct);
 
-
 % Train classifier using a set of 256 noisy instances,
 nTrain = 256;
-% Test performance using a set of 128 noisy instances
 nTest = 256;
 classifierPara = struct('trainFlag', 'random', ...
                         'testFlag', 'random', ...
                         'nTrain', nTrain, 'nTest', nTest);
                             
-
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
 % need to adjust the contrast range that Quest+ searches over, as well as
@@ -176,7 +169,6 @@ threshold = 10 .^ logThreshold;
 
 figure();
 d = dataOut{1}; plot(d.examinedContrasts, d.pCorrect, 'ks'); hold on; plot(d.examinedContrastsFit, d.pCorrectFit, 'r-')
-
 
 %% Plot Contrast Sensitivity Function
 theCsfFig = figure();
