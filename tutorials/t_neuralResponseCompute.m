@@ -35,28 +35,21 @@ function t_neuralResponseCompute
     % Instantiate the scene engine with a compute function.
     % This is a function that the USER has to supply.
     sceneComputeFunction = @sceUniformFieldTemporalModulation;
-    theSceneEngine = sceneEngine(sceneComputeFunction);
+    sceneParams = sceUniformFieldTemporalModulation;
+    theSceneEngine = sceneEngine(sceneComputeFunction,sceneParams);
     
     % Configure the function handle and the params for the @neuralResponseEngine
-    % This is a function that the USER has to supply
-    neuralComputeFunction = @nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
+    % This is a function that the USER has to specify, and write if they are not using
+    % one of our provided ones.
+    neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
     
     % Custom neural response params struct. The form of this structure is
     % defined by and is specific to the
-    % nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements compute function.  You
-    % can write your own compute function for the model visual system you
-    % are interested in, and it can take parameters defined by a structure
-    % that you set up as part of writing that function.
-    customNeuralResponseParams = struct(...
-        'opticsParams',  struct(...
-            'type', 'wvf human', ...
-            'pupilDiameterMM', 2.0 ...
-        ), ...
-        'coneMosaicParams',  struct(...
-            'upsampleFactor', 5, ...
-            'fovDegs', 0.1, ...
-            'timeIntegrationSeconds', 5/1000) ...
-    );
+    % nrePhotopigmentExcitationsCmosaic compute function.  Need to match
+    % integration time to the scene.
+    customNeuralResponseParams = nrePhotopigmentExcitationsCmosaic;
+    customNeuralResponseParams.opticsParams.pupilDiameterMM = 2.0;
+    customNeuralResponseParams.coneMosaicParams.timeIntegrationSeconds = sceneParams.frameDurationSeconds;
 
     % Instantiate a neuralResponseEngine with the custom neural response params
     theNeuralEngine = neuralResponseEngine(neuralComputeFunction, customNeuralResponseParams);
@@ -97,13 +90,13 @@ function t_neuralResponseCompute
     noiseFreeResponses = theResponses('none');
     
     % The noisy ('random') responses instances also comeback in the
-    % container.  These are arranged as an instancesNum x nDim x nTimepoints
+    % container.  These are arranged as an instancesNum x nTimepoints x nDim 
     % matrix, where nDim is the dimension of the neural response at a
     % single time point and nTimespoints is the number of time points in
     % the sequence.
     noisyInstances = theResponses('random');
     assert(size(noisyInstances,1) == instancesNum);
-    assert(size(noisyInstances,3) == length(theResponseTemporalSupportSeconds));
+    assert(size(noisyInstances,2) == length(theResponseTemporalSupportSeconds));
         
     % Visualize all responses computes (different figures for different
     % noise flags)
