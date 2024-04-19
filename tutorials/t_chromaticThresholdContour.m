@@ -24,7 +24,8 @@ clear; close all;
 % balanced incremental and decremental components, so that the isothreshold
 % contour is also symmetric.
 spatialFreq = 4;
-gratingPhaseDeg = 0;
+gratingPhaseDeg = 90;
+gratingFovDegs = 0.3;
 
 % Set up a set of chromatic directions. Passing elevation = 90 puts these
 % in the LM contrast plan.  These are at constant rms (vector length)
@@ -35,7 +36,7 @@ gratingPhaseDeg = 0;
 % monitors and don't worry about it further for this tutorial.  A vector
 % length contrast of 0.08 should be OK.
 rmsContrast = 0.1;
-nDirs = 16;
+nDirs = 8;
 for ii = 1:nDirs
     theta = (ii-1)/nDirs*2*pi;
     theDirs(:,ii) = [cos(theta) sin(theta) 0]';
@@ -43,19 +44,11 @@ for ii = 1:nDirs
     assert(abs(norm(theDirs(:,ii)) - rmsContrast) <= 1e-10);
 end
 
-%% Create neural response engine
-%
-% This calculations isomerizations in a patch of cone mosaic with Poisson
-% noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
-neuralParams.coneMosaicParams.fovDegs = 0.25;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements, neuralParams);
-
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+classifierEngine = responseClassifierEngine(@rcePoisson);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
@@ -78,32 +71,44 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
 questEnginePara = struct('minTrial', 1280*2, 'maxTrial', 1280*2, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);
 
-
 %% Compute threshold for each chromatic direction
 % 
-% See toolbox/helpers for functions createGratingScene computeThresholdTAFC
+% See toolbox/helpers for functions createGratingScene, computeThreshold
 dataFig = figure();
 logThreshold = zeros(1, nDirs);
 for ii = 1:nDirs
-    % Create a static grating scene with a particular chromatic direction,
+    % Create a grating scene engine with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    gratingScene = createGratingScene(theDirs(:,ii), spatialFreq, 'spatialPhase', gratingPhaseDeg);
+    theSceneEngine = createGratingScene(theDirs(:,ii), spatialFreq, 'spatialPhase', gratingPhaseDeg, 'fovDegs', gratingFovDegs);
+
+    %% Create neural response engine on first pass.
+    % 
+    % Do this after creating the first scene so we can match up integration
+    % time with frame duration.
+    if (ii == 1)
+        % This calculations isomerizations in a patch of cone mosaic with Poisson
+        % noise, and includes optical blur.
+        neuralParams = nrePhotopigmentExcitationsCmosaic;
+        neuralParams.coneMosaicParams.timeIntegrationSeconds = theSceneEngine.sceneParams.frameDurationSeconds;
+        neuralParams.coneMosaicParams.sizeDegs = [0.25 0.25];
+        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+    end
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformanceTAFC.
     [logThreshold(ii), questObj] = ...
-        computeThresholdTAFC(gratingScene, theNeuralEngine, classifierEngine, classifierPara, ...
-        thresholdPara, questEnginePara);
+        computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, classifierPara, ...
+        thresholdPara, questEnginePara,'TAFC',true);
     
     % Plot stimulus
     figure(dataFig);
     subplot(ceil(nDirs/2), 4, ii * 2 - 1);
     
     visualizationContrast = 1.0;
-    [theSceneSequence] = gratingScene.compute(visualizationContrast);
-    gratingScene.visualizeStaticFrame(theSceneSequence);
+    [theSceneSequence] = theSceneEngine.compute(visualizationContrast);
+    theSceneEngine.visualizeStaticFrame(theSceneSequence);
     
     % Plot data and psychometric curve 
     % with a marker size of 2.5
