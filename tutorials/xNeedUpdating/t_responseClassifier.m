@@ -32,6 +32,7 @@ function t_responseClassifier
     close all;
 
     % Configure the function handle and the params for the @sceneGenerationEngine
+    sceneParams = sceUniformFieldTemporalModulation;
     sceneComputeFunction = @sceUniformFieldTemporalModulation;
 
     % Instantiate a sceneGenerationEngine with the above sceneComputeFunctionHandle
@@ -39,12 +40,18 @@ function t_responseClassifier
     % in the sceneComputeFunction
     theSceneEngine = sceneEngine(sceneComputeFunction);
     
-    % Configure the function handle and the params for the @neuralResponseEnginey
-    neuralComputeFunction = @nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements;
+    % Configure the function handle and the params for the
+    % @neuralResponseEngine.
+    % 
+    % Set integration time to match scene sequence frame duration.  These
+    % need to match.
+    nreParams = nrePhotopigmentExcitationsCmosaic;
+    nreParams.coneMosaicParams.timeIntegrationSeconds = sceneParams.frameDurationSeconds;
+    neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
 
     % Instantiate a neuralResponseEngine. No responseParams passed, so we
     % are using the default params specified in the neuralComputeFunction
-    theNeuralEngine = neuralResponseEngine(neuralComputeFunction);
+    theNeuralEngine = neuralResponseEngine(neuralComputeFunction,nreParams);
     
     % User-supplied computeFunction for the @responseClassifierEngine
     classifierComputeFunction = @rcePcaSVMTAFC;
