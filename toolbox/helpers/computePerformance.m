@@ -149,6 +149,7 @@ if (~isempty(trainNoiseFlag))
         else %NWay_OneStimulusPerTrial
             inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
         end
+        
         % Train the classifier. This shows the usage to extact information
         % from the container retrned as the first return value from the neural
         % response engine - we index the responses by the string contained in
