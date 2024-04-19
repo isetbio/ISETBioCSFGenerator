@@ -143,12 +143,12 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
 
     % Get the number of scene sequences
     framesNum = numel(sceneSequence);
-    % if there are more than one frames (scenes), and we only want to keep
+
+    % If there are more than one frames (scenes), and we only want to keep
     % the first scene, then we need to check if all the scenes are 
     % identical
     if framesNum ~= 1 && amputateScenes
         flag_detectDiff = checkSceneSequences_allFramesIdentical(sceneSequence);
-        % if not, throw a warning
         if flag_detectDiff 
             warning(['The input scenes are temporally modulated. Thus, ',...
                 'it''s not recommended to simulate cone excitations solely ',...
@@ -180,9 +180,11 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
         theOptics = oiEnsemble{1};
         returnTheNeuralPipeline = true;
     else
-        % Load the optics from the previously computed neural pipeline
+        % Get the optics from the previously computed neural pipeline
+        % stored in the object
         theOptics = neuralEngineOBJ.neuralPipeline.optics;
-        % Load the cone mosaic from the previously computed neural pipeline
+
+        % Get the cone mosaic from the previously computed neural pipeline
         theConeMosaic = neuralEngineOBJ.neuralPipeline.coneMosaic;
         returnTheNeuralPipeline =  false;
     end    
