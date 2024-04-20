@@ -291,7 +291,7 @@ p = struct(...
     'type', 'basic', ...                            % type
     'viewingDistanceMeters', 2, ...                 % viewing distance: in meters
     'wls', 400:10:750, ...                          % wavelength support of the primary SPDs: in nanometers
-    'stimDiameter', 0, ...                          % stimulus diameter in degrees
+    'stimDiameter', 0.2, ...                        % stimulus diameter in degrees
     'spotWl', 550, ...                              % spot wavelength: in nm
     'spotFWHM', 20, ...                             % spot full width at half max: in nm
     'spotBgDegs', 0.25, ...                         % spot background: in degrees

@@ -46,7 +46,8 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         displayLinearRGBimage = imageLinearTransform(xyzImage, displayXYZToLinearRGB);
         RGBgunTrace(frameIndex,:) = squeeze(displayLinearRGBimage(mo,no,:));
        
-        % Settings RGB image
+        % Settings RGB image.  Can't pass values less than 0.
+        displayLinearRGBimage(displayLinearRGBimage < 0) = 0;
         displaySettingsImage = (ieLUTLinear(displayLinearRGBimage, displayGet(presentationDisplay, 'inverse gamma'))) / displayGet(presentationDisplay, 'nLevels');
 
         % Render image
