@@ -90,20 +90,22 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
 
 % Examples:
 %{
-    % Usage case #1. Just return the default neural response params
-    defaultParams = nrePhotopigmentExcitationsCmosaic()
-
-    % Usage case #2. Compute noise free, noisy, and repeatable (seed: 346) noisy response instances
-    % using a parent @neuralResponseEngine object and the default neural response params
-
-    % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic);
-
     % Instantiate a @sceneEngine object and generate a test scene
     theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
     testContrast = 0.1;
     [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
         theSceneEngineOBJ.compute(testContrast);
+
+    % Usage case #1. Just return the default neural response params
+    nreParams = nrePhotopigmentExcitationsCmosaic()
+    nreParams.coneMosaicParams.timeIntegrationSeconds = ...
+        theTestSceneTemporalSupportSeconds(2)-theTestSceneTemporalSupportSeconds(1);
+    
+    % Usage case #2. Compute noise free, noisy, and repeatable (seed: 346) noisy response instances
+    % using a parent @neuralResponseEngine object and the default neural response params
+
+    % Instantiate the parent @neuralResponseEngine object
+    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic,nreParams);
     
     % Compute 16 response instances for a number of different noise flags
     instancesNum = 16;
