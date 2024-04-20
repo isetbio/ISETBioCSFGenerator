@@ -133,9 +133,8 @@ switch (classifierChoice)
     case 'idealObserver'
         % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
         % Also set up parameters associated with use of this classifier.
-        theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
-        
-        
+        theClassifierEngine = responseClassifierEngine(@rcePoisson);
+               
         % Train classifier using 1 noise-free instance, 
         % Test performance using a set of 512 noisy instances
         nTest = 512;
@@ -215,8 +214,8 @@ questEngineParamsDummy = struct(...
     'stopCriterion', 0.5);
 
 % Run the dummy TAFC, just to generate theNeuralEngine and theGratingSceneEngine
-computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParamsDummy);
+computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        classifierParams, thresholdParams, questEngineParamsDummy,'TAFC',true);
 
 
 % Having ran the computeThresholdTAFC() function, theNeuralEngine has been generated,
@@ -310,8 +309,8 @@ for iChromaDir = 1:nChromaticDirections
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.
     [logThreshold(iChromaDir), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParams);
+        computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        classifierParams, thresholdParams, questEngineParams, 'TAFC', true);
 
     % Plot stimulus
     figure(dataFig);

@@ -219,8 +219,8 @@ questEngineParamsDummy = struct(...
     'stopCriterion', 0.5);
 
 % Run the dummy TAFC, just to generate theNeuralEngine and theGratingSceneEngine
-computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParamsDummy);
+computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        classifierParams, thresholdParams, questEngineParamsDummy,'TAFC', true);
 
 % Having ran the computeThresholdTAFC() function, theNeuralEngine has been generated,
 % so we can retrieve from it the size of the inputConeMosaic, and therefore match
@@ -233,7 +233,7 @@ theStimulusSpatialEnvelopeRadiusDegs = 0.5*max(theNeuralEngine.neuralPipeline.mR
 % different than the mean radiance of the null stimulus, and which can
 % result in the test stimulus being discriminable from the null stimulus
 % just because of differences in the value with which the OI is padded at
-% the edges
+% the edgesƒcom
 theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
 
 % Enough pixels so that the cone mosaic object does not complain that the
@@ -315,8 +315,8 @@ for iSF = 1:length(spatialFreqs)
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.
     [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThresholdTAFC(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParams);
+        computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        classifierParams, thresholdParams, questEngineParams,'TAFC', true);
     
     % Plot stimulus
     figure(dataFig);
