@@ -9,7 +9,7 @@ edit % Compute spatial CSF in the achromatic direction in the presence of fEM
 %    and square windowed gratings of constant size.
 %
 % See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
+%           t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 
 % History:
@@ -82,7 +82,7 @@ theNeuralEngine.customNeuralPipeline(struct(...
 % The spatial pooling struct
 poolingParamsStruct = struct(...
     'type', 'quadratureEnergy', ...
-    'weights', [] ... % pooling weights are computed separately for each stimulus and test contrast in computeThresholdTAFC()
+    'weights', [] ... % pooling weights are computed separately for each stimulus and test contrast in computeThreshold()
     );
 
 classifierEngineParamsStruct = struct(...
@@ -122,7 +122,7 @@ questEnginePara = struct('minTrial', nTest*contrastLevelsExamined, ...
 
 %% Compute threshold for each spatial frequency
 % 
-% See toolbox/helpers for functions createGratingScene computeThresholdTAFC
+% See toolbox/helpers for functions createGratingScene computeThreshold
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
@@ -139,11 +139,12 @@ for idx = 1:length(spatialFreqs)
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.  This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
-    % function computePerformanceTAFC.
+    % function computePerformance.
     [logThreshold(idx), questObj] = ...
-        computeThresholdTAFC(gratingSceneEngine, theNeuralEngine, classifierEngine, ...
+        computeThreshold(gratingSceneEngine, theNeuralEngine, classifierEngine, ...
         classifierPara, thresholdPara, questEnginePara, ...
-        'visualizeAllComponents', ~true);
+        'visualizeAllComponents', ~true, ...
+        'TAFC', true);
     
     % Plot stimulus
     figure(dataFig);

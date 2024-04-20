@@ -195,6 +195,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     p = inputParser;
     p.addParameter('noiseFlags', {'random'});
     p.addParameter('rngSeed',[], @(x) (isempty(x) || isnumeric(x)));
+    p.addParameter('amputatescenes',true,@islogical)
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     
