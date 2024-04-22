@@ -7,7 +7,7 @@ function t_spatialCSFmRGCMosaicOISequence
 %    using an mRGCMosaic neural respone engine with dynamic stimuli.
 %
 % See also: t_spatialCSFCMosaic, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
+%           t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 
 % History:
@@ -131,10 +131,10 @@ theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralR
 
 
 
-%% Instantiate a PoissonTAFC or a PcaSVMTAFC responseClassifierEngine
+%% Instantiate a Poisson or a PcaSVMTAFC responseClassifierEngine
 %
 % Options:
-%   'idealObserver' - ideal TAFC observer for Poisson limited signals
+%   'idealObserver' - ideal observer for Poisson limited signals
 %   'computationalObsever' - SVM based learned classifier
 
 % Since we are using a contrast-modulation based input to the mRGCmosaic,
@@ -144,9 +144,9 @@ classifierChoice = 'computationalObserver';
 
 switch (classifierChoice) 
     case 'idealObserver'
-        % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
+        % The Poisson ideal obsever makes decision by performing the Poisson likelihood ratio test
         % Also set up parameters associated with use of this classifier.
-        theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        theClassifierEngine = responseClassifierEngine(@rcePoisson);
         
         
         % Train classifier using 1 noise-free instance, 
@@ -208,7 +208,7 @@ questEngineParams = struct(...
 % to the size of the inputConeMosaic. We also need theGratingSceneEngine to
 % compute the theNullStimulusScene (which is used by the midgetRGCMosaic 
 % neural response engine to compute mRGC responses based on cone mosaic contrast responses)
-% To obtain these 2 engines, we call computeThresholdTAFC as with some dummy params as follows:
+% To obtain these 2 engines, we call computeThreshold as with some dummy params as follows:
 
 % Just some dummy params for the grating.
 dummySpatialFrequencyCPD = 1.0;
@@ -227,10 +227,10 @@ questEngineParamsDummy = struct(...
 
 fprintf('Computing a dummy threshold to get access to theNeuralEngine\n');
 % Run the dummy TAFC, just to generate theNeuralEngine and theGratingSceneEngine
-computeThresholdTAFC(theDummyGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParamsDummy);
+computeThreshold(theDummyGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        classifierParams, thresholdParams, questEngineParamsDummy, 'TAFC', true);
 
-% Having ran the computeThresholdTAFC() function, theNeuralEngine has been generated,
+% Having ran the computeThreshold() function, theNeuralEngine has been generated,
 % so we can retrieve from it the size of the inputConeMosaic, and therefore match
 % the stimulus spatial params to it as follows.
 % We make the stimulusFOV 25% larger than the input cone mosaic size
@@ -351,8 +351,8 @@ for iSF = 1:length(spatialFreqs)
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.
     [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThresholdTAFC(theDynamicGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParams);
+        computeThreshold(theDynamicGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        classifierParams, thresholdParams, questEngineParams, 'TAFC', true);
     
     % Plot stimulus
     figure(dataFig);
@@ -371,9 +371,15 @@ for iSF = 1:length(spatialFreqs)
 
 
     % Also visualize the entire scene sequence
-    theDynamicGratingSceneEngine.visualizeSceneSequence(...
-        theSceneSequence, theSceneSequenceTemporalSupportSeconds, ...
-        'videoFilename', sprintf('stimulus_%2.2fcpd', spatialFreqs(iSF)));
+    %
+    % This saves stuff into the github repository, which is a no-no.
+    % Left in case someone is inspired to generate a reasonable path,
+    % say to the local directory with a subfolder of this tutorial's name,
+    % and reinstate.
+    %
+    % theDynamicGratingSceneEngine.visualizeSceneSequence(...
+    %     theSceneSequence, theSceneSequenceTemporalSupportSeconds, ...
+    %     'videoFilename', sprintf('stimulus_%2.2fcpd', spatialFreqs(iSF)));
 
     % Save data for off-line visualizations
     theComputedQuestObjects{iSF} = questObj;
@@ -399,7 +405,8 @@ xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 
-% Export computed data
+% Export computed data.  Same comment as with videos above.  Don't write
+% out into the pwd in a tutorial. 
 % save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
 %     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
 %     'theTemporalFrequencyHz', 'theFrameDurationSeconds',  'theStimulusDurationSeconds', ... 
