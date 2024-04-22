@@ -204,6 +204,8 @@ function dataOut = nreMidgetRGCMosaicOISequence(...
     p = inputParser;
     p.addParameter('noiseFlags', {'random'});
     p.addParameter('rngSeed',[], @(x) (isempty(x) || isnumeric(x)));
+    p.addParameter('amputatescenes',true,@islogical)
+    p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     
