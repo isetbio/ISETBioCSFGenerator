@@ -266,7 +266,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     framesNum = numel(sceneSequence);
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame});
+        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
     end
 
     % Generate an @oiSequence object containing the list of computed optical images
@@ -283,7 +283,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         theNullStimulusScene = neuralResponseParamsStruct.theNullStimulusScene;
 
         % Compute the optical image of the null scene
-        theNullSceneOI = oiCompute(theOptics, theNullStimulusScene);
+        theNullSceneOI = oiCompute(theOptics, theNullStimulusScene,'padvalue','mean');
 
         % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
         theConeMosaicNullResponse = theMRGCmosaic.inputConeMosaic.compute(...

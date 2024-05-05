@@ -198,7 +198,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
     framesNum = numel(sceneSequence);
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame});
+        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
     end
     
     % Generate an @oiSequence object containing the list of computed optical images
