@@ -11,9 +11,28 @@ function t_spatialCSFmRGCMosaic
 
 % History:
 %   05/03/23  NPC   Wrote it
+%   05/08/24  DHB   Make number of pixels and spatial frequencies smaller
+%                   so this will run more quickly.
 
 % Clear and close
 clear; close all;
+
+% Set parameters for a relatively quick example calc or a long fuller calc.
+% 
+% At full calc, we use enough pixels so that the cone mosaic object does not complain that the
+% OI resolution is too low compared to the cone aperture.
+computeFaster = true;
+if (computeFaster)
+    theStimulusPixelsNum = 256;
+    minPixelsNumPerCycle = 6;
+    maxSF = 30;
+    spatialFrequenciesSampled = 2;
+else
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 12;
+    maxSF = 60;
+    spatialFrequenciesSampled = 16;
+end
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -38,7 +57,6 @@ rmsContrast = 0.1;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
-
 %% Create an mRGCMosaic-based neural response engine
 %
 % nreMidgetRGCMosaicSingleShot calculates the activation of an ON-center mRGCMosaic
@@ -47,7 +65,6 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicSingleShot;
 
 % Retrieve the default params for this engine
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
-
 
 % Modify certain params of interest
 % 1. Select one of the pre-computed mRGC mosaics by specifying its
@@ -63,7 +80,6 @@ neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
     'sizeDegs', [], ...
     'eccentricityDegs', [] ...
 );
-
 
 % 3. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here.
@@ -90,7 +106,6 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 
 % Post-cone summation noise when mRGCs are integrating  cone excitation modulations
 neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.015;
-
 
 % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
 % the specified neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType 
@@ -120,8 +135,6 @@ end
 
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
-
-
 
 %% Instantiate a PoissonTAFC or a PcaSVMTAFC responseClassifierEngine
 %
@@ -188,13 +201,11 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
 
 % Sample the contrast-response psychometric curve at 5 contrast levels
 contrastLevelsSampled = 5;
-
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
     'maxTrial', contrastLevelsSampled*nTest, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
-
 
 % We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
 % to the size of the inputConeMosaic. We also need theGratingSceneEngine to
@@ -235,11 +246,6 @@ theStimulusSpatialEnvelopeRadiusDegs = 0.5*max(theNeuralEngine.neuralPipeline.mR
 % just because of differences in the value with which the OI is padded at
 % the edgesƒcom
 theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
-
-% Enough pixels so that the cone mosaic object does not complain that the
-% OI resolution is too low compared to the cone aperture.
-theStimulusPixelsNum = 512;
-minPixelsNumPerCycle = 12;
 
 % Grating orientation
 theStimulusOrientationDegs = 90;
@@ -284,8 +290,6 @@ fprintf('Results will be saved in %s.\n', matFileName);
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone  mosaic
 minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
-maxSF = 60;
-spatialFrequenciesSampled = 16;
 
 % List of spatial frequencies to be tested.
 spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);

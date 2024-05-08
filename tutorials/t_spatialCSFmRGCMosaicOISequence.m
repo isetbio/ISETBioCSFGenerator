@@ -16,6 +16,23 @@ function t_spatialCSFmRGCMosaicOISequence
 % Clear and close
 clear; close all;
 
+% Set parameters for a relatively quick example calc or a long fuller calc.
+% 
+% At full calc, we use enough pixels so that the cone mosaic object does not complain that the
+% OI resolution is too low compared to the cone aperture.
+computeFaster = true;
+if (computeFaster)
+    theStimulusPixelsNum = 256;
+    minPixelsNumPerCycle = 6;
+    maxSF = 30;
+    spatialFrequenciesSampled = 2;
+else
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 12;
+    maxSF = 60;
+    spatialFrequenciesSampled = 16;
+end
+
 % Grating orientation
 theStimulusOrientationDegs = 0;
 
@@ -56,7 +73,6 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicOISequence;
 % Retrieve the default params for this engine
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
 
-
 % Modify certain params of interest
 % 1. Select one of the pre-computed mRGC mosaics by specifying its
 % eccentricityDegs & sizeDegs asnd its center type
@@ -72,7 +88,6 @@ neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
     'sizeDegs', [1.5 1.5], ...
     'eccentricityDegs', [] ...
 );
-
 
 % 3. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here.
@@ -128,8 +143,6 @@ end
 
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
-
-
 
 %% Instantiate a Poisson or a PcaSVMTAFC responseClassifierEngine
 %
@@ -242,14 +255,6 @@ computeThreshold(theDummyGratingSceneEngine, theNeuralEngine, theClassifierEngin
 theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
 theStimulusSpatialEnvelopeRadiusDegs = 0.5*theStimulusFOVdegs;
 
-
-% Enough pixels so that the cone mosaic object does not complain that the
-% OI resolution is too low compared to the cone aperture.
-theStimulusPixelsNum = 512;
-minPixelsNumPerCycle = 8;
-
-
-
 % Compute theNullStimulusScene (so we can express cone responses in terms
 % of cone modulations)
 nullContrast = 0.0;
@@ -305,8 +310,6 @@ fprintf('Results will be saved in %s.\n', matFileName);
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone mosaic
 minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
-maxSF = 60;
-spatialFrequenciesSampled = 16;
 
 % List of spatial frequencies to be tested.
 spatialFreqs = [0 logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled)];
