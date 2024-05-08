@@ -101,7 +101,12 @@ wvf_diffractionLimited = wvfCreate(...
     'measured wavelength', measuredWvl, ...
     'calc pupil size', calcPupilMM,...
     'calc wavelengths', infocusWvl_slc);
-wvf_diffractionLimited = wvfCompute(wvf_diffractionLimited,'humanlca',humanlca);
+if (humanlca)
+    wvf_diffractionLimited = wvfSet(wvf_diffractionLimited,'lcaMethod','human');
+else
+    wvf_diffractionLimited = wvfSet(wvf_diffractionLimited,'lcaMethod','none');
+end
+wvf_diffractionLimited = wvfCompute(wvf_diffractionLimited);
 
 % Get the psf given the diffraction-limited optics
 psf_diffractionLimited = wvf_diffractionLimited.psf;
@@ -316,7 +321,12 @@ function [peakPSF, psf] = psf_addedDefocus(defocus_added, defocus_wvf,...
     %replace the defocus value with the new one
     wvf          = wvfSet(wvf, 'zcoeffs', defocus_wvf, {'defocus'});
     %compute the point spread function
-    wvf          = wvfCompute(wvf,'humanlca',humanlca);
+    if (humanlca)
+        wvf          = wvfSet(wvf,'lcaMethod','human');
+    else
+        wvf          = wvfSet(wvf,'lcaMethod','none');
+    end
+    wvf          = wvfCompute(wvf);
     %get the psf
     psf          = wvf.psf{1};
     %get the peak
