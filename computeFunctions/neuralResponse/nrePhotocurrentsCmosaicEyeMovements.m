@@ -158,7 +158,6 @@ function dataOut = nrePhotocurrentsCmosaicEyeMovements(...
         theConeMosaic = neuralEngineOBJ.neuralPipeline.coneMosaic;
         returnTheNeuralPipeline =  false;
     end
-    
 
     fprintf('Computing %d instances of eye movements (drift model: ''%s'')\n', ...
         instancesNum, neuralResponseParamsStruct.eyeMovementsParams.driftModel);
@@ -171,15 +170,14 @@ function dataOut = nrePhotocurrentsCmosaicEyeMovements(...
                 'nTrials', instancesNum);
     
         case 'low velocity'
-            % Generate fixational eye movements with mugh higher drift speed
+            % Generate fixational eye movements with mugh lower drift speed
             driftModelPositionNoiseStd = 0.0;
             theConeMosaic.emGenSequence(neuralResponseParamsStruct.eyeMovementsParams.durationSeconds, ...
                 'centerPaths', true, ...
                 'microsaccadeType', 'none', ...
                 'driftModelPositionNoiseStd', driftModelPositionNoiseStd, ...
                 'nTrials', instancesNum);
- 
-            
+       
         case 'high velocity'
             % Generate fixational eye movements with mugh higher drift speed
             driftModelPositionNoiseStd = 0.70;
@@ -192,8 +190,6 @@ function dataOut = nrePhotocurrentsCmosaicEyeMovements(...
         otherwise
             error('Unknown driftModel: ''%s''.', neuralResponseParamsStruct.eyeMovementsParams.driftModel);
     end
-    
-    
     
     % Compute the sequence of optical images corresponding to the sequence of scenes
     framesNum = numel(sceneSequence);
@@ -211,9 +207,7 @@ function dataOut = nrePhotocurrentsCmosaicEyeMovements(...
     % level.
     if (~isempty(rngSeed))
         oldSeed = rng(rngSeed);
-    end
-    
-    
+    end   
     timeSamplesNum = numel(theConeMosaic.fixEMobj.timeAxis);
     
     % Compute responses for each type of noise flag requested
@@ -255,9 +249,7 @@ function dataOut = nrePhotocurrentsCmosaicEyeMovements(...
            % Compute photocurrent responses from the noiseFreeConeExcitationResponses
             theNeuralResponses(noiseFlags{idx}) = computePhotocurrent(...
                 noiseFreeConeExcitationResponses, temporalSupportSeconds, theConeMosaic.noiseFlag, ...
-                neuralResponseParamsStruct.eyeMovementsParams.keptResponsesDurationSeconds);
-            
-            
+                neuralResponseParamsStruct.eyeMovementsParams.keptResponsesDurationSeconds);         
             
         elseif (contains(ieParamFormat(noiseFlags{idx}), 'random'))
             % Because computeForOISequence freezes noise, if we want
