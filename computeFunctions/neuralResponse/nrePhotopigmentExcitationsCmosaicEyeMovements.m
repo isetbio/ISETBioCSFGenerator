@@ -136,7 +136,6 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
         theNeuralResponses(noiseFlags{idx}) = [];
     end
     
-
     if (isempty(neuralEngineOBJ.neuralPipeline))
         % Generate the @cMosaic object
         theConeMosaic = cMosaic(...
@@ -171,14 +170,13 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
                 'nTrials', instancesNum);
     
         case 'low velocity'
-            % Generate fixational eye movements with mugh higher drift speed
+            % Generate fixational eye movements with mugh lower drift speed
             driftModelPositionNoiseStd = 0.0;
             theConeMosaic.emGenSequence(neuralResponseParamsStruct.eyeMovementsParams.durationSeconds, ...
                 'centerPaths', true, ...
                 'microsaccadeType', 'none', ...
                 'driftModelPositionNoiseStd', driftModelPositionNoiseStd, ...
                 'nTrials', instancesNum);
- 
             
         case 'high velocity'
             % Generate fixational eye movements with mugh higher drift speed
@@ -192,7 +190,6 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
         otherwise
             error('Unknown driftModel: ''%s''.', neuralResponseParamsStruct.eyeMovementsParams.driftModel);
     end
-    
     
     % Compute the sequence of optical images corresponding to the sequence of scenes
     framesNum = numel(sceneSequence);
@@ -211,9 +208,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
     if (~isempty(rngSeed))
         oldSeed = rng(rngSeed);
     end
-    
     timeSamplesNum = numel(theConeMosaic.fixEMobj.timeAxis);
-    
         
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
@@ -240,8 +235,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
                 'withFixationalEyeMovements', true, ...
                 'seed', rngSeed ...        % random seed
             );
-            
-            
+                       
         elseif (contains(ieParamFormat(noiseFlags{idx}), 'random'))
             % Because computeForOISequence freezes noise, if we want
             % unfrozen noise (which is the case if we are here), 
@@ -252,8 +246,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaicEyeMovements(...
             [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
                 'withFixationalEyeMovements', true, ...
                 'seed', useSeed ...        % random seed
-            );
-        
+            );   
         end
     end
     
