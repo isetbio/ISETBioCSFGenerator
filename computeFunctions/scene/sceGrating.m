@@ -282,6 +282,43 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
         
     % Set the desired FOV
     theSceneFrame = sceneSet(theScene, 'h fov', gratingParams.fovDegs);
+
+    % Check if the spectral support and transmission data are available for the filter
+    if ~isempty(gratingParams.filter.spectralSupport) && ~isempty(gratingParams.filter.transmission)
+        % Replicate the spectral support of the gratingParams across rows equal to the 
+        % length of the filter's spectral support
+        wvl = repmat(gratingParams.spectralSupport, ...
+            [length(gratingParams.filter.spectralSupport), 1]);
+
+        % Replicate the spectral support of the filter across columns equal to the 
+        % length of the grating's spectral support
+        wvl_filter = repmat(gratingParams.filter.spectralSupport,...
+            [1, length(gratingParams.spectralSupport)]);
+
+        % Compute the absolute difference between the replicated wavelength grids
+        Diff = abs(wvl_filter - wvl);
+
+        % Find the indices of the minimum values in each column of the difference matrix
+        [~, minDiff_idx] = min(Diff, [], 1);
+
+        % Use the indices to select corresponding transmission values and convert 
+        % from percentage to decimal
+        transmission_wvl = gratingParams.filter.transmission(minDiff_idx)./100; 
+
+        % Replicate the adjusted transmission values across a grid defined by 
+        % pixelsNum x pixelsNum, and then permute to adjust dimensions
+        transmission_wvl_rep = permute(repmat(transmission_wvl(:),...
+            [1, gratingParams.pixelsNum, gratingParams.pixelsNum]),[2,3,1]);
+
+        % Retrieve the photon data from the current scene frame
+        photons = sceneGet(theSceneFrame,'photons');
+
+        % Apply the filter's transmission to the photon data
+        photons_filtered = photons.*transmission_wvl_rep;
+
+        % Update the scene frame with the filtered photons
+        theSceneFrame = sceneSet(theSceneFrame,'photons',photons_filtered);
+    end
 end
 
 function contrastPattern = generateSpatialModulationPattern(gratingParams, frameSpatialPhaseDegs)
@@ -443,6 +480,9 @@ function p = generateDefaultParams()
 
     p = struct(...
         'screenDisplay', 'LCD-Apple',...                % display: the screen display type
+        'filter',struct(...                             % spatial: apply a filter in front of the display 
+            'spectralSupport',[],...                    %   A vector containing the wavelengths (nm) at which the filter's transmission properties are defined 
+            'transmission',[]),...                      %   A corresponding vector of transmission values (%; ranging from 0 - 100) for each wavelength specified in 'spectralSupport' 
         'viewingDistanceMeters', 0.57, ...              % display: viewing distance
         'bitDepth', 20, ...                             % display: length of LUT
         'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear
