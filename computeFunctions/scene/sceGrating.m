@@ -305,13 +305,13 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
         % from percentage to decimal
         transmission_wvl = gratingParams.filter.transmission(minDiff_idx)./100; 
 
+        % Retrieve the photon data from the current scene frame
+        photons = sceneGet(theSceneFrame,'photons');
+
         % Replicate the adjusted transmission values across a grid defined by 
         % pixelsNum x pixelsNum, and then permute to adjust dimensions
         transmission_wvl_rep = permute(repmat(transmission_wvl(:),...
-            [1, gratingParams.pixelsNum, gratingParams.pixelsNum]),[2,3,1]);
-
-        % Retrieve the photon data from the current scene frame
-        photons = sceneGet(theSceneFrame,'photons');
+            [1, size(photons,1), size(photons,2)]),[2,3,1]);
 
         % Apply the filter's transmission to the photon data
         photons_filtered = photons.*transmission_wvl_rep;
