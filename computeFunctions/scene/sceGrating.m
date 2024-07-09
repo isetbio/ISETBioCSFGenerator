@@ -287,12 +287,12 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
     if ~isempty(gratingParams.filter.spectralSupport) && ~isempty(gratingParams.filter.transmission)
         % Replicate the spectral support of the gratingParams across rows equal to the 
         % length of the filter's spectral support
-        wvl = repmat(gratingParams.spectralSupport, ...
+        wvl = repmat(gratingParams.spectralSupport(:)', ...     %row vector
             [length(gratingParams.filter.spectralSupport), 1]);
 
         % Replicate the spectral support of the filter across columns equal to the 
         % length of the grating's spectral support
-        wvl_filter = repmat(gratingParams.filter.spectralSupport,...
+        wvl_filter = repmat(gratingParams.filter.spectralSupport(:),...  %column vector
             [1, length(gratingParams.spectralSupport)]);
 
         % Compute the absolute difference between the replicated wavelength grids
