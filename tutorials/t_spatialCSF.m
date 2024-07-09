@@ -24,8 +24,15 @@
 % Clear and close
 clear; close all;
 
+% Freeze rng for replicatbility
+rng(0);
+doValidationCheck = true;
+
 % List of spatial frequencies to be tested.
 spatialFreqs = [4, 8, 16, 32];
+if (length(spatialFreqs) ~= 4 | ~all(spatialFreqs == [4, 8, 16, 32]))
+    doValidationCheck = false;
+end
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -36,8 +43,10 @@ switch (stimType)
         chromaDir = [1.0, 1.0, 1.0]';
     case 'red-green'
         chromaDir = [1.0, -1.0, 0.0]';
+        doValidationCheck = false;
     case 'L-isolating'
         chromaDir = [1.0, 0.0, 0.0]';
+        doValidationCheck = false;
 end
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
@@ -56,6 +65,12 @@ neuralParams = nrePhotopigmentExcitationsCmosaic;
 neuralParams.coneMosaicParams.sizeDegs = [0.5 0.5]; 
 neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
 theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+if (~all(neuralParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
+    doValidationCheck = false;
+end
+if (neuralParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
+    doValidationCheck = false;
+end
 
 %% Instantiate the Poisson responseClassifierEngine
 %
@@ -153,3 +168,14 @@ yticks([2,5,10,20,50]); ylim([1, 50]);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+
+%% Do a check on the answer
+% 
+% So that if we break something in the future we will have
+% a chance of knowing it.
+if (doValidationCheck)
+    validationThresholds = [0.0351    0.0827    0.1534    0.5529];
+    if (any(abs(threshold-validationThresholds)./validationThresholds > 0.20))
+        error('Do not replicate validation thresholds to 20%. Check that parameters match, or for a bug.');
+    end
+end
