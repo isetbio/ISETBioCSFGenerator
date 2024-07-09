@@ -283,11 +283,12 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
     % Set the desired FOV
     theSceneFrame = sceneSet(theScene, 'h fov', gratingParams.fovDegs);
 
-    % Check if the spectral support and transmission data are available for the filter
+    % Check if the spectral support and transmission data are available for a filter
+    % If so, filter the photons.
     if ~isempty(gratingParams.filter.spectralSupport) && ~isempty(gratingParams.filter.transmission)
         % Replicate the spectral support of the gratingParams across rows equal to the 
         % length of the filter's spectral support
-        wvl = repmat(gratingParams.spectralSupport(:)', ...     %row vector
+        wvl = repmat(gratingParams.spectralSupport(:)', ...              %row vector
             [length(gratingParams.filter.spectralSupport), 1]);
 
         % Replicate the spectral support of the filter across columns equal to the 

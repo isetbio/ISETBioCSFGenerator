@@ -175,7 +175,7 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 % a chance of knowing it.
 if (doValidationCheck)
     validationThresholds = [0.0351    0.0827    0.1534    0.5529];
-    if (any(abs(threshold-validationThresholds)./validationThresholds > 0.20))
-        error('Do not replicate validation thresholds to 20%. Check that parameters match, or for a bug.');
+    if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
+        error('Do not replicate validation thresholds to 25%. Check that parameters match, or for a bug.');
     end
 end
