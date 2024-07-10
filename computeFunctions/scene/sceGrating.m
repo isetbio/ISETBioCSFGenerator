@@ -283,27 +283,17 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
     % Set the desired FOV
     theSceneFrame = sceneSet(theScene, 'h fov', gratingParams.fovDegs);
 
-    % Check if the spectral support and transmission data are available for a filter
-    % If so, filter the photons.
+    % Check if both spectral support (wavelength range) and transmission data are available for the filter
     if ~isempty(gratingParams.filter.spectralSupport) && ~isempty(gratingParams.filter.transmission)
-        % Replicate the spectral support of the gratingParams across rows equal to the 
-        % length of the filter's spectral support
-        wvl = repmat(gratingParams.spectralSupport(:)', ...              %row vector
-            [length(gratingParams.filter.spectralSupport), 1]);
-
-        % Replicate the spectral support of the filter across columns equal to the 
-        % length of the grating's spectral support
-        wvl_filter = repmat(gratingParams.filter.spectralSupport(:),...  %column vector
-            [1, length(gratingParams.spectralSupport)]);
-
-        % Compute the absolute difference between the replicated wavelength grids
-        Diff = abs(wvl_filter - wvl);
-
-        % Find the indices of the minimum values in each column of the difference matrix
-        [~, minDiff_idx] = min(Diff, [], 1);
-
-        % Use the indices to select corresponding transmission values 
-        transmission_wvl = gratingParams.filter.transmission(minDiff_idx); 
+        % Assert to ensure the number of wavelengths matches the number of transmission data points
+        assert(length(gratingParams.filter.spectralSupport) == length(gratingParams.filter.transmission),...
+            'The input filter transmittance does not match the input sampled wavelengths!');
+        
+        % Perform linear interpolation of filter's transmission over the scene's spectral range
+        % This adjusts the filter data to match the scene's sampled wavelengths, ensuring compatibility
+        transmission_wvl = interp1(gratingParams.filter.spectralSupport, ...
+            gratingParams.filter.transmission, gratingParams.spectralSupport,...
+            'linear');
 
         % Retrieve the photon data from the current scene frame
         photons = sceneGet(theSceneFrame,'photons');

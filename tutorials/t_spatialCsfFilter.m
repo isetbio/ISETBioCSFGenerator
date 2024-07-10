@@ -15,7 +15,7 @@
 clear; close all;
 
 % Compute the baseline contrast sensitivity function without any filter
-threshold0 = t_spatialCSF; %no input filter
+threshold0 = t_spatialCSF('doValidationCheck', false); %no input filter
 % Convert threshold to sensitivity (sensitivity is the inverse of threshold)
 sensitivity0 = 1./threshold0;
 
@@ -31,7 +31,7 @@ transmission_func1 = ones(length(wave),1);
 filter1 = struct('spectralSupport', wave, 'transmission', transmission_func1);
 
 % Compute CSF threshold using the perfect transmission filter
-threshold1 = t_spatialCSF('filter', filter1);
+threshold1 = t_spatialCSF('filter', filter1,'doValidationCheck', false);
 sensitivity1 = 1./threshold1;
 
 %% filter 2
@@ -42,7 +42,7 @@ transmission_func2 = 0.25.*ones(length(wave),1);
 filter2 = struct('spectralSupport', wave, 'transmission', transmission_func2);
 
 % Compute CSF threshold using the neutral density filter
-threshold2 = t_spatialCSF('filter', filter2);
+threshold2 = t_spatialCSF('filter', filter2,'doValidationCheck', false);
 sensitivity2 = 1./threshold2;
 
 %% Plot the results using logarithmic scales for both axes
@@ -74,48 +74,31 @@ title(lgd2, 'Filter type');
 set(gca,'FontSize',12)
 
 %%
-% This section explains the scene engine (sceGrating) handle mismatches 
-% between the sampled wavelengths of a scene and a filter by appropriately 
-% adjusting the filter's transmission data
+% This block handles spectral mismatch between the scene's sampled wavelengths 
+% and the filter by applying linear interpolation to adjust the filter's data.
 
-% sampled wavelengths used for the scene
-wave_scene  = wave; 
-% a finer resolution from 400 nm to 740 nm with steps of 1.25 nm to ensure 
-% detailed spectral coverage
-wave_filter = 400:7:740;
-% create a Gaussion filter 
+% Define the sampled wavelengths for the scene, using a fine resolution
+wave_scene  = 400:5:740; 
+
+% Define the sampled wavelengths for the filter, using a coarser resolution
+% than the scene for demonstration of interpolation necessity
+wave_filter = 400:20:740;
+
+% Create a Gaussian filter with a peak at 550 nm and a standard deviation of 50 nm
+% The Gaussian filter values are normalized to have a maximum of 1
 filter_Gaussian = normpdf(wave_filter, 550, 50); 
 filter_Gaussian = filter_Gaussian./max(filter_Gaussian);
 
-% Replicate the spectral support of the gratingParams across rows equal to the 
-% length of the filter's spectral support
-wvl = repmat(wave_scene(:)', [length(wave_filter), 1]);
+% Interpolate the Gaussian filter values to match the scene's finer wavelength sampling
+% This ensures the filter's transmittance values are defined at every wavelength used by the scene
+transmission_wvl = interp1(wave_filter, filter_Gaussian, wave_scene, 'linear');
 
-% Replicate the spectral support of the filter across columns equal to the 
-% length of the grating's spectral support
-wvl_filter = repmat(wave_filter(:), [1, length(wave_scene)]);
-
-% Compute the absolute difference between the replicated wavelength grids
-Diff = abs(wvl_filter - wvl);
-
-% For each column in the difference matrix, which corresponds to each scene 
-% wavelength, the index of the filter wavelength that has the minimum 
-% difference is identified. This index points to the filter wavelength that
-% is closest to the corresponding scene wavelength.
-[~, minDiff_idx] = min(Diff, [], 1);
-
-% Using the indices from the previous step, the corresponding transmission 
-% values from the Gaussian filter are selected. This step effectively maps 
-% the finely sampled filter transmission onto the coarser scene wavelength grid. 
-transmission_wvl = filter_Gaussian(minDiff_idx); 
-
-%The sampled wavelength resolution of the filter (wave_filter) should be as 
-%fine as possible, ideally include all the sampled wavleengths for the scene.
+% Visualizing the original and interpolated filter functions
 figure; hold on
-plot(wave_filter,filter_Gaussian, 'k-'); 
-plot(wave_scene, transmission_wvl, 'ko--');
+plot(wave_filter,filter_Gaussian, 'r-*', 'LineWidth',2); 
+plot(wave_scene, transmission_wvl, 'ko:');
 xlabel('Sampled wavelength (nm)');
 ylabel('Transmittance');
-legend({'Original filter function', 'Down-sampled filter function'})
+legend({'Original filter function', 'Interpolated filter function'})
 set(gca,'FontSize', 12);
 
