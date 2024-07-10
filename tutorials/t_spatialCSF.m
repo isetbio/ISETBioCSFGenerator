@@ -21,10 +21,10 @@
 %   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine
 %                   phase.
 
-function threshold = t_spatialCSF(varargin)
+function thresholdRet = t_spatialCSF(varargin)
     p = inputParser;
     p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
-    p.addParameter('doValidationCheck', false, @islogical);
+    p.addParameter('doValidationCheck', true, @islogical);
     parse(p, varargin{:});
     filter = p.Results.filter;
     doValidationCheck = p.Results.doValidationCheck;
@@ -183,5 +183,10 @@ function threshold = t_spatialCSF(varargin)
         if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
             error('Do not replicate validation thresholds to 25%. Check that parameters match, or for a bug.');
         end
+    end
+
+    %% Return a value if it was requested
+    if (nargout > 0)
+        thresholdRet = threshold;
     end
 end
