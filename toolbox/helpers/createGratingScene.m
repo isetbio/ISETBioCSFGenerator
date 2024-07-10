@@ -44,6 +44,7 @@ p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk',
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
 p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted', 'counter phase modulated'})));
 p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
@@ -70,6 +71,7 @@ gratingParams.meanLuminanceCdPerM2 = p.Results.meanLuminanceCdPerM2;
 gratingParams.meanChromaticityXY = p.Results.meanChromaticityXY;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
+gratingParams.filter          = p.Results.filter;
 gratingParams.orientationDegs = p.Results.orientation;
 gratingParams.pixelsNum = p.Results.pixelsNum;
 gratingParams.fovDegs = p.Results.fovDegs;

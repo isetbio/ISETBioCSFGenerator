@@ -302,9 +302,8 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
         % Find the indices of the minimum values in each column of the difference matrix
         [~, minDiff_idx] = min(Diff, [], 1);
 
-        % Use the indices to select corresponding transmission values and convert 
-        % from percentage to decimal
-        transmission_wvl = gratingParams.filter.transmission(minDiff_idx)./100; 
+        % Use the indices to select corresponding transmission values 
+        transmission_wvl = gratingParams.filter.transmission(minDiff_idx); 
 
         % Retrieve the photon data from the current scene frame
         photons = sceneGet(theSceneFrame,'photons');
@@ -483,7 +482,7 @@ function p = generateDefaultParams()
         'screenDisplay', 'LCD-Apple',...                % display: the screen display type
         'filter',struct(...                             % spatial: apply a filter in front of the display 
             'spectralSupport',[],...                    %   A vector containing the wavelengths (nm) at which the filter's transmission properties are defined 
-            'transmission',[]),...                      %   A corresponding vector of transmission values (%; ranging from 0 - 100) for each wavelength specified in 'spectralSupport' 
+            'transmission',[]),...                      %   A corresponding vector of transmission values (ranging from 0 - 1) for each wavelength specified in 'spectralSupport' 
         'viewingDistanceMeters', 0.57, ...              % display: viewing distance
         'bitDepth', 20, ...                             % display: length of LUT
         'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear
