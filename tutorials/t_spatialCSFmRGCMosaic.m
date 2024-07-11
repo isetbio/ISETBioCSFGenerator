@@ -15,6 +15,12 @@ function t_spatialCSFmRGCMosaic
 % Clear and close
 clear; close all;
 
+% Set fastParameters that make this take less time
+%
+% Setting to false is more realistic for real work, but we
+% try to keep the demo version relatively short.
+fastParameters = true;
+
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
@@ -38,7 +44,6 @@ rmsContrast = 0.1;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
-
 %% Create an mRGCMosaic-based neural response engine
 %
 % nreMidgetRGCMosaicSingleShot calculates the activation of an ON-center mRGCMosaic
@@ -47,7 +52,6 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicSingleShot;
 
 % Retrieve the default params for this engine
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
-
 
 % Modify certain params of interest
 % 1. Select one of the pre-computed mRGC mosaics by specifying its
@@ -63,7 +67,6 @@ neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
     'sizeDegs', [], ...
     'eccentricityDegs', [] ...
 );
-
 
 % 3. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here.
@@ -88,9 +91,8 @@ neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 % Post-cone summation noise when mRGCs are integrating raw cone excitation signals
 % neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 1e3 * 0.1;
 
-% Post-cone summation noise when mRGCs are integrating  cone excitation modulations
+% Post-cone summation noise when mRGCs are integrating cone excitation modulations
 neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 0.015;
-
 
 % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
 % the specified neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType 
@@ -121,8 +123,6 @@ end
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
 
-
-
 %% Instantiate a PoissonTAFC or a PcaSVMTAFC responseClassifierEngine
 %
 % Options:
@@ -130,7 +130,7 @@ theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralR
 %   'computationalObsever' - SVM based learned classifier
 
 % Since we are using a contrast-modulation based input to the mRGCmosaic,
-% the Poisson noise is not valid. So we use a computationalObserver (SVM
+% the Poisson noise is not accurate. So we use a computationalObserver (SVM
 % based)
 classifierChoice = 'computationalObserver';
 
@@ -140,28 +140,37 @@ switch (classifierChoice)
         % Also set up parameters associated with use of this classifier.
         theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
         
-        
         % Train classifier using 1 noise-free instance, 
         % Test performance using a set of 512 noisy instances
         nTest = 512;
         classifierParams = struct('trainFlag', 'none', ...
                                 'testFlag', 'random', ...
                                 'nTrain', 1, 'nTest', nTest);
+    
     case 'computationalObserver'
+        % Handle fastParameters
+        if (fastParameters)
+            crossValidationFolds = 2;
+            nTrain = 512;
+            nTest = 128;
+        else
+            crossValidationFolds = 10;
+            nTrain = 1024*4;
+            nTest = 1024*4;
+        end
+
         % Instantiate a computational observer consisting of a linear SVM 
         % coupled with a PCA operating on 2 components
         theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
             struct(...
                 'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
-                'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
+                'crossValidationFoldsNum', crossValidationFolds, ...  % employ a 10-fold cross-validated linear 
                 'kernelFunction', 'linear', ...     % linear
                 'classifierType', 'svm' ...         % binary SVM classifier
             ));
 
         % Train SVM classifier using a set of 4K noisy instances, 
         % Test performance using a set of 4K noisy instances
-        nTrain = 1024*4;
-        nTest = 1024*4;
         classifierParams = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
                                 'nTrain', nTest, 'nTest', nTrain);
@@ -186,15 +195,21 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 
-% Sample the contrast-response psychometric curve at 5 contrast levels
-contrastLevelsSampled = 5;
+% Sample the contrast-response psychometric curve at this number of
+% contrast levels.
+%
+% Might want to up the number for the non-fastParameters case.
+if (fastParameters)
+    contrastLevelsSampled = 5;
+else
+    constrastLevelsSampled = 5;
+end
 
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
     'maxTrial', contrastLevelsSampled*nTest, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
-
 
 % We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
 % to the size of the inputConeMosaic. We also need theGratingSceneEngine to
@@ -236,10 +251,16 @@ theStimulusSpatialEnvelopeRadiusDegs = 0.5*max(theNeuralEngine.neuralPipeline.mR
 % the edgesƒcom
 theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
 
-% Enough pixels so that the cone mosaic object does not complain that the
-% OI resolution is too low compared to the cone aperture.
-theStimulusPixelsNum = 512;
-minPixelsNumPerCycle = 12;
+% This will run faster if you reduce theStimulusPixelsNum to something
+% smaller, but then you will get an annoying limit about the precision
+% of the cone aperture blurring.
+if (fastParameters)
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 4;
+else
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 12;
+end
 
 % Grating orientation
 theStimulusOrientationDegs = 90;
@@ -278,14 +299,16 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
     neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
 
-fprintf('Results will be saved in %s.\n', matFileName);
-
 %% Ready to compute thresholds at a set of examined spatial frequencies
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone  mosaic
 minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
 maxSF = 60;
-spatialFrequenciesSampled = 16;
+if (fastParameters)
+    spatialFrequenciesSampled = 3;
+else
+    spatialFrequenciesSampled = 16;
+end
 
 % List of spatial frequencies to be tested.
 spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
@@ -340,6 +363,7 @@ for iSF = 1:length(spatialFreqs)
     theStimulusScenes{iSF} = theSceneSequence(1);
 end
 
+% Pretty up data figure
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 
 % Convert returned log threshold to linear threshold
@@ -352,7 +376,13 @@ xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 
-% Export computed data
+%% Export computed data. 
+%
+% Commented out. If you want to save data like this from a tutorial, put it
+% into a local directory and make sure that is gitignored so it doesn't
+% clog up the repository.
+%
+% fprintf('Results will be saved in %s.\n', matFileName);
 % save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
 %     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
 %     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
