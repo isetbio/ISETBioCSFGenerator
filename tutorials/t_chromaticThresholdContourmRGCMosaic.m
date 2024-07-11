@@ -12,9 +12,14 @@ function t_chromaticThresholdContourmRGCMosaic
 % History:
 %   05/05/23  NPC   Wrote it
 
-
 % Clear and close
 clear; close all;
+
+% Set fastParameters that make this take less time
+%
+% Setting to false provides more realistic values for real work, but we
+% try to keep the demo version run time relatively short.
+fastParameters = true;
 
 % Choose stimulus spatial frequency, orientation, and spatial phase
 theStimulusSpatialFrequencyCPD = 0;
@@ -28,14 +33,17 @@ theStimulusOrientationDegs = 0;
 rmsContrast = 0.08;
 
 % List of LM chromatic directions to be tested 
-nChromaticDirections = 16;
+if (fastParameters)
+    nChromaticDirections = 4;
+else
+    nChromaticDirections = 16;
+end
 for ii = 1:nChromaticDirections
     theta = (ii-1)/nChromaticDirections*2*pi;
     theChromaticDirections(:,ii) = [cos(theta) sin(theta) 0]';
     theChromaticDirections(:,ii) = theChromaticDirections(:,ii) / norm(theChromaticDirections(:,ii)) * rmsContrast;
     assert(abs(norm(theChromaticDirections(:,ii)) - rmsContrast) <= 1e-10);
 end
-
 
 %% Create an mRGCMosaic-based neural response engine
 %
@@ -112,11 +120,8 @@ switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
         error('Unknown input signal type specified: ''%s''.', neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
 end
 
-
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
-
-
 
 %% Instantiate a PoissonTAFC or a PcaSVMTAFC responseClassifierEngine
 %
@@ -127,7 +132,7 @@ theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralR
 % Since we are using a contrast-modulation based input to the mRGCmosaic,
 % the Poisson noise is not valid. So we use a computationalObserver (SVM
 % based)
-classifierChoice = 'idealObserver';
+classifierChoice = 'computationalObserver';
 
 switch (classifierChoice) 
     case 'idealObserver'
@@ -141,21 +146,31 @@ switch (classifierChoice)
         classifierParams = struct('trainFlag', 'none', ...
                                 'testFlag', 'random', ...
                                 'nTrain', 1, 'nTest', nTest);
+    
     case 'computationalObserver'
+        % Handle fastParameters
+        if (fastParameters)
+            crossValidationFolds = 2;
+            nTrain = 64;
+            nTest = 32;
+        else
+            crossValidationFolds = 10;
+            nTrain = 1024*4;
+            nTest = 1024*4;
+        end
+
         % Instantiate a computational observer consisting of a linear SVM 
         % coupled with a PCA operating on 2 components
         theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
             struct(...
                 'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
-                'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
+                'crossValidationFoldsNum', crossValidationFolds, ...  % employ a 10-fold cross-validated linear 
                 'kernelFunction', 'linear', ...     % linear
                 'classifierType', 'svm' ...         % binary SVM classifier
             ));
 
         % Train SVM classifier using a set of 4K noisy instances, 
         % Test performance using a set of 4K noisy instances
-        nTrain = 1024*4;
-        nTest = 1024*4;
         classifierParams = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
                                 'nTrain', nTest, 'nTest', nTrain);
@@ -163,7 +178,6 @@ switch (classifierChoice)
     otherwise
         error('Unknown classifier: ''%s''.', classifierChoice);
 end
-
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
@@ -181,8 +195,15 @@ thresholdParams = struct('logThreshLimitLow', 3.0, ...
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 
-% Sample the contrast-response psychometric curve at 5 contrast levels
-contrastLevelsSampled = 5;
+% Sample the contrast-response psychometric curve at this number of
+% contrast levels.
+%
+% Might want to up the number for the non-fastParameters case.
+if (fastParameters)
+    contrastLevelsSampled = 5;
+else
+    constrastLevelsSampled = 5;
+end
 
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
@@ -197,7 +218,6 @@ questEngineParams = struct(...
 % To obtain these 2 engines, we call computeThresholdTAFC as with some dummy params as follows:
 
 % Just some dummy params for the grating.
-
 dummyFOVdegs = 2.0;
 dummyChromaDir = theChromaticDirections(:,1);
 theGratingSceneEngine = createGratingScene(dummyChromaDir, theStimulusSpatialFrequencyCPD , ...
@@ -208,15 +228,14 @@ theGratingSceneEngine = createGratingScene(dummyChromaDir, theStimulusSpatialFre
 
 % Some low res quest params to run fast
 questEngineParamsDummy = struct(...
-    'minTrial', nTest, ...
-    'maxTrial', nTest, ...
+    'minTrial', 16, ...
+    'maxTrial', 16, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.5);
 
 % Run the dummy TAFC, just to generate theNeuralEngine and theGratingSceneEngine
 computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParamsDummy,'TAFC',true);
-
 
 % Having ran the computeThresholdTAFC() function, theNeuralEngine has been generated,
 % so we can retrieve from it the size of the inputConeMosaic, and therefore match
@@ -232,11 +251,16 @@ theStimulusSpatialEnvelopeRadiusDegs = 0.5*max(theNeuralEngine.neuralPipeline.mR
 % the edges
 theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
 
-% Enough pixels so that the cone mosaic object does not complain that the
-% OI resolution is too low compared to the cone aperture.
-theStimulusPixelsNum = 512;
-minPixelsNumPerCycle = 12;
-
+% This will run faster if you reduce theStimulusPixelsNum to something
+% smaller, but then you will get an annoying limit about the precision
+% of the cone aperture blurring.
+if (fastParameters)
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 4;
+else
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 12;
+end
 
 % Neural response engine updating
 switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
@@ -251,7 +275,6 @@ switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
             'spatialPhase', theStimulusSpatialPhaseDegs, ...
             'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
             'pixelsNum', theStimulusPixelsNum);
-
         theNullStimulusSceneSequence = theGratingSceneEngine.compute(nullContrast);
     
         % Save theNullStimulusScene in the neuralResponsePipelineParams, so
@@ -271,7 +294,9 @@ switch (neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType)
 
 end
 
-% Generate Matlab filename for saving computed data
+% Generate Matlab filename for saving computed data.
+% 
+% Code that actually does the save commented out at the end.matFileName = sprintf('mRGCMosaicIsothresholdContour_eccDegs_%2.1f_%2.1f_SpatialFrequencyCPD_%2.1f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s_vMembraneSigma_%2.3f.mat', ...
 matFileName = sprintf('mRGCMosaicIsothresholdContour_eccDegs_%2.1f_%2.1f_SpatialFrequencyCPD_%2.1f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s_vMembraneSigma_%2.3f.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
@@ -281,8 +306,6 @@ matFileName = sprintf('mRGCMosaicIsothresholdContour_eccDegs_%2.1f_%2.1f_Spatial
     neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag, ...
     neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma);
-
-fprintf('Results will be saved in %s.\n', matFileName);
 
 %% Ready to compute threshold for each chromatic direction
 logThreshold = zeros(1, nChromaticDirections );
@@ -357,7 +380,7 @@ circleIn2D = UnitCircleGenerate(nThetaEllipse);
 fitEllipse = PointsOnEllipseQ(fitQ,circleIn2D)/scaleFactor;
 
 %% Plot the fitted ellipse
-contrastLim = 0.02;
+contrastLim = 0.04;
 theContourFig = figure; clf; hold on
 plot(thresholdConeContrasts(1,:), thresholdConeContrasts(2,:), 'ok', 'MarkerFaceColor','k', 'MarkerSize',12);
 plot(fitEllipse(1,:),fitEllipse(2,:),'r','LineWidth',3);
@@ -369,8 +392,13 @@ set(theContourFig, 'Position',  [800, 0, 600, 800]);
 xlim([-contrastLim contrastLim]); ylim([-contrastLim contrastLim]);
 axis('square');
 
-
-% Export computed data
+%% Export computed data. 
+%
+% Commented out. If you want to save data like this from a tutorial, put it
+% into a local directory and make sure that is gitignored so it doesn't
+% clog up the repository.
+%
+% fprintf('Results will be saved in %s.\n', matFileName);
 % save(matFileName, 'theChromaticDirections', 'threshold', ...
 %     'theStimulusSpatialFrequencyCPD', 'theStimulusSpatialPhaseDegs', 'theStimulusOrientationDegs', ...
 %     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...

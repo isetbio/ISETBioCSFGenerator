@@ -151,8 +151,8 @@ switch (classifierChoice)
         % Handle fastParameters
         if (fastParameters)
             crossValidationFolds = 2;
-            nTrain = 512;
-            nTest = 128;
+            nTrain = 64;
+            nTest = 32;
         else
             crossValidationFolds = 10;
             nTrain = 1024*4;
