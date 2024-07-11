@@ -305,7 +305,7 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
 minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
 maxSF = 60;
 if (fastParameters)
-    spatialFrequenciesSampled = 3;
+    spatialFrequenciesSampled = 2;
 else
     spatialFrequenciesSampled = 16;
 end
