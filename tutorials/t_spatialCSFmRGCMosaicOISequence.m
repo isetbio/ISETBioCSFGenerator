@@ -165,9 +165,9 @@ switch (classifierChoice)
     case 'computationalObserver'
         % Handle fastParameters
         if (fastParameters)
-            crossValidationFolds = 2;
-            nTrain = 256;
-            nTest = 128;
+            crossValidationFolds = 1;
+            nTrain = 64;
+            nTest = 32;
         else
             crossValidationFolds = 10;
             nTrain = 1024*4;
@@ -186,8 +186,6 @@ switch (classifierChoice)
 
         % Train SVM classifier using a set of 4K noisy instances, 
         % Test performance using a set of 4K noisy instances
-        nTrain = 1024*4;
-        nTest = 1024*4;
         classifierParams = struct('trainFlag', 'random', ...
                                 'testFlag', 'random', ...
                                 'nTrain', nTest, 'nTest', nTrain);
@@ -304,8 +302,13 @@ theTemporalFrequencyHz = 5.0;
 % Match the frame duration to the cone integration time
 theFrameDurationSeconds = coneIntegrationTimeSeconds;
 
-% Make the stimulus last for 1 full temporal cycle
-theStimulusDurationSeconds = 1.0/theTemporalFrequencyHz;
+if (fastParameters)
+    % Just do two frames in fastParameters mode.
+    theStimulusDurationSeconds = 2*theFrameDurationSeceonds;
+else
+    % Make the stimulus last for 1 full temporal cycle
+    theStimulusDurationSeconds = 1.0/theTemporalFrequencyHz;
+end
 
 % And instruct the mRGCMosaic neural response engine to operate on cone
 % modulations
@@ -328,6 +331,7 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
 
 %% Ready to compute thresholds at a set of examined spatial frequencies
+%
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone mosaic
 minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
