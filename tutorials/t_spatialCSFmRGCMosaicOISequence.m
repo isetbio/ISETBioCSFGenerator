@@ -16,6 +16,12 @@ function t_spatialCSFmRGCMosaicOISequence
 % Clear and close
 clear; close all;
 
+% Set fastParameters that make this take less time
+%
+% Setting to false provides more realistic values for real work, but we
+% try to keep the demo version relatively run time relatively short.
+fastParameters = true;
+
 % Grating orientation
 theStimulusOrientationDegs = 0;
 
@@ -42,7 +48,6 @@ rmsContrast = 0.08;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
-
 % Set the cone mosaic intergration time. This will also be the stimulus
 % frame duration. Here, set it to 50 mseconds
 coneIntegrationTimeSeconds = 50/1000;
@@ -56,7 +61,6 @@ theNeuralComputePipelineFunction = @nreMidgetRGCMosaicOISequence;
 % Retrieve the default params for this engine
 neuralResponsePipelineParams = theNeuralComputePipelineFunction();
 
-
 % Modify certain params of interest
 % 1. Select one of the pre-computed mRGC mosaics by specifying its
 % eccentricityDegs & sizeDegs asnd its center type
@@ -65,14 +69,19 @@ neuralResponsePipelineParams.mRGCMosaicParams.sizeDegs = [2.0 2.0];
 neuralResponsePipelineParams.mRGCMosaicParams.eccDegs = [7 0];
 neuralResponsePipelineParams.mRGCMosaicParams.sizeDegs = [6.0 3.0];
 neuralResponsePipelineParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
+
 % 2. We can crop the mRGCmosaic to some desired size. 
 %     Passing [] for sizeDegs will not crop.
 %     Passing [] for eccentricityDegs will crop the mosaic at its center.
+if (fastParameters)
+    cropSize = [0.5 0.5];
+else
+    cropSize = [1.5 1.5];
+end
 neuralResponsePipelineParams.mRGCMosaicParams.cropParams = struct(...
-    'sizeDegs', [1.5 1.5], ...
+    'sizeDegs', cropSize, ...
     'eccentricityDegs', [] ...
 );
-
 
 % 3. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here.
@@ -129,8 +138,6 @@ end
 % Instantiate theNeuralEngine!
 theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralResponsePipelineParams);
 
-
-
 %% Instantiate a Poisson or a PcaSVMTAFC responseClassifierEngine
 %
 % Options:
@@ -156,12 +163,23 @@ switch (classifierChoice)
                                 'testFlag', 'random', ...
                                 'nTrain', 1, 'nTest', nTest);
     case 'computationalObserver'
+        % Handle fastParameters
+        if (fastParameters)
+            crossValidationFolds = 2;
+            nTrain = 256;
+            nTest = 128;
+        else
+            crossValidationFolds = 10;
+            nTrain = 1024*4;
+            nTest = 1024*4;
+        end
+
         % Instantiate a computational observer consisting of a linear SVM 
         % coupled with a PCA operating on 16 components
         theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC, ...
             struct(...
                 'PCAComponentsNum', 4, ...         % number of PCs used for feature set dimensionality reduction
-                'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear 
+                'crossValidationFoldsNum', crossValidationFolds, ...  % employ a 10-fold cross-validated linear 
                 'kernelFunction', 'linear', ...     % linear
                 'classifierType', 'svm' ...         % binary SVM classifier
             ));
@@ -194,15 +212,21 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
 % See t_thresholdEngine.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 
-% Sample the contrast-response psychometric curve at 5 contrast levels
-contrastLevelsSampled = 5;
+% Sample the contrast-response psychometric curve at this number of
+% contrast levels.
+%
+% Might want to up the number for the non-fastParameters case.
+if (fastParameters)
+    contrastLevelsSampled = 5;
+else
+    constrastLevelsSampled = 5;
+end
 
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
     'maxTrial', contrastLevelsSampled*nTest, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
-
 
 % We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
 % to the size of the inputConeMosaic. We also need theGratingSceneEngine to
@@ -218,6 +242,7 @@ theDummyGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequency
         'fovDegs', dummyFOVdegs, ...
         'minPixelsNumPerCycle', 5, ...
         'pixelsNum', 256);
+
 % Some low res quest params to run fast
 questEngineParamsDummy = struct(...
     'minTrial', 64, ...
@@ -225,8 +250,8 @@ questEngineParamsDummy = struct(...
     'numEstimator', 1, ...
     'stopCriterion', 0.5);
 
-fprintf('Computing a dummy threshold to get access to theNeuralEngine\n');
 % Run the dummy TAFC, just to generate theNeuralEngine and theGratingSceneEngine
+fprintf('Computing a dummy threshold to get access to theNeuralEngine\n');
 computeThreshold(theDummyGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParamsDummy, 'TAFC', true);
 
@@ -242,13 +267,16 @@ computeThreshold(theDummyGratingSceneEngine, theNeuralEngine, theClassifierEngin
 theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
 theStimulusSpatialEnvelopeRadiusDegs = 0.5*theStimulusFOVdegs;
 
-
-% Enough pixels so that the cone mosaic object does not complain that the
-% OI resolution is too low compared to the cone aperture.
-theStimulusPixelsNum = 512;
-minPixelsNumPerCycle = 8;
-
-
+% This will run faster if you reduce theStimulusPixelsNum to something
+% smaller, but then you will get an annoying limit about the precision
+% of the cone aperture blurring.
+if (fastParameters)
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 4;
+else
+    theStimulusPixelsNum = 512;
+    minPixelsNumPerCycle = 8;
+end
 
 % Compute theNullStimulusScene (so we can express cone responses in terms
 % of cone modulations)
@@ -279,7 +307,6 @@ theFrameDurationSeconds = coneIntegrationTimeSeconds;
 % Make the stimulus last for 1 full temporal cycle
 theStimulusDurationSeconds = 1.0/theTemporalFrequencyHz;
 
-
 % And instruct the mRGCMosaic neural response engine to operate on cone
 % modulations
 neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType = 'cone_modulations';
@@ -288,6 +315,8 @@ neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType = 'cone_modulation
 theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 
 % Generate Matlab filename for saving computed data
+% 
+% Code that actually does the save commented out at the end.
 matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_temporalFrequencyHz_%2.1f_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
@@ -298,15 +327,16 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
     neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag, ...
     neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag);
 
-fprintf('Results will be saved in %s.\n', matFileName);
-
-
 %% Ready to compute thresholds at a set of examined spatial frequencies
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone mosaic
 minSF = 0.5/(min(theNeuralEngine.neuralPipeline.mRGCMosaic.inputConeMosaic.sizeDegs));
 maxSF = 60;
-spatialFrequenciesSampled = 16;
+if (fastParameters)
+    spatialFrequenciesSampled = 2;
+else
+    spatialFrequenciesSampled = 16;
+end
 
 % List of spatial frequencies to be tested.
 spatialFreqs = [0 logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled)];
@@ -324,7 +354,6 @@ plotCols = 8;
 plotRows = ceil((length(spatialFreqs)*2) / plotCols);
 
 for iSF = 1:length(spatialFreqs)
-
     if (spatialFreqs(iSF) == 0)
         % For 0 c/deg, we do a counter-phase modulation
         thePresentationModeForThisSF = 'counter phase modulated';
@@ -369,7 +398,6 @@ for iSF = 1:length(spatialFreqs)
     questObj.plotMLE(2.5);
     drawnow;
 
-
     % Also visualize the entire scene sequence
     %
     % This saves stuff into the github repository, which is a no-no.
@@ -405,8 +433,13 @@ xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 
-% Export computed data.  Same comment as with videos above.  Don't write
-% out into the pwd in a tutorial. 
+%% Export computed data. 
+%
+% Commented out. If you want to save data like this from a tutorial, put it
+% into a local directory and make sure that is gitignored so it doesn't
+% clog up the repository.
+%
+% fprintf('Results will be saved in %s.\n', matFileName);
 % save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
 %     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
 %     'theTemporalFrequencyHz', 'theFrameDurationSeconds',  'theStimulusDurationSeconds', ... 

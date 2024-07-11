@@ -17,8 +17,8 @@ clear; close all;
 
 % Set fastParameters that make this take less time
 %
-% Setting to false is more realistic for real work, but we
-% try to keep the demo version relatively short.
+% Setting to false provides more realistic values for real work, but we
+% try to keep the demo version run time relatively short.
 fastParameters = true;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
@@ -289,7 +289,9 @@ neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType = 'cone_modulation
 % Update theNeuralEngine with the new neuralResponsePipelineParams
 theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 
-% Generate Matlab filename for saving computed data
+% Generate Matlab filename for saving computed data.
+% 
+% Code that actually does the save commented out at the end.
 matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
