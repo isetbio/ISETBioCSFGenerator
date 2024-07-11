@@ -165,7 +165,7 @@ switch (classifierChoice)
     case 'computationalObserver'
         % Handle fastParameters
         if (fastParameters)
-            crossValidationFolds = 1;
+            crossValidationFolds = 2;
             nTrain = 64;
             nTest = 32;
         else
@@ -304,7 +304,7 @@ theFrameDurationSeconds = coneIntegrationTimeSeconds;
 
 if (fastParameters)
     % Just do two frames in fastParameters mode.
-    theStimulusDurationSeconds = 2*theFrameDurationSeceonds;
+    theStimulusDurationSeconds = 2*theFrameDurationSeconds;
 else
     % Make the stimulus last for 1 full temporal cycle
     theStimulusDurationSeconds = 1.0/theTemporalFrequencyHz;
