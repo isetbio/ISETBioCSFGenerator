@@ -53,23 +53,12 @@ function t_tumblingEsceneEngine()
     theSmallEsceneSequence270degs = tumblingEsceneEngine270degs.compute(sizeDegs);
     theSmallBackgroundSceneSequence = backgroundSceneEngine.compute(sizeDegs);
 
-    % Generate scenes with size of 0.3 deg
-    sizeDegs = 0.3;
-    theLargeEsceneSequence0degs = tumblingEsceneEngine0degs.compute(sizeDegs);
-    theLargeEsceneSequence90degs = tumblingEsceneEngine90degs.compute(sizeDegs);
-    theLargeBackgroundSceneSequence = backgroundSceneEngine.compute(sizeDegs);
-
     % Get first frame of the scene sequences
     theSmallEscene0degs = theSmallEsceneSequence0degs{1};
     theSmallEscene90degs = theSmallEsceneSequence90degs{1};
     theSmallEscene180degs = theSmallEsceneSequence180degs{1};
     theSmallEscene270degs = theSmallEsceneSequence270degs{1};
     theSmallBackgroundScene = theSmallBackgroundSceneSequence{1};
-
-    % Get first frame of the scene sequences
-    theLargeEscene0degs = theLargeEsceneSequence0degs{1};
-    theLargeEscene90degs = theLargeEsceneSequence90degs{1};
-    theLargeBackgroundScene = theLargeBackgroundSceneSequence{1};
 
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
        'rowsNum', 1, ...
@@ -145,10 +134,8 @@ function t_tumblingEsceneEngine()
             );
 
     projectBaseDir = ISETBioCSFGeneratorRootPath;
-    pdfFile = [fullfile(projectBaseDir, 'figures') filesep 'stimuli.pdf'];
+    pdfFile = fullfile(projectBaseDir,'figures','t_tumblingEsceneEngine_stimuli.pdf');
     NicePlot.exportFigToPDF(pdfFile,hFig, 300);
-
-
 end
 
 function tumblingEsceneEngine = createTumblingEsceneEngine(orientation, varargin)

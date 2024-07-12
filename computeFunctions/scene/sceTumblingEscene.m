@@ -16,11 +16,21 @@ function dataOut = sceTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
     sizeScalingFactor = 1.0/0.75;
 
     % Generate the display on which the tumbing E scenes are presented
-    presentationDisplay = generatePresentationDisplay(...
-        testEsizeDegs*sizeScalingFactor, sceneParams.letterHeightPixels, ...
-        sceneParams.spdDataFile, ...
-        sceneParams.ambientSPDDataFile, ...
-        sceneParams.plotDisplayCharacteristics);
+    if (~isfield(sceneParams,'presentationDisplay') | isempty(sceneParams.presentationDisplay))
+        presentationDisplay = generatePresentationDisplay(...
+            testEsizeDegs*sizeScalingFactor, sceneParams.letterHeightPixels, ...
+            sceneParams.spdDataFile, ...
+            sceneParams.ambientSPDDataFile, ...
+            sceneParams.plotDisplayCharacteristics);
+    else
+        presentationDisplay  = sceneParams.presentationDisplay;
+        presentationDisplay = displaySet(presentationDisplay,'dpi',220);
+        pixelSizeMeters = displayGet(presentationDisplay, 'meters per dot');
+        letterSizeMeters = sceneParams.letterHeightPixels*pixelSizeMeters;
+        desiredViewingDistance = 0.5*letterSizeMeters/(tand(testEsizeDegs*sizeScalingFactor/2));
+        presentationDisplay = displaySet(presentationDisplay, 'viewing distance', desiredViewingDistance);    
+    end
+
 
     % Generate the E scene with 0 deg rotation
     theTestScene = generateTumblingEscene(...
@@ -33,7 +43,6 @@ function dataOut = sceTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
     dataOut.presentationDisplay = presentationDisplay;
     dataOut.statusReport = 'done';
 end
-
 
 function theScene = generateTumblingEscene(...
     presentationDisplay, theChar, sceneParams, varargin)
@@ -69,6 +78,7 @@ function p = generateDefaultParams()
         'letterWidthPixels', 18, ...            % Letter width in pixels - must be 18
         'yPixelsNumMargin', 25, ...             % Y-margin
         'xPixelsNumMargin', 25, ...             % X-margin
+        'presentationDisplay',[], ...           % If this not empty, it is the display file to use
         'upSampleFactor', uint8(3), ...         % Upsampling for better centering
         'chromaSpecification', struct(...
                 'type', 'RGBsettings', ...
@@ -81,7 +91,8 @@ function p = generateDefaultParams()
        );
 end
 
-% Create an ISETBio display given parameters we are interested in.
+% Create an ISETBio display given parameters we are interested in.  This
+% was originally for the JandJISETBio chromatic aberration project
 function presentationDisplay = generatePresentationDisplay(...
     letterSizeDegs, letterSizePixels, spdDataFile, ambientSPDDataFile, plotCharacteristics)
 
@@ -123,7 +134,6 @@ function presentationDisplay = generatePresentationDisplay(...
            'ambientSPDWattsPerSteradianM2NanoMeter', ambientSPD, ...
            'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
            'plotCharacteristics', plotCharacteristics);
-    
     
     pixelSizeMeters = displayGet(presentationDisplay, 'meters per dot');
     letterSizeMeters = letterSizePixels*pixelSizeMeters;

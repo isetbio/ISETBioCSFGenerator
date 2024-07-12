@@ -1,93 +1,141 @@
-% t_AOTumblingEScene
-%
-% Description:
-%   Produce an AO apparatus scene with a tumbling E stimulus whose
-%   orientation we can specify and where the variable that is changed is
-%   the size.
-%
-% See also:
-%    t_AORectangelScene.
+function t_AOtumblingEscene()
 
-% History:
-%    06/25/24  dhb, qf  Wrote it.
+    % Initialize
+    clear; close all;
+    
+    % Make sure figures and results directories exist so that output writes
+    % don't fail
+    rootPath = ISETBioCSFGeneratorRootPath;
+    if (~exist(fullfile(rootPath,'local','figures'),'dir'))
+        mkdir(fullfile(rootPath,'local','figures'));
+    end
 
-%% Clear and close
-clear; close all;
+    % Load in a monitor that mimics the primaries in the Berkely AO system.
+    theDisplay = load(fullfile(rootPath,'data','monoDisplay.mat'));
+    presentationDisplay = theDisplay.monoDisplay;
+    
+    % Set the parameters for the AO mimicing display
+    sceneParams = sceTumblingEscene;
+    sceneParams.presentationDisplay = presentationDisplay;
+    sceneParams.plotDisplayCharacteristics = false;
 
-%% Set parameters 
-defocusDiopters = 0.05;
-pupilDiameterMm = 7;
+    % Define the foreground (E) and background RGB wrt the monochromatic
+    % monitor.  I think the Berkeley experiments use only the green
+    % channel, so we'll do that here.
+    sceneParams.chromaSpecification.backgroundRGB = [0 0 0];
+    sceneParams.chromaSpecification.foregroundRGB = [0 0.5 0];
 
-% Orientation of the E.
-%
-% Natural choices here are 0, 90, 180 and 270.
-letterRotationDegrees = 0;
+    % Instantiate a tumblingEsceneEngine for 0 deg rotation E
+    sceneParams.letterRotationDegs = 0;
+    tumblingEsceneEngine0degs = sceneEngine(@sceTumblingEscene,sceneParams);
 
-% Other stimulus parameters
-%
-% Define basic parameters of the AO stimulus,
-% We can put in arbitrary spectra but the
-% actual E we want to model was monochromatic.
-wls = 600:10:800;
-eWavelengthNm = 780;
+    % Generate sceneEngine for 90 deg rotation E
+    sceneParams.letterRotationDegs = 90;
+    tumblingEsceneEngine90degs = sceneEngine(@sceTumblingEscene,sceneParams);
 
-% Spatial parameters
-nPixels = 128;
-fieldSizeMinutes = 60;
-fieldSizeDegs = fieldSizeMinutes/60;
+    % Generate sceneEngine for 180 deg rotation E
+    sceneParams.letterRotationDegs = 180;
+    tumblingEsceneEngine180degs = sceneEngine(@sceTumblingEscene,sceneParams);
 
-% Background power in uW.  Depending on how Will ships this to us,
-% we may need to convert into these units.
-fieldPowerUWPerDeg2 = 2000;
-fieldPowerUW = (fieldSizeDegs^2)*fieldPowerUWPerDeg2;
+    % Generate sceneEngine for 270 deg rotation E
+    sceneParams.letterRotationDegs = 270;
+    tumblingEsceneEngine270degs = sceneEngine(@sceTumblingEscene,sceneParams);
 
-% E power in uW.  This is the power for the stimulus that
-% is added to the background.  Let's assume for now that
-% it is twice the background power.
-ePowerUW = 2*fieldPowerUW;
+    % Generate params for the background scene
+    backgroundSceneParams = sceneParams;
+    backgroundSceneParams.chromaSpecification.foregroundRGB = sceneParams.chromaSpecification.backgroundRGB;
+    backgroundSceneEngine = sceneEngine(@sceTumblingEscene,backgroundSceneParams);
 
-% Set up two spot params
-rectParams = struct(...
-    'type', 'basic', ...                            % type
-    'viewingDistanceMeters', 2, ...                 % viewing distance: in meters
-    'wls', 400:10:750, ...                          % wavelength support of the primary SPDs: in nanometers
-    'stimAngle', stimAngle, ...                     % stimulus angle in incr/decr plane
-    'spotWl', eWavelengthNm, ...                 % spot wavelength: in nm
-    'spotFWHM', 20, ...                             % spot full width at half max: in nm
-    'spotWidthDegs', spotWidthMinutes/60, ...       % spot width: in degrees
-    'spotHeightDegs', spotHeightMinutes/60, ...     % spot height: in degrees
-    'spotVerticalSepDegs', spotVerticalSepMinutes/60 , ... % spot center to center vertical separation: in degrees
-    'spotHorizontalSepDegs', spotHorizontalSepMinutes/60, ... % spot center to center horizontal separation: in degrees
-    'spotBgDegs', fieldSizeDegs, ...                % spot background: in degrees
-    'spotBgPowerUW', spotBgPowerUW, ...             % spot background power: in uW
-    'imagingWl', 750, ...                           % imaging beam wavelength: in nm
-    'imagingFWHM', 20, ...                          % imaging beam full width at half max: in nm
-    'imagingBgPowerUW', 0, ...                      % imaging beam power entering eye: in uW
-    'fovDegs', fieldSizeDegs, ...                   % spatial: full scene field of view, in degrees
-    'pixelsNum', nPixels, ...                       % spatial: desired size of stimulus in pixels
-    'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed'}
-    'temporalModulationParams', struct(...          % temporal: modulation params struct
-      'stimOnFrameIndices', [1], ...                %   params relevant to the temporalModulationMode
-      'stimDurationFramesNum', 1), ...              %   params relevant to the temporalModulationMode
-    'frameDurationSeconds', 3/16, ...               % temporal: frame duration, in seconds
-    'pupilDiameterMm', pupilDiameterMm ...          % pupil diameter mm
-    );
-                     
-% Create a static two-spot AO scene with a particular incr-decr direction,
-% and other relevant parameters. This uses compute function handle for
-% two-spot AO stimuli, as commented above the parameters have been cooked
-% to make one rectangular spot on a dark background.
-rectComputeFunction = @sceAOTwoSpot;
+    % Generate scenes with size of 0.1 deg
+    sizeDegs = 0.1;
+    theSmallEsceneSequence0degs = tumblingEsceneEngine0degs.compute(sizeDegs);
+    theSmallEsceneSequence90degs = tumblingEsceneEngine90degs.compute(sizeDegs);
+    theSmallEsceneSequence180degs = tumblingEsceneEngine180degs.compute(sizeDegs);
+    theSmallEsceneSequence270degs = tumblingEsceneEngine270degs.compute(sizeDegs);
+    theSmallBackgroundSceneSequence = backgroundSceneEngine.compute(sizeDegs);
 
-% Instantiate a sceneEngine with the above sceneComputeFunctionHandle
-% and the custom params.
-rectScene = sceneEngine(rectComputeFunction, rectParams);
+    % Get first frame of the scene sequences
+    theSmallEscene0degs = theSmallEsceneSequence0degs{1};
+    theSmallEscene90degs = theSmallEsceneSequence90degs{1};
+    theSmallEscene180degs = theSmallEsceneSequence180degs{1};
+    theSmallEscene270degs = theSmallEsceneSequence270degs{1};
+    theSmallBackgroundScene = theSmallBackgroundSceneSequence{1};
 
-% Create a scene sequence at a particular contrast.  Here there is just one
-% frame in the returned cell array of scenes.
-visualizationContrast = 1.0;
-rectSceneSequence = rectScene.compute(bgFactor*visualizationContrast);
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+       'rowsNum', 1, ...
+       'colsNum', 4, ...
+       'heightMargin',  0.0, ...
+       'widthMargin',    0.05, ...
+       'leftMargin',     0.05, ...
+       'rightMargin',    0.00, ...
+       'bottomMargin',   0.05, ...
+       'topMargin',      0.00);
 
-% Visualize
-ieAddObject(rectSceneSequence{1});
-sceneWindow;
+    domainVisualizationLimits = 0.3*0.5*[-1 1 -1 1];
+
+    hFig = figure(1);
+    clf;
+    set(hFig, 'Position', [10 10 1550 400], 'Color', [1 1 1]);
+    ax = subplot('Position', subplotPosVectors(1,1).v);
+    visualizeScene(theSmallEscene0degs, ...
+            'spatialSupportInDegs', true, ...
+            'crossHairsAtOrigin', true, ...
+            'displayRadianceMaps', false, ...
+            'avoidAutomaticRGBscaling', true, ...
+            'noTitle', true, ...
+            'axesHandle', ax);
+    set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
+            'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
+            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
+            );
+
+    ax = subplot('Position', subplotPosVectors(1,2).v);
+    visualizeScene(theSmallEscene90degs, ...
+            'spatialSupportInDegs', true, ...
+            'crossHairsAtOrigin', true, ...
+            'displayRadianceMaps', false, ...
+            'avoidAutomaticRGBscaling', true, ...
+            'noYLabel', true, ...
+            'noYTicks', true, ...
+            'noTitle', true, ...
+            'axesHandle', ax);
+    set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
+            'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
+            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
+            );
+
+    ax = subplot('Position', subplotPosVectors(1,3).v);
+    visualizeScene(theSmallEscene180degs, ...
+            'spatialSupportInDegs', true, ...
+            'crossHairsAtOrigin', true, ...
+            'displayRadianceMaps', false, ...
+            'avoidAutomaticRGBscaling', true, ...
+            'noYLabel', true, ...
+            'noYTicks', true, ...
+            'noTitle', true, ...
+            'axesHandle', ax);
+    set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
+            'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
+            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
+            );
+
+    ax = subplot('Position', subplotPosVectors(1,4).v);
+    visualizeScene(theSmallEscene270degs, ...
+            'spatialSupportInDegs', true, ...
+            'crossHairsAtOrigin', true, ...
+            'displayRadianceMaps', false, ...
+            'avoidAutomaticRGBscaling', true, ...
+            'noYLabel', true, ...
+            'noYTicks', true, ...
+            'noTitle', true, ...
+            'axesHandle', ax);
+    set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
+            'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
+            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
+            );
+
+    projectBaseDir = ISETBioCSFGeneratorRootPath;
+    pdfFile = fullfile(projectBaseDir,'figures','t_AOTumblingScene_stimuli.pdf');
+    NicePlot.exportFigToPDF(pdfFile,hFig, 300);
+end
+
