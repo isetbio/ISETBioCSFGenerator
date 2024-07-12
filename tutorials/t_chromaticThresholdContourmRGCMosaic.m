@@ -19,6 +19,9 @@ clear; close all;
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version run time relatively short.
+%
+% Note that with the fast parameters, this doesn't really show the
+% way that the ellipse rotationes with noise at the mRGCs.  
 fastParameters = true;
 
 % Choose stimulus spatial frequency, orientation, and spatial phase
@@ -34,7 +37,7 @@ rmsContrast = 0.08;
 
 % List of LM chromatic directions to be tested 
 if (fastParameters)
-    nChromaticDirections = 4;
+    nChromaticDirections = 8;
 else
     nChromaticDirections = 16;
 end
@@ -128,11 +131,11 @@ theNeuralEngine = neuralResponseEngine(theNeuralComputePipelineFunction, neuralR
 % Options:
 %   'idealObserver' - ideal TAFC observer for Poisson limited signals
 %   'computationalObsever' - SVM based learned classifier
-
+%
 % Since we are using a contrast-modulation based input to the mRGCmosaic,
-% the Poisson noise is not valid. So we use a computationalObserver (SVM
-% based)
-classifierChoice = 'computationalObserver';
+% the Poisson noise is a totally correct assumption. But it illustrates
+% the inefficiency of the luminance direction.
+classifierChoice = 'idealObserver';
 
 switch (classifierChoice) 
     case 'idealObserver'
@@ -142,7 +145,11 @@ switch (classifierChoice)
                
         % Train classifier using 1 noise-free instance, 
         % Test performance using a set of 512 noisy instances
-        nTest = 512;
+        if (fastParameters)
+            nTest = 128;
+        else
+            nTest = 512;
+        end
         classifierParams = struct('trainFlag', 'none', ...
                                 'testFlag', 'random', ...
                                 'nTrain', 1, 'nTest', nTest);
@@ -184,8 +191,8 @@ end
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
-thresholdParams = struct('logThreshLimitLow', 3.0, ...
-                       'logThreshLimitHigh', 0.5, ...
+thresholdParams = struct('logThreshLimitLow', 1.5, ...
+                       'logThreshLimitHigh', 0, ...
                        'logThreshLimitDelta', 0.01, ...
                        'slopeRangeLow', 1, ...
                        'slopeRangeHigh', 50, ...
@@ -380,7 +387,7 @@ circleIn2D = UnitCircleGenerate(nThetaEllipse);
 fitEllipse = PointsOnEllipseQ(fitQ,circleIn2D)/scaleFactor;
 
 %% Plot the fitted ellipse
-contrastLim = 0.04;
+contrastLim = 0.06;
 theContourFig = figure; clf; hold on
 plot(thresholdConeContrasts(1,:), thresholdConeContrasts(2,:), 'ok', 'MarkerFaceColor','k', 'MarkerSize',12);
 plot(fitEllipse(1,:),fitEllipse(2,:),'r','LineWidth',3);
