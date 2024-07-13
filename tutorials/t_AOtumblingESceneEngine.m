@@ -178,7 +178,7 @@ if (nargout > 0)
     sce90 = tumblingEsceneEngine90degs;
     sce180 = tumblingEsceneEngine180degs;
     sce270 = tumblingEsceneEngine270degs;
-    sceBG = backgroundSceneEngine;
+    sceBg = backgroundSceneEngine;
 end
 
 end
