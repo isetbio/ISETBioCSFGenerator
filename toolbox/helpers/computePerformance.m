@@ -93,7 +93,7 @@ function [predictions, theClassifierEngine, responses] = computePerformance(theS
 %                   NWay_OneStimulusPerTrial.
 
 p = inputParser;
-p.addParameter('TAFC',  false, @islogical);
+p.addParameter('TAFC', false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('amputateScenes', false, @islogical);
@@ -118,7 +118,6 @@ nScenes   = length(theScenes);
 % and training is skipped.  Otherwise trainFlag is passed to the stimulus
 % generation routine to indicate what type of noise (typically 'none' or
 % 'random') should be used in the training.
-
 if (~isempty(trainNoiseFlag))
     inSampleStimResponsesCell = cell(1,nScenes);
     % Generate stimuli for training
