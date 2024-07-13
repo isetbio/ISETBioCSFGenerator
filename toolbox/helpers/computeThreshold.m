@@ -285,7 +285,6 @@ while (nextFlag)
         % Train classifier for this TEST contrast and get predicted
         % correct/incorrect predictions.  This function also computes the
         % neural responses needed to train and predict.
-
         %
         % Note that because the classifer engine is a handle class, we
         % need to use a copy method to do the caching.  Otherwise the
