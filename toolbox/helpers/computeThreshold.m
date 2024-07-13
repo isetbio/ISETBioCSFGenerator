@@ -86,6 +86,7 @@ p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
 p.addParameter('amputateScenes', false, @islogical);
 p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
+p.addParameter('parameterIsContrast',true,@islogical);
 
 parse(p, varargin{:});
 beVerbose = p.Results.beVerbose;
@@ -193,7 +194,11 @@ while (nextFlag)
     % Label for pCorrect dictionary
     contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
     if (beVerbose)
-        fprintf('Testing %s\n', contrastLabel);
+        if (p.Results.parameterIsContrast)
+            fprintf('Testing %s\n', contrastLabel);
+        else
+            fprintf('Testing parameter value %0.4g\n',testContrast)
+        end
     end
     
     % Have we already built the classifier for this contrast?
