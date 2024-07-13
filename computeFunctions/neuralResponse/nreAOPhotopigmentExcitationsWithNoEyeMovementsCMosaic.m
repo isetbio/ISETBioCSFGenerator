@@ -125,8 +125,14 @@ p = inputParser;
 p.addParameter('noiseFlags', {'random'});
 p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
 p.addParameter('verbose',false,@islogical);
+p.addParameter('amputateScenes',false,@islogical);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
+
+% Make sure amputateScenes is false
+if (p.Results.amputateScenes)
+    error('Better implement amputateScenes option since it was set to true on call');
+end
 
 % Retrieve the response noiseFlag labels and validate them.
 noiseFlags = p.Results.noiseFlags;
