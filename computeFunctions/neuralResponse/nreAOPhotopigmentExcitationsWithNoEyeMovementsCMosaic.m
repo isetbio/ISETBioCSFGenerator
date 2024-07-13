@@ -126,6 +126,7 @@ p.addParameter('noiseFlags', {'random'});
 p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
 p.addParameter('verbose',false,@islogical);
 p.addParameter('amputateScenes',false,@islogical);
+p.addParameter('theBackgroundRetinalImage',struct('type', 'opticalimage'),@isstruct);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 
@@ -171,17 +172,21 @@ if (isempty(neuralEngineOBJ.neuralPipeline))
     wvfP = wvfSet(wvfP, 'measured pupil size', neuralResponseParamsStruct.opticsParams.pupilDiameterMM);
     wvfP = wvfSet(wvfP, 'calc pupil size', neuralResponseParamsStruct.opticsParams.pupilDiameterMM);
     wvfP = wvfSet(wvfP,'zcoeffs', neuralResponseParamsStruct.opticsParams.defocusAmount, 'defocus');
+    if (~neuralResponseParamsStruct.opticsParams.defeatLCA)
+        wvfP = wvfSet(wvfP,'lcaMethod','human');
+    end
     
     % Compute pupil function and PSF
     %
     % Whether LCA should be included depends on your apparatus and
     % is controlled by the boolean defeatLCA in the computation of
     % the pupil function.
-    wvfP = wvfComputePupilFunction(wvfP,false,'no lca',neuralResponseParamsStruct.opticsParams.defeatLCA);
-    wvfP = wvfComputePSF(wvfP);
+    wvfP = wvfCompute(wvfP);
+    % wvfP = wvfComputePupilFunction(wvfP,false,'no lca',neuralResponseParamsStruct.opticsParams.defeatLCA);
+    % wvfP = wvfComputePSF(wvfP);
     
     % Generate optical image object from the wavefront object
-    theOptics = wvf2oi(wvfP);
+    theOptics = wvf2oi(wvfP,'humanlens',true);
     
     % Set the fNumber to correspond to the pupil size
     focalLengthMM = oiGet(theOptics,'focal length')*1000;
@@ -208,7 +213,7 @@ end
 framesNum = numel(sceneSequence);
 theListOfOpticalImages = cell(1, framesNum);
 for frame = 1:framesNum
-    theListOfOpticalImages{frame} = oiCompute(sceneSequence{frame}, theOptics);
+    theListOfOpticalImages{frame} = oiCompute(theOptics,sceneSequence{frame});
 end
 
 % Generate an @oiSequence object containing the list of computed optical images
