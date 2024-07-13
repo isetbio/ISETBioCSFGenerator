@@ -1,4 +1,4 @@
-function t_tumblingEsceneEngine()
+function t_tumblingESceneEngine()
 
     % Initialize
     clear; close all;
@@ -134,7 +134,7 @@ function t_tumblingEsceneEngine()
             );
 
     projectBaseDir = ISETBioCSFGeneratorRootPath;
-    pdfFile = fullfile(projectBaseDir,'figures','t_tumblingEsceneEngine_stimuli.pdf');
+    pdfFile = fullfile(projectBaseDir,'local','figures','t_tumblingESceneEngine_stimuli.pdf');
     NicePlot.exportFigToPDF(pdfFile,hFig, 300);
 end
 
