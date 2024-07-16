@@ -45,17 +45,6 @@ filter2 = struct('spectralSupport', wave, 'transmission', transmission_func2);
 threshold2 = t_spatialCSF('filter', filter2,'doValidationCheck', false);
 sensitivity2 = 1./threshold2;
 
-%% filter 2
-% Create a neutral density filter with 25% transmittance
-transmission_func3 = ones(length(wave),1)./16;
-
-% Define filter properties in a struct
-filter3 = struct('spectralSupport', wave, 'transmission', transmission_func3);
-
-% Compute CSF threshold using the neutral density filter
-threshold3 = t_spatialCSF('filter', filter3,'doValidationCheck', false);
-sensitivity3 = 1./threshold3;
-
 %% Plot the results using logarithmic scales for both axes
 % Expected Results:
 % (1) The contrast sensitivity simulated using the perfect filter (100% transmittance) 
