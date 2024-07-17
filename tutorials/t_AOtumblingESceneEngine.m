@@ -20,31 +20,65 @@ end
 theDisplay = load(fullfile(rootPath,'sampledata','monoDisplay.mat'));
 presentationDisplay = theDisplay.monoDisplay;
 
-% % These are (or might be) some of the key parameters for the Berkeley
-% % AO experiments.
-% %
-% % Other stimulus parameters
-% %
-% % Define basic parameters of the AO stimulus,
-% % We can put in arbitrary spectra but the
-% % actual E we want to model was monochromatic.
-% wls = 600:10:800;
-% eWavelengthNm = 780;
+% Will's description of the stimulus parameters for this experiment.
+%   - Wavelength: the tumbling-E was modulated in the imaging channel. The
+%   center wavelength is 840 nm. We don't have a spectroradiometer that
+%   operates in this part of the spectrum, so we haven't measured the
+%   spectral bandwidth directly, but the filter used to select light in
+%   this channel is this one:
+%   https://www.idex-hs.com/store/product-detail/ff01_840_12_25/fl-004460 -
+%   Display size: 512 by 512 pixels, 1.413 by 1.413 degrees, 362.3
+%   pixels/degree.
 %
-% % Spatial parameters
-% nPixels = 128;
-% fieldSizeMinutes = 60;
-% fieldSizeDegs = fieldSizeMinutes/60;
+%   - The E was presented as a decrement against the 840 nm imaging
+%   channel. The contrast is nominally 100%, but this in practice this will
+%   be slightly less due to (a) imperfect extinction by the AOM and (b)
+%   background 940 nm light that is used for wavefront sensing and is not
+%   modulated.
 %
-% % Background power in uW.  Depending on how Will ships this to us,
-% % we may need to convert into these units.
-% fieldPowerUWPerDeg2 = 2000;
-% fieldPowerUW = (fieldSizeDegs^2)*fieldPowerUWPerDeg2;
+%   - The average 840 nm power measured at the cornea was 141.4 microwatts.
+%   This would be distributed more or less uniformly over the 1.413 degree
+%   square field described above. Assuming a 16.67 mm eye length, I'm
+%   getting 8.37E-04 W/mm2, but you might want to check my math on that.
 %
-% % E power in uW.  This is the power for the stimulus that
+%   - Temporal characteristics of the AOSLO: 30 fps, 50 ns per pixel. This
+%   means each pixel in the raster is illuminated very briefly every ~33
+%   ms. Depending on the size of the cone, the effective pulse of light it
+%   receives every frame will be slightly longer since the AOSLO pixels are
+%   smaller than the cones themselves. At this AOSLO field size, a cone
+%   with a 1 arcmin diameter will receive stimulus light over the course of
+%   ~0.40 ms per frame. The timing of stimulation might be relevant for
+%   this modeling, so happy to discuss the details further.
+%
+% Other potentially relevant details:
+%   - Test eccentricity: 1 degree (usually temporal)
+%   - Stimulus duration: 3 AOSLO frames
+%   - Stimulus size: 20/40 tumbling-E optotype (width of E bar = 2 arcmin; overall E size is 10 arcmin)
+%   - Imposed stimulus motion on the retina
+%   - Magnitude: we shifted the letter on each frame by increments of the
+%   bar width -- either 0, 0.5, 1.0, or 2.0. "0" imposed motion in this
+%   case means it was retinally stabilized
+%   direction: shifts were imposed in retinal coordinates along the four
+%   cardinal meridians Performance was assessed as % correct for a fixed
+%   letter size
+
+% Here are some other parameters that we need to think about in the code.
+%   wls = 820:10:860;
+%   eWavelengthNm = 840;
+%
+% Spatial parameters
+%   nPixels = 512;
+%   fieldSizeMinutes = 1.43*60;
+%   fieldSizeDegs = fieldSizeMinutes/60;
+%
+% Background power in uW.
+%   fieldPowerUW = 141.4;
+%   fieldPowerUWPerDeg2 = fieldPowerUW/(fieldSizeDegs^2);
+
+% E power in uW.  This is the power for the stimulus that
 % % is added to the background.  Let's assume for now that
 % % it is twice the background power.
-% ePowerUW = 2*fieldPowerUW;
+%   ePowerUW = 0;
 
 % Set the parameters for the AO mimicing display
 sceneParams = sceTumblingEscene;
