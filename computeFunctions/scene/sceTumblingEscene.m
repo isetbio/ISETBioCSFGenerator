@@ -31,7 +31,6 @@ function dataOut = sceTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
         presentationDisplay = displaySet(presentationDisplay, 'viewing distance', desiredViewingDistance);    
     end
 
-
     % Generate the E scene with 0 deg rotation
     theTestScene = generateTumblingEscene(...
         presentationDisplay, 'E', sceneParams, ...
