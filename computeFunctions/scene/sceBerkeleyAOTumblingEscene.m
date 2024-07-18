@@ -19,11 +19,16 @@ function dataOut = sceTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
     %
     % WE ARE NO LONGER GOING TO READ A DISPLAY BUT INSTEAD WILL GENERATE IT
     % HERE BASED ON THE BERKELEY PARAMETERS.
+    %
+    sceneParams.wave
+    sceneParams.spd
+    sceneParams.ambiendSpd
     if (~isfield(sceneParams,'presentationDisplay') | isempty(sceneParams.presentationDisplay))
-        presentationDisplay = generatePresentationDisplay(...
+        presentationDisplay = generateBerkeleyAOPresentationDisplay(...
             testEsizeDegs*sizeScalingFactor, sceneParams.letterHeightPixels, ...
-            sceneParams.spdDataFile, ...
-            sceneParams.ambientSPDDataFile, ...
+            sceneParams.wave, ...
+            sceneParams.spd, ...
+            sceneParams.ambientSpd, ...
             sceneParams.plotDisplayCharacteristics);
     else
         presentationDisplay  = sceneParams.presentationDisplay;
@@ -75,21 +80,25 @@ end
 function p = generateDefaultParams()
 
     p = struct(...
+        'displayPixelSize', 512, ...            % Linear display pixel size
+        'displayFOVDeg', 1.413, ...             % Linear field size in degrees
         'letterRotationDegs', 0, ...            % Letter rotation (0,90,180,270 only)
         'letterHeightPixels', 20, ...           % Letter height in pixels - must be 20
         'letterWidthPixels', 18, ...            % Letter width in pixels - must be 18
         'yPixelsNumMargin', 25, ...             % Y-margin
         'xPixelsNumMargin', 25, ...             % X-margin
-        'presentationDisplay',[], ...           % If this not empty, it is the display file to use
         'upSampleFactor', uint8(3), ...         % Upsampling for better centering
         'chromaSpecification', struct(...
                 'type', 'RGBsettings', ...
                 'backgroundRGB', [0.5 0.5 0.5], ...   
                 'foregroundRGB',  [0.4 0.4 0.4]), ...
-        'spdDataFile', 'BVAMS_White_Guns_At_Max.mat', ...  % Name of file containing the display SPDs
-        'ambientSPDDataFile', 'BVAMS_White_Background.mat', ... % Name of the file containing the ambient SPD
-        'visualizeScene', false, ...                % Whether to visualize the generated scene
-        'plotDisplayCharacteristics', false ...     % Whether to visualize the display characteristics
+        'wave', (400:10:860)',                  % Wavelength sampling for primaries
+        'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
+        'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
+        'AOPowersUWPerDeg2', [70.8215 0 0], ... % Display spd power full on
+        'ambientSpd', [], ...                   % Display ambientSpd
+        'visualizeScene', false, ...            % Whether to visualize the generated scene
+        'plotDisplayCharacteristics', false ... % Whether to visualize the display characteristics
        );
 end
 
@@ -161,7 +170,7 @@ end
 % So I guess create a spectrum at 940 nm since that is what Will says is
 % the other light source.  Some logic as making the 840 spectrum.
 
-function presentationDisplay = generatePresentationDisplay(...
+function presentationDisplay = generateBerkeleyAOPresentationDisplay(...
     letterSizeDegs, letterSizePixels, wave, spd, ambientSpd, plotCharacteristics)
 
     % Load the ambient SPD

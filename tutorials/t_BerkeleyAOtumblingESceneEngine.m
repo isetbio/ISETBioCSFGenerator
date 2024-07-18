@@ -63,33 +63,44 @@ presentationDisplay = theDisplay.monoDisplay;
 %   letter size
 
 % Here are some other parameters that we need to think about in the code.
-%   wls = 820:10:860;
+%   wls = 500:10:860;
 %   eWavelengthNm = 840;
 %
 % Spatial parameters
 %   nPixels = 512;
-%   fieldSizeMinutes = 1.43*60;
+%   fieldSizeMinutes = 1.413*60;
 %   fieldSizeDegs = fieldSizeMinutes/60;
 %
-% Background power in uW.
+% Imaging (840 nm) power in uW.
 %   fieldPowerUW = 141.4;
 %   fieldPowerUWPerDeg2 = fieldPowerUW/(fieldSizeDegs^2);
 
-% E power in uW.  This is the power for the stimulus that
-% % is added to the background.  Let's assume for now that
-% % it is twice the background power.
-%   ePowerUW = 0;
+% Display spatial parameters
+sceneParams.displayPixelSize = 512;
+sceneParams.displayFOVDegs = 1.413;
 
-% Set the parameters for the AO mimicing display
-sceneParams = sceTumblingEscene;
-sceneParams.presentationDisplay = presentationDisplay;
+% Set the basic parameters for the AO mimicing display
+sceneParams = sceAOBerkeleyTumblingEscene;
+sceneParams.wave = (500:10:860)';
+sceneParams.AOPrimaryWls = [840 650 540];
+sceneParams.AOPrimaryFWHM = [10 10 10];
+sceneParams.AOPowersUWPerDeg2 = [70.8215 0 0];
+sceneParams.ambientSpd = zeros(size(sceneParams.wave));
 sceneParams.plotDisplayCharacteristics = false;
 
 % Define the foreground (E) and background RGB wrt the monochromatic
-% monitor.  I think the Berkeley experiments use only the green
-% channel, so we'll do that here.
-sceneParams.chromaSpecification.backgroundRGB = [0 0 0];
-sceneParams.chromaSpecification.foregroundRGB = [0 0.5 0];
+% monitor.  The Berkeley tumbling E experiments use only the 840
+% channel, with background nominally full on and E nominally full off.
+sceneParams.chromaSpecification = 'RGBSettings';
+sceneParams.chromaSpecification.backgroundRGB = [1 0 0];
+sceneParams.chromaSpecification.foregroundRGB = [0 0 0];
+
+% Specifiy E spatial parameters
+% NEED TO UPDATE SCENE ENGINE SO THIS CAN BE VARIED.  THERE IS A COMMENT
+% THAT IT NEEDS TO BE 20 x 18 PIXELS AT PRESENT.  ALSO NEED TO CONVERT OUR
+% SPECIFICATION FROM DEGS TO PIXELS BUT THAT IS EASY.
+sceneParams.letterHeightPixels = 20;
+sceneParams.letterWidthPixels = 18;
 
 % Instantiate a tumblingEsceneEngine for 0 deg rotation E
 sceneParams.letterRotationDegs = 0;
