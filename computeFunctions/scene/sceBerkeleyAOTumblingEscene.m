@@ -1,5 +1,5 @@
 % The tublingEsceneEngine.compute(Esize) compute function
-function dataOut = sceTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
+function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
@@ -95,62 +95,11 @@ function p = generateDefaultParams()
         'wave', (400:10:860)',                  % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
         'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
-        'AOPowersUWPerDeg2', [70.8215 0 0], ... % Display spd power full on
+        'AOAOCornealPowersUW', [141.4 0 0], ... % Display spd power full on
         'ambientSpd', [], ...                   % Display ambientSpd
         'visualizeScene', false, ...            % Whether to visualize the generated scene
         'plotDisplayCharacteristics', false ... % Whether to visualize the display characteristics
        );
-end
-
-% Create an ISETBio display given parameters we are interested in.  This
-% was originally for the JandJISETBio chromatic aberration project
-function presentationDisplay = generatePresentationDisplay(...
-    letterSizeDegs, letterSizePixels, spdDataFile, ambientSPDDataFile, plotCharacteristics)
-
-    % Load the ambient SPD
-    projectBaseDir = ISETBioCSFGeneratorRootPath();
-
-    fprintf('Loading ambient SPD from %s\n', fullfile(projectBaseDir,'sampledata',ambientSPDDataFile));
-    load(fullfile(projectBaseDir,'sampledata',ambientSPDDataFile),'spd');
-    ambientSPD = spd;
-    clear 'spd'
-    
-    % Check data consistency
-    assert(size(ambientSPD, 2) == 2, 'The ambient SPD matrix must be an N x 2 matrix, with the first column being the spectral support');
-    if (size(ambientSPD,2) > 2)
-        fprintf(2,'\nThe ambient SPD matrix must be an N x 2 matrix, with the first column being the spectral support and the second column being the ambient energy.\n');
-        fprintf(2,'The data retrieved from ''%s'', contain %d columns. Ignoring all but the first 2 columns.\n\n', ambientSPDDataFile, size(ambientSPD,2));
-    end
-    
-    ambientWave = ambientSPD(:,1);
-    ambientSPD = ambientSPD(:,2);
-    ambientSPD = ambientSPD/ (ambientWave(2)-ambientWave(1));
-    
-    % Load the RGB SPDs
-    fprintf('Loading SPDs from %s\n', fullfile(getpref('ISETBioJandJ','dataDir'),spdDataFile));
-    load(fullfile(getpref('ISETBioJandJ','dataDir'),spdDataFile), 'spd');
-    
-    % Check data consistency
-    assert(size(spd, 2) == 4, 'The SPD matrix must be an N x 4 matrix, with the first column being the spectral support');
-    wave = spd(:,1);
-    spd = spd(:,2:4);
-    spd = spd / (wave(2)-wave(1));
-    assert(size(spd,1) == size(ambientSPD,1), 'The ambient SPD must have the same wavelength entries as the display SPD');
-    assert(all(ambientWave == wave), 'The ambient wavelength support must match the wavelength support of the display SPD');
-    
-    presentationDisplay = generateCustomDisplay(...
-           'dotsPerInch', 220, ...
-           'wavelengthSupportNanoMeters', wave, ...
-           'spectralPowerDistributionWattsPerSteradianM2NanoMeter', spd, ...
-           'ambientSPDWattsPerSteradianM2NanoMeter', ambientSPD, ...
-           'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
-           'plotCharacteristics', plotCharacteristics);
-    
-    pixelSizeMeters = displayGet(presentationDisplay, 'meters per dot');
-    letterSizeMeters = letterSizePixels*pixelSizeMeters;
-    desiredViewingDistance = 0.5*letterSizeMeters/(tand(letterSizeDegs/2));
-    presentationDisplay = displaySet(presentationDisplay, 'viewing distance', desiredViewingDistance);
-    
 end
 
 %% WE NEED TO UPDATE THIS TO PRODUCE A DISPLAY THAT MATCHES THE BERKELEY SYSTEM.
@@ -170,45 +119,28 @@ end
 % So I guess create a spectrum at 940 nm since that is what Will says is
 % the other light source.  Some logic as making the 840 spectrum.
 
-function presentationDisplay = generateBerkeleyAOPresentationDisplay(...
-    letterSizeDegs, letterSizePixels, wave, spd, ambientSpd, plotCharacteristics)
+function presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams)
 
-    % Load the ambient SPD
-    projectBaseDir = strrep(ISETBioCSFGeneratorRootPath(), 'toolbox', '');
+   % First thing we need to do is generate the primary spectra.  We know
+   % the center wavelength, FWHM, and power for each.
+s
 
-    fprintf('Loading ambient SPD from %s\n', fullfile(projectBaseDir,'data',ambientSpd));
-    load(fullfile(projectBaseDir,'data',ambientSpd), 'spd');
-    ambientSPD = spd;
-    clear 'spd'
-    
-    % Check data consistency
-    assert(size(ambientSPD, 2) == 2, 'The ambient SPD matrix must be an N x 2 matrix, with the first column being the spectral support');
-    if (size(ambientSPD,2) > 2)
-        fprintf(2,'\nThe ambient SPD matrix must be an N x 2 matrix, with the first column being the spectral support and the second column being the ambient energy.\n');
-        fprintf(2,'The data retrieved from ''%s'', contain %d columns. Ignoring all but the first 2 columns.\n\n', ambientSpd, size(ambientSPD,2));
-    end
-    
-    %ambientSPD = ambientSPD/ (ambientWave(2)-ambientWave(1));
-    
-    % Check data consistency
-    assert(size(spd, 2) == 4, 'The SPD matrix must be an N x 4 matrix, with the first column being the spectral support');
-    % spd = spd / (wave(2)-wave(1));
-    assert(size(spd,1) == size(ambientSPD,1), 'The ambient SPD must have the same wavelength entries as the display SPD');
-    assert(all(ambientWave == wave), 'The ambient wavelength support must match the wavelength support of the display SPD');
-    
-    % Call into the ISETBio custom display generation routine.
-    presentationDisplay = generateCustomDisplay(...
-           'dotsPerInch', 220, ...
-           'wavelengthSupportNanoMeters', wave, ...
-           'spectralPowerDistributionWattsPerSteradianM2NanoMeter', spd, ...
-           'ambientSPDWattsPerSteradianM2NanoMeter', ambientSPD, ...
-           'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
-           'plotCharacteristics', plotCharacteristics);
-    
-    
-    pixelSizeMeters = displayGet(presentationDisplay, 'meters per dot');
-    letterSizeMeters = letterSizePixels*pixelSizeMeters;
-    desiredViewingDistance = 0.5*letterSizeMeters/(tand(letterSizeDegs/2));
-    presentationDisplay = displaySet(presentationDisplay, 'viewing distance', desiredViewingDistance);
+   % We need to figure out a distance and pixel meters per do that will
+   % make the display have the desired visual angle on the retina
+   pixelSizeMeters = displayGet(presentationDisplay, 'meters per dot');
+   letterSizeMeters = letterSizePixels*pixelSizeMeters;
+   desiredViewingDistance = 0.5*letterSizeMeters/(tand(letterSizeDegs/2));
+   presentationDisplay = displaySet(presentationDisplay, 'viewing distance', desiredViewingDistance);
+
+   % Now build the display given all the wonderful things we know about it.
+   presentationDisplay = generateCustomDisplay(...
+       'dotsPerInch', 220, ...
+       'wavelengthSupportNanoMeters', wave, ...
+       'spectralPowerDistributionWattsPerSteradianM2NanoMeter', spd, ...
+       'ambientSPDWattsPerSteradianM2NanoMeter', ambientspd, ...
+       'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
+       'plotCharacteristics', plotCharacteristics);
+
+
     
 end

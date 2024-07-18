@@ -84,7 +84,7 @@ sceneParams = sceAOBerkeleyTumblingEscene;
 sceneParams.wave = (500:10:860)';
 sceneParams.AOPrimaryWls = [840 650 540];
 sceneParams.AOPrimaryFWHM = [10 10 10];
-sceneParams.AOPowersUWPerDeg2 = [70.8215 0 0];
+sceneParams.AOCornealPowersUW = [141.4 0 0];
 sceneParams.ambientSpd = zeros(size(sceneParams.wave));
 sceneParams.plotDisplayCharacteristics = false;
 
@@ -104,24 +104,24 @@ sceneParams.letterWidthPixels = 18;
 
 % Instantiate a tumblingEsceneEngine for 0 deg rotation E
 sceneParams.letterRotationDegs = 0;
-tumblingEsceneEngine0degs = sceneEngine(@sceTumblingEscene,sceneParams);
+tumblingEsceneEngine0degs = sceneEngine(@sceBerkeleyAOTumblingEscene,sceneParams);
 
 % Generate sceneEngine for 90 deg rotation E
 sceneParams.letterRotationDegs = 90;
-tumblingEsceneEngine90degs = sceneEngine(@sceTumblingEscene,sceneParams);
+tumblingEsceneEngine90degs = sceneEngine(@sceBerkeleyAOTumblingEscene,sceneParams);
 
 % Generate sceneEngine for 180 deg rotation E
 sceneParams.letterRotationDegs = 180;
-tumblingEsceneEngine180degs = sceneEngine(@sceTumblingEscene,sceneParams);
+tumblingEsceneEngine180degs = sceneEngine(@sceBerkeleyAOTumblingEscenee,sceneParams);
 
 % Generate sceneEngine for 270 deg rotation E
 sceneParams.letterRotationDegs = 270;
-tumblingEsceneEngine270degs = sceneEngine(@sceTumblingEscene,sceneParams);
+tumblingEsceneEngine270degs = sceneEngine(@sceBerkeleyAOTumblingEscene,sceneParams);
 
 % Generate params for the background scene
 backgroundSceneParams = sceneParams;
 backgroundSceneParams.chromaSpecification.foregroundRGB = sceneParams.chromaSpecification.backgroundRGB;
-backgroundSceneEngine = sceneEngine(@sceTumblingEscene,backgroundSceneParams);
+backgroundSceneEngine = sceneEngine(@sceBerkeleyAOTumblingEscene,backgroundSceneParams);
 
 % Generate scenes with size of 0.1 deg
 sizeDegs = 0.1;
