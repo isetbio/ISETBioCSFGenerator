@@ -16,6 +16,9 @@ function dataOut = sceTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
     sizeScalingFactor = 1.0/0.75;
 
     % Generate the display on which the tumbing E scenes are presented
+    %
+    % WE ARE NO LONGER GOING TO READ A DISPLAY BUT INSTEAD WILL GENERATE IT
+    % HERE BASED ON THE BERKELEY PARAMETERS.
     if (~isfield(sceneParams,'presentationDisplay') | isempty(sceneParams.presentationDisplay))
         presentationDisplay = generatePresentationDisplay(...
             testEsizeDegs*sizeScalingFactor, sceneParams.letterHeightPixels, ...
@@ -133,6 +136,66 @@ function presentationDisplay = generatePresentationDisplay(...
            'ambientSPDWattsPerSteradianM2NanoMeter', ambientSPD, ...
            'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
            'plotCharacteristics', plotCharacteristics);
+    
+    pixelSizeMeters = displayGet(presentationDisplay, 'meters per dot');
+    letterSizeMeters = letterSizePixels*pixelSizeMeters;
+    desiredViewingDistance = 0.5*letterSizeMeters/(tand(letterSizeDegs/2));
+    presentationDisplay = displaySet(presentationDisplay, 'viewing distance', desiredViewingDistance);
+    
+end
+
+%% WE NEED TO UPDATE THIS TO PRODUCE A DISPLAY THAT MATCHES THE BERKELEY SYSTEM.
+%
+% spdDataFile -> spd: Instead of reading a date file which has an nWls by 3
+% matrix of spectral power distributions, we will pass such a matrix along
+% with the wavelengths.  We'll make the spectra in the first column of the matrix match up with
+% the imaging channel light specified above.  The other two columns can be
+% anything since for this experiment there is just one wavelength involved.
+% So, for example, all zeros should work OK.
+%
+% See lines 180 to 194 of sceAOTumblingESceneFromTwoSpot for how to make
+% the spd for the first column.
+%
+% ambientSPDDataFile -> ambientSpd instead of a file, we'll pass a one column vector
+% with nWls samples.  This describes the background light in the AO system.
+% So I guess create a spectrum at 940 nm since that is what Will says is
+% the other light source.  Some logic as making the 840 spectrum.
+
+function presentationDisplay = generatePresentationDisplay(...
+    letterSizeDegs, letterSizePixels, wave, spd, ambientSpd, plotCharacteristics)
+
+    % Load the ambient SPD
+    projectBaseDir = strrep(ISETBioCSFGeneratorRootPath(), 'toolbox', '');
+
+    fprintf('Loading ambient SPD from %s\n', fullfile(projectBaseDir,'data',ambientSpd));
+    load(fullfile(projectBaseDir,'data',ambientSpd), 'spd');
+    ambientSPD = spd;
+    clear 'spd'
+    
+    % Check data consistency
+    assert(size(ambientSPD, 2) == 2, 'The ambient SPD matrix must be an N x 2 matrix, with the first column being the spectral support');
+    if (size(ambientSPD,2) > 2)
+        fprintf(2,'\nThe ambient SPD matrix must be an N x 2 matrix, with the first column being the spectral support and the second column being the ambient energy.\n');
+        fprintf(2,'The data retrieved from ''%s'', contain %d columns. Ignoring all but the first 2 columns.\n\n', ambientSpd, size(ambientSPD,2));
+    end
+    
+    %ambientSPD = ambientSPD/ (ambientWave(2)-ambientWave(1));
+    
+    % Check data consistency
+    assert(size(spd, 2) == 4, 'The SPD matrix must be an N x 4 matrix, with the first column being the spectral support');
+    % spd = spd / (wave(2)-wave(1));
+    assert(size(spd,1) == size(ambientSPD,1), 'The ambient SPD must have the same wavelength entries as the display SPD');
+    assert(all(ambientWave == wave), 'The ambient wavelength support must match the wavelength support of the display SPD');
+    
+    % Call into the ISETBio custom display generation routine.
+    presentationDisplay = generateCustomDisplay(...
+           'dotsPerInch', 220, ...
+           'wavelengthSupportNanoMeters', wave, ...
+           'spectralPowerDistributionWattsPerSteradianM2NanoMeter', spd, ...
+           'ambientSPDWattsPerSteradianM2NanoMeter', ambientSPD, ...
+           'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
+           'plotCharacteristics', plotCharacteristics);
+    
     
     pixelSizeMeters = displayGet(presentationDisplay, 'meters per dot');
     letterSizeMeters = letterSizePixels*pixelSizeMeters;
