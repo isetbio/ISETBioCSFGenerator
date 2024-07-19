@@ -84,9 +84,9 @@ sceneParams.wave = (500:10:860)';
 % The display routine doesn't know what to do with 840 nm,
 % putting in 700 for right now so visualization is approximately
 % correct.
-sceneParams.AOPrimaryWls = [700 650 540] % [840 650 540];
+sceneParams.AOPrimaryWls = [700 683 543] % [700 683 54];
 
-sceneParams.AOPrimaryFWHM = [10 10 10];
+sceneParams.AOPrimaryFWHM = [22 27 23];
 sceneParams.AOCornealPowersUW = [141.4 10 10];
 sceneParams.ambientSpd = zeros(size(sceneParams.wave));
 sceneParams.pupilSizeMM = 6;
