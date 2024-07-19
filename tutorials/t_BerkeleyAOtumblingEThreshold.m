@@ -33,8 +33,8 @@ rootPath = ISETBioCSFGeneratorRootPath;
 if (~exist(fullfile(rootPath,'local','figures'),'dir'))
     mkdir(fullfile(rootPath,'local','figures'));
 end
-if (~exist(fullfile(rootPath,'results'),'dir'))
-    mkdir(fullfile(rootPath,'results'));
+if (~exist(fullfile(rootPath,'local','results'),'dir'))
+    mkdir(fullfile(rootPath,'local','results'));
 end
 
 % Get the tumbling E scene engines.
@@ -106,8 +106,8 @@ params = struct(...
 % if (~isempty(params.customLensAgeYears))
 %     summaryFileName = strrep(summaryFileName, '.mat', sprintf('_lensAge_%d.mat', params.customLensAgeYears));
 % end
-% params.outputResultsDir = fullfile(ISETBioJandJRootPath,'results',strrep(summaryFileName, '.mat',''));
-% params.outputFiguresDir =  fullfile(ISETBioJandJRootPath,'figures',strrep(summaryFileName, '.mat',''));
+% params.outputResultsDir = fullfile(ISETBioCSFGeneratorRootPath,'local','results',strrep(summaryFileName, '.mat',''));
+% params.outputFiguresDir =  fullfile(ISETBioCSFGeneratorRootPath,'local','figures',strrep(summaryFileName, '.mat',''));
 % if (~exist(params.outputResultsDir,'dir'))
 %     mkdir(params.outputResultsDir);
 % end

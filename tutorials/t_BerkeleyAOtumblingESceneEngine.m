@@ -7,7 +7,6 @@ close all;
 p = inputParser;
 p.addParameter('visualizeScene', true, @islogical);
 p.parse(varargin{:});
-visualizeScene = p.Results.visualizeScene;
 
 % Make sure figures directory exists so that output writes
 % don't fail
@@ -61,10 +60,6 @@ presentationDisplay = theDisplay.monoDisplay;
 %   direction: shifts were imposed in retinal coordinates along the four
 %   cardinal meridians Performance was assessed as % correct for a fixed
 %   letter size
-
-% Here are some other parameters that we need to think about in the code.
-%   wls = 500:10:860;
-%   eWavelengthNm = 840;
 %
 % Spatial parameters
 %   nPixels = 512;
@@ -74,24 +69,38 @@ presentationDisplay = theDisplay.monoDisplay;
 % Imaging (840 nm) power in uW.
 %   fieldPowerUW = 141.4;
 %   fieldPowerUWPerDeg2 = fieldPowerUW/(fieldSizeDegs^2);
+%
+% Need pupil diameter to convert corneal power to appropriate equivalent
+% radiance.  Probably around 6 mm.
 
 % Display spatial parameters
 sceneParams.displayPixelSize = 512;
-sceneParams.displayFOVDegs = 1.413;
+sceneParams.displayFOVDeg = 1.413;
 
 % Set the basic parameters for the AO mimicing display
-sceneParams = sceAOBerkeleyTumblingEscene;
+sceneParams = sceBerkeleyAOTumblingEscene;
 sceneParams.wave = (500:10:860)';
-sceneParams.AOPrimaryWls = [840 650 540];
+
+% The display routine doesn't know what to do with 840 nm,
+% putting in 700 for right now so visualization is approximately
+% correct.
+sceneParams.AOPrimaryWls = [700 650 540] % [840 650 540];
+
 sceneParams.AOPrimaryFWHM = [10 10 10];
-sceneParams.AOCornealPowersUW = [141.4 0 0];
+sceneParams.AOCornealPowersUW = [141.4 10 10];
 sceneParams.ambientSpd = zeros(size(sceneParams.wave));
+sceneParams.pupilSizeMM = 6;
 sceneParams.plotDisplayCharacteristics = false;
+for pp = 1:length(sceneParams.AOPrimaryWls)
+    sceneParams.spd(:,pp) = generateAOPrimarySpd(sceneParams.wave, ...
+        sceneParams.AOPrimaryWls(pp),sceneParams.AOPrimaryFWHM(pp),sceneParams.AOCornealPowersUW(pp), ...
+        sceneParams.displayFOVDeg,sceneParams.pupilSizeMM);
+end
 
 % Define the foreground (E) and background RGB wrt the monochromatic
 % monitor.  The Berkeley tumbling E experiments use only the 840
 % channel, with background nominally full on and E nominally full off.
-sceneParams.chromaSpecification = 'RGBSettings';
+sceneParams.chromaSpecification.type = 'RGBsettings';
 sceneParams.chromaSpecification.backgroundRGB = [1 0 0];
 sceneParams.chromaSpecification.foregroundRGB = [0 0 0];
 
@@ -112,7 +121,7 @@ tumblingEsceneEngine90degs = sceneEngine(@sceBerkeleyAOTumblingEscene,sceneParam
 
 % Generate sceneEngine for 180 deg rotation E
 sceneParams.letterRotationDegs = 180;
-tumblingEsceneEngine180degs = sceneEngine(@sceBerkeleyAOTumblingEscenee,sceneParams);
+tumblingEsceneEngine180degs = sceneEngine(@sceBerkeleyAOTumblingEscene,sceneParams);
 
 % Generate sceneEngine for 270 deg rotation E
 sceneParams.letterRotationDegs = 270;
@@ -138,7 +147,7 @@ theSmallEscene180degs = theSmallEsceneSequence180degs{1};
 theSmallEscene270degs = theSmallEsceneSequence270degs{1};
 theSmallBackgroundScene = theSmallBackgroundSceneSequence{1};
 
-if (visualizeScene)
+if (p.Results.visualizeScene)
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
         'rowsNum', 1, ...
         'colsNum', 4, ...
@@ -213,7 +222,7 @@ if (visualizeScene)
         );
 
     projectBaseDir = ISETBioCSFGeneratorRootPath;
-    pdfFile = fullfile(projectBaseDir,'figures','t_AOTumblingSceneEngine_stimuli.pdf');
+    pdfFile = fullfile(projectBaseDir,'local','figures','t_AOTumblingSceneEngine_stimuli.pdf');
     NicePlot.exportFigToPDF(pdfFile,hFig, 300);
 end
 
