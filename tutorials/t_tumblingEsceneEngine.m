@@ -29,7 +29,6 @@ function t_tumblingESceneEngine()
     letterRotationDegs = 90;
     tumblingEsceneEngine90degs = createTumblingEsceneEngine(letterRotationDegs);
 
-
     % Generate sceneEngine for 180 deg rotation E
     letterRotationDegs = 180;
     tumblingEsceneEngine180degs = createTumblingEsceneEngine(letterRotationDegs);
@@ -37,7 +36,6 @@ function t_tumblingESceneEngine()
     % Generate sceneEngine for 270 deg rotation E
     letterRotationDegs = 270;
     tumblingEsceneEngine270degs = createTumblingEsceneEngine(letterRotationDegs);
-
 
     % Generate params for the background scene
     sceneParams = tumblingEsceneEngine0degs.sceneComputeFunction();

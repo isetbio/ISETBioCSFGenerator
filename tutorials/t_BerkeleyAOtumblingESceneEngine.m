@@ -103,18 +103,11 @@ sceneParams.chromaSpecification.type = 'RGBsettings';
 sceneParams.chromaSpecification.backgroundRGB = [1 0 0];
 sceneParams.chromaSpecification.foregroundRGB = [0 0 0];
 
-% Specifiy E spatial parameters
-% NEED TO UPDATE SCENE ENGINE SO THIS CAN BE VARIED.  THERE IS A COMMENT
-% THAT IT NEEDS TO BE 20 x 18 PIXELS AT PRESENT.  ALSO NEED TO CONVERT OUR
-% SPECIFICATION FROM DEGS TO PIXELS BUT THAT IS EASY.
-sceneParams.eHeightMin = 10;
-sceneParams.eWidthMin = (18/20)*sceneParams.eHeightMin;
-
-sceneParams.letterHeightPixels = 20;
-sceneParams.letterWidthPixels = 18;
-sceneParams.yPixelsNumMargin = (sceneParams.displayPixelSize-sceneParams.letterHeightPixels)/2;
-sceneParams.xPixelsNumMargin =  (sceneParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
-sceneParams.upSampleFactor = uint8(1);
+% Specifiy E spatial parameters.  The scene engine only produces binary
+% text characters so the size of the letter has to be an integer, and we
+% want it to be an even integer so that we can put it in the center of an 
+% image array that itself has an even number of pixels.
+sceneParams.eHeightMin = 30;
 
 % Instantiate a tumblingEsceneEngine for 0 deg rotation E
 sceneParams.letterRotationDegs = 0;
@@ -138,12 +131,13 @@ backgroundSceneParams.chromaSpecification.foregroundRGB = sceneParams.chromaSpec
 backgroundSceneEngine = sceneEngine(@sceBerkeleyAOTumblingEscene,backgroundSceneParams);
 
 % Generate scenes with size of 0.1 deg
-sizeDegs = 0.05;
-theSmallEsceneSequence0degs = tumblingEsceneEngine0degs.compute(sizeDegs);
-theSmallEsceneSequence90degs = tumblingEsceneEngine90degs.compute(sizeDegs);
-theSmallEsceneSequence180degs = tumblingEsceneEngine180degs.compute(sizeDegs);
-theSmallEsceneSequence270degs = tumblingEsceneEngine270degs.compute(sizeDegs);
-theSmallBackgroundSceneSequence = backgroundSceneEngine.compute(sizeDegs);
+testESizeMin = 10;
+testESizeDeg = testESizeMin/60;
+theSmallEsceneSequence0degs = tumblingEsceneEngine0degs.compute(testESizeDeg);
+theSmallEsceneSequence90degs = tumblingEsceneEngine90degs.compute(testESizeDeg);
+theSmallEsceneSequence180degs = tumblingEsceneEngine180degs.compute(testESizeDeg);
+theSmallEsceneSequence270degs = tumblingEsceneEngine270degs.compute(testESizeDeg);
+theSmallBackgroundSceneSequence = backgroundSceneEngine.compute(testESizeDeg);
 
 % Get first frame of the scene sequences
 theSmallEscene0degs = theSmallEsceneSequence0degs{1};
@@ -164,7 +158,7 @@ if (p.Results.visualizeScene)
         'bottomMargin',   0.05, ...
         'topMargin',      0.00);
 
-    domainVisualizationLimits = 1.5*[-1 1 -1 1]% 0.3*0.5*[-1 1 -1 1];
+    domainVisualizationLimits = 1.5*[-1 1 -1 1]; % 0.3*0.5*[-1 1 -1 1];
 
     hFig = figure(1);
     clf;

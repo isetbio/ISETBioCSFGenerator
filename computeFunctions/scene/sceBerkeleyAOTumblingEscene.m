@@ -1,5 +1,4 @@
-% The tumblingEsceneEngine.compute(Esize) compute function
-function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
+function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sceneParams)
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
@@ -7,18 +6,30 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testEsizeDegs, sc
     end
 
     % Validate params
-    assert(sceneParams.letterHeightPixels == 20, 'letterHeight must be 20 pixels');
-    assert(sceneParams.letterWidthPixels == 18, 'letterWidth must be 18 pixels');
+    assert(rem(sceneParams.displayPixelSize,2) == 0, 'display assumed to have even number of pixels');
+    assert(rem(sceneParams.letterHeightPixels,2) == 0, 'letterHeight must be an even number of pixels');
+    assert(rem(sceneParams.letterWidthPixels,2) == 0, 'letterWidth must be an even number of pixels');
     assert(ismember(sceneParams.letterRotationDegs, [0 90 180 270]), 'letterRotationDegs must be in 0, 90, 180, or 270');
-
-    % Account for the fact that the E does not occupy all 20 pixels along the
-    % y-dimension
-    sizeScalingFactor = 1.0/0.75;
 
     % Generate the display on which the tumbing E scenes are presented
     presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams);
 
-    % Generate the E scene with 0 deg rotation
+    % The height of the actual E in the bitmap is only 15 rows, not the
+    % nominal 20.  We care about the E size, not the bitmap size.  So we
+    % bump up the desired number of rows by this factor in the computation
+    % just below.
+    sizeScalingFactor = 1.0/0.75;
+
+    % Figure out how many rows and columns we want the E bitmap to be
+    testESizeMin = testESizeDeg*60;
+    letterHeightUnquantizedPixels = sizeScalingFactor*((testESizeMin/60)/(sceneParams.displayFOVDeg))*sceneParams.displayPixelSize;
+    sceneParams.letterHeightPixels = 2*round(letterHeightUnquantizedPixels/2);
+    sceneParams.letterWidthPixels = 2*round(letterHeightUnquantizedPixels*(18/20)/2);
+    sceneParams.yPixelsNumMargin = (sceneParams.displayPixelSize-sceneParams.letterHeightPixels)/2;
+    sceneParams.xPixelsNumMargin =  (sceneParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
+    sceneParams.upSampleFactor = uint8(1);
+
+    % Generate the E scene 
     theTestScene = generateTumblingEscene(...
         presentationDisplay, 'E', sceneParams, ...
         'visualizeScene', sceneParams.visualizeScene);
@@ -39,16 +50,23 @@ function theScene = generateTumblingEscene(...
     p.parse(varargin{:});
     visualizeScene = p.Results.visualizeScene;
 
+    % Check pixel consistency
+    rowsNum = sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2;
+    colsNum = sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2;
+    if (rowsNum ~= sceneParams.displayPixelSize || colsNum ~= sceneParams.displayPixelSize)
+        error('Have not computed rowsNum and colsNum or some other parameter consistently.');
+    end
+
     % Generate stimulus scene
     textSceneParams = struct(...
         'textString', theChar, ...                                              % Text to display
         'textRotation', sceneParams.letterRotationDegs, ...                     % Rotation (0,90,180,270 only)
-        'rowsNum', sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2, ... % Pixels along the vertical (y) dimension
-        'colsNum', sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2, ...  % Pixels along the horizontal (x) dimension
+        'rowsNum', rowsNum, ... % Pixels along the vertical (y) dimension
+        'colsNum', colsNum, ...  % Pixels along the horizontal (x) dimension
+        'textBitMapRescaledRowsCols', [sceneParams.letterHeightPixels sceneParams.letterWidthPixels], ...
         'targetRow', sceneParams.yPixelsNumMargin, ...                          % Y-pixel offset 
         'targetCol', sceneParams.xPixelsNumMargin, ...                          % X-pixel offset 
         'upSampleFactor', uint8(1), ...                       % Upsample the scene to increase the retinal image resolution
-        'horizontalFOVDegs', sceneParams.eWidthMin/60, ...
         'chromaSpecification', sceneParams.chromaSpecification ...              % Background and stimulus rgb values
     );
     theScene = rotatedTextSceneRealizedOnDisplay(presentationDisplay, ...
