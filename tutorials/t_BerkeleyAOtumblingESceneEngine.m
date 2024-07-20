@@ -84,8 +84,7 @@ sceneParams.wave = (500:10:860)';
 % The display routine doesn't know what to do with 840 nm,
 % putting in 700 for right now so visualization is approximately
 % correct.
-sceneParams.AOPrimaryWls = [700 683 543] % [700 683 54];
-
+sceneParams.AOPrimaryWls = [700 683 543]; % [700 683 54];
 sceneParams.AOPrimaryFWHM = [22 27 23];
 sceneParams.AOCornealPowersUW = [141.4 10 10];
 sceneParams.ambientSpd = zeros(size(sceneParams.wave));
@@ -108,8 +107,14 @@ sceneParams.chromaSpecification.foregroundRGB = [0 0 0];
 % NEED TO UPDATE SCENE ENGINE SO THIS CAN BE VARIED.  THERE IS A COMMENT
 % THAT IT NEEDS TO BE 20 x 18 PIXELS AT PRESENT.  ALSO NEED TO CONVERT OUR
 % SPECIFICATION FROM DEGS TO PIXELS BUT THAT IS EASY.
+sceneParams.eHeightMin = 10;
+sceneParams.eWidthMin = (18/20)*sceneParams.eHeightMin;
+
 sceneParams.letterHeightPixels = 20;
 sceneParams.letterWidthPixels = 18;
+sceneParams.yPixelsNumMargin = (sceneParams.displayPixelSize-sceneParams.letterHeightPixels)/2;
+sceneParams.xPixelsNumMargin =  (sceneParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
+sceneParams.upSampleFactor = uint8(1);
 
 % Instantiate a tumblingEsceneEngine for 0 deg rotation E
 sceneParams.letterRotationDegs = 0;
@@ -133,7 +138,7 @@ backgroundSceneParams.chromaSpecification.foregroundRGB = sceneParams.chromaSpec
 backgroundSceneEngine = sceneEngine(@sceBerkeleyAOTumblingEscene,backgroundSceneParams);
 
 % Generate scenes with size of 0.1 deg
-sizeDegs = 0.1;
+sizeDegs = 0.05;
 theSmallEsceneSequence0degs = tumblingEsceneEngine0degs.compute(sizeDegs);
 theSmallEsceneSequence90degs = tumblingEsceneEngine90degs.compute(sizeDegs);
 theSmallEsceneSequence180degs = tumblingEsceneEngine180degs.compute(sizeDegs);
@@ -147,6 +152,7 @@ theSmallEscene180degs = theSmallEsceneSequence180degs{1};
 theSmallEscene270degs = theSmallEsceneSequence270degs{1};
 theSmallBackgroundScene = theSmallBackgroundSceneSequence{1};
 
+% Take a look at the scene
 if (p.Results.visualizeScene)
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
         'rowsNum', 1, ...
@@ -158,7 +164,7 @@ if (p.Results.visualizeScene)
         'bottomMargin',   0.05, ...
         'topMargin',      0.00);
 
-    domainVisualizationLimits = 0.3*0.5*[-1 1 -1 1];
+    domainVisualizationLimits = 1.5*[-1 1 -1 1]% 0.3*0.5*[-1 1 -1 1];
 
     hFig = figure(1);
     clf;

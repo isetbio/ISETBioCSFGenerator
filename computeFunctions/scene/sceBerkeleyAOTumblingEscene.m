@@ -16,15 +16,7 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testEsizeDegs, sc
     sizeScalingFactor = 1.0/0.75;
 
     % Generate the display on which the tumbing E scenes are presented
-    %
-    % WE ARE NO LONGER GOING TO READ A DISPLAY BUT INSTEAD WILL GENERATE IT
-    % HERE BASED ON THE BERKELEY PARAMETERS.
     presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams);
-        % testEsizeDegs*sizeScalingFactor, sceneParams.letterHeightPixels, ...
-        % sceneParams.wave, ...
-        % sceneParams.spd, ...
-        % sceneParams.ambientSpd, ...
-        % sceneParams.plotDisplayCharacteristics);
 
     % Generate the E scene with 0 deg rotation
     theTestScene = generateTumblingEscene(...
@@ -47,18 +39,18 @@ function theScene = generateTumblingEscene(...
     p.parse(varargin{:});
     visualizeScene = p.Results.visualizeScene;
 
+    % Generate stimulus scene
     textSceneParams = struct(...
-        'textString', theChar, ...                              % Text to display
+        'textString', theChar, ...                                              % Text to display
         'textRotation', sceneParams.letterRotationDegs, ...                     % Rotation (0,90,180,270 only)
         'rowsNum', sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2, ... % Pixels along the vertical (y) dimension
         'colsNum', sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2, ...  % Pixels along the horizontal (x) dimension
-        'targetRow', sceneParams.yPixelsNumMargin, ...                      % Y-pixel offset 
-        'targetCol', sceneParams.xPixelsNumMargin, ...                      % X-pixel offset 
-        'upSampleFactor', sceneParams.upSampleFactor, ...                         % Upsample the scene to increase the retinal image resolution
-        'chromaSpecification', sceneParams.chromaSpecification ...          % Background and stimulus chromaticity
+        'targetRow', sceneParams.yPixelsNumMargin, ...                          % Y-pixel offset 
+        'targetCol', sceneParams.xPixelsNumMargin, ...                          % X-pixel offset 
+        'upSampleFactor', uint8(1), ...                       % Upsample the scene to increase the retinal image resolution
+        'horizontalFOVDegs', sceneParams.eWidthMin/60, ...
+        'chromaSpecification', sceneParams.chromaSpecification ...              % Background and stimulus rgb values
     );
-    
-    % Generate stimulus scene
     theScene = rotatedTextSceneRealizedOnDisplay(presentationDisplay, ...
         textSceneParams, visualizeScene);
 end
