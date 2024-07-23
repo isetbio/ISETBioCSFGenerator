@@ -29,21 +29,20 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     sceneParams.xPixelsNumMargin =  (sceneParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
     sceneParams.upSampleFactor = uint8(1);
 
-    % % Generate the E scene 
-    % theTestScene = generateTumblingEscene(...
-    %     presentationDisplay, 'E', sceneParams, ...
-    %     'visualizeScene', sceneParams.visualizeScene);
+    %% CONVERT SHIFT TO FROM DEGS TO PIXELS.  SPECIFY AN OFFSET IN PIXELS IN ADDITION
+    % TO SCALE FACTOR SO THAT THE E ENDS UP CLOSER TO CENTERED.
+
+    % Check pixel consistency
+    rowsNum = sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2;
+    colsNum = sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2;
+    if (rowsNum ~= sceneParams.displayPixelSize || colsNum ~= sceneParams.displayPixelSize)
+        error('Have not computed rowsNum and colsNum or some other parameter consistently.');
+    end
 
     % Generate the E scene frame sequence 
     [theTestSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequence(...
         presentationDisplay, 'E', sceneParams, ...
         'visualizeScene', sceneParams.visualizeScene);
-
-    % % Assemble dataOut struct - required fields
-    % dataOut.sceneSequence{1} = theTestScene;
-    % dataOut.temporalSupport(1) = 0;
-    % dataOut.presentationDisplay = presentationDisplay;
-    % dataOut.statusReport = 'done';
 
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence = theTestSceneSequence;
@@ -61,26 +60,39 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     p.parse(varargin{:});
     visualizeScene = p.Results.visualizeScene;
 
-    % Extract sequence parameters
-    frameRateHz = sceneParams.temporalModulationParams.frameRateHz;
-    numFrames = sceneParams.temporalModulationParams.numFrames;
-    xShiftPerFrame = sceneParams.temporalModulationParams.xShiftPerFrame;
-    yShiftPerFrame = sceneParams.temporalModulationParams.yShiftPerFrame;
+    % Extract sequence parameters.  For backwards compatibility, there is
+    % just one frame and no shift if nothing is specfied (and in that case,
+    % the frame rate has no effect).
+    if (~isfield(sceneParams,'temporalModulationParams') || isempty(sceneParams.temporalModulationParams))
+        frameRateHz = 60;
+        numFrames = 1;
+        xShiftPerFrame = 0;
+        yShiftPerFrame = 0;
+    else
+        frameRateHz = sceneParams.temporalModulationParams.frameRateHz;
+        numFrames = sceneParams.temporalModulationParams.numFrames;
+        xShiftPerFrame = sceneParams.temporalModulationParams.xShiftPerFrame;
+        yShiftPerFrame = sceneParams.temporalModulationParams.yShiftPerFrame;
+    end
     frameDurationSec = 1 / frameRateHz;
 
     % Initialize output
     theSceneSequence = cell(1, numFrames);
     temporalSupportSeconds = zeros(1, numFrames);
 
+    xPixelsNumMargin0 = sceneParams.xPixelsNumMargin;
+    yPixelsNumMargin0 = sceneParams.yPixelsNumMargin;
+
     % Generate each frame
     for frameIndex = 1:numFrames
-        % Update scene parameters for current frame
-        sceneParams.xPixelsNumMargin = sceneParams.xPixelsNumMargin + (frameIndex - 1) * xShiftPerFrame;
-        sceneParams.yPixelsNumMargin = sceneParams.yPixelsNumMargin + (frameIndex - 1) * yShiftPerFrame;
+        % Update scene parameters for current frame.  This handles the
+        % specified shift of the letter on each frame.
+        sceneParams.xPixelsNumMargin = xPixelsNumMargin0 + (frameIndex - 1) * xShiftPerFrame(frameIndex);
+        sceneParams.yPixelsNumMargin = yPixelsNumMargin0  + (frameIndex - 1) * yShiftPerFrame(frameIndex);
 
         % Generate the scene frame
         theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, sceneParams, 'visualizeScene', visualizeScene);
-
+        
         % Store the scene frame
         theSceneSequence{frameIndex} = theSceneFrame;
 
@@ -98,27 +110,20 @@ function theScene = generateTumblingEscene(...
     p.parse(varargin{:});
     visualizeScene = p.Results.visualizeScene;
 
-    % Check pixel consistency
-    rowsNum = sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2;
-    colsNum = sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2;
-    if (rowsNum ~= sceneParams.displayPixelSize || colsNum ~= sceneParams.displayPixelSize)
-        error('Have not computed rowsNum and colsNum or some other parameter consistently.');
-    end
-
     % Generate stimulus scene
     textSceneParams = struct(...
         'textString', theChar, ...                                              % Text to display
         'textRotation', sceneParams.letterRotationDegs, ...                     % Rotation (0,90,180,270 only)
-        'rowsNum', rowsNum, ... % Pixels along the vertical (y) dimension
-        'colsNum', colsNum, ...  % Pixels along the horizontal (x) dimension
+        'rowsNum', sceneParams.displayPixelSize, ...                            % Pixels along the vertical (y) dimension
+        'colsNum', sceneParams.displayPixelSize, ...                            % Pixels along the horizontal (x) dimension
         'textBitMapRescaledRowsCols', [sceneParams.letterHeightPixels sceneParams.letterWidthPixels], ...
         'targetRow', sceneParams.yPixelsNumMargin, ...                          % Y-pixel offset 
         'targetCol', sceneParams.xPixelsNumMargin, ...                          % X-pixel offset 
-        'upSampleFactor', uint8(1), ...                       % Upsample the scene to increase the retinal image resolution
-        'chromaSpecification', sceneParams.chromaSpecification, ...              % Background and stimulus rgb values
+        'upSampleFactor', uint8(1), ...                                         % Upsample the scene to increase the retinal image resolution
+        'chromaSpecification', sceneParams.chromaSpecification, ...             % Background and stimulus rgb values
         'temporalModulationParams', sceneParams.temporalModulationParams ...
     );
-    
+
     theScene = rotatedTextSceneRealizedOnDisplay(presentationDisplay, ...
         textSceneParams, visualizeScene);
 end
@@ -142,9 +147,9 @@ function p = generateDefaultParams()
                 'foregroundRGB',  [0.4 0.4 0.4]), ...
         'temporalModulationParams', struct(...  % temporal: modulation params struct
                 'frameRateHz', 60, ...              % frame rate in Hz
-                'numFrames', 9, ...                 % number of frames we want the E on for
-                'xShiftPerFrame', 1, ...            % How much the E should be shifted in the x dimension in each frame
-                'yShiftPerFrame', 1), ...           % How much the E should be shifted in the y dimension in each frame
+                'numFrames', 1, ...                 % number of frames we want the E on for
+                'xShiftPerFrame', 0, ...            % How much the E should be shifted in the x dimension in each frame
+                'yShiftPerFrame', 0), ...           % How much the E should be shifted in the y dimension in each frame
         'wave', (400:10:860)', ...              % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
         'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
