@@ -29,16 +29,64 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     sceneParams.xPixelsNumMargin =  (sceneParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
     sceneParams.upSampleFactor = uint8(1);
 
-    % Generate the E scene 
-    theTestScene = generateTumblingEscene(...
+    % % Generate the E scene 
+    % theTestScene = generateTumblingEscene(...
+    %     presentationDisplay, 'E', sceneParams, ...
+    %     'visualizeScene', sceneParams.visualizeScene);
+
+    % Generate the E scene frame sequence 
+    [theTestSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequence(...
         presentationDisplay, 'E', sceneParams, ...
         'visualizeScene', sceneParams.visualizeScene);
 
+    % % Assemble dataOut struct - required fields
+    % dataOut.sceneSequence{1} = theTestScene;
+    % dataOut.temporalSupport(1) = 0;
+    % dataOut.presentationDisplay = presentationDisplay;
+    % dataOut.statusReport = 'done';
+
     % Assemble dataOut struct - required fields
-    dataOut.sceneSequence{1} = theTestScene;
-    dataOut.temporalSupport(1) = 0;
+    dataOut.sceneSequence = theTestSceneSequence;
+    dataOut.temporalSupport = temporalSupportSeconds;
     dataOut.presentationDisplay = presentationDisplay;
     dataOut.statusReport = 'done';
+end
+
+function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequence(...
+    presentationDisplay, theChar, sceneParams, varargin)
+
+    % Parse optional input
+    p = inputParser;
+    p.addParameter('visualizeScene', false, @islogical);
+    p.parse(varargin{:});
+    visualizeScene = p.Results.visualizeScene;
+
+    % Extract sequence parameters
+    frameRateHz = sceneParams.temporalModulationParams.frameRateHz;
+    numFrames = sceneParams.temporalModulationParams.numFrames;
+    xShiftPerFrame = sceneParams.temporalModulationParams.xShiftPerFrame;
+    yShiftPerFrame = sceneParams.temporalModulationParams.yShiftPerFrame;
+    frameDurationSec = 1 / frameRateHz;
+
+    % Initialize output
+    theSceneSequence = cell(1, numFrames);
+    temporalSupportSeconds = zeros(1, numFrames);
+
+    % Generate each frame
+    for frameIndex = 1:numFrames
+        % Update scene parameters for current frame
+        sceneParams.xPixelsNumMargin = sceneParams.xPixelsNumMargin + (frameIndex - 1) * xShiftPerFrame;
+        sceneParams.yPixelsNumMargin = sceneParams.yPixelsNumMargin + (frameIndex - 1) * yShiftPerFrame;
+
+        % Generate the scene frame
+        theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, sceneParams, 'visualizeScene', visualizeScene);
+
+        % Store the scene frame
+        theSceneSequence{frameIndex} = theSceneFrame;
+
+        % Store the timestamp of the scene frame
+        temporalSupportSeconds(frameIndex) = (frameIndex - 1) * frameDurationSec;
+    end
 end
 
 function theScene = generateTumblingEscene(...
@@ -67,8 +115,10 @@ function theScene = generateTumblingEscene(...
         'targetRow', sceneParams.yPixelsNumMargin, ...                          % Y-pixel offset 
         'targetCol', sceneParams.xPixelsNumMargin, ...                          % X-pixel offset 
         'upSampleFactor', uint8(1), ...                       % Upsample the scene to increase the retinal image resolution
-        'chromaSpecification', sceneParams.chromaSpecification ...              % Background and stimulus rgb values
+        'chromaSpecification', sceneParams.chromaSpecification, ...              % Background and stimulus rgb values
+        'temporalModulationParams', sceneParams.temporalModulationParams ...
     );
+    
     theScene = rotatedTextSceneRealizedOnDisplay(presentationDisplay, ...
         textSceneParams, visualizeScene);
 end
@@ -79,7 +129,7 @@ function p = generateDefaultParams()
     p = struct(...
         'displayPixelSize', 512, ...            % Linear display pixel size
         'displayFOVDeg', 1.413, ...             % Linear field size in degrees
-        'viewingDistanceMeters', 3, ...            % Far enough away to be in good focus
+        'viewingDistanceMeters', 3, ...         % Far enough away to be in good focus
         'letterRotationDegs', 0, ...            % Letter rotation (0,90,180,270 only)
         'letterHeightPixels', 20, ...           % Letter height in pixels - must be 20
         'letterWidthPixels', 18, ...            % Letter width in pixels - must be 18
@@ -90,6 +140,11 @@ function p = generateDefaultParams()
                 'type', 'RGBsettings', ...
                 'backgroundRGB', [0.5 0.5 0.5], ...   
                 'foregroundRGB',  [0.4 0.4 0.4]), ...
+        'temporalModulationParams', struct(...  % temporal: modulation params struct
+                'frameRateHz', 60, ...              % frame rate in Hz
+                'numFrames', 9, ...                 % number of frames we want the E on for
+                'xShiftPerFrame', 1, ...            % How much the E should be shifted in the x dimension in each frame
+                'yShiftPerFrame', 1), ...           % How much the E should be shifted in the y dimension in each frame
         'wave', (400:10:860)', ...              % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
         'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
