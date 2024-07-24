@@ -121,7 +121,8 @@ function theScene = generateTumblingEscene(...
         'targetCol', sceneParams.xPixelsNumMargin, ...                          % X-pixel offset 
         'upSampleFactor', uint8(1), ...                                         % Upsample the scene to increase the retinal image resolution
         'chromaSpecification', sceneParams.chromaSpecification, ...             % Background and stimulus rgb values
-        'temporalModulationParams', sceneParams.temporalModulationParams ...
+        'temporalModulationParams', sceneParams.temporalModulationParams, ...   % Parameters describing temporal sequence
+        'centerLetter', false ...                                               % Use rotatedTextSceneRealizedOnDisplay?  (We center manually so false here).
     );
 
     theScene = rotatedTextSceneRealizedOnDisplay(presentationDisplay, ...
