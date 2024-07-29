@@ -71,10 +71,23 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     else
         frameRateHz = sceneParams.temporalModulationParams.frameRateHz;
         numFrames = sceneParams.temporalModulationParams.numFrames;
-        xShiftPerFrame = sceneParams.temporalModulationParams.xShiftPerFrame;
-        yShiftPerFrame = sceneParams.temporalModulationParams.yShiftPerFrame;
+        xShiftDegrees = sceneParams.temporalModulationParams.xShiftPerFrame;
+        yShiftDegrees = sceneParams.temporalModulationParams.yShiftPerFrame;
     end
     frameDurationSec = 1 / frameRateHz;
+
+    % Calculate degrees per pixel
+    displayFOVDeg = sceneParams.displayFOVDeg;
+    displayPixelSize = sceneParams.displayPixelSize;
+    degreesPerPixel = displayFOVDeg / displayPixelSize;
+
+    % Convert shifts from degrees to pixels
+    xShiftPixels = xShiftDegrees / degreesPerPixel;
+    yShiftPixels = yShiftDegrees / degreesPerPixel;
+
+    % Round the shift to the nearest integer of pixels
+    xShiftPixels = round(xShiftPixels);
+    yShiftPixels = round(yShiftPixels);
 
     % Initialize output
     theSceneSequence = cell(1, numFrames);
@@ -87,8 +100,8 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     for frameIndex = 1:numFrames
         % Update scene parameters for current frame.  This handles the
         % specified shift of the letter on each frame.
-        sceneParams.xPixelsNumMargin = xPixelsNumMargin0 + (frameIndex - 1) * xShiftPerFrame(frameIndex);
-        sceneParams.yPixelsNumMargin = yPixelsNumMargin0  + (frameIndex - 1) * yShiftPerFrame(frameIndex);
+        sceneParams.xPixelsNumMargin = xPixelsNumMargin0 + (frameIndex - 1) * xShiftPixels(frameIndex);
+        sceneParams.yPixelsNumMargin = yPixelsNumMargin0  + (frameIndex - 1) * yShiftPixels(frameIndex);
 
         % Generate the scene frame
         theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, sceneParams, 'visualizeScene', visualizeScene);
@@ -149,8 +162,8 @@ function p = generateDefaultParams()
         'temporalModulationParams', struct(...  % temporal: modulation params struct
                 'frameRateHz', 60, ...              % frame rate in Hz
                 'numFrames', 1, ...                 % number of frames we want the E on for
-                'xShiftPerFrame', 0, ...            % How much the E should be shifted in the x dimension in each frame
-                'yShiftPerFrame', 0), ...           % How much the E should be shifted in the y dimension in each frame
+                'xShiftPerFrame', 0, ...            % shift E in the x dimension in each frame in degree
+                'yShiftPerFrame', 0), ...           % shift E in the y dimension in each frame in degree
         'wave', (400:10:860)', ...              % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
         'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
