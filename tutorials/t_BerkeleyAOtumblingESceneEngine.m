@@ -114,8 +114,8 @@ sceneParams.eHeightMin = 30;
 sceneParams.temporalModulationParams = struct(...  % temporal: modulation params struct
                 'frameRateHz', 60, ...              % frame rate in Hz
                 'numFrames', 3, ...                 % number of frames we want the E on for
-                'xShiftPerFrame', [0 100 0], ...    % How much the E should be shifted in the x dimension in each frame
-                'yShiftPerFrame', [0 0 -100]  ...   % How much the E should be shifted in the y dimension in each frame
+                'xShiftPerFrame', [0 0.1 0], ...    % How much the E should be shifted in the x dimension in each frame
+                'yShiftPerFrame', [0 0 0.1]  ...   % How much the E should be shifted in the y dimension in each frame
                 );
 
 % Instantiate a tumblingEsceneEngine for 0 deg rotation E
@@ -148,7 +148,15 @@ theSmallEsceneSequence180degs = tumblingEsceneEngine180degs.compute(testESizeDeg
 theSmallEsceneSequence270degs = tumblingEsceneEngine270degs.compute(testESizeDeg);
 theSmallBackgroundSceneSequence = backgroundSceneEngine.compute(testESizeDeg);
 
-% Visualize each frame ofthe scene sequenc
+% Visualize each frame ofthe scene sequence
+
+displaySizePixels = sceneParams.displayPixelSize;
+displaySizeDegrees = sceneParams.displayFOVDeg;
+pixelsPerDegree = displaySizePixels / displaySizeDegrees;
+
+domainVisualizationLimits = [-displaySizeDegrees/2, displaySizeDegrees/2, -displaySizeDegrees/2, displaySizeDegrees/2];
+
+
 for ff = 1:length(theSmallEsceneSequence0degs)
     theSmallEscene0degs = theSmallEsceneSequence0degs{ff};
     theSmallEscene90degs = theSmallEsceneSequence90degs{ff};
@@ -181,11 +189,20 @@ for ff = 1:length(theSmallEsceneSequence0degs)
             'avoidAutomaticRGBscaling', true, ...
             'noTitle', true, ...
             'axesHandle', ax);
+        % set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
+        %     'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
+        %     'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
+        %     );
         set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
             'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
-            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
-            );
+            'XTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), ...
+            'YTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5));
+        xTickLabels = arrayfun(@(x) sprintf('%.2f', x), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
+        yTickLabels = arrayfun(@(y) sprintf('%.2f', y), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
 
+        set(ax, 'XTickLabel', xTickLabels, 'YTickLabel', yTickLabels);
+        set(ax, 'FontSize', 10, 'FontWeight', 'bold');
+        
         ax = subplot('Position', subplotPosVectors(1,2).v);
         visualizeScene(theSmallEscene90degs, ...
             'spatialSupportInDegs', true, ...
@@ -198,8 +215,13 @@ for ff = 1:length(theSmallEsceneSequence0degs)
             'axesHandle', ax);
         set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
             'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
-            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
-            );
+            'XTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), ...
+            'YTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5));
+        xTickLabels = arrayfun(@(x) sprintf('%.2f', x), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
+        yTickLabels = arrayfun(@(y) sprintf('%.2f', y), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
+
+        set(ax, 'XTickLabel', xTickLabels, 'YTickLabel', yTickLabels);
+        set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
         ax = subplot('Position', subplotPosVectors(1,3).v);
         visualizeScene(theSmallEscene180degs, ...
@@ -213,8 +235,13 @@ for ff = 1:length(theSmallEsceneSequence0degs)
             'axesHandle', ax);
         set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
             'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
-            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
-            );
+            'XTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), ...
+            'YTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5));
+        xTickLabels = arrayfun(@(x) sprintf('%.2f', x), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
+        yTickLabels = arrayfun(@(y) sprintf('%.2f', y), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
+
+        set(ax, 'XTickLabel', xTickLabels, 'YTickLabel', yTickLabels);
+        set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
         ax = subplot('Position', subplotPosVectors(1,4).v);
         visualizeScene(theSmallEscene270degs, ...
@@ -228,8 +255,13 @@ for ff = 1:length(theSmallEsceneSequence0degs)
             'axesHandle', ax);
         set(ax, 'XLim', [domainVisualizationLimits(1) domainVisualizationLimits(2)], ...
             'YLim', [domainVisualizationLimits(3) domainVisualizationLimits(4)], ...
-            'XTick', [-0.1 0 0.1], 'YTick', [-0.1 0 0.1] ...
-            );
+            'XTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), ...
+            'YTick', linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5));
+        xTickLabels = arrayfun(@(x) sprintf('%.2f', x), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
+        yTickLabels = arrayfun(@(y) sprintf('%.2f', y), linspace(-displaySizeDegrees/2, displaySizeDegrees/2, 5), 'UniformOutput', false);
+
+        set(ax, 'XTickLabel', xTickLabels, 'YTickLabel', yTickLabels);
+        set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
         projectBaseDir = ISETBioCSFGeneratorRootPath;
         pdfFile = fullfile(projectBaseDir,'local','figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
