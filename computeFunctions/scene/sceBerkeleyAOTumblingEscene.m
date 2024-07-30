@@ -11,38 +11,54 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     assert(rem(sceneParams.letterWidthPixels,2) == 0, 'letterWidth must be an even number of pixels');
     assert(ismember(sceneParams.letterRotationDegs, [0 90 180 270]), 'letterRotationDegs must be in 0, 90, 180, or 270');
 
+    % Assign passed sceneParams to struct paramsForTextRendering, to avoid
+    % confusion.  We will then add fields to the latter and pass it on.
+    paramsForTextRendering = sceneParams;
+
     % Generate the display on which the tumbing E scenes are presented
     presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams);
 
-    % The height of the actual E in the bitmap is only 15 rows, not the
-    % nominal 20.  We care about the E size, not the bitmap size.  So we
-    % bump up the desired number of rows by this factor in the computation
-    % just below.
-    sizeScalingFactor = 1.0/0.75;
+    % Decide bitmap to use.  Here we define a custom E bitmap in a function
+    % at the bottom of this script, that returns a 15 by 15 pixel square E.
+    theCustomBitMap = textToCustomBitmap('E');
+
+    % Letter pixel aspect ratio. This is the pixel 
+    letterPixelAspectRatio = size(theCustomBitMap,2)/size(theCustomBitMap,1);
+
+    % If we define our letter bitmap to be exactly the letter size, then
+    % this can be 1.  If the letter has margins around it in the bitmap,
+    % this factor can adjust the size in pixels in the code below.
+    sizeScalingFactor = 1.0;
+
+    % We can define an extra shift of the letter in pixels relative to its
+    % nominal center, to try to get the letter as centered as possible when
+    % it is nominally at 0,0. 
+    %
+    % Allowing this was an idea we had, but because the bitmapped letter
+    % gets scaled below, quite what values we want may depend on the letter
+    % size.
+    paramsForTextRendering.yOffset = 0; % shift up (negative) or down (positive)
+    paramsForTextRendering.xOffset = 0; % shift left (negative) or right (positive)
 
     % Figure out how many rows and columns we want the E bitmap to be
     testESizeMin = testESizeDeg*60;
-    letterHeightUnquantizedPixels = sizeScalingFactor*((testESizeMin/60)/(sceneParams.displayFOVDeg))*sceneParams.displayPixelSize;
-    sceneParams.letterHeightPixels = 2*round(letterHeightUnquantizedPixels/2);
-    sceneParams.letterWidthPixels = 2*round(letterHeightUnquantizedPixels*(18/20)/2);
-    sceneParams.yPixelsNumMargin = (sceneParams.displayPixelSize-sceneParams.letterHeightPixels)/2;
-    sceneParams.xPixelsNumMargin =  (sceneParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
-    sceneParams.upSampleFactor = uint8(1);
-
-    %% CONVERT SHIFT TO FROM DEGS TO PIXELS.  SPECIFY AN OFFSET IN PIXELS IN ADDITION
-    % TO SCALE FACTOR SO THAT THE E ENDS UP CLOSER TO CENTERED.
+    letterHeightUnquantizedPixels = sizeScalingFactor*((testESizeMin/60)/(paramsForTextRendering.displayFOVDeg))*paramsForTextRendering.displayPixelSize;
+    paramsForTextRendering.letterHeightPixels = 2*round(letterHeightUnquantizedPixels/2);
+    paramsForTextRendering.letterWidthPixels = 2*round(letterHeightUnquantizedPixels*(letterPixelAspectRatio)/2);
+    paramsForTextRendering.yPixelsNumMargin = (paramsForTextRendering.displayPixelSize-paramsForTextRendering.letterHeightPixels)/2;
+    paramsForTextRendering.xPixelsNumMargin =  (paramsForTextRendering.displayPixelSize-paramsForTextRendering.letterWidthPixels)/2;
+    paramsForTextRendering.upSampleFactor = uint8(1);
 
     % Check pixel consistency
-    rowsNum = sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2;
-    colsNum = sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2;
-    if (rowsNum ~= sceneParams.displayPixelSize || colsNum ~= sceneParams.displayPixelSize)
+    rowsNum = paramsForTextRendering.letterHeightPixels + paramsForTextRendering.yPixelsNumMargin*2;
+    colsNum = paramsForTextRendering.letterWidthPixels + paramsForTextRendering.xPixelsNumMargin*2;
+    if (rowsNum ~= paramsForTextRendering.displayPixelSize || colsNum ~= paramsForTextRendering.displayPixelSize)
         error('Have not computed rowsNum and colsNum or some other parameter consistently.');
     end
 
-    % Generate the E scene frame sequence 
     [theTestSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequence(...
-        presentationDisplay, 'E', sceneParams, ...
-        'visualizeScene', sceneParams.visualizeScene);
+        presentationDisplay, theCustomBitMap, paramsForTextRendering, ...
+        'visualizeScene', paramsForTextRendering.visualizeScene);
 
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence = theTestSceneSequence;
@@ -52,7 +68,8 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
 end
 
 function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequence(...
-    presentationDisplay, theChar, sceneParams, varargin)
+    presentationDisplay, theChar, paramsForTextRendering ...
+    , varargin)
 
     % Parse optional input
     p = inputParser;
@@ -63,52 +80,45 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     % Extract sequence parameters.  For backwards compatibility, there is
     % just one frame and no shift if nothing is specfied (and in that case,
     % the frame rate has no effect).
-    if (~isfield(sceneParams,'temporalModulationParams') || isempty(sceneParams.temporalModulationParams))
+    if (~isfield(paramsForTextRendering,'temporalModulationParams') || isempty(paramsForTextRendering.temporalModulationParams))
         frameRateHz = 60;
         numFrames = 1;
         xShiftPerFrame = 0;
         yShiftPerFrame = 0;
     else
-        frameRateHz = sceneParams.temporalModulationParams.frameRateHz;
-        numFrames = sceneParams.temporalModulationParams.numFrames;
-        xShiftDegrees = sceneParams.temporalModulationParams.xShiftPerFrame;
-        yShiftDegrees = sceneParams.temporalModulationParams.yShiftPerFrame;
+        frameRateHz = paramsForTextRendering.temporalModulationParams.frameRateHz;
+        numFrames = paramsForTextRendering.temporalModulationParams.numFrames;
+        xShiftDegrees = paramsForTextRendering.temporalModulationParams.xShiftPerFrame;
+        yShiftDegrees = paramsForTextRendering.temporalModulationParams.yShiftPerFrame;
     end
     frameDurationSec = 1 / frameRateHz;
 
     % Calculate degrees per pixel
-    displayFOVDeg = sceneParams.displayFOVDeg;
-    displayPixelSize = sceneParams.displayPixelSize;
+    displayFOVDeg = paramsForTextRendering.displayFOVDeg;
+    displayPixelSize = paramsForTextRendering.displayPixelSize;
     degreesPerPixel = displayFOVDeg / displayPixelSize;
 
     % Convert shifts from degrees to pixels
-    xShiftPixels = xShiftDegrees / degreesPerPixel;
-    yShiftPixels = yShiftDegrees / degreesPerPixel;
-
-    % Round the shift to the nearest integer of pixels
-    xShiftPixels = round(xShiftPixels);
-    yShiftPixels = round(yShiftPixels);
+    xShiftPixels = round(xShiftDegrees / degreesPerPixel);
+    yShiftPixels = round(yShiftDegrees / degreesPerPixel);
 
     % Initialize output
     theSceneSequence = cell(1, numFrames);
     temporalSupportSeconds = zeros(1, numFrames);
 
-    xPixelsNumMargin0 = sceneParams.xPixelsNumMargin;
-    yPixelsNumMargin0 = sceneParams.yPixelsNumMargin;
+    xPixelsNumMargin0 = paramsForTextRendering.xPixelsNumMargin;
+    yPixelsNumMargin0 = paramsForTextRendering.yPixelsNumMargin;
 
-    % shift extra pixels by default to let E be on the center
-    yOffset = 0; % shift up -0.5
-    xOffset = 1; % shift to right
 
     % Generate each frame
     for frameIndex = 1:numFrames
         % Update scene parameters for current frame.  This handles the
         % specified shift of the letter on each frame.
-        sceneParams.xPixelsNumMargin = xPixelsNumMargin0 + (frameIndex - 1) * xShiftPixels(frameIndex) + xOffset;
-        sceneParams.yPixelsNumMargin = yPixelsNumMargin0  + (frameIndex - 1) * yShiftPixels(frameIndex) + yOffset;
+        paramsForTextRendering.xPixelsNumMargin = xPixelsNumMargin0 + xShiftPixels(frameIndex) + paramsForTextRendering.xOffset;
+        paramsForTextRendering.yPixelsNumMargin = yPixelsNumMargin0  + yShiftPixels(frameIndex) + paramsForTextRendering.yOffset;
 
         % Generate the scene frame
-        theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, sceneParams, 'visualizeScene', visualizeScene);
+        theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, paramsForTextRendering, 'visualizeScene', visualizeScene);
         
         % Store the scene frame
         theSceneSequence{frameIndex} = theSceneFrame;
@@ -119,7 +129,7 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
 end
 
 function theScene = generateTumblingEscene(...
-    presentationDisplay, theChar, sceneParams, varargin)
+    presentationDisplay, theChar, paramsForTextRendering, varargin)
 
     % Parse optional input
     p = inputParser;
@@ -129,17 +139,17 @@ function theScene = generateTumblingEscene(...
 
     % Generate stimulus scene
     textSceneParams = struct(...
-        'textString', theChar, ...                                              % Text to display
-        'textRotation', sceneParams.letterRotationDegs, ...                     % Rotation (0,90,180,270 only)
-        'rowsNum', sceneParams.displayPixelSize, ...                            % Pixels along the vertical (y) dimension
-        'colsNum', sceneParams.displayPixelSize, ...                            % Pixels along the horizontal (x) dimension
-        'textBitMapRescaledRowsCols', [sceneParams.letterHeightPixels sceneParams.letterWidthPixels], ...
-        'targetRow', sceneParams.yPixelsNumMargin, ...                          % Y-pixel offset 
-        'targetCol', sceneParams.xPixelsNumMargin, ...                          % X-pixel offset 
-        'upSampleFactor', uint8(1), ...                                         % Upsample the scene to increase the retinal image resolution
-        'chromaSpecification', sceneParams.chromaSpecification, ...             % Background and stimulus rgb values
-        'temporalModulationParams', sceneParams.temporalModulationParams, ...   % Parameters describing temporal sequence
-        'centerLetter', false ...                                               % Use rotatedTextSceneRealizedOnDisplay?  (We center manually so false here).
+        'textString', theChar, ...                                                         % Text to display, can be letter or bitmap. 
+        'textRotation', paramsForTextRendering.letterRotationDegs, ...                     % Rotation (0,90,180,270 only)
+        'rowsNum', paramsForTextRendering.displayPixelSize, ...                            % Pixels along the vertical (y) dimension
+        'colsNum', paramsForTextRendering.displayPixelSize, ...                            % Pixels along the horizontal (x) dimension
+        'textBitMapRescaledRowsCols', [paramsForTextRendering.letterHeightPixels paramsForTextRendering.letterWidthPixels], ...
+        'targetRow', paramsForTextRendering.yPixelsNumMargin, ...                          % Y-pixel offset 
+        'targetCol', paramsForTextRendering.xPixelsNumMargin, ...                          % X-pixel offset 
+        'upSampleFactor', uint8(1), ...                                                    % Upsample the scene to increase the retinal image resolution
+        'chromaSpecification', paramsForTextRendering.chromaSpecification, ...             % Background and stimulus rgb values
+        'temporalModulationParams', paramsForTextRendering.temporalModulationParams, ...   % Parameters describing temporal sequence
+        'centerLetter', false ...                                                          % Use rotatedTextSceneRealizedOnDisplay?  (We center manually so false here).
     );
 
     theScene = rotatedTextSceneRealizedOnDisplay(presentationDisplay, ...
@@ -199,4 +209,53 @@ function presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams
        'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
        'plotCharacteristics', sceneParams.plotDisplayCharacteristics);
     
+end
+
+function TxtIm = textToCustomBitmap(text)
+
+switch (text)
+    case 'E'
+        % 20 x 18 E, with actual E 15 x 15
+        % TxtIm=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1;
+        %     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1;
+        %     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+
+        % 15 by 15 E
+        TxtIm=[
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,1,1,1,1,1,1,1,1,1,1,1,1;
+            0,0,0,1,1,1,1,1,1,1,1,1,1,1,1;
+            0,0,0,1,1,1,1,1,1,1,1,1,1,1,1;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,1,1,1,1,1,1,1,1,1,1,1,1;
+            0,0,0,1,1,1,1,1,1,1,1,1,1,1,1;
+            0,0,0,1,1,1,1,1,1,1,1,1,1,1,1;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0;
+            ];
+    otherwise
+        error('Do not know about passed text');
+end
 end

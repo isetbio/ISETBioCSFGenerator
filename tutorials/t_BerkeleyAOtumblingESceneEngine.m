@@ -109,13 +109,14 @@ sceneParams.chromaSpecification.foregroundRGB = [0 0 0];
 % image array that itself has an even number of pixels.
 sceneParams.eHeightMin = 30;
 
-% Define the temporal sequence of scenes that we want
-% SPECIFY SHIFT IN DEGREES HERE
-sceneParams.temporalModulationParams = struct(...  % temporal: modulation params struct
+% Define the E size temporal sequence of scenes that we want that includes
+% how the E should move around across frames
+testESizeMin = 10;
+sceneParams.temporalModulationParams = struct(...   % temporal: modulation params struct
                 'frameRateHz', 60, ...              % frame rate in Hz
                 'numFrames', 3, ...                 % number of frames we want the E on for
-                'xShiftPerFrame', [0 0.1 0], ...    % How much the E should be shifted in the x dimension in each frame
-                'yShiftPerFrame', [0 0 0.1]  ...   % How much the E should be shifted in the y dimension in each frame
+                'xShiftPerFrame', [0 10/60 0], ...    % How much the E should be shifted in the x dimension in each frame, in degrees
+                'yShiftPerFrame', [0 0 10/60]  ...    % How much the E should be shifted in the y dimension in each frame, in degrees
                 );
 
 % Instantiate a tumblingEsceneEngine for 0 deg rotation E
@@ -140,7 +141,6 @@ backgroundSceneParams.chromaSpecification.foregroundRGB = sceneParams.chromaSpec
 backgroundSceneEngine = sceneEngine(@sceBerkeleyAOTumblingEscene,backgroundSceneParams);
 
 % Generate scenes with size of 0.1 deg
-testESizeMin = 10;
 testESizeDeg = testESizeMin/60;
 theSmallEsceneSequence0degs = tumblingEsceneEngine0degs.compute(testESizeDeg);
 theSmallEsceneSequence90degs = tumblingEsceneEngine90degs.compute(testESizeDeg);
@@ -149,7 +149,6 @@ theSmallEsceneSequence270degs = tumblingEsceneEngine270degs.compute(testESizeDeg
 theSmallBackgroundSceneSequence = backgroundSceneEngine.compute(testESizeDeg);
 
 % Visualize each frame ofthe scene sequence
-
 displaySizePixels = sceneParams.displayPixelSize;
 displaySizeDegrees = sceneParams.displayFOVDeg;
 pixelsPerDegree = displaySizePixels / displaySizeDegrees;
