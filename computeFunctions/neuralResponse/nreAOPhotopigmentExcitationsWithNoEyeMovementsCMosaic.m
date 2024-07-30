@@ -182,8 +182,6 @@ if (isempty(neuralEngineOBJ.neuralPipeline))
     % is controlled by the boolean defeatLCA in the computation of
     % the pupil function.
     wvfP = wvfCompute(wvfP);
-    % wvfP = wvfComputePupilFunction(wvfP,false,'no lca',neuralResponseParamsStruct.opticsParams.defeatLCA);
-    % wvfP = wvfComputePSF(wvfP);
     
     % Generate optical image object from the wavefront object
     theOptics = wvf2oi(wvfP,'humanlens',true);
