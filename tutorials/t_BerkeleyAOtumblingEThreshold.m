@@ -1,6 +1,7 @@
 function t_AOtumblingEThreshold(options)
 
 %% Pick up optional arguments
+% THESE OPTIONAL ARGS SHOULD BE UPDATED FOR TUMBLING E
 arguments
     options.defocusDiopters (1,1) double = 0.05;
     options.pupilDiameterMm (1,1) double = 6;
@@ -42,8 +43,11 @@ end
 % At the moment cannot vary the set of orientations, but would be easy
 % enough to allow this with a key/value pair passed to the called tutorial
 % function.
+%
+% The scene engine tutorial returns its parameters, which are used below to
+% try to match things up as best as possible.
 orientations = [0 90 180 270];
-[sce0,sce90,sce180,sce270,backgroundSceneEngine] = t_BerkeleyAOtumblingESceneEngine('VisualizeScene',false);
+[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOtumblingESceneEngine('VisualizeScene',false);
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
 
@@ -129,9 +133,9 @@ thresholdP = params.thresholdP;
 neuralParams = nreAOPhotopigmentExcitationsWithNoEyeMovementsCMosaic;
 
 % Set optics params
-wls = 400:1:750;
+wls = sceneParams.wave;
 fieldSizeDegs = 0.25;
-accommodatedWl = 550;
+accommodatedWl = sceneParams.AOPrimaryWls(1);
 pupilDiameterMm = options.pupilDiameterMm;
 defocusDiopters = options.defocusDiopters;
 
@@ -144,6 +148,7 @@ neuralParams.opticsParams.defeatLCA = true;
 neuralParams.verbose = options.verbose;
 
 % Cone params
+neuralParams.coneMosaicParams.wave = wls;
 neuralParams.coneMosaicParams.fovDegs = fieldSizeDegs;
 theNeuralEngine = neuralResponseEngine(@nreAOPhotopigmentExcitationsWithNoEyeMovementsCMosaic, neuralParams);
 
@@ -154,8 +159,6 @@ classifierEngine = responseClassifierEngineNWay(@rcePoisson);
 classifierPara = struct('trainFlag', 'none', ...
     'testFlag', 'random', ...
     'nTrain', 1, 'nTest', nTest);
-
-% Tumbling E setup
 
 %% Parameters for threshold estimation/quest engine
 thresholdParameters = struct(...

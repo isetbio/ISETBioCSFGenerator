@@ -1,4 +1,4 @@
-function [sce0,sce90,sce180,sce270,sceBg] = t_AOtumblingESceneEngine(varargin)
+function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_AOtumblingESceneEngine(varargin)
 
 % Initialize
 close all;
@@ -79,7 +79,7 @@ sceneParams.displayFOVDeg = 1.413;
 
 % Set the basic parameters for the AO mimicing display
 sceneParams = sceBerkeleyAOTumblingEscene;
-sceneParams.wave = (500:10:860)';
+sceneParams.wave = (500:5:860)';
 
 % The display routine doesn't know what to do with 840 nm,
 % putting in 700 for right now so visualization is approximately

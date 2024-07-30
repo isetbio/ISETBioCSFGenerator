@@ -191,9 +191,14 @@ if (isempty(neuralEngineOBJ.neuralPipeline))
     theOptics = oiSet(theOptics, 'optics fnumber', focalLengthMM/neuralResponseParamsStruct.opticsParams.pupilDiameterMM);
     
     % Generate the cone mosaic
-    theConeMosaic = cMosaic('sizeDegs', neuralResponseParamsStruct.coneMosaicParams.fovDegs*[1 1], ...
-        'integrationTime', neuralResponseParamsStruct.coneMosaicParams.timeIntegrationSeconds);
-    
+    if (isfield(neuralResponseParamsStruct.coneMosaicParams,'wave'))
+        theConeMosaic = cMosaic('wave', neuralResponseParamsStruct.coneMosaicParams.wave, 'sizeDegs', neuralResponseParamsStruct.coneMosaicParams.fovDegs*[1 1], ...
+            'integrationTime', neuralResponseParamsStruct.coneMosaicParams.timeIntegrationSeconds);
+    else
+        theConeMosaic = cMosaic('wave', neuralResponseParamsStruct.coneMosaicParams.wave, 'sizeDegs', neuralResponseParamsStruct.coneMosaicParams.fovDegs*[1 1], ...
+            'integrationTime', neuralResponseParamsStruct.coneMosaicParams.timeIntegrationSeconds);
+    end
+
     % Set flag
     returnTheNeuralPipeline = true;
 else
