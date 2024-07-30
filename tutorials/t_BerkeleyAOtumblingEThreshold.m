@@ -43,7 +43,7 @@ end
 % enough to allow this with a key/value pair passed to the called tutorial
 % function.
 orientations = [0 90 180 270];
-[sce0,sce90,sce180,sce270,backgroundSceneEngine] = t_AOtumblingESceneEngine('VisualizeScene',false);
+[sce0,sce90,sce180,sce270,backgroundSceneEngine] = t_BerkeleyAOtumblingESceneEngine('VisualizeScene',false);
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
 
