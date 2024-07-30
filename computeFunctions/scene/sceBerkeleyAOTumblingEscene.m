@@ -96,12 +96,16 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     xPixelsNumMargin0 = sceneParams.xPixelsNumMargin;
     yPixelsNumMargin0 = sceneParams.yPixelsNumMargin;
 
+    % shift extra pixels by default to let E be on the center
+    yOffset = 0; % shift up -0.5
+    xOffset = 1; % shift to right
+
     % Generate each frame
     for frameIndex = 1:numFrames
         % Update scene parameters for current frame.  This handles the
         % specified shift of the letter on each frame.
-        sceneParams.xPixelsNumMargin = xPixelsNumMargin0 + (frameIndex - 1) * xShiftPixels(frameIndex);
-        sceneParams.yPixelsNumMargin = yPixelsNumMargin0  + (frameIndex - 1) * yShiftPixels(frameIndex);
+        sceneParams.xPixelsNumMargin = xPixelsNumMargin0 + (frameIndex - 1) * xShiftPixels(frameIndex) + xOffset;
+        sceneParams.yPixelsNumMargin = yPixelsNumMargin0  + (frameIndex - 1) * yShiftPixels(frameIndex) + yOffset;
 
         % Generate the scene frame
         theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, sceneParams, 'visualizeScene', visualizeScene);
