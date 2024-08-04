@@ -1,4 +1,4 @@
-function t_AOtumblingEThreshold(options)
+function t_BerkeleyAOtumblingEThreshold(options)
 
 %% Pick up optional arguments
 % THESE OPTIONAL ARGS SHOULD BE UPDATED FOR TUMBLING E
@@ -151,6 +151,29 @@ neuralParams.verbose = options.verbose;
 neuralParams.coneMosaicParams.wave = wls;
 neuralParams.coneMosaicParams.fovDegs = fieldSizeDegs;
 theNeuralEngine = neuralResponseEngine(@nreAOPhotopigmentExcitationsWithNoEyeMovementsCMosaic, neuralParams);
+
+% set up scene sequence
+% Loop through each orientation and calculate the neural response
+for orientationIndex = 1:length(orientations)
+    % Retrieve the scene sequence and temporal support from the scene engine
+    theSceneEngine = tumblingEsceneEngines{orientationIndex};
+    theTestSceneSequence = theSceneEngine.sceneSequence;
+    theTestSceneTemporalSupportSeconds = theSceneEngine.temporalSupport;
+
+    % Calculate neural response for the entire scene sequence
+    instancesNum = 1; % Number of instances for Poisson noise
+    noiseFlags = {'random', 'none'};
+    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
+            theTestSceneSequence, ...
+            theTestSceneTemporalSupportSeconds, ...
+            instancesNum, ...
+            'noiseFlags', noiseFlags ...
+            );
+    % not sure if we need this, and not sure if we need to add these
+    % responses into the Poisson classifier?
+    noiseFreeResponses = theResponses('none');
+    randomNoiseResponseInstances = theResponses('random');
+end
 
 % Poisson n-way AFC
 classifierEngine = responseClassifierEngineNWay(@rcePoisson);
