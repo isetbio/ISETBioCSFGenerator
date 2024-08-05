@@ -79,12 +79,12 @@ sceneParams.displayFOVDeg = 1.413;
 
 % Set the basic parameters for the AO mimicing display
 sceneParams = sceBerkeleyAOTumblingEscene;
-sceneParams.wave = (500:5:860)';
+sceneParams.wave = (500:5:870)';
 
 % The display routine doesn't know what to do with 840 nm,
 % putting in 700 for right now so visualization is approximately
 % correct.
-sceneParams.AOPrimaryWls = [700 683 543]; % [700 683 54];
+sceneParams.AOPrimaryWls = [840 683 543]; % [700 683 54];
 sceneParams.AOPrimaryFWHM = [22 27 23];
 sceneParams.AOCornealPowersUW = [141.4 10 10];
 sceneParams.ambientSpd = zeros(size(sceneParams.wave));

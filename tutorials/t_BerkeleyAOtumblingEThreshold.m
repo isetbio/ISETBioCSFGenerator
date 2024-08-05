@@ -134,7 +134,7 @@ neuralParams = nreAOPhotopigmentExcitationsWithNoEyeMovementsCMosaic;
 
 % Set optics params
 wls = sceneParams.wave;
-fieldSizeDegs = 0.25;
+fieldSizeDegs = sceneParams.displayFOVDeg;
 accommodatedWl = sceneParams.AOPrimaryWls(1);
 pupilDiameterMm = options.pupilDiameterMm;
 defocusDiopters = options.defocusDiopters;
