@@ -6,6 +6,8 @@ close all;
 % Parse optional input
 p = inputParser;
 p.addParameter('visualizeScene', true, @islogical);
+p.addParameter('displayNPixels',512,@isnumeric);
+p.addParameter('displayFOVDeg','1.413',@isnumeric);
 p.parse(varargin{:});
 
 % Make sure figures directory exists so that output writes
@@ -74,8 +76,8 @@ presentationDisplay = theDisplay.monoDisplay;
 % radiance.  Probably around 6 mm.
 
 % Display spatial parameters
-sceneParams.displayPixelSize = 512;
-sceneParams.displayFOVDeg = 1.413;
+sceneParams.displayPixelSize = p.Results.displayNPixels;
+sceneParams.displayFOVDeg = p.Results.displayFOVDeg; 
 
 % Set the basic parameters for the AO mimicing display
 sceneParams = sceBerkeleyAOTumblingEscene;

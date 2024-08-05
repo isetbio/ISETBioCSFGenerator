@@ -38,6 +38,8 @@ if (~exist(fullfile(rootPath,'local','results'),'dir'))
     mkdir(fullfile(rootPath,'local','results'));
 end
 
+% Define the AO scene parameters for the experiment we are modeling
+
 % Get the tumbling E scene engines.
 %
 % At the moment cannot vary the set of orientations, but would be easy
@@ -152,27 +154,34 @@ neuralParams.coneMosaicParams.wave = wls;
 neuralParams.coneMosaicParams.fovDegs = fieldSizeDegs;
 theNeuralEngine = neuralResponseEngine(@nreAOPhotopigmentExcitationsWithNoEyeMovementsCMosaic, neuralParams);
 
-% set up scene sequence
-% Loop through each orientation and calculate the neural response
-for orientationIndex = 1:length(orientations)
-    % Retrieve the scene sequence and temporal support from the scene engine
-    theSceneEngine = tumblingEsceneEngines{orientationIndex};
-    theTestSceneSequence = theSceneEngine.sceneSequence;
-    theTestSceneTemporalSupportSeconds = theSceneEngine.temporalSupport;
+% For interest in how things work in general, use scene engines and neural
+% engine to compute some neural responses.  We don't actually need this to
+% compute thresholds, because essentially the same thing happens inside of
+% function computeThreshold().  
+ILLUSTRATIVE_COMPUTATION = false;
+if (ILLUSTRATIVE_COMPUTATION)
+    % Loop through each orientation and calculate the neural response
+    for orientationIndex = 1:length(orientations)
+        % Retrieve the scene sequence and temporal support from the scene engine
+        theSceneEngine = tumblingEsceneEngines{orientationIndex};
+        theTestSceneSequence = theSceneEngine.sceneSequence;
+        theTestSceneTemporalSupportSeconds = theSceneEngine.temporalSupport;
 
-    % Calculate neural response for the entire scene sequence
-    instancesNum = 1; % Number of instances for Poisson noise
-    noiseFlags = {'random', 'none'};
-    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
+        % Calculate neural response for the entire scene sequence
+        instancesNum = 1; % Number of instances for Poisson noise
+        noiseFlags = {'random', 'none'};
+        [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
             theTestSceneSequence, ...
             theTestSceneTemporalSupportSeconds, ...
             instancesNum, ...
             'noiseFlags', noiseFlags ...
             );
-    % not sure if we need this, and not sure if we need to add these
-    % responses into the Poisson classifier?
-    noiseFreeResponses = theResponses('none');
-    randomNoiseResponseInstances = theResponses('random');
+
+        % Pull out the noise free and noisy response instances from the
+        % container.
+        noiseFreeResponses = theResponses('none');
+        randomNoiseResponseInstances = theResponses('random');
+    end
 end
 
 % Poisson n-way AFC
