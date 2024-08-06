@@ -184,7 +184,6 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         'plotTitle', 'noisy response instance');
 %}
 
-
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
@@ -204,7 +203,6 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     noiseFlags = p.Results.noiseFlags;
     passedRngSeed = p.Results.rngSeed;
     neuralEngineOBJ.validateNoiseFlags(noiseFlags);
-  
     
     % For each noise flag we generate a corresponing neural response, and all 
     % neural responses are stored in a dictionary indexed by the noiseFlag label.
@@ -261,7 +259,6 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         returnTheNeuralPipeline = false;
     end
 
-
     % Compute the sequence of optical images corresponding to the sequence of scenes
     framesNum = numel(sceneSequence);
     theListOfOpticalImages = cell(1, framesNum);
@@ -271,7 +268,6 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
     % Generate an @oiSequence object containing the list of computed optical images
     theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
-
     
     % Compute theConeMosaicNullResponse if the inputSignalType is set to
     % 'cone modulations' and if we have theNullStimulusScene
@@ -311,8 +307,8 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
     switch (neuralResponseParamsStruct.noiseParams.inputConeMosaicNoiseFlag)
         case 'none'
-            fprintf('\tComputing noise-free cone mosaic responses\n');
             % Compute noise-free cone mosaic response instances
+            fprintf('\tComputing noise-free cone mosaic responses\n');
             [theNoiseFreeConeMosaicResponses, ~, ~, ~, coneMosaicTemporalSupportSeconds] = ...
                     theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
                         'nTrials', 1 ...
@@ -323,9 +319,9 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
             theConeMosaicResponses = repmat(theNoiseFreeConeMosaicResponses, [instancesNum 1 1]);
 
         case 'frozen'
+            % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
             if (~isempty(passedRngSeed))
                 fprintf('\tComputing noisy cone mosaic responses with a frozen seed (%d)\n', passedRngSeed);
-                % Compute input cone mosaic noisy response instances with a specified random noise seed for repeatability
                 [~, theConeMosaicResponses, ~, ~, coneMosaicTemporalSupportSeconds] = ...
                         theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
                             'nTrials', instancesNum, ...
@@ -336,10 +332,10 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
             end
 
         case 'random'
+            fprintf('\tComputing noisy cone mosaic responses with a random seed (%d)\n', useSeed);
             % 1 in a million
             useSeed = randi(1e6,1,1);
     
-            fprintf('\tComputing noisy cone mosaic responses with a random seed (%d)\n', useSeed);
             % Compute input cone mosaic noisy response instances with a  random noise seed
             [~, theConeMosaicResponses, ~, ~, coneMosaicTemporalSupportSeconds] = ...
                     theMRGCmosaic.inputConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
@@ -353,7 +349,6 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     % Restore the original cone mosaic noise flag
     theMRGCmosaic.inputConeMosaic.noiseFlag = lastInputConeMosaicNoiseFlag;
 
-
     % Transform the cone excitation responses to cone modulation responses
     if (~isempty(theConeMosaicNullResponse))
         % Transform the noise-free cone mosaic response modulation to a contrast response
@@ -364,7 +359,6 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
                     bsxfun(@times, bsxfun(@minus, theConeMosaicResponses, theConeMosaicNullResponse), ...
                     coneMosaicNormalizingResponse);
     end
-
 
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
@@ -408,7 +402,6 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         % Restore the mRGC mosaic noiseFlag
         theMRGCmosaic.noiseFlag = lastMRGCMosaicNoiseFlag;
     end
-
 
     % Restore rng seed if we set it
     if (~isempty(passedRngSeed))
@@ -455,7 +448,6 @@ function p = generateDefaultParams()
         'sizeDegs', [], ...
         'eccentricityDegs', []);
 
-    
     mRGCMosaicParams = struct(...
         'eccDegs', [7 0], ...
         'sizeDegs',  [6 3], ...
