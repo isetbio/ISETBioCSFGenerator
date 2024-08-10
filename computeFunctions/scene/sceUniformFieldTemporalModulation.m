@@ -24,7 +24,7 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
 %
 % Inputs:
 %    sceneEngineOBJ             - Calling @sceneEngine object.  This is
-%                                  currently used, but passing it allows us
+%                                  currently unused, but passing it allows us
 %                                  flexibility in the future and matches
 %                                  conventions for the other classes in
 %                                  this toolbox.
