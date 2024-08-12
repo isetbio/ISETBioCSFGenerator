@@ -12,11 +12,14 @@ function validateAndSetParamsStruct(obj, paramsStruct)
     assert(isstruct(paramsStruct), ...
         'Expected a struct during neuralResponseEngine instantiation');
     
-    % Obligatory sub-truct: 'opticsParams'
-    % Assert that we have a sub-struct named 'opticsParams'
-    assert((isfield(paramsStruct, 'opticsParams'))&&(isstruct(paramsStruct.opticsParams)), ...
-        'Expected an ''opticsParams'' substruct during neuralResponseEngine instantiation.');
-    
+    % DHB: This type checking too restrictive as our view of what is
+    % possible with this general compute structure expands.  Commented out.
+    %
+%    % Obligatory sub-truct: 'opticsParams'
+%    % Assert that we have a sub-struct named 'opticsParams'
+%    assert((isfield(paramsStruct, 'opticsParams'))&&(isstruct(paramsStruct.opticsParams)), ...
+%        'Expected an ''opticsParams'' substruct during neuralResponseEngine instantiation.');
+%    
 %     % Obligatory sub-struct: 'coneMosaicParams'
 %     % Assert that we have a sub-struct named 'coneMosaicParams'
 %     assert((isfield(paramsStruct, 'coneMosaicParams'))&&(isstruct(paramsStruct.coneMosaicParams)), ...
@@ -27,7 +30,7 @@ function validateAndSetParamsStruct(obj, paramsStruct)
 %     if (isfield(paramsStruct, 'rgcMosaicParams'))
 %         assert((isstruct(paramsStruct.rgcMosaicParams)), ...
 %             'Optional ''rgcMosaicParams''passed during neuralResponseEngine instantiation is not a struct.');
- %   end
+%    end
     
     % Set the neural params
     obj.neuralParams = paramsStruct;

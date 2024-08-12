@@ -25,6 +25,9 @@ function thresholdRet = t_metaContastCSF(varargin)
     filter = p.Results.filter;
     doValidationCheck = p.Results.doValidationCheck;
 
+    % Close out old figs
+    close all;
+    
     % Freeze rng for replicatbility
     rng(0);
     
@@ -137,7 +140,7 @@ function thresholdRet = t_metaContastCSF(varargin)
 
         % Create the sceMetaContrast scene engine
         metaSceneEngineParams = sceMetaContrast;
-        theMetaSceneEngine = sceMetaContrast(metaSceneEngineParams);
+        theMetaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
         
         % Create nreMetaContrast using the actual scene and neural engines
         metaNeuralResponseEngineParams = nreMetaContrast;
@@ -146,7 +149,7 @@ function thresholdRet = t_metaContastCSF(varargin)
         metaNeuralResponseEngineParams.sceneEngine = gratingSceneEngine;
         metaNeuralResponseEngineParams.neuralEngine = theNeuralEngine;
         metaNeuralResponseEngineParams.noiseAddMethod = 'nre';
-        theMetaNeuralEngine = nreMetaContrast(metaNeuralEngineParams);
+        theMetaNeuralEngine = neuralResponseEngine(@nreMetaContrast,metaNeuralResponseEngineParams);
 
         % Compute the threshold for our grating scene with meta scene and
         % and neural response engines. This function does a lot of

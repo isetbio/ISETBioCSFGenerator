@@ -1,8 +1,8 @@
 function dataOut = sceMetaContrast(sceneEngineOBJ,testContrast,sceneParamsStruct)
 % Compute function for generating a meta contrast scenes. These just return
-% the numerical value of the contrast in a one pixel, one wavelength scene.
-% The value lives in the photons field. This is done for each frame of the
-% returned scene sequence.
+% the numerical value of the contrast in a one pixel, one wavelength
+% scene,one frame. The actual full temporal sequence is handled at the meta
+% contrast nre stage.
 %
 % Syntax:
 %   dataOut = sceMetaContrast(obj,testContrast,sceneParamsStruct);
@@ -96,24 +96,11 @@ function dataOut = sceMetaContrast(sceneEngineOBJ,testContrast,sceneParamsStruct
     % Create an equal photon uniform field
     uniformScene = sceneCreate('uniform monochromatic',550,1);
 
-    % background: adjust radiance according to desired  mean luminance
-    backgroundScene = sceneSet(uniformScene,'photons',0);
-
-    % pedestal: adjust radiance according to desired  mean luminance and test contrast
-    pedestalScene = sceneSet(uniformScene,'photons',testContrast); 
+    % Stash contrast in only scene in scene sequence
+    theSceneSequence{1} = sceneSet(uniformScene,'photons',testContrast); 
 
     % Generate temporal support for the scene sequence
-    temporalSupportSeconds = (0:(sceneParamsStruct.stimDurationFramesNum-1))*(sceneParamsStruct.frameDurationSeconds);
-    
-    % Generate the scene sequence
-    theSceneSequence = cell(1, sceneParamsStruct.stimDurationFramesNum);
-    for frameIndex = 1:sceneParamsStruct.stimDurationFramesNum
-        if (ismember(frameIndex, sceneParamsStruct.stimOnsetFramesIndices))
-            theSceneSequence{frameIndex} = pedestalScene;
-        else
-            theSceneSequence{frameIndex} = backgroundScene;
-        end
-    end
+    temporalSupportSeconds = 0; 
     
     % Assemble dataOut struct
     dataOut.sceneSequence = theSceneSequence;
@@ -122,9 +109,6 @@ function dataOut = sceMetaContrast(sceneEngineOBJ,testContrast,sceneParamsStruct
 end
 
 function p = generateDefaultParams()
-    p = struct(...
-        'frameDurationSeconds', 50/1000, ...        % 50 msec frame duration
-        'stimDurationFramesNum', 4, ...             % total time: 200 msec
-        'stimOnsetFramesIndices', [2 3] ...         % modulate luminance at frames 1 and 2, so between 50 and 150 msec                          
-    );
+    p = struct( ...
+        );
 end
