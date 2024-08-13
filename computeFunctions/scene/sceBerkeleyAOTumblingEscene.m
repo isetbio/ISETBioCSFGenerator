@@ -109,7 +109,6 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     xPixelsNumMargin0 = paramsForTextRendering.xPixelsNumMargin;
     yPixelsNumMargin0 = paramsForTextRendering.yPixelsNumMargin;
 
-
     % Generate each frame
     for frameIndex = 1:numFrames
         % Update scene parameters for current frame.  This handles the
