@@ -47,6 +47,16 @@ function dataOut = nreScenePhotonNoise(...
 %                                     Default is {'random'}.
 %   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
 %                                     seed.
+%   'amputateScenes'                - Logical. Must now always be false.
+%                                     Will go away sooner or later.
+%   'theBackgroundRetinalImage'     - OI describing the retinal image to
+%                                     the background stimulus.  Default is
+%                                     an empty struct. This is not used by
+%                                     this nre, but the key/value pair is
+%                                     here because some nre's use it.
+%   'justAddNoise'                  - Boolean.  Default false. If true,
+%                                     treat the sceneSequence as a noise
+%                                     free instance and add noise to it.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -127,8 +137,20 @@ function dataOut = nreScenePhotonNoise(...
     p = inputParser;
     p.addParameter('noiseFlags', {'random'});
     p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
+    p.addParameter('amputateScenes', false, @islogical);
+    p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
+    p.addParameter('justAddNoise',false,@islogical)
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
+
+    % Scene amputation really complicates the code, and it is probably not
+    % conceptually good to allow it at the nre level. Disallowing and
+    % providing message.
+    if (p.Results.amputateScenes)
+        fprintf('No longer supporting amputation of scene sequences\n');
+        fprintf('If scene sequence amputation is needed, do it application specific calling code.\n');
+        error('Throwing error to motivate this change.');
+    end
     
     % Retrieve the response noiseFlag labels and validate them.
     noiseFlags = p.Results.noiseFlags;

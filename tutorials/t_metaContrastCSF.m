@@ -1,14 +1,17 @@
-% Meta contrast computation of spatial CSF in different color directions
+ % Meta contrast computation of spatial CSF in different color directions
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.
 %    This example uses an ideal Poisson observer and circularly
 %    windowed gratings of constant size, and is set up to illustrate the
-%    metacontrast approach.
+%    meta contrast approach.
 %
 %    The meta contrast approach works by taking advantage of the function that
 %    for fixed spatial parameters, we can compute responses to any scene
 %    by synthesis from the responses from just two precomputed contrasts.
+%
+%    The name meta contrast here has nothing to do with the concept of meta
+%    contrast masking.
 %
 % See also: t_spatialCSF, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
@@ -27,7 +30,7 @@ function thresholdRet = t_metaContastCSF(varargin)
 
     % Close out old figs
     close all;
-    
+
     % Freeze rng for replicatbility
     rng(0);
     
@@ -66,7 +69,7 @@ function thresholdRet = t_metaContastCSF(varargin)
     % noise, and includes optical blur.
     neuralParams = nrePhotopigmentExcitationsCmosaic;
     neuralParams.coneMosaicParams.sizeDegs = [0.5 0.5]; 
-    neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
+    neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
     theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
     if (~all(neuralParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
         doValidationCheck = false;

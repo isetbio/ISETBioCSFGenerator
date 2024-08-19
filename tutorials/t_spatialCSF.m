@@ -67,7 +67,7 @@ function thresholdRet = t_spatialCSF(varargin)
     % noise, and includes optical blur.
     neuralParams = nrePhotopigmentExcitationsCmosaic;
     neuralParams.coneMosaicParams.sizeDegs = [0.5 0.5]; 
-    neuralParams.coneMosaicParams.timeIntegrationSeconds  = 0.1;
+    neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
     theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
     if (~all(neuralParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
         doValidationCheck = false;

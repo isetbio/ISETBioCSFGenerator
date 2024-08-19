@@ -71,57 +71,28 @@ function dataOut = nreMetaContrast(...
 %                                   an empty neuralPipeline property)
 %
 %       The computed neural responses can be extracted as:
-%           neuralResponses('one of the entries of noiseFlags')
+%           neuralResponses('one of the entries of noiseFlags') 
 %       and are arranged in a matrix of:
-%           [instancesNum x mCones x tTimeBins]
+%           [instancesNum x nTimeBins x mResponses]
+%       where mResponses is the dimensionality of the response vector returned
+%       by the actual underlying nre (e.g. mCones in the case of a cMosaic).
 %
-%       NOTE: MATLAB always drops the last dimension of an matrix if that  is 1.
-%             So if tBins is 1, the returned array will be [instancesNum x  mCones],
-%             NOT [instancesNum x mCones x 1].
+%       BUT: If you ask for multiple instances in the noise free case, you
+%            only get one instance.  An exception to may be if the
+%            underlying nre involves a set of eye movement paths that are
+%            not all zeros, where one noise free instance is returned per
+%            eye movement path.
+%
+%       NOTE: MATLAB always drops the last dimension of an matrix that has
+%             more than two dimensions, if that dimension has only 1 entry.
+%             So if mCones is 1, the returned array will be [instancesNum x
+%             nTimeBins], NOT [instancesNum x nTimeBins x mResponses].
 %
 % See Also:
-%     t_metaContrast
+%     t_metaContrastCSF
 
 % History:
 %    08/11/24    dhb  Wrote it.
-
-% Examples:
-%{
-    % Instantiate a @sceneEngine object and generate a test scene
-    theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
-    testContrast = 0.1;
-    [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
-        theSceneEngineOBJ.compute(testContrast);
-
-    % Usage case #1. Just return the default neural response params
-    nreParams = nrePhotopigmentExcitationsCmosaic()
-    nreParams.coneMosaicParams.timeIntegrationSeconds = ...
-        theTestSceneTemporalSupportSeconds(2)-theTestSceneTemporalSupportSeconds(1);
-    
-    % Usage case #2. Compute noise free, noisy, and repeatable (seed: 346) noisy response instances
-    % using a parent @neuralResponseEngine object and the default neural response params
-
-    % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic,nreParams);
-    
-    % Compute 16 response instances for a number of different noise flags
-    instancesNum = 16;
-    noiseFlags = {'random', 'none'};
-    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngineOBJ.compute(...
-            theTestSceneSequence, ...
-            theTestSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-
-    % Retrieve the different computed responses
-    noiseFreeResponses = theResponses('none');
-    randomNoiseResponseInstances = theResponses('random');
-%}
-
-
-%% NOISE, BACKGROUNDWTFIMAGE
-
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0)
@@ -141,16 +112,13 @@ p.parse(varargin{:});
 % We need amputation scenes parameter to match calling routines, but we
 % never want it to be true
 if (p.Results.amputateScenes)
-    error('The amputateScenes option was a temporary hack.  Rewrite your code so you can set it to false.');
+    error('The amputateScenes option was a temporary hack.  Rewrite code so that it is not needed.');
 end
 
 % Retrieve the response noiseFlag labels and validate them.
 noiseFlags = p.Results.noiseFlags;
 rngSeed = p.Results.rngSeed;
 metaNeuralEngineOBJ.validateNoiseFlags(noiseFlags);
-
-% Get the number of scene sequences
-framesNum = numel(metaSceneSequence);
 
 % For each noise flag we generate a corresponing neural response, and all
 % neural responses are stored in a dictionary indexed by the noiseFlag label.
@@ -175,13 +143,12 @@ if (isempty(metaNeuralEngineOBJ.neuralPipeline))
         actualTemporalSupport, ...
         1, ...
         'noiseFlags', {'none'}, ...
-        'amputateScenes', false, ...
         'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage);
 
     neuralPipeline.response0 = contrast0Response('none');
     clear contrast0Response
 
-    % Compute the passed contrast response
+    % Compute the passed contrast1 response
     neuralPipeline.contrast1 = metaNeuralParams.contrast1;
     [actualSceneSequence, actualTemporalSupport] = metaNeuralParams.sceneEngine.compute(metaNeuralParams.contrast1);
     [contrast1Response, ~] = metaNeuralParams.neuralEngine.compute(...
@@ -189,13 +156,12 @@ if (isempty(metaNeuralEngineOBJ.neuralPipeline))
         actualTemporalSupport, ...
         1, ...
         'noiseFlags', {'none'}, ...
-        'amputateScenes', false);
-    %'theBackgroundRetinalImage',theBackgroundRetinalImage);
+        'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage);
     
     % Store in canonical form that we can compute the real response quickly as done
     % below.
-    neuralPipeline.response1 = contrast1Response('none')/neuralPipeline.contrast1 - neuralPipeline.response0;
-    clear contrast1Response1
+    neuralPipeline.response1 = (contrast1Response('none')-neuralPipeline.response0)/neuralPipeline.contrast1;
+    clear contrast1Response
     
     % Save actual temporal support
     neuralPipeline.temporalSupportSecs = actualTemporalSupport;
@@ -224,9 +190,11 @@ end
 if (returnTheNeuralPipeline)
     theNoiseFreeNeuralResponses = neuralPipeline.response0 + ...
         theContrast*neuralPipeline.response1;
+    theNoiseFreeTemporalSupport = neuralPipeline.temporalSupportSecs;
 else
     theNoiseFreeNeuralResponses = metaNeuralEngineOBJ.neuralPipeline.response0 + ...
         theContrast*metaNeuralEngineOBJ.neuralPipeline.response1;
+    theNoiseFreeTemporalSupport = metaNeuralEngineOBJ.neuralPipeline.temporalSupportSecs;
 end
 
 % Compute responses for each type of noise flag requested
@@ -234,22 +202,35 @@ for idx = 1:length(noiseFlags)
     % Return noise free response
     if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
 
-        % Store noise-free response instances
+        % Store noise-free response instances.  By convention, we only 
+        % return one instance here, independent of how many are requested.
         theNeuralResponses(noiseFlags{idx}) = theNoiseFreeNeuralResponses;
 
     else
+        % We already have the noise free response, so now just need to add
+        % noise to it to compute noisy response.
+        %
+        % If passed, set the rng seed in the hope that doing so will freeze the
+        % noise.
         if (~isempty(rngSeed))
-            % Compute noisy response instances with a specified random noise seed for repeatability
-            theNeuralResponses(noiseFlags{idx}) = theNoiseFreeNeuralResponses; 
-        else
-            % Because computeForOISequence freezes noise, if we want
-            % unfrozen noise (which is the case if we are here),
-            % we have to pass it a randomly chosen seed.
-            useSeed = randi(32000,1,1);
-
-            % Compute noisy response instances with a random random noise seed 
-            theNeuralResponses(noiseFlags{idx}) = theNoiseFreeNeuralResponses;
+            rng(rngSeed);
         end
+ 
+        % Add noise to each response instance
+        [~,m,n] = size(theNoiseFreeNeuralResponses);
+        theNoisyNeuralResponses = zeros(instancesNum,m,n);
+        for iii = 1:instancesNum
+            % useSeed = randi(32000,1,1);
+            [theNoisyNeuralResponsesOneInstance] = metaNeuralParams.neuralEngine.compute(...
+                theNoiseFreeNeuralResponses, ...
+                theNoiseFreeTemporalSupport, ...
+                1, ...
+                'noiseFlags', {'random'}, ...
+                'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage, ...
+                'justAddNoise', true, 'rngSeed',[]);
+            theNoisyNeuralResponses(iii,:,:) = theNoisyNeuralResponsesOneInstance('random');
+        end
+        theNeuralResponses(noiseFlags{idx}) = theNoisyNeuralResponses;
     end
 end
 

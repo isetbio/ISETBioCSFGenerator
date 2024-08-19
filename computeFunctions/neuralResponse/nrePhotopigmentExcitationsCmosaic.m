@@ -36,10 +36,6 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
 %    instancesNum                   - the number of response instances to compute
 %
 % Optional key/value input arguments:
-%    'amputateScenes'               - Logical. Whether we want to just
-%                                       select the first scene and generate
-%                                       cone excitations and amputate the
-%                                       rest. Default: false.
 %    'noiseFlags'                   - Cell array of strings containing labels
 %                                     that encode the type of noise to be included
 %                                     Valid values are: 
@@ -48,6 +44,16 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
 %                                     Default is {'random'}.
 %   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
 %                                     seed.
+%   'amputateScenes'                - Logical. Must now always be false.
+%                                     Will go away sooner or later.
+%   'theBackgroundRetinalImage'     - OI describing the retinal image to
+%                                     the background stimulus.  Default is
+%                                     an empty struct. This is not used by
+%                                     this nre, but the key/value pair is
+%                                     here because some nre's use it.
+%   'justAddNoise'                  - Boolean.  Default false. If true,
+%                                     treat the sceneSequence as a noise
+%                                     free instance and add noise to it.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -73,11 +79,15 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
 %       The computed neural responses can be extracted as:
 %           neuralResponses('one of the entries of noiseFlags') 
 %       and are arranged in a matrix of:
-%           [instancesNum x mCones x tTimeBins] 
+%           [instancesNum x nTimeBins x mCones]
 %
-%       NOTE: MATLAB always drops the last dimension of an matrix if that  is 1. 
-%             So if tBins is 1, the returned array will be [instancesNum x  mCones], 
-%             NOT [instancesNum x mCones x 1].
+%       BUT: If you ask for multiple instances in the noise free case, you
+%            only get one instance.
+%
+%       NOTE: MATLAB always drops the last dimension of an matrix that has
+%             more than two dimensions, if that dimension has only 1 entry.
+%             So if mCones is 1, the returned array will be [instancesNum x
+%             nTimeBins], NOT [instancesNum x nTimeBins x mCones].
 %
 % See Also:
 %     t_neuralResponseCompute
@@ -134,9 +144,19 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
     p.addParameter('amputateScenes', false, @islogical);
     p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
+    p.addParameter('justAddNoise',false,@islogical)
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
-    
+
+    % Scene amputation really complicates the code, and it is probably not
+    % conceptually good to allow it at the nre level. Disallowing and
+    % providing message.
+    if (p.Results.amputateScenes)
+        fprintf('No longer supporting amputation of scene sequences\n');
+        fprintf('If scene sequence amputation is needed, do it application specific calling code.\n');
+        error('Throwing error to motivate this change.');
+    end
+
     % Retrieve the response noiseFlag labels and validate them.
     noiseFlags = p.Results.noiseFlags;
     rngSeed = p.Results.rngSeed;
@@ -146,18 +166,6 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     % Get the number of scene sequences
     framesNum = numel(sceneSequence);
 
-    % If there are more than one frames (scenes), and we only want to keep
-    % the first scene, then we need to check if all the scenes are 
-    % identical
-    if framesNum ~= 1 && amputateScenes
-        flag_detectDiff = checkSceneSequences_allFramesIdentical(sceneSequence);
-        if flag_detectDiff 
-            warning(['The input scenes are temporally modulated. Thus, ',...
-                'it''s not recommended to simulate cone excitations solely ',...
-                'based on the first scene!']);
-        end
-    end
-    
     % For each noise flag we generate a corresponing neural response, and all 
     % neural responses are stored in a dictionary indexed by the noiseFlag label.
     % Setup theNeuralResponses dictionary, loading empty responses for now
@@ -166,6 +174,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
         theNeuralResponses(noiseFlags{idx}) = [];
     end
     
+    % Create/get key objects
     if (isempty(neuralEngineOBJ.neuralPipeline))
         % Generate the @cMosaic object
         theConeMosaic = cMosaic(...
@@ -173,7 +182,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
             'eccentricityDegs', neuralResponseParamsStruct.coneMosaicParams.eccDegs, ...
             'integrationTime', neuralResponseParamsStruct.coneMosaicParams.timeIntegrationSeconds ...
             );
-        
+
         % Generate optics appropriate for the mosaic's eccentricity
         oiEnsemble = theConeMosaic.oiEnsembleGenerate(neuralResponseParamsStruct.coneMosaicParams.eccDegs, ...
             'zernikeDataBase', 'Polans2015', ...
@@ -189,21 +198,24 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
         % Get the cone mosaic from the previously computed neural pipeline
         theConeMosaic = neuralEngineOBJ.neuralPipeline.coneMosaic;
         returnTheNeuralPipeline =  false;
-    end    
-
-    % Compute the sequence of optical images corresponding to the sequence of scenes
-    if framesNum == 1 
-        theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue','mean');
-    else
-        theListOfOpticalImages = cell(1, framesNum);
-        for frame = 1:framesNum
-            theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
-        end
-        
-        % Generate an @oiSequence object containing the list of computed optical images
-        theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
     end
-    
+
+    % Don't need to compute if we are just adding noise
+    if (~p.Results.justAddNoise)
+        % Compute the sequence of optical images corresponding to the sequence of scenes
+        if framesNum == 1
+            theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue','mean');
+        else
+            theListOfOpticalImages = cell(1, framesNum);
+            for frame = 1:framesNum
+                theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
+            end
+
+            % Generate an @oiSequence object containing the list of computed optical images
+            theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
+        end
+    end
+
     % Set rng seed if one was passed. Not clear we need to do this because
     % all the randomness is in the @coneMosaic compute object, but it
     % doesn't hurt to do so, if we ever choose a random number at this
@@ -211,7 +223,7 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
     if (~isempty(rngSeed))
         oldSeed = rng(rngSeed);
     end
-    
+
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
         % Compute the noise-free response
@@ -222,63 +234,67 @@ function dataOut = nrePhotopigmentExcitationsCmosaic(...
             % Set the coneMosaic.noiseFlag to 'none';
             theConeMosaic.noiseFlag = 'none';
             
-            % Compute noise-free response instances
-            if ~amputateScenes
+            % Compute/get noise-free response instances
+            if (p.Results.justAddNoise)
+                % Don't need to compute if we are just adding noise,
+                % because the noise free responses were passed in.
+                theNeuralResponses(noiseFlags{idx}) = sceneSequence;
+                temporalSupportSeconds = sceneSequenceTemporalSupport;
+            else
+                % Compute
                 [theNeuralResponses(noiseFlags{idx}), ~, ~, ~, temporalSupportSeconds] = ...
                     theConeMosaic.compute(theOIsequence, ...
                     'nTrials', instancesNum, ...
-                    'withFixationalEyeMovements', false);
-            else
-                [theNeuralResponses(noiseFlags{idx}), ~, ~, ~, temporalSupportSeconds] = ...
-                    theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                    'nTrials', instancesNum, ...
-                    'withFixationalEyeMovements', false, ...
-                    'nTimePoints', framesNum);
+                    'withFixationalEyeMovements', false);     
             end
             
-        elseif (~isempty(rngSeed))            
-            % Set the coneMosaic.noiseFlag to 'none';
-            theConeMosaic.noiseFlag = 'random';
+        % Compute noisy responses instances.    
+        elseif (~isempty(rngSeed))
+            if (p.Results.justAddNoise)
+                % If the just add noise flag is passed, then we were handed the
+                % noise free responses and only have to add noise.  The
+                % passed variable sceneSequence is really the noise free
+                % response instances in this specific case.
+                theNeuralResponses(noiseFlags{idx}) = cMosaic.noisyInstances(sceneSequence, 'seed', rngSeed, 'noiseFlag', 'frozen');
+                temporalSupportSeconds = sceneSequenceTemporalSupport;
+            else
+                % We both need to compute and add noise
+                %
+                % Set the coneMosaic.noiseFlag to 'random';
+                theConeMosaic.noiseFlag = 'random';
 
-            % Compute noisy response instances with a specified random noise seed for repeatability
-            if ~amputateScenes
+                % Compute noisy response instances with a specified random noise seed for repeatability
                 [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
                     theConeMosaic.compute(theOIsequence, ...
                     'nTrials', instancesNum, ...
                     'withFixationalEyeMovements', false, ...
-                    'seed', rngSeed);        % random seed
-            else
-                [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
-                    theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                    'nTrials', instancesNum, ...
-                    'withFixationalEyeMovements', false, ...
-                    'nTimePoints', framesNum,...
-                    'seed', rngSeed);        % random seed
+                    'seed', rngSeed);        
             end
 
-        elseif (contains(ieParamFormat(noiseFlags{idx}), 'random'))
+        else
             % Because computeForOISequence freezes noise, if we want
-            % unfrozen noise (which is the case if we are here), 
+            % unfrozen noise (which is the case if we are here),
             % we have to pass it a randomly chosen seed.
-            useSeed = randi(32000,1,1);
-            
-            % Set the coneMosaic.noiseFlag to 'none';
-            theConeMosaic.noiseFlag = 'random';
+            if (p.Results.justAddNoise)
+                % If the just add noise flag is passed, then we were handed the
+                % noise free responses and only have to add noise.  The
+                % passed variable sceneSequence is really the noise free
+                % response instances in this specific case.
+                theNeuralResponses(noiseFlags{idx}) = theConeMosaic.noisyInstances(sceneSequence,'noiseFlag','donotset');
+                temporalSupportSeconds = sceneSequenceTemporalSupport;
+            else
+                % Here we need to compute responses and add noise
+                %
+                % Set the coneMosaic.noiseFlag to 'random';
+                theConeMosaic.noiseFlag = 'random';
 
-            % Compute noisy response instances
-            if ~amputateScenes
+                % Compute noisy response instances
+                useSeed = randi(32000,1,1);
                 [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
                     theConeMosaic.compute(theOIsequence, ...
                     'nTrials', instancesNum, ...
                     'withFixationalEyeMovements', false, ...
-                    'seed', useSeed);        % random seed
-            else
-                [~,theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = ...
-                    theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
-                    'nTrials', instancesNum, ...
-                    'withFixationalEyeMovements', false, ...
-                    'nTimePoints', framesNum,...
-                    'seed', useSeed);        % random seed
+                    'seed', useSeed);        
             end
         end
         
