@@ -289,8 +289,6 @@ function dataOut = nrePhotocurrentsCmosaicEyeMovements(...
     end
 end
 
-
-
 function p = generateDefaultParams()
     % Default params for this compute function
     p = struct(...
