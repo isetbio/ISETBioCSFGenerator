@@ -10,6 +10,20 @@
 %    for fixed spatial parameters, we can compute responses to any scene
 %    by synthesis from the responses from just two precomputed contrasts.
 %
+%    Here's the idea, which also works for a scene sequence. Let's suppose
+%    that r0 is the noise-free response to a background scene, and r1 is the
+%    noise-free response to a scene with a contrast of c1.  We can rewrite 
+%       r1 = r0 + c1*[(r1-r0)/c1] = r0 + c1*deltaR
+%    Let deltaR = [(r1-r0)/c1].  If I then consider some other contrast c2
+%    where I want the noise-free response, I can then compute it as
+%       r2 = r0 + c2*deltaR
+%    when the nre's noise-free responses are linear in the photons.  The
+%    calculation above is much faster than recomputing r2 through the nre,
+%    at least in realistic case.
+%
+%    In addition, adding the noise to the noise-free response is
+%    comptuationally fast.
+%
 %    The name meta contrast here has nothing to do with the concept of meta
 %    contrast masking.
 %
