@@ -120,8 +120,16 @@ function dataOut = nreAOPhotocurrentWithNoEyeMovementsCMosaic(...
     p = inputParser;
     p.addParameter('noiseFlags', {'random'});
     p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
+    p.addParameter('amputateScenes',false,@islogical);
+    p.addParameter('theBackgroundRetinalImage',struct('type', 'opticalimage'),@isstruct);
+    p.addParameter('verbose',false,@islogical);
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
+
+    % Make sure amputateScenes is false
+    if (p.Results.amputateScenes)
+        error('Better implement amputateScenes option since it was set to true on call');
+    end
     
     % Retrieve the response noiseFlag labels and validate them.
     noiseFlags = p.Results.noiseFlags;
@@ -210,6 +218,21 @@ end
     % Generate an @oiSequence object containing the list of computed optical images
     theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
     
+    % Some diagnosis
+    if (p.Results.verbose)
+        fprintf('Optical image aperuture diameter = %g mm\n',opticsGet(oiGet(theListOfOpticalImages{1},'optics'),'aperture diameter')*1000);
+        fprintf('Optical image focal length = %g mm\n',opticsGet(oiGet(theListOfOpticalImages{1},'optics'),'focal length')*1000);
+        theWl = 400;
+        theFrame = 1;
+        index = find(theListOfOpticalImages{theFrame}.spectrum.wave == theWl);
+        temp = theListOfOpticalImages{theFrame}.data.photons(:,:,index);
+        fprintf('At %d nm, frame %d, oi mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+        theWl = 550;
+        index = find(theListOfOpticalImages{theFrame}.spectrum.wave == theWl);
+        temp = theListOfOpticalImages{theFrame}.data.photons(:,:,index);
+        fprintf('At %d nm, frame %d, oi mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+    end
+   
     % Set rng seed if one was passed. Not clear we need to do this because
     % all the randomness is in the @coneMosaic compute object, but it
     % doesn't hurt to do so, if we ever choose a random number at this
@@ -218,6 +241,12 @@ end
         oldSeed = rng(rngSeed);
     end
     
+    % to generate a temporalSupport timeAxis
+    nFrames = theOIsequence.length; % 3
+    nTimebin = nFrames*10;
+    timeAxis = theOIsequence.timeAxis; % [0,0.016666666666667,0.033333333333333]
+    temporalSupportSeconds = linspace(min(timeAxis), max(timeAxis), nTimebin);
+
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
         if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
@@ -229,11 +258,17 @@ end
             theConeMosaic.noiseFlag = 'none';
             
             % Compute noise-free response instances WITHOUT eye movements
-            [noiseFreeConeExcitationResponses, ~, ~, ~, temporalSupportSeconds] = ...
+            % [noiseFreeConeExcitationResponses, ~, ~, ~, temporalSupportSeconds] = ...
+            %     theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            %     'nTrials', 1, ...
+            %     'nTimePoints', timeSamplesNum);
+            % [noiseFreeConeExcitationResponses, ~, ~, ~, temporalSupportSeconds] = ...
+            %     theConeMosaic.compute(theOIsequence.frameAtIndex(1));
+            [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = ...
                 theConeMosaic.compute(theOIsequence.frameAtIndex(1));
         
             % Compute photocurrent responses from the noiseFreeConeExcitationResponses
-            theNeuralResponses(noiseFlags{idx}) = cMosaicNreComputePhotocurrent(...
+            theNeuralResponses(noiseFlags{idx}) = CMosaicNreComputePhotocurrent(...
                 noiseFreeConeExcitationResponses, temporalSupportSeconds, theConeMosaic.noiseFlag);
             
             % Restore the original noise flag
@@ -243,7 +278,7 @@ end
             
             fprintf('Computing %d response instances\n', instancesNum);
             % Compute noise-free cone excitation response instances with a specified random noise seed for repeatability
-            [noiseFreeConeExcitationResponses, ~, ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
                 'nTrials', instancesNum, 'seed', rngSeed ...        % random seed
             );
             
@@ -259,7 +294,7 @@ end
             
             fprintf('Computing %d response instances\n', instancesNum);
             % Compute noise-free cone excitation response instances with a specified random noise seed for repeatability
-            [noiseFreeConeExcitationResponses, ~, ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
                 'nTrials', instancesNum, 'seed', useSeed ...        % random seed
             );
         

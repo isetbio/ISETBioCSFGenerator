@@ -258,7 +258,6 @@ for idx = 1:length(noiseFlags)
         % Compute noise-free response instances
         [theNeuralResponses(noiseFlags{idx}), ~, ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1));
         
-        
         % Restore the original noise flag
         theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
         

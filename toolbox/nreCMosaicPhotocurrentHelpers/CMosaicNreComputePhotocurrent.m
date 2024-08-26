@@ -1,8 +1,20 @@
-function photocurrentResponses = cMosaicNreComputePhotocurrent(coneExcitationResponses, temporalSupportSeconds, noiseFlag, responseSecondsKept)
+function photocurrentResponses = CMosaicNreComputePhotocurrent(coneExcitationResponses, temporalSupportSeconds, noiseFlag, responseSecondsKept, cutoffFlag)
+    % % Compute photocurrent responses from the cone excitation responses
+    % photocurrentResponses = 0*coneExcitationResponses;
+    % 
+    % impulseResponse = CMosaicNreComputePhotocurrentImpulseResponse(temporalSupportSeconds);
+    
+    if notDefined('cutoffFlag'), cutoffFlag = 'false'; end
     % Compute photocurrent responses from the cone excitation responses
     photocurrentResponses = 0*coneExcitationResponses;
+    switch cutoffFlag
+        case 'true'
+            impulseResponse = CMosaicNreComputePhotocurrentImpulseResponse(temporalSupportSeconds, 'true');
+        case 'false'
+            impulseResponse = CMosaicNreComputePhotocurrentImpulseResponse(temporalSupportSeconds, 'false');
+    end
+    impulseResponse(1) = 0.0;
 
-    impulseResponse = cMosaicNreComputePhotocurrentImpulseResponse(temporalSupportSeconds);
     dt = temporalSupportSeconds(2)-temporalSupportSeconds(1);
     
     for iTrial = 1:size(coneExcitationResponses,1)
