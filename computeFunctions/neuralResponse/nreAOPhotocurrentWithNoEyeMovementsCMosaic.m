@@ -278,10 +278,13 @@ end
             
             fprintf('Computing %d response instances\n', instancesNum);
             % Compute noise-free cone excitation response instances with a specified random noise seed for repeatability
-            [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            % [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            %     'nTrials', instancesNum, 'seed', rngSeed ...        % random seed
+            % );
+            [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence, ...
                 'nTrials', instancesNum, 'seed', rngSeed ...        % random seed
             );
-            
+
            % Compute photocurrent responses from the noiseFreeConeExcitationResponses
             theNeuralResponses(noiseFlags{idx}) = cMosaicNreComputePhotocurrent(...
                 noiseFreeConeExcitationResponses, temporalSupportSeconds, theConeMosaic.noiseFlag);         
@@ -294,10 +297,13 @@ end
             
             fprintf('Computing %d response instances\n', instancesNum);
             % Compute noise-free cone excitation response instances with a specified random noise seed for repeatability
-            [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            % [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+            %     'nTrials', instancesNum, 'seed', useSeed ...        % random seed
+            % );
+            [noiseFreeConeExcitationResponses, ~, ~, ~, ~] = theConeMosaic.compute(theOIsequence, ...
                 'nTrials', instancesNum, 'seed', useSeed ...        % random seed
             );
-        
+
             % Compute photocurrent responses from the noiseFreeConeExcitationResponses
             theNeuralResponses(noiseFlags{idx}) = cMosaicNreComputePhotocurrent(...
                 noiseFreeConeExcitationResponses, temporalSupportSeconds, theConeMosaic.noiseFlag);
