@@ -1,46 +1,4 @@
-function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_AOtumblingESceneEngine(options)
-
-arguments
-    options.visualizeScene (1,1) logical = true;
-    options.displayNPixels (1,1) double = 512;
-    options.displayFOVDeg (1,1) double = 1.413;
-    options.wave (:,1) double = (500:5:870)';
-    options.AOPrimaryWls (1,3) double = [840 683 543]; % [700 683 54];
-    options.AOPrimaryFWHM (1,3) double = [22 27 23];
-    options.AOCornealPowersUW (1,3) double = [141.4 10 10];
-    options.ambientSpd (:,1) double = zeros(size((500:5:870)'));  % Adjust this if wave changes
-    options.pupilSizeMM (1,1) double = 6;
-    options.plotDisplayCharacteristics (1,1) logical = false;
-    options.chromaSpecification_type (1,:) char = 'RGBsettings';
-    options.chromaSpecification_backgroundRGB (1,3) double = [1 0 0];
-    options.chromaSpecification_foregroundRGB (1,3) double = [0 0 0];
-    options.eHeightMin (1,1) double = 30;
-    options.temporalModulationParams_frameRateHz (1,1) double = 60;
-    options.temporalModulationParams_numFrame (1,1) double = 3;
-    options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
-    options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
-end
-
-% Initialize
-close all;
-
-% % Parse optional input
-% p = inputParser;
-% p.addParameter('visualizeScene', true, @islogical);
-% p.addParameter('displayNPixels',512,@isnumeric);
-% p.addParameter('displayFOVDeg','1.413',@isnumeric);
-% p.parse(varargin{:});
-
-% Make sure figures directory exists so that output writes
-% don't fail
-rootPath = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(rootPath,'local','figures'),'dir'))
-    mkdir(fullfile(rootPath,'local','figures'));
-end
-
-% Load in a monitor that mimics the primaries in the Berkely AO system.
-theDisplay = load(fullfile(rootPath,'sampledata','monoDisplay.mat'));
-presentationDisplay = theDisplay.monoDisplay;
+function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOtumblingESceneEngine(options)
 
 % Will's description of the stimulus parameters for this experiment.
 %   - Wavelength: the tumbling-E was modulated in the imaging channel. The
@@ -95,6 +53,41 @@ presentationDisplay = theDisplay.monoDisplay;
 %
 % Need pupil diameter to convert corneal power to appropriate equivalent
 % radiance.  Probably around 6 mm.
+
+arguments
+    options.visualizeScene (1,1) logical = ~true;
+    options.displayNPixels (1,1) double = 512;
+    options.displayFOVDeg (1,1) double = 1.413;
+    options.wave (:,1) double = (500:5:870)';
+    options.AOPrimaryWls (1,3) double = [840 683 543]; % [700 683 54];
+    options.AOPrimaryFWHM (1,3) double = [22 27 23];
+    options.AOCornealPowersUW (1,3) double = [141.4 10 10];
+    options.ambientSpd (:,1) double = zeros(size((500:5:870)'));  % Adjust this if wave changes
+    options.pupilSizeMM (1,1) double = 6;
+    options.plotDisplayCharacteristics (1,1) logical = false;
+    options.chromaSpecification_type (1,:) char = 'RGBsettings';
+    options.chromaSpecification_backgroundRGB (1,3) double = [1 0 0];
+    options.chromaSpecification_foregroundRGB (1,3) double = [0 0 0];
+    options.eHeightMin (1,1) double = 30;
+    options.temporalModulationParams_frameRateHz (1,1) double = 60;
+    options.temporalModulationParams_numFrame (1,1) double = 3;
+    options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
+    options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
+end
+
+% Initialize
+close all;
+
+% Make sure figures directory exists so that output writes
+% don't fail
+rootPath = ISETBerkeleyAOTumblingERootPath;
+if (~exist(fullfile(rootPath,'local','figures'),'dir'))
+    mkdir(fullfile(rootPath,'local','figures'));
+end
+
+% Load in a monitor that mimics the primaries in the Berkely AO system.
+theDisplay = load(fullfile(rootPath,'sampledata','monoDisplay.mat'));
+presentationDisplay = theDisplay.monoDisplay;
 
 % Display spatial parameters
 sceneParams.displayPixelSize = options.displayNPixels;
@@ -285,7 +278,7 @@ for ff = 1:length(theSmallEsceneSequence0degs)
         set(ax, 'XTickLabel', xTickLabels, 'YTickLabel', yTickLabels);
         set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
-        projectBaseDir = ISETBioCSFGeneratorRootPath;
+        projectBaseDir = ISETBerkeleyAOTumblingERootPath;
         pdfFile = fullfile(projectBaseDir,'local','figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
         NicePlot.exportFigToPDF(pdfFile,hFig, 300);
     end
