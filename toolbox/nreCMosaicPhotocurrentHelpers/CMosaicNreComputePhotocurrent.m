@@ -1,18 +1,40 @@
-function photocurrentResponses = CMosaicNreComputePhotocurrent(coneExcitationResponses, temporalSupportSeconds, noiseFlag, responseSecondsKept, cutoffFlag)
+function photocurrentResponses = CMosaicNreComputePhotocurrent(coneExcitationResponses, temporalSupportSeconds, noiseFlag, responseSecondsKept, interpolateImpulseResponseFlag)
     % % Compute photocurrent responses from the cone excitation responses
     % photocurrentResponses = 0*coneExcitationResponses;
     % 
     % impulseResponse = CMosaicNreComputePhotocurrentImpulseResponse(temporalSupportSeconds);
     
-    if notDefined('cutoffFlag'), cutoffFlag = 'false'; end
+    % Set default on the flag that determines whether we interpate the
+    % impulse response to the timebase of the excitation sequence.
+    if notDefined('interpolateImpulseResponseFlag')
+        interpolateImpulseResponseFlag = 'false';
+    
+    end
     % Compute photocurrent responses from the cone excitation responses
     photocurrentResponses = 0*coneExcitationResponses;
-    switch cutoffFlag
+    switch interpolateImpulseResponseFlag
         case 'true'
+            % This case reads the impuluse response and interpolates it to
+            % the time base of the excitations.
+            %
+            % QUESTIONS:
+            % 1) Why is there a factor of 2 in the returned impuluse response?
+            % 2) How much error in the calculation do we introduce by doing
+            % the calculations at the frame rate of the excitations, as
+            % opposed to interpolating them to a finer time scale?
+            % 3) How should we automatically compute the impulse response
+            % that we want from the excitations, rather than reading them
+            % from a file where they have been precomputed for some other
+            % purpose?
             impulseResponse = CMosaicNreComputePhotocurrentImpulseResponse(temporalSupportSeconds, 'true');
         case 'false'
+            % I DON'T THINK THIS CASE WILL CURRENTLY RUN CORRECTLY,
+            % ALTHOUGH IT MIGHT RUN WITHOUT CRASHING.
             impulseResponse = CMosaicNreComputePhotocurrentImpulseResponse(temporalSupportSeconds, 'false');
     end
+
+    % WHY IS THIS HAPPENING. You'd think that would be set correctly when
+    % we snagged the impuluse response.
     impulseResponse(1) = 0.0;
 
     dt = temporalSupportSeconds(2)-temporalSupportSeconds(1);

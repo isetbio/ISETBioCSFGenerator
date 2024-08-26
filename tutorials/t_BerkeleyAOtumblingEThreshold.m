@@ -1,7 +1,6 @@
 function t_BerkeleyAOtumblingEThreshold(options)
 
 %% Pick up optional arguments
-% THESE OPTIONAL ARGS SHOULD BE UPDATED FOR TUMBLING E
 arguments
     options.defocusDiopters (1,1) double = 0.05;
     options.pupilDiameterMm (1,1) double = 6;

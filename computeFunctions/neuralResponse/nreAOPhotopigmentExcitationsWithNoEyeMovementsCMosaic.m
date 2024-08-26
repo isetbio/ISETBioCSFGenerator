@@ -256,14 +256,17 @@ for idx = 1:length(noiseFlags)
         theConeMosaic.noiseFlag = 'none';
         
         % Compute noise-free response instances
-        [theNeuralResponses(noiseFlags{idx}), ~, ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1));
-        
+        %[theNeuralResponses(noiseFlags{idx}), ~, ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1));
+        [theNeuralResponses(noiseFlags{idx}), ~, ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence);
+
         % Restore the original noise flag
         theConeMosaic.noiseFlag = lastConeMosaicNoiseFlag;
         
     elseif (~isempty(rngSeed))
         % Compute noisy response instances with a specified random noise seed for repeatability
-        [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+        % [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+        %   'nTrials', instancesNum, 'seed', rngSeed);
+        [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence, ...
           'nTrials', instancesNum, 'seed', rngSeed);
 
     elseif (contains(ieParamFormat(noiseFlags{idx}), 'random'))
@@ -273,9 +276,10 @@ for idx = 1:length(noiseFlags)
         useSeed = randi(32000,1,1);
         
         % Compute noisy response instances
-        [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+        % [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence.frameAtIndex(1), ...
+        %   'nTrials', instancesNum, 'seed', useSeed);
+        [~, theNeuralResponses(noiseFlags{idx}), ~, ~, temporalSupportSeconds] = theConeMosaic.compute(theOIsequence, ...
           'nTrials', instancesNum, 'seed', useSeed);
-      
     end
 end
 
