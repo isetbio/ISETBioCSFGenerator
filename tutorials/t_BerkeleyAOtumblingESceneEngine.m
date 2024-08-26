@@ -80,7 +80,7 @@ close all;
 
 % Make sure figures directory exists so that output writes
 % don't fail
-rootPath = ISETBerkeleyAOTumblingERootPath;
+rootPath = ISETBioCSFGeneratorRootPath;
 if (~exist(fullfile(rootPath,'local','figures'),'dir'))
     mkdir(fullfile(rootPath,'local','figures'));
 end
@@ -278,7 +278,7 @@ for ff = 1:length(theSmallEsceneSequence0degs)
         set(ax, 'XTickLabel', xTickLabels, 'YTickLabel', yTickLabels);
         set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
-        projectBaseDir = ISETBerkeleyAOTumblingERootPath;
+        projectBaseDir = ISETBioCSFGeneratorRootPath;
         pdfFile = fullfile(projectBaseDir,'local','figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
         NicePlot.exportFigToPDF(pdfFile,hFig, 300);
     end
