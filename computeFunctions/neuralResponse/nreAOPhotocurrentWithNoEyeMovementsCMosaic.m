@@ -208,44 +208,44 @@ else
     returnTheNeuralPipeline =  false;
 end
     
-    % Compute the sequence of optical images corresponding to the sequence of scenes
-    framesNum = numel(sceneSequence);
-    theListOfOpticalImages = cell(1, framesNum);
-    for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
-    end
-    
-    % Generate an @oiSequence object containing the list of computed optical images
-    theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
-    
-    % Some diagnosis
-    if (p.Results.verbose)
-        fprintf('Optical image aperuture diameter = %g mm\n',opticsGet(oiGet(theListOfOpticalImages{1},'optics'),'aperture diameter')*1000);
-        fprintf('Optical image focal length = %g mm\n',opticsGet(oiGet(theListOfOpticalImages{1},'optics'),'focal length')*1000);
-        theWl = 400;
-        theFrame = 1;
-        index = find(theListOfOpticalImages{theFrame}.spectrum.wave == theWl);
-        temp = theListOfOpticalImages{theFrame}.data.photons(:,:,index);
-        fprintf('At %d nm, frame %d, oi mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
-        theWl = 550;
-        index = find(theListOfOpticalImages{theFrame}.spectrum.wave == theWl);
-        temp = theListOfOpticalImages{theFrame}.data.photons(:,:,index);
-        fprintf('At %d nm, frame %d, oi mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
-    end
+% Compute the sequence of optical images corresponding to the sequence of scenes
+framesNum = numel(sceneSequence);
+theListOfOpticalImages = cell(1, framesNum);
+for frame = 1:framesNum
+    theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
+end
+
+% Generate an @oiSequence object containing the list of computed optical images
+theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
+
+% Some diagnosis
+if (p.Results.verbose)
+    fprintf('Optical image aperuture diameter = %g mm\n',opticsGet(oiGet(theListOfOpticalImages{1},'optics'),'aperture diameter')*1000);
+    fprintf('Optical image focal length = %g mm\n',opticsGet(oiGet(theListOfOpticalImages{1},'optics'),'focal length')*1000);
+    theWl = 400;
+    theFrame = 1;
+    index = find(theListOfOpticalImages{theFrame}.spectrum.wave == theWl);
+    temp = theListOfOpticalImages{theFrame}.data.photons(:,:,index);
+    fprintf('At %d nm, frame %d, oi mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+    theWl = 550;
+    index = find(theListOfOpticalImages{theFrame}.spectrum.wave == theWl);
+    temp = theListOfOpticalImages{theFrame}.data.photons(:,:,index);
+    fprintf('At %d nm, frame %d, oi mean, min, max: %g, %g, %g\n',theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
+end
    
-    % Set rng seed if one was passed. Not clear we need to do this because
-    % all the randomness is in the @coneMosaic compute object, but it
-    % doesn't hurt to do so, if we ever choose a random number at this
-    % level.
-    if (~isempty(rngSeed))
-        oldSeed = rng(rngSeed);
-    end
+% Set rng seed if one was passed. Not clear we need to do this because
+% all the randomness is in the @coneMosaic compute object, but it
+% doesn't hurt to do so, if we ever choose a random number at this
+% level.
+if (~isempty(rngSeed))
+    oldSeed = rng(rngSeed);
+end
     
-    % to generate a temporalSupport timeAxis
-    nFrames = theOIsequence.length; % 3
-    nTimebin = nFrames*10;
-    timeAxis = theOIsequence.timeAxis; % [0,0.016666666666667,0.033333333333333]
-    temporalSupportSeconds = linspace(min(timeAxis), max(timeAxis), nTimebin);
+% to generate a temporalSupport timeAxis
+nFrames = theOIsequence.length; % 3
+nTimebin = nFrames*10;
+timeAxis = theOIsequence.timeAxis; % [0,0.016666666666667,0.033333333333333]
+temporalSupportSeconds = linspace(min(timeAxis), max(timeAxis), nTimebin);
 
     % Compute responses for each type of noise flag requested
     for idx = 1:length(noiseFlags)
