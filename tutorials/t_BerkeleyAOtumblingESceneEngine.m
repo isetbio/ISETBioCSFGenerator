@@ -73,6 +73,7 @@ arguments
     options.temporalModulationParams_numFrame (1,1) double = 3;
     options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
+    options.responseFlag (1,:) char = 'excitation';
 end
 
 % Initialize
