@@ -90,6 +90,7 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
         numFrames = paramsForTextRendering.temporalModulationParams.numFrames;
         xShiftDegrees = paramsForTextRendering.temporalModulationParams.xShiftPerFrame;
         yShiftDegrees = paramsForTextRendering.temporalModulationParams.yShiftPerFrame;
+        backgroundRGBPerFrame = paramsForTextRendering.temporalModulationParams.backgroundRGBPerFrame;
     end
     frameDurationSec = 1 / frameRateHz;
 
@@ -115,6 +116,9 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
         % specified shift of the letter on each frame.
         paramsForTextRendering.xPixelsNumMargin = xPixelsNumMargin0 + xShiftPixels(frameIndex) + paramsForTextRendering.xOffset;
         paramsForTextRendering.yPixelsNumMargin = yPixelsNumMargin0  + yShiftPixels(frameIndex) + paramsForTextRendering.yOffset;
+
+        % change background for each frame
+        paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
 
         % Generate the scene frame
         theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, paramsForTextRendering, 'visualizeScene', visualizeScene);
@@ -176,7 +180,8 @@ function p = generateDefaultParams()
                 'frameRateHz', 60, ...              % frame rate in Hz
                 'numFrames', 1, ...                 % number of frames we want the E on for
                 'xShiftPerFrame', 0, ...            % shift E in the x dimension in each frame in degree
-                'yShiftPerFrame', 0), ...           % shift E in the y dimension in each frame in degree
+                'yShiftPerFrame', 0, ...
+                'backgroundRGBPerFrame', [1 0 0]), ...           % shift E in the y dimension in each frame in degree
         'wave', (400:10:860)', ...              % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
         'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
