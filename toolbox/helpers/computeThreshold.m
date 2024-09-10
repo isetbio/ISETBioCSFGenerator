@@ -1,4 +1,5 @@
-function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = ...
+function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
+    trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
     computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
 % Compute contrast threshold for different scenes, neural response engine, 
@@ -6,7 +7,8 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 % N-alternative forced-choice tasks. 
 %
 % Syntax:
-%    [logThreshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold( ...
+%    [logThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
+%        trialByTrialStimulusAlternatives,trialByTrialPerformance] = computeThreshold( ...
 %        theSceneEngine, theNeuralEngine, classifierEngine, ...
 %        classifierPara, thresholdPara, questEnginePara)  
 %
@@ -35,10 +37,19 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %   logThreshold              - Estimated threshold value (log)
 %   questObj                  - questThresholdEngine object, which
 %                               contains information about all the trials run.
-%   psychometricFunction      - Dictionary (indexed by contrast level) with the 
+%   psychometricFunction      - Dictionary (aka Container, indexed by contrast level) with the 
 %                               psychometric function.
 %   fittedPsychometricParams  - Parameters of psychometric function fit,
 %                               matched to PF used in the questThresholdEngine object
+%   trialByTrialStimulusAlternatives - Dictionary with same keys as
+%                               psychometric fuction that has a column vector for each contrast level
+%                               that gives the trial-by-trial stimulus alternative (integer 1-N) for
+%                               each trial at that contrast level.
+%                               Currently this is only meaningful for
+%                               rcePoisson classifier engines.
+%   trialByTrialPerformance   - One more dictionary matched to
+%                               trialByTrialStimulusAlternatives that gives correct (1) or incorrect
+%                               (0) for each trial.
 %
 % Optional key/value pairs:
 %   'beVerbose'           - Logical. Provide some printout? Default true.
@@ -183,8 +194,13 @@ else
     datasavePara.saveMRGCResponses = false;
 end
 
-% Dictionary to store the measured psychometric function which is returned to the user
+% Dictionary to store the measured psychometric function which is returned
+% to the user.  We also make and return containers that have the
+% trial-by-trial stimulus alternative and trial-by-trial performance for
+% each tested stimulus level
 psychometricFunction = containers.Map();
+trialByTrialStimulusAlternatives = containers.Map();
+trialByTrialPerformance = containers.Map();
 
 testCounter = 0;
 while (nextFlag)
@@ -295,8 +311,11 @@ while (nextFlag)
         % need to use a copy method to do the caching.  Otherwise the
         % cached pointer will simply continue to point to the same
         % object, and be updated by future training.
+        %
+        % The which alternatives vector is meaningful for the rcePoisson
+        % classification engines, but not other ones.
         eStart = tic;
-        [predictions, tempClassifierEngine, responses] = computePerformance(...
+        [predictions, tempClassifierEngine, responses, whichAlternatives] = computePerformance(...
             theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
             classifierPara.nTrain, classifierPara.nTest, theNeuralEngine,...
             classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
@@ -314,8 +333,11 @@ while (nextFlag)
                 fprintf('computeThreshold: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
         end
 
-        % Update the psychometric function with data point for this contrast level
+        % Update the psychometric function with data point for this
+        % contrast level.  Also the trial-by-trial containers.
         psychometricFunction(contrastLabel) = mean(predictions);
+        trialByTrialStimulusAlternatives(contrastLabel) = whichAlternatives;
+        trialByTrialPerformance(contrastLabel) = predictions';
         
         if (beVerbose)
             fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
@@ -351,9 +373,11 @@ while (nextFlag)
              error('Should not be repeating any constrast for validation blocked method');
         end
 
-        % Classifier is already trained, just get predictions
+        % Classifier is already trained, just get predictions.  The
+        % whichAlternatives returned variable is only meaningful at present
+        % for the rcePoisson classification engines.
         eStart = tic;
-        [predictions, ~, ~] = computePerformance(theSceneSequences{testedIndex}, ...
+        [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
             'TAFC', isTAFC, 'theBackgroundRetinalImage',theBackgroundRetinalImage,...
@@ -365,10 +389,19 @@ while (nextFlag)
             fprintf('computeThreshold: Predicting test block %d no training took %0.1f secs\n',testCounter,e);
         end
 
-        % Update the psychometric function with data point for this contrast level
+        % Update the psychometric function with data point for this
+        % contrast level. Also update the trial-by-trial containers.
         previousData = psychometricFunction(contrastLabel);
         currentData = cat(2,previousData,mean(predictions));
         psychometricFunction(contrastLabel) = currentData;
+
+        prevTemp = trialByTrialStimulusAlternatives(contrastLabel);
+        currentTemp = cat(1,prevTemp,whichAlternatives);
+        trialByTrialStimulusAlternatives(contrastLabel) = currentTemp;
+
+        prevTemp = trialByTrialPerformance(contrastLabel);
+        currentTemp = cat(1,prevTemp,predictions');
+        trialByTrialPerformance(contrastLabel) = currentTemp;
 
         if (beVerbose)
            fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
@@ -376,7 +409,6 @@ while (nextFlag)
         end
     end
     
-
     % Tell QUEST+ what we ran (how many trials at the given contrast) and
     % get next stimulus contrast to run.
     eStart = tic;

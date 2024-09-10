@@ -1,4 +1,4 @@
-function [predictions, theClassifierEngine, responses] = computePerformance(theScenes, ...
+function [predictions, theClassifierEngine, responses, whichAlternatives] = computePerformance(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     varargin)
 % Compute performance of a classifier given different scenes, a neural 
@@ -6,7 +6,7 @@ function [predictions, theClassifierEngine, responses] = computePerformance(theS
 % and N-alternative forced-choice tasks. 
 %
 % Syntax:
-%    [predictions, theClassifierEngine, responses] = ...
+%    [predictions, theClassifierEngine, responses, whichAlternatives] = ...
 %        computePerformance(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
 %       theClassifierEngine, trainNoiseFlag, testNoiseFlag, varargin)
 %
@@ -77,6 +77,13 @@ function [predictions, theClassifierEngine, responses] = computePerformance(theS
 %     theClassifierEngine    - Trained version of passed classifier object.
 %
 %     responses              - Neural responses computed
+%     whichAlternatives      - Vector with integers that tells us which
+%                              stimulus alternative was presented on each 
+%                              of the stimulated trials.  This should have
+%                              the same length as the predictions vector
+%                              returned. This is currently only meaningful
+%                              for classification engines whose names start
+%                              with 'rcePoisson'.  
 %
 % Optional key/value pairs:
 %     None.
@@ -237,9 +244,13 @@ if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',
     dataOut = theClassifierEngine.compute('predict', ...
         outSampleStimResponses(testNoiseFlag),whichAlternatives);
 else
+    % Other classification engines. This need to be generalized to handle N-Way
+    % and don't currently make use of the whichAlternatives list but rather
+    % simply pass in the out of sample responses for the two stimulus
+    % alternatives.
     dataOut = theClassifierEngine.compute('predict', ...
         outSampleStimResponsesCell{1}(testNoiseFlag), ... %nullResponses
-        outSampleStimResponsesCell{2}(testNoiseFlag)); %testResponses
+        outSampleStimResponsesCell{2}(testNoiseFlag));    %testResponses
 end
 
 
