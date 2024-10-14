@@ -75,6 +75,7 @@ arguments
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
     options.responseFlag (1,:) char = 'excitation';
+    options.exportCondition (1,:) char = 'no change'; 
 end
 
 % Initialize

@@ -203,7 +203,7 @@ else
     assert(mod(nTest, nScenes) == 0, ['The number of test trials must be an',...
         ' integer multiple of the number of alternative choices']);
     whichAlternatives = repmat(1:nScenes,[nTests_eachScene, 1]);
-    whichAlternatives = whichAlternatives(:);
+    whichAlternatives = whichAlternatives(:); 
 end
 
 outSampleStimResponsesCell = cell(1, nScenes);
