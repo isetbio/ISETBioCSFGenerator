@@ -1,4 +1,4 @@
-function t_spatialCSFmRGCMosaic
+function t_spatialCSFmRGCMosaic_metaContrast
 % Compute spatial CSF in different color directions, using the ON-center mRGCMosaics
 %
 % Description:
@@ -311,6 +311,11 @@ end
 % List of spatial frequencies to be tested.
 spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
 
+% Create the sceMetaContrast scene engine
+metaSceneEngineParams = sceMetaContrast;
+%initialize
+[theMetaSceneEngine, theMetaNeuralEngine] = deal(cell(1, length(spatialFreqs)));
+
 %% Compute threshold for each spatial frequency
 % 
 logThreshold = zeros(1, length(spatialFreqs));
@@ -332,11 +337,22 @@ for iSF = 1:length(spatialFreqs)
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
         'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
         'pixelsNum', theStimulusPixelsNum);
+
+    theMetaSceneEngine{iSF} = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+
+    % Create nreMetaContrast using the actual scene and neural engines
+    metaNeuralResponseEngineParams = nreMetaContrast;
+    metaNeuralResponseEngineParams.contrast0 = 0;
+    metaNeuralResponseEngineParams.contrast1 = 1;
+    metaNeuralResponseEngineParams.sceneEngine = theGratingSceneEngine;
+    metaNeuralResponseEngineParams.neuralEngine = theNeuralEngine;
+    metaNeuralResponseEngineParams.noiseAddMethod = 'nre';
+    theMetaNeuralEngine{iSF} = neuralResponseEngine(@nreMetaContrast,metaNeuralResponseEngineParams);
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.
     [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        computeThreshold(theMetaSceneEngine{iSF}, theMetaNeuralEngine{iSF}, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParams,'TAFC', true);
     
     % Plot stimulus

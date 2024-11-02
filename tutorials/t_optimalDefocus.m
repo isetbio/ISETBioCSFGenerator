@@ -1,5 +1,5 @@
 function [defocus_adj_diopters, defocus_adj_microns] = t_optimalDefocus(...
-    PolansSubj, varargin)
+    Subj, varargin)
 %{
 The goal of this script is to find the amount of defocus that can lead
 to the most compact PSF at the FOVEA. Specifically,
@@ -36,9 +36,10 @@ p.addParameter('measuredPupilMM', 4,@isscalar);  %measured pupil size (mm)
 p.addParameter('calcPupilMM', 3, @isscalar);     %pupil size for calculation (mm)
 p.addParameter('measuredWvl', 550, @(x)(isscalar(x) && floor(x)==ceil(x) && x <= 800 && x >= 400)); %measured wavelength (nm)
 p.addParameter('infocusWvl', 550, @(x)(isscalar(x) && floor(x)==ceil(x) && x <= 650 && x >= 450));  %select one in-focus wavelength for visualization
+p.addParameter('optics_dataset', 'Polans2015', @ischar);
 p.addParameter('defocus_lb', -1.5, @isscalar);   %the lower bound of defocus
 p.addParameter('defocus_ub', 1.5, @isscalar);    %the upper bound of defocus
-p.addParameter('num_defocus', 101, @(x)(isscaler(x) && x >= 51));   %the number of defocus within the range
+p.addParameter('num_defocus', 101, @(x)(isscalar(x) && x >= 51));   %the number of defocus within the range
 p.addParameter('whichEye', 'right', @(x)(ischar(x) && (ismember(x, {'left', 'right'}))));  
 p.addParameter('zernike_jIndex', 3:14, @(x)(isnumeric(x) && (max(x) <= 15) && (min(x) >= 1)));
 p.addParameter('verbose', true, @islogical);
@@ -50,6 +51,7 @@ measuredPupilMM = p.Results.measuredPupilMM;
 calcPupilMM     = p.Results.calcPupilMM;
 measuredWvl     = p.Results.measuredWvl;
 infocusWvl_slc  = p.Results.infocusWvl;
+optics_dataset  = p.Results.optics_dataset;
 addedDefocus_lb = p.Results.defocus_lb;
 addedDefocus_ub = p.Results.defocus_ub;
 lenDefocus      = p.Results.num_defocus;
@@ -60,15 +62,10 @@ visualization   = p.Results.visualization;
 saveFigs        = p.Results.saveFigs;
 
 %% Do some basic checks for the inputs
-assert(calcPupilMM < measuredPupilMM, ['The pupil size for calculation ',...
+assert(calcPupilMM <= measuredPupilMM, ['The pupil size for calculation ',...
     'has to be smaller than the measured pupil size!']);
 assert(addedDefocus_ub > addedDefocus_lb, ['The upper bound has to be ',...
     'smaller than the lower bound for the range of added defocus!']);
-
-%% Default subject
-if (~exist('PolansSubj','var'))
-    PolansSubj = 1;
-end
 
 %% We want human lca for this tutorial
 humanlca = true;
@@ -88,9 +85,9 @@ addedDefocus = linspace(addedDefocus_lb,addedDefocus_ub,lenDefocus);
 
 %% Load the data from the selected subject
 wvf_0 = wvfLoadWavefrontOpticsData(...
-    'wvfZcoefsSource', 'Polans2015', 'jIndex', jIndex, ...
+    'wvfZcoefsSource', optics_dataset, 'jIndex', jIndex, ...
     'whichEye', whichEye, 'eccentricity', [0,0], ...
-    'whichGroup', PolansSubj, 'verbose', false);
+    'whichGroup', Subj, 'verbose', false);
 %grab the zernike polynomial corresponding to defocus
 defocus_wvf0 = wvfGet(wvf_0, 'zcoeffs', {'defocus'});
 
