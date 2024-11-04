@@ -1,16 +1,17 @@
 function t_spatialCSFmRGCMosaic_metaContrast
-% Compute spatial CSF in different color directions, using the ON-center mRGCMosaics
+% Compute spatial CSF in different color directions, using the ON-center
+% mRGCMosaics. This script is based on t_spatialCSFmRGCMosaic.m, modified
+% to incorporate nreMetaContrast response engine.
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions 
 %    using mRGCMosaic neural respone engines.
 %
-% See also: t_spatialCSFCMosaic, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
+% See also: t_spatialCSFmRGCMosaic.m
 %
 
 % History:
-%   05/03/23  NPC   Wrote it
+%   11/02/2024  FH   Adopted based on t_spatialCSFmRGCMosaic.m
 
 % Clear and close
 clear; close all;
@@ -199,7 +200,7 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
 % contrast levels.
 %
 % Might want to up the number for the non-fastParameters case.
-contrastLevelsSampled = 5;
+contrastLevelsSampled = 15;%5;
 
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
@@ -313,8 +314,6 @@ spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
 
 % Create the sceMetaContrast scene engine
 metaSceneEngineParams = sceMetaContrast;
-%initialize
-[theMetaSceneEngine, theMetaNeuralEngine] = deal(cell(1, length(spatialFreqs)));
 
 %% Compute threshold for each spatial frequency
 % 
@@ -323,6 +322,7 @@ theComputedQuestObjects = cell(1, length(spatialFreqs));
 thePsychometricFunctions = cell(1, length(spatialFreqs));
 theFittedPsychometricParams = cell(1, length(spatialFreqs));
 theStimulusScenes = cell(1, length(spatialFreqs));
+[theMetaSceneEngine, theMetaNeuralEngine] = deal(cell(1, length(spatialFreqs)));
 
 dataFig = figure();
 plotRows = 4;

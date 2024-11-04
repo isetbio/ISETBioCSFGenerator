@@ -77,6 +77,7 @@ function dataOut = nreMidgetRGCMosaicOISequence(...
 
 % History:
 %    05/04/23  NPC  Wrote it
+%    11/03/24  FH   Edited it to incorporate metaContrast
 
 % Examples:
 %{
@@ -402,7 +403,7 @@ function dataOut = nreMidgetRGCMosaicOISequence(...
                 if (~isempty(passedRngSeed))
                     fprintf('\tComputing noisy mRGC responses with a frozen seed (%d)\n', passedRngSeed);
                     if (p.Results.justAddNoise)
-                        theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence, 'seed', passedRngSeed, 'noiseFlag', 'frozen');
+                        theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence, 'noiseFlag', 'frozen', 'seed', passedRngSeed);
                         temporalSupportSeconds = sceneSequenceTemporalSupport;
                     else
                         [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
@@ -416,7 +417,7 @@ function dataOut = nreMidgetRGCMosaicOISequence(...
 
             case 'random'
                 if (p.Results.justAddNoise)
-                    theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence); %,'noiseFlag','donotset'
+                    theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence,'noiseFlag','donotset'); 
                     temporalSupportSeconds = sceneSequenceTemporalSupport;
                 else
                     % 1 in a million

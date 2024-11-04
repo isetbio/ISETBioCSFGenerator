@@ -80,7 +80,7 @@ neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1
 neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'none';
 
 % Post-cone summation noise (Gaussian noise)
-neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
+neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'frozen';
 
 % Post-cone summation noise is additive Gaussian noise with a desired
 % sigma. When the input is raw cone excitations, the sigma should be expressed in
@@ -199,7 +199,7 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
 % contrast levels.
 %
 % Might want to up the number for the non-fastParameters case.
-contrastLevelsSampled = 5;
+contrastLevelsSampled = 15;
 
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...

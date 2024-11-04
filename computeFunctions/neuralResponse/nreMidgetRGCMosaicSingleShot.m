@@ -77,6 +77,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
 % History:
 %    05/04/23  NPC  Wrote it
+%    11/03/24  FH   Edited it to incorporate metaContrast
 
 % Examples:
 %{
@@ -259,11 +260,9 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         theMRGCmosaic = neuralEngineOBJ.neuralPipeline.mRGCMosaic;
         returnTheNeuralPipeline = false;
     end
-
-    % we need to compute this whether p.Results.justAddNoise is true or false
-    % Compute the sequence of optical images corresponding to the sequence of scenes
     
-    % Don't need to compute if we are just adding noise
+    % Compute the sequence of optical images corresponding to the sequence 
+    % of scenes if we are not just adding noise
     if (~p.Results.justAddNoise)
         % Get the number of scene sequences
         framesNum = numel(sceneSequence);
@@ -395,7 +394,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
                 if (~isempty(passedRngSeed))
                     fprintf('\tComputing noisy mRGC responses with a frozen seed (%d)\n', passedRngSeed);
                     if (p.Results.justAddNoise)
-                        theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence, 'seed', passedRngSeed); %, 'noiseFlag', 'frozen'
+                        theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence, 'noiseFlag', 'frozen', 'seed', passedRngSeed); 
                         temporalSupportSeconds = sceneSequenceTemporalSupport;
                     else
                         [~,theNeuralResponses(noiseFlags{idx}), temporalSupportSeconds] = theMRGCmosaic.compute( ...
@@ -409,7 +408,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
             case 'random'
                 if (p.Results.justAddNoise)
-                    theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence); %,'noiseFlag','donotset'
+                    theNeuralResponses(noiseFlags{idx}) = theMRGCmosaic.noisyInstances(sceneSequence,'noiseFlag','donotset');
                     temporalSupportSeconds = sceneSequenceTemporalSupport;
                 else
                     % 1 in a million
