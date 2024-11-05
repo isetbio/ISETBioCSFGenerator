@@ -197,7 +197,7 @@ for ff = 1:length(theSmallEsceneSequence0degs)
 
         domainVisualizationLimits = 1.5*[-1 1 -1 1]; % 0.3*0.5*[-1 1 -1 1];
 
-        hFig = figure(1);
+        hFig = figure;
         clf;
         set(hFig, 'Position', [10 10 1550 400], 'Color', [1 1 1]);
         ax = subplot('Position', subplotPosVectors(1,1).v);
