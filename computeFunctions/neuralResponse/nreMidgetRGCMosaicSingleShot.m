@@ -340,9 +340,9 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
                 end
     
             case 'random'
-                fprintf('\tComputing noisy cone mosaic responses with a random seed (%d)\n', useSeed);
                 % 1 in a million
                 useSeed = randi(1e6,1,1);
+                fprintf('\tComputing noisy cone mosaic responses with a random seed (%d)\n', useSeed);
         
                 % Compute input cone mosaic noisy response instances with a  random noise seed
                 [~, theConeMosaicResponses, ~, ~, coneMosaicTemporalSupportSeconds] = ...

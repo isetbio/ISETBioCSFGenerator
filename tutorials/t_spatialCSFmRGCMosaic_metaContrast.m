@@ -15,12 +15,12 @@ function t_spatialCSFmRGCMosaic_metaContrast
 
 % Clear and close
 clear; close all;
-
+tic
 % Set fastParameters that make this take less time
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version run time relatively short.
-fastParameters = true;
+fastParameters = false;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -200,7 +200,7 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
 % contrast levels.
 %
 % Might want to up the number for the non-fastParameters case.
-contrastLevelsSampled = 15;%5;
+contrastLevelsSampled = 15;
 
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
@@ -289,7 +289,7 @@ theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 % Generate Matlab filename for saving computed data.
 % 
 % Code that actually does the save commented out at the end.
-matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
+matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s_metaContrast.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
     chromaDir(1), chromaDir(2), chromaDir(3), ...
@@ -379,9 +379,13 @@ end
 
 % Pretty up data figure
 set(dataFig, 'Position',  [0, 0, 800, 800]);
+% Save the figure as a PDF
+set(dataFig, 'PaperSize', [30, 20]);
+saveas(dataFig, [matFileName(1:10),'PMF', matFileName(21:end-4), '.pdf']);
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
+elapsedTime = toc;
 
 %% Plot Contrast Sensitivity Function
 theCsfFig = figure();
@@ -389,6 +393,8 @@ loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+% Save the figure as a PDF
+saveas(theCsfFig, [matFileName(1:end-4), '.pdf']);
 
 %% Export computed data. 
 %
@@ -396,10 +402,11 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 % into a local directory and make sure that is gitignored so it doesn't
 % clog up the repository.
 %
-% fprintf('Results will be saved in %s.\n', matFileName);
-% save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
-%     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
-%     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
-%     'classifierChoice', 'classifierParams', 'thresholdParams', ...
-%     'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams');
+fprintf('Results will be saved in %s.\n', matFileName);
+save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
+    'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
+    'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
+    'theMetaSceneEngine', 'theMetaNeuralEngine',...
+    'classifierChoice', 'classifierParams', 'thresholdParams', ...
+    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams','elapsedTime');
 end

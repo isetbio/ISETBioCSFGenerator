@@ -14,12 +14,12 @@ function t_spatialCSFmRGCMosaic
 
 % Clear and close
 clear; close all;
-
+tic
 % Set fastParameters that make this take less time
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version run time relatively short.
-fastParameters = true;
+fastParameters = false;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -80,7 +80,7 @@ neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1
 neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'none';
 
 % Post-cone summation noise (Gaussian noise)
-neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'frozen';
+neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
 
 % Post-cone summation noise is additive Gaussian noise with a desired
 % sigma. When the input is raw cone excitations, the sigma should be expressed in
@@ -362,17 +362,23 @@ for iSF = 1:length(spatialFreqs)
 end
 
 % Pretty up data figure
-set(dataFig, 'Position',  [0, 0, 800, 800]);
+set(dataFig, 'Unit','Normalized', 'Position',  [0, 0, 1, 1]);
+% Save the figure as a PDF
+set(dataFig, 'PaperSize', [30, 20]);
+saveas(dataFig, [matFileName(1:10),'PMF', matFileName(21:end-4), '.pdf']);
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
+elapsedTime = toc;
 
 %% Plot Contrast Sensitivity Function
 theCsfFig = figure();
 loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
-ylabel('Sensitivity');
+ylabel('Sensitivity');yticks(0:5:100); grid on;
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+% Save the figure as a PDF
+saveas(theCsfFig, [matFileName(1:end-4), '.pdf']);
 
 %% Export computed data. 
 %
@@ -380,10 +386,10 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 % into a local directory and make sure that is gitignored so it doesn't
 % clog up the repository.
 %
-% fprintf('Results will be saved in %s.\n', matFileName);
-% save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
-%     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
-%     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
-%     'classifierChoice', 'classifierParams', 'thresholdParams', ...
-%     'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams');
+fprintf('Results will be saved in %s.\n', matFileName);
+save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
+    'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
+    'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
+    'classifierChoice', 'classifierParams', 'thresholdParams', ...
+    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams','elapsedTime');
 end
