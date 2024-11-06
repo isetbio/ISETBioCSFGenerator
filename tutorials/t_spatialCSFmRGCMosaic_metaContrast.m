@@ -17,11 +17,18 @@ function t_spatialCSFmRGCMosaic_metaContrast
 clear; close all;
 tic
 
+% Make sure figures directory exists so that output writes
+% don't fail
+rootPath = ISETBioCSFGeneratorRootPath;
+if (~exist(fullfile(rootPath,'local','t_spatialCSFRGCMosaic_metaContrast'),'dir'))
+    mkdir(fullfile(rootPath,'local','t_spatialCSFRGCMosaic_metaContrast'));
+end
+
 % Set fastParameters that make this take less time
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version run time relatively short.
-fastParameters = true;
+fastParameters = false;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -290,7 +297,9 @@ theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 % Generate Matlab filename for saving computed data.
 % 
 % Code that actually does the save commented out at the end.
-matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s_metaContrast.mat', ...
+projectBaseDir = ISETBioCSFGeneratorRootPath;
+matFileName = ...
+    sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s_metaContrast.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
     chromaDir(1), chromaDir(2), chromaDir(3), ...
@@ -382,7 +391,8 @@ end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 % Save the figure as a PDF
 set(dataFig, 'PaperSize', [30, 20]);
-saveas(dataFig, [matFileName(1:10),'PMF', matFileName(21:end-4), '.pdf']);
+saveas(dataFig, fullfile(projectBaseDir,'local','t_spatialCSFRGCMosaic_metaContrast', ...
+    [matFileName(1:10),'PMF', matFileName(21:end-4), '.pdf']));
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
@@ -395,7 +405,7 @@ xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 % Save the figure as a PDF
-saveas(theCsfFig, [matFileName(1:end-4), '.pdf']);
+saveas(theCsfFig, fullfile(projectBaseDir,'local','t_spatialCSFRGCMosaic_metaContrast',[matFileName(1:end-4), '.pdf']));
 
 %% Export computed data. 
 %
@@ -404,7 +414,7 @@ saveas(theCsfFig, [matFileName(1:end-4), '.pdf']);
 % clog up the repository.
 %
 fprintf('Results will be saved in %s.\n', matFileName);
-save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
+save(fullfile(projectBaseDir,'local','t_spatialCSFRGCMosaic_metaContrast',matFileName), 'spatialFreqs', 'threshold', 'chromaDir', ...
     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
     'theMetaSceneEngine', 'theMetaNeuralEngine',...
