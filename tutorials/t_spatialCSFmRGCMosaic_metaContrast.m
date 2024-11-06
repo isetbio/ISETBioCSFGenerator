@@ -16,11 +16,12 @@ function t_spatialCSFmRGCMosaic_metaContrast
 % Clear and close
 clear; close all;
 tic
+
 % Set fastParameters that make this take less time
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version run time relatively short.
-fastParameters = false;
+fastParameters = true;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
