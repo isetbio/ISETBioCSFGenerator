@@ -24,7 +24,7 @@ myName = mfilename;
 if (~exist(fullfile(rootPath,'local',myName),'dir'))
     mkdir(fullfile(rootPath,'local',myName));
 end
-figureTypeStr = 'tiff';
+figureTypeStr = '.tif';
 
 % Set fastParameters that make this take less time
 %
