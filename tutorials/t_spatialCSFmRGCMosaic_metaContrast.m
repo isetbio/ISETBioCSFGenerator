@@ -1,20 +1,31 @@
-function t_spatialCSFmRGCMosaic
-% Compute spatial CSF in different color directions, using the ON-center mRGCMosaics
+function t_spatialCSFmRGCMosaic_metaContrast
+% Compute spatial CSF in different color directions, using the ON-center
+% mRGCMosaics. This script is based on t_spatialCSFmRGCMosaic.m, modified
+% to incorporate nreMetaContrast response engine.
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions 
 %    using mRGCMosaic neural respone engines.
 %
-% See also: t_spatialCSFCMosaic, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
+% See also: t_spatialCSFmRGCMosaic.m
 %
 
 % History:
-%   05/03/23  NPC   Wrote it
+%   11/02/2024  FH   Adopted based on t_spatialCSFmRGCMosaic.m
 
 % Clear and close
 clear; close all;
 tic
+
+% Make sure figures directory exists so that output writes
+% don't fail
+rootPath = ISETBioCSFGeneratorRootPath;
+myName = mfilename;
+if (~exist(fullfile(rootPath,'local',myName),'dir'))
+    mkdir(fullfile(rootPath,'local',myName));
+end
+figureTypeStr = 'tiff';
+
 % Set fastParameters that make this take less time
 %
 % Setting to false provides more realistic values for real work, but we
@@ -288,7 +299,9 @@ theNeuralEngine.updateParamsStruct(neuralResponsePipelineParams);
 % Generate Matlab filename for saving computed data.
 % 
 % Code that actually does the save commented out at the end.
-matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s.mat', ...
+projectBaseDir = ISETBioCSFGeneratorRootPath;
+matFileName = ...
+    sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2.2f_%2.2f_%2.2f_OrientationDegs_%d_inputSignal_%s_coneMosaicNoise_%s_mRGCMosaicNoise_%s_metaContrast.mat', ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(1), ...
     neuralResponsePipelineParams.mRGCMosaicParams.eccDegs(2), ...
     chromaDir(1), chromaDir(2), chromaDir(3), ...
@@ -311,6 +324,9 @@ end
 % List of spatial frequencies to be tested.
 spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
 
+% Create the sceMetaContrast scene engine
+metaSceneEngineParams = sceMetaContrast;
+
 %% Compute threshold for each spatial frequency
 % 
 logThreshold = zeros(1, length(spatialFreqs));
@@ -318,6 +334,7 @@ theComputedQuestObjects = cell(1, length(spatialFreqs));
 thePsychometricFunctions = cell(1, length(spatialFreqs));
 theFittedPsychometricParams = cell(1, length(spatialFreqs));
 theStimulusScenes = cell(1, length(spatialFreqs));
+[theMetaSceneEngine, theMetaNeuralEngine] = deal(cell(1, length(spatialFreqs)));
 
 dataFig = figure();
 plotRows = 4;
@@ -332,11 +349,22 @@ for iSF = 1:length(spatialFreqs)
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
         'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
         'pixelsNum', theStimulusPixelsNum);
+
+    theMetaSceneEngine{iSF} = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+
+    % Create nreMetaContrast using the actual scene and neural engines
+    metaNeuralResponseEngineParams = nreMetaContrast;
+    metaNeuralResponseEngineParams.contrast0 = 0;
+    metaNeuralResponseEngineParams.contrast1 = 1;
+    metaNeuralResponseEngineParams.sceneEngine = theGratingSceneEngine;
+    metaNeuralResponseEngineParams.neuralEngine = theNeuralEngine;
+    metaNeuralResponseEngineParams.noiseAddMethod = 'nre';
+    theMetaNeuralEngine{iSF} = neuralResponseEngine(@nreMetaContrast,metaNeuralResponseEngineParams);
     
     % Compute the threshold for our grating scene with the previously
     % defined neural and classifier engine.
     [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+        computeThreshold(theMetaSceneEngine{iSF}, theMetaNeuralEngine{iSF}, theClassifierEngine, ...
         classifierParams, thresholdParams, questEngineParams,'TAFC', true);
     
     % Plot stimulus
@@ -362,10 +390,12 @@ for iSF = 1:length(spatialFreqs)
 end
 
 % Pretty up data figure
-set(dataFig, 'Unit','Normalized', 'Position',  [0, 0, 1, 1]);
+set(dataFig, 'Position',  [0, 0, 800, 800]);
+
 % Save the figure as a PDF
-set(dataFig, 'PaperSize', [30, 20]);
-saveas(dataFig, [matFileName(1:10),'PMF', matFileName(21:end-4), '.pdf']);
+% set(dataFig, 'PaperSize', [30, 20]);
+saveas(dataFig, fullfile(projectBaseDir,'local',myName, ...
+    [matFileName(1:10),'PMF', matFileName(21:end-4), figureTypeStr]));
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
@@ -375,10 +405,11 @@ elapsedTime = toc;
 theCsfFig = figure();
 loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
-ylabel('Sensitivity');yticks(0:5:100); grid on;
+ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+
 % Save the figure as a PDF
-saveas(theCsfFig, [matFileName(1:end-4), '.pdf']);
+saveas(theCsfFig, fullfile(projectBaseDir,'local',myName,[matFileName(1:end-4), figureTypeStr]));
 
 %% Export computed data. 
 %
@@ -386,10 +417,11 @@ saveas(theCsfFig, [matFileName(1:end-4), '.pdf']);
 % into a local directory and make sure that is gitignored so it doesn't
 % clog up the repository.
 %
-fprintf('Results will be saved in %s.\n', matFileName);
-save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
+fprintf('Results will be saved in %s.\n', fullfile(projectBaseDir,'local',myName,matFileName));
+save(fullfile(projectBaseDir,'local',myName,matFileName), 'spatialFreqs', 'threshold', 'chromaDir', ...
     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
+    'theMetaSceneEngine', 'theMetaNeuralEngine',...
     'classifierChoice', 'classifierParams', 'thresholdParams', ...
-    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams','elapsedTime');
+    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams','elapsedTime','-v7.3');
 end
