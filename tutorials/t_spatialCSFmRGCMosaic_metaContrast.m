@@ -20,9 +20,11 @@ tic
 % Make sure figures directory exists so that output writes
 % don't fail
 rootPath = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(rootPath,'local','t_spatialCSFRGCMosaic_metaContrast'),'dir'))
-    mkdir(fullfile(rootPath,'local','t_spatialCSFRGCMosaic_metaContrast'));
+myName = mfilename;
+if (~exist(fullfile(rootPath,'local',myName),'dir'))
+    mkdir(fullfile(rootPath,'local',myName));
 end
+figureTypeStr = 'tiff';
 
 % Set fastParameters that make this take less time
 %
@@ -389,10 +391,11 @@ end
 
 % Pretty up data figure
 set(dataFig, 'Position',  [0, 0, 800, 800]);
+
 % Save the figure as a PDF
-set(dataFig, 'PaperSize', [30, 20]);
-saveas(dataFig, fullfile(projectBaseDir,'local','t_spatialCSFRGCMosaic_metaContrast', ...
-    [matFileName(1:10),'PMF', matFileName(21:end-4), '.pdf']));
+% set(dataFig, 'PaperSize', [30, 20]);
+saveas(dataFig, fullfile(projectBaseDir,'local',myName, ...
+    [matFileName(1:10),'PMF', matFileName(21:end-4), figureTypeStr]));
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
@@ -404,8 +407,9 @@ loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+
 % Save the figure as a PDF
-saveas(theCsfFig, fullfile(projectBaseDir,'local','t_spatialCSFRGCMosaic_metaContrast',[matFileName(1:end-4), '.pdf']));
+saveas(theCsfFig, fullfile(projectBaseDir,'local',myName,[matFileName(1:end-4), figureTypeStr]));
 
 %% Export computed data. 
 %
@@ -413,11 +417,11 @@ saveas(theCsfFig, fullfile(projectBaseDir,'local','t_spatialCSFRGCMosaic_metaCon
 % into a local directory and make sure that is gitignored so it doesn't
 % clog up the repository.
 %
-fprintf('Results will be saved in %s.\n', matFileName);
-save(fullfile(projectBaseDir,'local','t_spatialCSFRGCMosaic_metaContrast',matFileName), 'spatialFreqs', 'threshold', 'chromaDir', ...
+fprintf('Results will be saved in %s.\n', fullfile(projectBaseDir,'local',myName,matFileName));
+save(fullfile(projectBaseDir,'local',myName,matFileName), 'spatialFreqs', 'threshold', 'chromaDir', ...
     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
     'theMetaSceneEngine', 'theMetaNeuralEngine',...
     'classifierChoice', 'classifierParams', 'thresholdParams', ...
-    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams','elapsedTime');
+    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams','elapsedTime','-v7.3');
 end
