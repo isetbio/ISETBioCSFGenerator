@@ -158,7 +158,8 @@ else
         'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 end
 
-% Some diagnosis
+% Some diagnosis.  This currently crashes if true, because
+% theNullSceneSequence is not defined at this point in the code.
 if (p.Results.extraVerbose)
     theWl = 400;
     theFrame = 1;
@@ -257,7 +258,8 @@ while (nextFlag)
                 Wl_vec(index),theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
         end
         
-        % Visualize the drifting sequence
+        % Visualize the drifting sequence.  This seems to crash for the
+        % 4AFC version.
         if (visualizeStimulus)
             theStim = 2; %TAFC: 2nd stim is the test
             if length(theSceneEngine) > 1; sE = theSceneEngine{theStim};

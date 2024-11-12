@@ -273,7 +273,8 @@ if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
     theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', ...
         squeeze(Responses), 'verticalActivationColorBarInside', true);
 
-    % Also visualize the full absorptions density
+    % Also visualize the full absorptions density.  This is buggy because
+    % it doesn't depend on the passed responses the way it should.
     figNo = 999;
     theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
 end
