@@ -29,7 +29,7 @@ figureTypeStr = '.tif';
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version run time relatively short.
-fastParameters = true;
+fastParameters = false;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
@@ -400,7 +400,7 @@ saveas(theCsfFig, fullfile(projectBaseDir,'local',myName,[matFileName(1:end-4), 
 % clog up the repository.
 %
 fprintf('Results will be saved in %s.\n', fullfile(projectBaseDir,'local',myName,matFileName));
-save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
+save(fullfile(projectBaseDir,'local',myName,matFileName), 'spatialFreqs', 'threshold', 'chromaDir', ...
     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', ...
     'theNeuralComputePipelineFunction', ...
     'classifierChoice', 'classifierParams', 'thresholdParams', ...
