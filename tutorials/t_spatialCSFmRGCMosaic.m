@@ -29,7 +29,7 @@ figureTypeStr = '.tif';
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version run time relatively short.
-fastParameters = true;
+fastParameters = false;
 
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
