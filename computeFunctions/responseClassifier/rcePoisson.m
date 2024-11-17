@@ -99,6 +99,8 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 % History:
 %   12/03/21  dhb  Started on this.
 %   04/10/23  fh   Changed the title and edited the comments
+%   11/17/24  dhb  Handle case where an entry of template is 0.  Taking log
+%                  of 0 does not work well, so we set this to a small number.
 
 % For consistency with the interface
 if (nargin == 0)
@@ -115,6 +117,7 @@ if (strcmp(operationMode, 'train'))
     % No noise response template for each alternative stimulus 
     for ii = 1:length(theResponses)
         theTemplates{ii} = mean(theResponses{ii}(:, :), 1);
+        theTemplates{ii}(theTemplates{ii} == 0) = 1e-6;
     end
     dataOut.trainedClassifier = [];
     dataOut.preProcessingConstants.theTemplates = theTemplates;
