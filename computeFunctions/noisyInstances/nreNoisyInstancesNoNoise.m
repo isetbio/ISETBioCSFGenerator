@@ -1,27 +1,28 @@
-function dataOut = nreNoisyInstancesPoisson(...
+function dataOut = nreNoisyInstancesNoNoise(...
     neuralEngineOBJ, noisyInstancesComputeParams, noiseFreeResponses, ...
-    temporalSupportSeconds, instancesNum, varargin)
-% Compute function for adding Poisson noise to neural responses
+    temporalSupport, instancesNum, varargin)
+% Compute function for adding no noise to neural responses
 %
 % Syntax:
-%   dataOut = nreNoisyInstancesPoisson(...
+%   dataOut = nreNoisyInstancesNoNoise(...
 %    neuralEngineOBJ, noisyInstancesComputeParams, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
 % Description:
 %    Function serving as the computeFunctionHandle for a @neuralResponseEngine
-%    object.  This version adds Poisson noise
+%    object.  This version adds no noise, but can be useful for testing
+%    and/or creating multiple copies 
 %
 %    There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments, 
-%           dataOut = nreNoisyInstancesPoisson()
+%           dataOut = nreNoisyInstancesNoNoise()
 %       it does not compute anything and simply returns a struct with the 
 %       default parameter structure for this computation.
 %
 %       [2] If called from a parent @neuralResponseEngine object, 
 %       it computes 'instancesNum' of noisy response instances using
-%       a Poisson noise model, based on the passed noise free responses.
+%       a NoNoise noise model, based on the passed noise free responses.
 %
 %       It is not a terribly good idea to try to call this function with arguments
 %       directly - it should be called by the compute method of its parent
@@ -34,7 +35,7 @@ function dataOut = nreNoisyInstancesPoisson(...
 %                                     This should just be empty for this function.                                
 %    noiseFreeResponses             - a matrix of noise free neural
 %                                     responses, with each column providing the responses for one frame.
-%    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
+%    temporalSupport                - the temporal support for the stimulus frames, in seconds
 %    instancesNum                   - the number of response instances to compute
 %
 % Optional key/value input arguments:
@@ -100,6 +101,7 @@ function dataOut = nreNoisyInstancesPoisson(...
     p.parse(varargin{:});
 
     % Retrieve the response noiseFlag labels and validate them.
+    noiseFlags = p.Results.noiseFlags;
     rngSeed = p.Results.rngSeed;
     
     % Return a dummy neural pipeline struct to keep parent object happy if
@@ -117,13 +119,14 @@ function dataOut = nreNoisyInstancesPoisson(...
     end
     
     % Compute responses for each type of noise flag requested
-    [responseDim, framesNum] = size(noiseFreeResponses);
+    responseDim = length(sceneSequence{1}.data.photons(:));
+    framesNum = numel(sceneSequence);
 
     % Compute noisy response instances
-    noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
+    theResponses = zeros(instancesNum,responseDim,framesNum);
     for jj = 1:framesNum
         for ii = 1:instancesNum
-            noisyResponseInstances(ii,:,jj) = iePoisson(noiseFreeResponses(:,jj));
+            theResponses(ii,:,jj) = ieNoNoise(noiseFreeResponses(:,jj));
         end
     end
     
@@ -132,13 +135,16 @@ function dataOut = nreNoisyInstancesPoisson(...
         rng(oldSeed);
     end
     
+    % Temporal support for the neural response
+    temporalSupportSeconds = sceneSequenceTemporalSupport; 
+    
     % Assemble the dataOut struct
     dataOut = struct(...
-        'neuralResponses', noisyResponseInstances, ...
+        'neuralResponses', theNeuralResponses, ...
     	'temporalSupport', temporalSupportSeconds);
 
     if (returnTheNoisyInstancesPipeline)
-        dataOut.noisyInstancesPipeline = noisyInstancesPipeline;
+        dataOut.neuralPipeline = noisyInstances;
     end
 end
 

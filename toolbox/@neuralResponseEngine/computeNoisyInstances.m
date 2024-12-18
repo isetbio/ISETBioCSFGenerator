@@ -52,10 +52,10 @@ function [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstance
 %    9/20/2020  NPC Wrote it
 
     % Call the user-supplied compute function
-    dataOut = obj.noisyInstancesComputeFunction(obj, obj.neuralParams, noiseFreeReponses, sceneTemporalSupportSeconds, instancesNum, varargin{:});
+    dataOut = obj.noisyInstancesComputeFunction(obj, obj.noisyInstancesComputeParams, noiseFreeReponses, temporalSupportSeconds, instancesNum, varargin{:});
 
     % Parse dataOut struct
-    noisyResponses = dataOut.neuralResponses;
+    noisyResponseInstances = dataOut.neuralResponses;
     temporalSupportSeconds = dataOut.temporalSupport;
 
     % Set the neural pipeline struct for future computations
