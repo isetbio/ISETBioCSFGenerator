@@ -80,7 +80,7 @@ function dataOut = nreNoisyInstancesPoisson(...
 %       frame.
 %
 % See Also:
-%     t_neuralResponseCompute
+%     nreNoiseFreeSceneAsResponse, t_neuralResponseCompute
 
 % History:
 %    09/26/2020  dhb  Wrote it.
@@ -98,9 +98,6 @@ function dataOut = nreNoisyInstancesPoisson(...
     p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x) | ischar(x)));
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
-
-    % Retrieve the response noiseFlag labels and validate them.
-    rngSeed = p.Results.rngSeed;
     
     % Return a dummy neural pipeline struct to keep parent object happy if
     % it hasn't yet stored one.
@@ -112,8 +109,8 @@ function dataOut = nreNoisyInstancesPoisson(...
     end
 
     % Set rng seed
-    if (~isempty(rngSeed))
-        oldSeed = rng(rngSeed);
+    if (~isempty(p.Results.rngSeed))
+        oldSeed = rng(p.Results.rngSeed);
     end
     
     % Compute responses for each type of noise flag requested
@@ -128,7 +125,7 @@ function dataOut = nreNoisyInstancesPoisson(...
     end
     
     % Restore
-    if (~isempty(rngSeed))
+    if (~isempty(p.Results.rngSeed))
         rng(oldSeed);
     end
     

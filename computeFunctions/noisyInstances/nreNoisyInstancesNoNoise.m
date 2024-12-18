@@ -1,7 +1,7 @@
 function dataOut = nreNoisyInstancesNoNoise(...
     neuralEngineOBJ, noisyInstancesComputeParams, noiseFreeResponses, ...
-    temporalSupport, instancesNum, varargin)
-% Compute function for adding no noise to neural responses
+    temporalSupportSeconds, instancesNum, varargin)
+% Compute function for making instances without actually adding any noise
 %
 % Syntax:
 %   dataOut = nreNoisyInstancesNoNoise(...
@@ -10,8 +10,9 @@ function dataOut = nreNoisyInstancesNoNoise(...
 %
 % Description:
 %    Function serving as the computeFunctionHandle for a @neuralResponseEngine
-%    object.  This version adds no noise, but can be useful for testing
-%    and/or creating multiple copies 
+%    object.  This version does not add noise, which might be useful for
+%    testing or for creating multiple response instances in a manner
+%    compatible with other nre noise adding functions.
 %
 %    There are 2 ways to use this function.
 %
@@ -21,8 +22,8 @@ function dataOut = nreNoisyInstancesNoNoise(...
 %       default parameter structure for this computation.
 %
 %       [2] If called from a parent @neuralResponseEngine object, 
-%       it computes 'instancesNum' of noisy response instances using
-%       a NoNoise noise model, based on the passed noise free responses.
+%       it computes 'instancesNum' of response instances but doesn't
+%       add any noise.
 %
 %       It is not a terribly good idea to try to call this function with arguments
 %       directly - it should be called by the compute method of its parent
@@ -35,16 +36,12 @@ function dataOut = nreNoisyInstancesNoNoise(...
 %                                     This should just be empty for this function.                                
 %    noiseFreeResponses             - a matrix of noise free neural
 %                                     responses, with each column providing the responses for one frame.
-%    temporalSupport                - the temporal support for the stimulus frames, in seconds
+%    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
 %    instancesNum                   - the number of response instances to compute
 %
 % Optional key/value input arguments:
-%   'rngSeed'                       - Integer or string.  Set rng seed. Empty (default) means don't touch the
-%                                     seed. An integer uses that as the
-%                                     seed.  A string (e.g. 'shuffle') sets
-%                                     the seed by passing the string into the rng() function. When the rng seed is
-%                                     set, the old seed is saved and restored upon return.
-%                                     Note that setting the seed is slow, so you want to invoke this option with some trepidation.
+%   'rngSeed'                       - Integer or string. Default is empty. This does not do anything
+%                                     but is here for compatibility with other nre noise computation functions.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -99,10 +96,6 @@ function dataOut = nreNoisyInstancesNoNoise(...
     p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x) | ischar(x)));
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
-
-    % Retrieve the response noiseFlag labels and validate them.
-    noiseFlags = p.Results.noiseFlags;
-    rngSeed = p.Results.rngSeed;
     
     % Return a dummy neural pipeline struct to keep parent object happy if
     % it hasn't yet stored one.
@@ -112,39 +105,26 @@ function dataOut = nreNoisyInstancesNoNoise(...
     else
         returnTheNoisyInstancesPipeline =  false;
     end
-
-    % Set rng seed
-    if (~isempty(rngSeed))
-        oldSeed = rng(rngSeed);
-    end
     
     % Compute responses for each type of noise flag requested
-    responseDim = length(sceneSequence{1}.data.photons(:));
-    framesNum = numel(sceneSequence);
+    [responseDim, framesNum] = size(noiseFreeResponses);
 
-    % Compute noisy response instances
-    theResponses = zeros(instancesNum,responseDim,framesNum);
+    % Compute noisy response instances. This loop could be made
+    % to go faster, I'm sure.
+    noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     for jj = 1:framesNum
         for ii = 1:instancesNum
-            theResponses(ii,:,jj) = ieNoNoise(noiseFreeResponses(:,jj));
+            noisyResponseInstances(ii,:,jj) = noiseFreeResponses(:,jj);
         end
     end
     
-    % Restore
-    if (~isempty(rngSeed))
-        rng(oldSeed);
-    end
-    
-    % Temporal support for the neural response
-    temporalSupportSeconds = sceneSequenceTemporalSupport; 
-    
     % Assemble the dataOut struct
     dataOut = struct(...
-        'neuralResponses', theNeuralResponses, ...
+        'neuralResponses', noisyResponseInstances, ...
     	'temporalSupport', temporalSupportSeconds);
 
     if (returnTheNoisyInstancesPipeline)
-        dataOut.neuralPipeline = noisyInstances;
+        dataOut.noisyInstancesPipeline = noisyInstancesPipeline;
     end
 end
 
