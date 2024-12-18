@@ -6,13 +6,7 @@ function t_neuralResponseCompute
 %
 % Description:
 %    Demonstrates how to generate a stimulus sequence using a
-%    @sceneEngine object and a neural compute function. The neural pipeline defined
-%    by the 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements' compute function represents
-%    the cone excitations in the absence of fixational eye movements. Here we are
-%    passing a custom neural response params struct during instantiation of the
-%    @neuralResponseEngine object. If no neural response params struct were passed, 
-%    the default neural response params defined in the 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements' 
-%    compute function would be used.
+%    @sceneEngine object and a neural compute function.
 %
 % Inputs:
 %    None.

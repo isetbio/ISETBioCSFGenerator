@@ -1,5 +1,5 @@
-function [neuralResponses, temporalSupportSeconds] = compute(obj, ...
-                sceneSequence, sceneTemporalSupportSeconds, instancesNum, varargin)
+function [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstances(obj, ...
+                noiseFreeReponses, temporalSupportSeconds, instancesNum, varargin)
 % Generic compute method for the @neuralResponseEngine class.
 %
 % Syntax:
@@ -23,13 +23,13 @@ function [neuralResponses, temporalSupportSeconds] = compute(obj, ...
 % Inputs:
 %    obj                            - the parent @neuralResponseEngine object
 %                               
-%    sceneSequence                  - a cell array of scenes, representing a 
-%                                     spatiotemporal stimulus
+%    noiseFreeResponses             - noisy free neural repsonse sequence as returned by
+%                                     nre computeNoiseFree method.
 %
-%    sceneTemporalSupportSeconds    - a vector of time stamps for each frame 
-%                                     of the scene sequence 
+%    temporalSupportSeconds         - a vector of time stamps for each frame 
+%                                     of the noise free response sequence
 %
-%    instancesNum                   - a scalar, specifying the number of response 
+%    instancesNum                   - a scalar, specifying the number of noisy response 
 %                                     instances to generate
 %
 %
@@ -38,9 +38,12 @@ function [neuralResponses, temporalSupportSeconds] = compute(obj, ...
 %                                     computeFunction of the @neuralResponseEngine object
 %
 % Outputs:
-%    neuralResponses                - computed neural responses
+%    noisyResponseInstances         - computed noisy response instances
 %
-%    temporalSupportSeconds         - a vector of time stamps for each time bin of the computed response 
+%    temporalSupportSeconds         - a vector of time stamps for each time
+%                                     bin of returned noisy responses.
+%                                     Typically the same as the input
+%                                     values for this.
 %
 % See Also:
 %     t_sceneGeneration
@@ -49,15 +52,15 @@ function [neuralResponses, temporalSupportSeconds] = compute(obj, ...
 %    9/20/2020  NPC Wrote it
 
     % Call the user-supplied compute function
-    dataOut = obj.neuralComputeFunction(obj, obj.neuralParams, sceneSequence, sceneTemporalSupportSeconds, instancesNum, varargin{:});
+    dataOut = obj.noisyInstancesComputeFunction(obj, obj.neuralParams, noiseFreeReponses, sceneTemporalSupportSeconds, instancesNum, varargin{:});
 
     % Parse dataOut struct
-    neuralResponses = dataOut.neuralResponses;
+    noisyResponses = dataOut.neuralResponses;
     temporalSupportSeconds = dataOut.temporalSupport;
 
     % Set the neural pipeline struct for future computations
-    if (isfield(dataOut, 'neuralPipeline'))
-        obj.neuralPipeline = dataOut.neuralPipeline;
+    if (isfield(dataOut, 'noisyInstancesPipeline'))
+        obj.neuralPipeline.noisyInstances = dataOut.noisyInstancesPipeline;
     end
              
 end

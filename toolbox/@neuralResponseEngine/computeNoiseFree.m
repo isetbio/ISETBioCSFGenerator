@@ -45,15 +45,15 @@ function [noiseFreeResponses, temporalSupportSeconds] = computeNoiseFree(obj, ..
 %    9/20/2020  NPC Wrote it
 
     % Call the user-supplied compute function
-    dataOut = obj.neuralComputeFunction(obj, obj.neuralParams, sceneSequence, sceneTemporalSupportSeconds, instancesNum, varargin{:});
+    dataOut = obj.noiseFreeComputeFunction(obj, obj.noiseFreeComputeParams, sceneSequence, sceneTemporalSupportSeconds, varargin{:});
 
     % Parse dataOut struct
     noiseFreeResponses = dataOut.neuralResponses;
     temporalSupportSeconds = dataOut.temporalSupport;
 
     % Set the neural pipeline struct for future computations
-    if (isfield(dataOut, 'neuralPipeline'))
-        obj.neuralPipeline.noiseFree = dataOut.neuralPipeline;
+    if (isfield(dataOut, 'noiseFreeResponsesPipeline'))
+        obj.neuralPipeline.noiseFreeResponses = dataOut.noiseFreeResponsesPipeline;
     end
              
 end
