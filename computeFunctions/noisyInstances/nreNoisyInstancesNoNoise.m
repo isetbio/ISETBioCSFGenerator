@@ -109,13 +109,11 @@ function dataOut = nreNoisyInstancesNoNoise(...
     % Compute responses for each type of noise flag requested
     [responseDim, framesNum] = size(noiseFreeResponses);
 
-    % Compute noisy response instances. This loop could be made
-    % to go faster, I'm sure.
+    % Compute noisy response instances. Here we aren't adding noise,
+    % so the noisy response is just the noise free response.
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
-    for jj = 1:framesNum
-        for ii = 1:instancesNum
-            noisyResponseInstances(ii,:,jj) = noiseFreeResponses(:,jj);
-        end
+    for ii = 1:instancesNum
+        noisyResponseInstances(ii,:,:) = noiseFreeResponses;
     end
     
     % Assemble the dataOut struct

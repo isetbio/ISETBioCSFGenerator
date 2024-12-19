@@ -118,12 +118,10 @@ function dataOut = nreNoisyInstancesPoisson(...
 
     % Compute noisy response instances
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
-    for jj = 1:framesNum
-        for ii = 1:instancesNum
-            noisyResponseInstances(ii,:,jj) = iePoisson(noiseFreeResponses(:,jj));
-        end
+    for ii = 1:instancesNum
+        noisyResponseInstances(ii,:,:) = poissrnd(noiseFreeResponses);
     end
-    
+
     % Restore
     if (~isempty(p.Results.rngSeed))
         rng(oldSeed);
