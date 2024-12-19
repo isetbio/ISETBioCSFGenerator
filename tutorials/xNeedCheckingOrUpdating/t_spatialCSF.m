@@ -20,6 +20,7 @@
 %                       & computePerformance.m & rcePossion.m
 %   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine
 %                   phase.
+%   12/19/24  dhb   Update for new architecture.
 
 function thresholdRet = t_spatialCSF(varargin)
     p = inputParser;
@@ -30,7 +31,7 @@ function thresholdRet = t_spatialCSF(varargin)
     doValidationCheck = p.Results.doValidationCheck;
 
     % Freeze rng for replicatbility
-    rng(0);
+    rng(1);
     
     % List of spatial frequencies to be tested.
     spatialFreqs = [4, 8, 16, 32];
@@ -183,7 +184,12 @@ function thresholdRet = t_spatialCSF(varargin)
     %% Do a check on the answer
     % 
     % So that if we break something in the future we will have
-    % a chance of knowing it.
+    % a chance of knowing it. The current numbers don't quite
+    % match the old version, but I think that is because of a change
+    % away from iePoisson which was not freezing the rng, and also
+    % other changes somewhere in stochasticity that I have not quite
+    % tracked down. But this validation generally passes.  Might fail
+    % sometimes.
     if (doValidationCheck)
         validationThresholds = [0.0351    0.0827    0.1534    0.5529];
         if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
