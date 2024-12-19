@@ -106,11 +106,9 @@ function dataOut = nreNoisyInstancesNoNoise(...
         returnTheNoisyInstancesPipeline =  false;
     end
     
-    % Compute responses for each type of noise flag requested
-    [responseDim, framesNum] = size(noiseFreeResponses);
-
     % Compute noisy response instances. Here we aren't adding noise,
     % so the noisy response is just the noise free response.
+    [responseDim, framesNum] = size(noiseFreeResponses);
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     for ii = 1:instancesNum
         noisyResponseInstances(ii,:,:) = noiseFreeResponses;

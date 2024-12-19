@@ -112,11 +112,9 @@ function dataOut = nreNoisyInstancesPoisson(...
     if (~isempty(p.Results.rngSeed))
         oldSeed = rng(p.Results.rngSeed);
     end
-    
-    % Compute responses for each type of noise flag requested
-    [responseDim, framesNum] = size(noiseFreeResponses);
 
     % Compute noisy response instances
+    [responseDim, framesNum] = size(noiseFreeResponses);
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     for ii = 1:instancesNum
         noisyResponseInstances(ii,:,:) = poissrnd(noiseFreeResponses);

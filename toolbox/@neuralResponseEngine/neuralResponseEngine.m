@@ -84,11 +84,16 @@ classdef neuralResponseEngine < handle
         %
         % This lets you stick anything you want into the neuralPipeline
         % field of the object. With great power comes great responsibility.
-        % We enforce no structure on what you do here, so you need to make
+        % We enforce little structure on what you do here, so you need to make
         % sure that your compute methods are compatible with whatever you
         % put here.
-        function customNeuralPipeline(obj, thePipeline)
-            obj.neuralPipeline = thePipeline;
+        function customNeuralPipeline(obj, noiseFreeResponsePipeline,noisyInstancesPipeline)
+            if (~isempty(noiseFreeResponsePipeline))
+                obj.neuralPipeline.noiseFreeResponse = noiseFreeResponsePipeline;
+            end
+            if (~isempty(noisyInstancesPipeline))
+                obj.neuralPipeline.noisInstances = noisyInstancesPipeline;
+            end
         end
         
         % Compute method for noise free response

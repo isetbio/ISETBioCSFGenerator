@@ -88,7 +88,7 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
     
     % Usage case #2. Compute noise free responses 
     % using a parent @neuralResponseEngine object and the default neural response params
-
+    %
     % Instantiate the parent @neuralResponseEngine object, with Poisson noise
     theNeuralEngine = neuralResponseEngine(@nreNoiseFreePhotopigmentExcitationsCmosaic, ...
         @nreNoisyInstancesPoisson, ...
@@ -142,10 +142,10 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
     else
         % Get the optics from the previously computed neural pipeline
         % stored in the object
-        theOptics = neuralEngine.neuralPipeline.noiseFreeRespones.optics;
+        theOptics = neuralEngine.neuralPipeline.noiseFreeResponse.optics;
 
         % Get the cone mosaic from the previously computed neural pipeline
-        theConeMosaic = neuralEngine.neuralPipeline.noiseFreeRespones.coneMosaic;
+        theConeMosaic = neuralEngine.neuralPipeline.noiseFreeResponse.coneMosaic;
         returnTheNoiseFreePipeline = false;
     end
 
@@ -167,6 +167,9 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
         theConeMosaic.compute(theOIsequence, ...
         'nTrials', 1, ...
         'withFixationalEyeMovements', false);
+
+    % Convert cMosaic return convention to nre return convention
+    theNeuralResponses = squeeze(theNeuralResponses)';
            
     % Assemble the dataOut struct
     dataOut = struct(...
