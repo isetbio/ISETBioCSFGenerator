@@ -57,18 +57,6 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                             theNeuralEngine to generate the test
 %                             response instances. Typically 'random'.
 %
-%
-% Optional key/value pairs:
-%     TAFC                  - logical. Whether this is a two-interval 
-%                             forced-choice task or N-way one-stimulus-per
-%                             -trial task. Default false.
-%     saveResponses         - Logical. Whether to return the computed
-%                             response instances
-%     visualizeAllComponents - Logical. Whether to visualize or not.
-%     amputateScenes        - Logical. Whether we want to just select the 
-%                               first scene and generate cone excitations 
-%                               and amputate the rest. Default: false.
-%
 % Outputs:
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
 %                              that gives trial by trial performance of the
@@ -86,7 +74,18 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                              with 'rcePoisson'.  
 %
 % Optional key/value pairs:
-%     None.
+%
+% Optional key/value pairs:
+%     TAFC                  - logical. Whether this is a two-interval 
+%                             forced-choice task or N-way one-stimulus-per
+%                             -trial task. Default false.
+%     saveResponses         - Logical (default false). Whether to return the computed
+%                             response instances
+%     visualizeAllComponents - Logical (default false). Whether to visualize or not.
+%     verbose               - Logical (default true). Print out stuff.
+%     theBackgroundRetinalImage - Optical image (default a blank oi
+%                             struct). Some neural response engines expect this so that they can
+%                             compute modulations and/or contrast.
 %
 % See also
 %   t_thresholdEngine, t_spatialCsf, computeThreshold
@@ -103,6 +102,7 @@ p = inputParser;
 p.addParameter('TAFC', false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
+p.addParameter('verbose', true, @islogical);
 p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
 
 parse(p, varargin{:});
@@ -123,83 +123,87 @@ nScenes   = length(theScenes);
 % 'random') should be used in the training. Using 'random' inherits
 % whatever noise model is in the nre.
 if (~isempty(trainNoiseFlag))
+    % Generate responses for training
+    %
+    % The responses are a 3 dimensional
+    % matrix, with the dimensions indexing [instancesNum x mNeuralDim x tTimeBins].
+    %   instancesNum   - number of response instances
+    %   mNeuralDim     - dimension of neural response at one timepoint
+    %   tTimeBins      - number of time points in stimulus sequence.
+    % Note that if nTimeBins is 1, the last dimension is implicit,
+    % following Matlab conventions.
     inSampleStimResponsesCell = cell(1,nScenes);
-
-    % Generate stimuli for training
     for n = 1:nScenes
-        % Noise scene response for nth alternative scene sequence
+        % Noise free response for nth alternative scene sequence
         [inSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine.computeNoiseFree(...
             theScenes{n}, ...
             temporalSupport, ...
             'theBackgroundRetinalImage',theBackgroundRetinalImage);
-        [nResponse,nFrames] = size(inSampleNoiseFreeStimResponsesCell{n});
 
-        % Add noise (or not) to nth alternative scene sequence
-        switch (trainNoiseFlag)
-            case 'none'
-                % Copy over the noise free respones so it has the expected
-                % form.
-                inSampleStimResponsesCell{n} = zeros(nTrain,nResponse,nFrames);
-                for ii = 1:nTrain
-                    inSampleStimResponsesCell{n}(ii,:,:) = inSampleNoiseFreeStimResponsesCell{n};
-                end
-
-            case 'random'
-                [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
-                    inSampleNoiseFreeStimResponsesCell{n}, ...
-                    temporalSupport, ...
-                    nTrain);
-
-            otherwise
-                error('Train flag must be ''none'' or ''random''');
-        end
+        % Add noise (or not) to nth alternative responses
+        [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
+            inSampleNoiseFreeStimResponsesCell{n}, ...
+            temporalSupport, ...
+            nTrain, ...
+            trainNoiseFlag);
     end
 
-    % If the classifier is either rcePoisson or rcePoissonTAFC or 
-    % rcePoissonNWay_OneStimulusPerTrial, those are the only classifiers
-    % that currently can be used for NWay_OneStimulusPerTrial
-    if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',10)
-        % If the task is TAFC, then we need to do the following 
-        % reorganization of the data
-        if isTAFC
-            % Concatenate them along the 3rd dimension (cones)
-            cat1 = cat(3, inSampleStimResponsesCell{1}(trainNoiseFlag), ...
-                inSampleStimResponsesCell{2}(trainNoiseFlag)); %[null, test]
-            cat2 = cat(3, inSampleStimResponsesCell{2}(trainNoiseFlag), ...
-                inSampleStimResponsesCell{1}(trainNoiseFlag)); %[test, null]
+    % Classifier specific massaging for training
+    switch (func2str(theClassifierEngine.classifierComputeFunction))
+        case 'rcePoisson'
+            % If it's TAFC and rcePoisson, massage the responses to be
+            % the concatenation of the responses to the two
+            % stimuli that were actually passed. This is because rcePoisson is set up to
+            % handle N alternatives, one stimulus per trial and doing this turns
+            % the TAFC case work into that format.
+            %
+            % If rcePoisson and not TAFC, then we just continue on with the cell
+            % array we already have because we are explictly doing an N-alternative
+            % one stimulus per trial task.
+            %
+            % We don't overwrite the original inSampleStimResonsesCell
+            % array, because for visualization below it is convenient to
+            % have the responses to the individual stimuli still available.
+            if (isTAFC)
+                % Concatenate them along the 2nd dimension (responses) in both
+                % orders
+                cat1 = cat(2, inSampleStimResponsesCell{1}, ...
+                    inSampleStimResponsesCell{2}); %[null, test]
+                cat2 = cat(2, inSampleStimResponsesCell{2}, ...
+                    inSampleStimResponsesCell{1}); %[test, null]
 
-            % Nicely put the concatenated cells back to the container
-            inSampleStimResponses = containers.Map(trainNoiseFlag, {cat1, cat2});
-        else %NWay_OneStimulusPerTrial
-            inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
-        end
-        
-        % Train the classifier. This shows the usage to extact information
-        % from the container retrned as the first return value from the neural
-        % response engine - we index the responses by the string contained in
-        % the variable trainFlag (which was itself passed to the neural
-        % repsonse engine above.)
-        %
-        % Once extracted from the container, the responses are a 3 dimensional
-        % matrix, with the dimensions indexing [instancesNum x mNeuralDim x tTimeBins].
-        %   instancesNum   - number of response instances
-        %   mNeuralDim     - dimension of neural response at one timepoint
-        %   tTimeBins      - number of time points in stimulus sequence.
-        theClassifierEngine.compute('train', inSampleStimResponses(trainNoiseFlag),[]);
-    else %all the rest classifiers are only suitable for TAFC tasks (e.g., 
-        theClassifierEngine.compute('train', inSampleStimResponsesCell{1}(trainNoiseFlag),...
-            inSampleStimResponsesCell{2}(trainNoiseFlag)); %nullResponses, testResponses
+                % Nicely put the concatenated cells back to the container
+                inSampleStimResponsesMassagedCell = {cat1, cat2};
+            else
+                inSampleStimResponsesMassagedCell = inSampleStimResponsesCell;
+            end
+
+            % Train the rcePoisson classifier.
+            theClassifierEngine.compute('train', inSampleStimResponsesMassagedCell,[]);
+            clear inSampleStimResponsesMassagedCell
+
+        otherwise
+            % Our other classifiers are designed for TAFC and we pass the
+            % two individual stimulus responses explicitly in to them, rather than a
+            % cell array of the responses to the N stimuli.  Typically
+            % these are the responses to null and test stimuli, but
+            % actually they can be any two stimuli.  These classifiers are
+            % responsible for the concatenation manuever that we do for the
+            % TAFC rcePoisson case above.
+            theClassifierEngine.compute('train', inSampleStimResponsesCell{1}, ...
+                inSampleStimResponsesCell{2});
     end
 
     % Visualization the cone excitation for selected stimulus
     if visualizeAllComponents
-        %TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
+        % TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
         theStim = 1; 
-        visualizeConeResps(theNeuralEngine, inSampleStimResponsesCell,...
-            trainNoiseFlag, theStim);
+        visualizeConeResps(theNeuralEngine, inSampleStimResponsesCell, theStim);
     end
 
-    % Save computed response instances
+    % Save computed response instances.  These are the responses to the
+    % individually passed stimuli, even when the actually classifier is
+    % trained on concatenated resoponses
     if (saveResponses)
         responses.inSampleStimResponses = inSampleStimResponsesCell;
     end
@@ -212,8 +216,9 @@ end
 % prediction.  Typically 'random'.
 if isTAFC
     nTests_eachScene = nTest;
-    %the first template the always the correct answer [nullStim, testStim]
-    %since the responses are organized as [nullResps, testResps]
+
+    % The first template the always the correct answer [nullStim, testStim]
+    % since the responses are organized as [nullResps, testResps]
     whichAlternatives = ones(nTests_eachScene, 1); 
 else
     % Alternative implementation here ...
@@ -224,52 +229,80 @@ else
     whichAlternatives = whichAlternatives(:); 
 end
 
-outSampleStimResponsesCell = cell(1, nScenes);
+% Generate responses for training
+%
+% The responses are a 3 dimensional
+% matrix, with the dimensions indexing [instancesNum x mNeuralDim x tTimeBins].
+%   instancesNum   - number of response instances
+%   mNeuralDim     - dimension of neural response at one timepoint
+%   tTimeBins      - number of time points in stimulus sequence.
+% Note that if nTimeBins is 1, the last dimension is implicit,
+% following Matlab conventions.
+outSampleStimResponsesCell = cell(1,nScenes);
 eStart = tic;
 for n = 1:nScenes
-    [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.compute(...
+    % Noise free response for nth alternative scene sequence
+    [outSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine.computeNoiseFree(...
         theScenes{n}, ...
         temporalSupport, ...
-        nTests_eachScene, ...
         'theBackgroundRetinalImage',theBackgroundRetinalImage);
+
+    % Add noise (or not) to nth alternative responses
+    [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
+        outSampleNoiseFreeStimResponsesCell{n}, ...
+        temporalSupport, ...
+        nTests_eachScene, ...
+        testNoiseFlag);
 end
 e = toc(eStart);
-fprintf('computePerformance: Took %0.1f secs to generate mean responses for all alternatives\n',e);
-
-%if the classifier is either rcePoisson or rcePoissonTAFC or
-%rcePoissonNWay_OneStimulusPerTrial
-if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',10)
-    % If the task is TAFC, then we need to do the following reorganization
-    % of the data
-    if isTAFC
-        %get the responses given the null stimulus
-        outSampleNullStimResponses = outSampleStimResponsesCell{1}(testNoiseFlag);
-        outSampleNullStimResponses = outSampleNullStimResponses(:,:);
-        %get the responses given the test stimulus
-        outSampleTestStimResponses = outSampleStimResponsesCell{2}(testNoiseFlag);
-        %combine the 2nd (time) and the 3rd dimensions (cones)
-        outSampleTestStimResponses = outSampleTestStimResponses(:,:);
-        %concatenate them together along the 2nd dimension (cones)
-        cat_resp = cat(2, outSampleNullStimResponses, outSampleTestStimResponses);
-        %nicely put them back to the container
-        outSampleStimResponses = containers.Map(testNoiseFlag, cat_resp);
-    else
-        outSampleStimResponses = combineContainersMat(outSampleStimResponsesCell);
-    end
-    
-    % Do the prediction
-    dataOut = theClassifierEngine.compute('predict', ...
-        outSampleStimResponses(testNoiseFlag),whichAlternatives);
-else
-    % Other classification engines. This need to be generalized to handle N-Way
-    % and don't currently make use of the whichAlternatives list but rather
-    % simply pass in the out of sample responses for the two stimulus
-    % alternatives.
-    dataOut = theClassifierEngine.compute('predict', ...
-        outSampleStimResponsesCell{1}(testNoiseFlag), ... %nullResponses
-        outSampleStimResponsesCell{2}(testNoiseFlag));    %testResponses
+if (p.Results.verbose)
+    fprintf('computePerformance: Took %0.1f secs to generate test responses for all alternatives\n',e);
 end
 
+% Classifier specific massaging for training
+switch (func2str(theClassifierEngine.classifierComputeFunction))
+    case 'rcePoisson'
+        % If it's TAFC and rcePoisson, massage the responses to be
+        % the concatenation of the responses to the two
+        % stimuli that were actually passed. This is because rcePoisson is set up to
+        % handle N alternatives, one stimulus per trial and doing this turns
+        % the TAFC case work into that format.
+        %
+        % If rcePoisson and not TAFC, then we just continue on with the cell
+        % array we already have because we are explictly doing an N-alternative
+        % one stimulus per trial task.
+        %
+        % We don't overwrite the original outSampleStimResonsesCell
+        % array, because for visualization below it is convenient to
+        % have the responses to the individual stimuli still available.
+        if (isTAFC)
+            % Concatenate them along the 2nd dimension (responses) in
+            % null/test order.  We don't need to intermix test/cell as well
+            % because the observer is not biased and doesn't care about the
+            % order.
+            cat1 = cat(2, outSampleStimResponsesCell{1}, outSampleStimResponsesCell{2});
+
+            % Stash the concatenated trials
+            outSampleStimResponsesMassagedCell = {cat1};
+        else
+            outSampleStimResponsesMassagedCell = outSampleStimResponsesCell;
+        end
+
+        % Train the rcePoisson classifier.
+        dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassagedCell{1}, whichAlternatives);
+        clear outSampleStimResponsesMassagedCell
+
+    otherwise
+        % Our other classifiers are designed for TAFC and we pass the
+        % two individual stimulus responses explicitly in to them, rather than a
+        % cell array of the responses to the N stimuli.  Typically
+        % these are the responses to null and test stimuli, but
+        % actually they can be any two stimuli.  These classifiers are
+        % responsible for the concatenation manuever that we do for the
+        % TAFC rcePoisson case above.
+        dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesCell{1}, ...
+            outSampleStimResponsesCell{2});
+end
 
 % Save computed response instances
 if (saveResponses)
@@ -282,10 +315,13 @@ predictions = dataOut.trialPredictions;
 
 end
 
-function visualizeConeResps(theNeuralEngine, inSampleTestStimResponses, ...
-    trainNoiseFlag, selectedScene)
+% Helper function for diagnostic visualizations.
+function visualizeConeResps(theNeuralEngine, neuralResponses, selectedScene)
+
+% If we've got a cone mosaic, visualize responses assuming they go with the
+% cone mosaic
 if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
-    Responses = inSampleTestStimResponses{selectedScene}(trainNoiseFlag);
+    Responses = neuralResponses{selectedScene};
     % Visualize the activation
     theNeuralEngine.neuralPipeline.coneMosaic.visualize('activation', ...
         squeeze(Responses), 'verticalActivationColorBarInside', true);
@@ -294,12 +330,14 @@ if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
     % it doesn't depend on the passed responses the way it should.
     figNo = 999;
     theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
-end
 
-if (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
+% If we don't have a cone mosaic but have an mRGC mosaic, visualize
+% responses asumming they go with the mRGC mosaic
+elseif (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
     theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
-        responseTemporalSupportSeconds, inSampleTestStimResponses{selectedScene}(trainNoiseFlag), ...
+        responseTemporalSupportSeconds, neuralResponses{selectedScene}, ...
         'stimulusTemporalSupportSeconds', temporalSupport,...
         'stimulusSceneSequence', testScene);
 end
+
 end

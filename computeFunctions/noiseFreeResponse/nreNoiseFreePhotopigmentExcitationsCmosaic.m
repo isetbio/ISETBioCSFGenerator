@@ -177,14 +177,21 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
     end
 
     % Compute responses for each type of noise flag requested
-    [theNeuralResponses, ~, ~, ~, temporalSupportSeconds] = ...
+    [theNeuralResponsesRaw, ~, ~, ~, temporalSupportSeconds] = ...
         theConeMosaic.compute(theOIsequence, ...
         'nTrials', 1, ...
         'withFixationalEyeMovements', false);
 
-    % Convert cMosaic return convention to nre return convention
-    theNeuralResponses = squeeze(theNeuralResponses)';
-           
+    % Convert cMosaic return convention to nre return convention.  We have
+    % to deal with unfortunate special casing because of the way Matlab
+    % and/or cMosaic handle singleton dimensions, so that the returned
+    % responses always have the responses in the column(s).
+    theNeuralResponses(:,:) = theNeuralResponsesRaw(1,:,:);
+    clear theNeuralResponsesRaw
+    if (length(temporalSupportSeconds) > 1)
+           theNeuralResponses = theNeuralResponses';
+    end
+
     % Assemble the dataOut struct
     dataOut = struct(...
         'neuralResponses', theNeuralResponses, ...

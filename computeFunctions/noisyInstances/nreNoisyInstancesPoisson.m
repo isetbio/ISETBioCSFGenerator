@@ -45,18 +45,6 @@ function dataOut = nreNoisyInstancesPoisson(...
 %                                     seem silly, but it simplifies some
 %                                     cases of calling code by avoiding
 %                                     special cases at that level.
-% 
-% Optional key/value input arguments:
-%   'rngSeed'                       - Integer or string.  Set rng seed. Empty (default) means don't touch the
-%                                     seed. An integer uses that as the
-%                                     seed.  A string (e.g. 'shuffle') sets
-%                                     the seed by passing the string into
-%                                     the rng() function. When the rng seed
-%                                     is set, the old seed is saved and
-%                                     restored upon return. Note that
-%                                     setting the seed is slow, so you want
-%                                     to invoke this option with some
-%                                     trepidation.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -91,6 +79,19 @@ function dataOut = nreNoisyInstancesPoisson(...
 %           [instancesNum x mResponses x nFrames] 
 %       where the mResponses is the dimension of the passed response vector for each
 %       frame.
+% 
+% Optional key/value input arguments:
+%   'rngSeed'                       - Integer or string.  Set rng seed. Empty (default) means don't touch the
+%                                     seed. An integer uses that as the
+%                                     seed.  A string (e.g. 'shuffle') sets
+%                                     the seed by passing the string into
+%                                     the rng() function. When the rng seed
+%                                     is set, the old seed is saved and
+%                                     restored upon return. Note that
+%                                     setting the seed is slow, so you want
+%                                     to invoke this option with some
+%                                     trepidation.
+%
 %
 % See Also:
 %     nreNoiseFreeSceneAsResponse, t_neuralResponseCompute

@@ -51,10 +51,6 @@ function dataOut = nreNoisyInstancesNoNoise(...
 %                                     noise flag since it does the same
 %                                     thing in either case.
 %
-% Optional key/value input arguments:
-%   'rngSeed'                       - Integer or string. Default is empty. This does not do anything
-%                                     but is here for compatibility with other nre noise computation functions.
-%
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
 %
@@ -88,6 +84,10 @@ function dataOut = nreNoisyInstancesNoNoise(...
 %           [instancesNum x mResponses x nFrames] 
 %       where the mResponses is the dimension of the passed response vector for each
 %       frame.
+%
+% Optional key/value input arguments:
+%   'rngSeed'                       - Integer or string. Default is empty. This does not do anything
+%                                     but is here for compatibility with other nre noise computation functions.
 %
 % See Also:
 %     t_neuralResponseCompute
