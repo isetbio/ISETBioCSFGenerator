@@ -124,10 +124,15 @@ switch (whichNeuralEngine)
         % Basic retinal image formation and sampling by the cone mosaic.
         % Note use of neural engine to get its own default parameters and
         % adjust them.  Smaller field of view speeds things up.
-        neuralParams = nrePhotopigmentExcitationsCmosaic;
-        neuralParams.coneMosaicParams.sizeDegs = [0.25 0.25];
-        neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
-        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic,neuralParams);
+        noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCmosaic;
+        noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.25 0.25];
+        noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
+        noisyInstancesParams = nreNoisyInstancesPoisson;
+        theNeuralEngine = neuralResponseEngine( ...
+            @nreNoiseFreePhotopigmentExcitationsCmosaic, ...
+            @nreNoisyInstancesPoisson, ...
+            noiseFreeResponseParams, ...
+            noisyInstancesParams);
         
         % The actual threshold varies enough with the different engines that we
         % need to adjust the contrast range that Quest+ searches over, as well as
@@ -148,7 +153,7 @@ switch (whichNeuralEngine)
         % visual system performed against what was imposed by physical
         % limits and no consideration of the visual system.  This 'neural'
         % engine instantiates calculations of this sort.
-        theNeuralEngine = neuralResponseEngine(@nreScenePhotonNoise);
+        theNeuralEngine = neuralResponseEngine(@nreNoiseFreeScenePhotonNoise,@nreNoisyInstancesPoisson);
         
         % Again, custom ranges for the code that finds threshold
         logThreshLimitLow = 7;
@@ -190,7 +195,7 @@ end
 %   'rcePoisson'
 %   'rceTemplateDistanceTAFC'
 %   'rcePcaSVMTAFC'
-whichObserver = 'rcePcaSVMTAFC';
+whichObserver = 'rcePoisson';
 switch whichObserver
     case 'rcePoisson'
         % The ideal observer for a TAFC task limited by Poisson noise.
