@@ -1,6 +1,6 @@
 function dataOut = nreNoisyInstancesPoisson(...
     neuralEngineOBJ, noisyInstancesComputeParams, noiseFreeResponses, ...
-    temporalSupportSeconds, instancesNum, varargin)
+    temporalSupportSeconds, instancesNum, noiseFlag, varargin)
 % Compute function for adding Poisson noise to neural responses
 %
 % Syntax:
@@ -36,14 +36,27 @@ function dataOut = nreNoisyInstancesPoisson(...
 %                                     responses, with each column providing the responses for one frame.
 %    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
 %    instancesNum                   - the number of response instances to compute
-%
+%    noiseFlag                      - string: 'random' (default) or 'none'.
+%                                     The defalt value of 'random' means
+%                                     actually add the noise.  The value of
+%                                     'none' means return instancesNum
+%                                     instances of noise versions of the
+%                                     passed responses. This option may
+%                                     seem silly, but it simplifies some
+%                                     cases of calling code by avoiding
+%                                     special cases at that level.
+% 
 % Optional key/value input arguments:
 %   'rngSeed'                       - Integer or string.  Set rng seed. Empty (default) means don't touch the
 %                                     seed. An integer uses that as the
 %                                     seed.  A string (e.g. 'shuffle') sets
-%                                     the seed by passing the string into the rng() function. When the rng seed is
-%                                     set, the old seed is saved and restored upon return.
-%                                     Note that setting the seed is slow, so you want to invoke this option with some trepidation.
+%                                     the seed by passing the string into
+%                                     the rng() function. When the rng seed
+%                                     is set, the old seed is saved and
+%                                     restored upon return. Note that
+%                                     setting the seed is slow, so you want
+%                                     to invoke this option with some
+%                                     trepidation.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -116,8 +129,17 @@ function dataOut = nreNoisyInstancesPoisson(...
     % Compute noisy response instances
     [responseDim, framesNum] = size(noiseFreeResponses);
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
-    for ii = 1:instancesNum
-        noisyResponseInstances(ii,:,:) = poissrnd(noiseFreeResponses);
+    switch (noiseFlag)
+        case {'random'}
+            for ii = 1:instancesNum
+                noisyResponseInstances(ii,:,:) = poissrnd(noiseFreeResponses);
+            end
+        case {'none'}
+            for ii = 1:instancesNum
+                noisyResponseInstances(ii,:,:) = noiseFreeResponses;
+            end
+        otherwise
+            error('noiseFlag must be ''random'' or ''none''');
     end
 
     % Restore

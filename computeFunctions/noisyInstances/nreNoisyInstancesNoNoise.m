@@ -1,6 +1,6 @@
 function dataOut = nreNoisyInstancesNoNoise(...
     neuralEngineOBJ, noisyInstancesComputeParams, noiseFreeResponses, ...
-    temporalSupportSeconds, instancesNum, varargin)
+    temporalSupportSeconds, instancesNum, noiseFlag, varargin)
 % Compute function for making instances without actually adding any noise
 %
 % Syntax:
@@ -38,6 +38,18 @@ function dataOut = nreNoisyInstancesNoNoise(...
 %                                     responses, with each column providing the responses for one frame.
 %    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
 %    instancesNum                   - the number of response instances to compute
+%    noiseFlag                      - string: 'random' (default) or 'none'.
+%                                     The defalt value of 'random' means
+%                                     actually add the noise.  The value of
+%                                     'none' means return instancesNum
+%                                     instances of noise versions of the
+%                                     passed responses. This option may
+%                                     seem silly, but it simplifies some
+%                                     cases of calling code by avoiding
+%                                     special cases at that level. In this
+%                                     particular routine, we can ignore the
+%                                     noise flag since it does the same
+%                                     thing in either case.
 %
 % Optional key/value input arguments:
 %   'rngSeed'                       - Integer or string. Default is empty. This does not do anything
@@ -93,6 +105,7 @@ function dataOut = nreNoisyInstancesNoNoise(...
     
     % Parse the input arguments
     p = inputParser;
+    p.KeepUnmatched = true;
     p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x) | ischar(x)));
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
@@ -110,10 +123,15 @@ function dataOut = nreNoisyInstancesNoNoise(...
     % so the noisy response is just the noise free response.
     [responseDim, framesNum] = size(noiseFreeResponses);
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
-    for ii = 1:instancesNum
-        noisyResponseInstances(ii,:,:) = noiseFreeResponses;
+    switch (noiseFlag)
+        case {'random', 'none'}
+            for ii = 1:instancesNum
+                noisyResponseInstances(ii,:,:) = noiseFreeResponses;
+            end
+        otherwise
+            error('noiseFlag must be ''random'' or ''none''');
     end
-    
+
     % Assemble the dataOut struct
     dataOut = struct(...
         'neuralResponses', noisyResponseInstances, ...
