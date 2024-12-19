@@ -65,14 +65,20 @@ function thresholdRet = t_spatialCSF(varargin)
     %
     % This calculations isomerizations in a patch of cone mosaic with Poisson
     % noise, and includes optical blur.
-    neuralParams = nrePhotopigmentExcitationsCmosaic;
-    neuralParams.coneMosaicParams.sizeDegs = [0.5 0.5]; 
+    noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCmosaic;
+    neuralParams.coneMosaicParams.sizeDegs = [0.5 0.5];
     neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
-    theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
-    if (~all(neuralParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
+    noisyInstancesParams = nreNoisyInstancesPoisson;
+    theNeuralEngine = neuralResponseEngine( ...
+        @nreNoiseFreePhotopigmentExcitationsCmosaic, ...
+        @nreNoisyInstancesPoisson, ...
+        noiseFreeResponseParams, ...
+        noisyInstancesParams);
+
+    if (~all(noiseFreeResponseParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
         doValidationCheck = false;
     end
-    if (neuralParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
+    if (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
         doValidationCheck = false;
     end
     
