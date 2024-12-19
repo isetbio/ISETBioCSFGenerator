@@ -103,54 +103,72 @@ p = inputParser;
 p.addParameter('TAFC', false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
-p.addParameter('amputateScenes', false, @islogical);
 p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
 saveResponses = p.Results.saveResponses;
 visualizeAllComponents = p.Results.visualizeAllComponents;
-amputateScenes = p.Results.amputateScenes;
 theBackgroundRetinalImage = p.Results.theBackgroundRetinalImage;
 
 % Empty responses
 responses = [];
 nScenes   = length(theScenes);
-%nScenes = 2 if the input task is 'TAFC'
-%nScenes = #alternatives if the input task is 'NWay_OneStimulusPerTrial'
 
 % Train the classifier.
 %
 % If trainNoiseFlag is empty, then the passed classifier has already been trained
 % and training is skipped.  Otherwise trainFlag is passed to the stimulus
-% generation routine to indicate what type of noise (typically 'none' or
-% 'random') should be used in the training.
+% generation routine to indicate what type of noise ('none' or
+% 'random') should be used in the training. Using 'random' inherits
+% whatever noise model is in the nre.
 if (~isempty(trainNoiseFlag))
     inSampleStimResponsesCell = cell(1,nScenes);
+
     % Generate stimuli for training
     for n = 1:nScenes
-        [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.compute(...
+        % Noise scene response for nth alternative scene sequence
+        [inSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine.computeNoiseFree(...
             theScenes{n}, ...
             temporalSupport, ...
-            nTrain, ...
-            'noiseFlags', {trainNoiseFlag},...
-            'amputateScenes', amputateScenes,...
             'theBackgroundRetinalImage',theBackgroundRetinalImage);
+        [nResponse,nFrames] = size(inSampleNoiseFreeStimResponsesCell{n});
+
+        % Add noise (or not) to nth alternative scene sequence
+        switch (trainNoiseFlag)
+            case 'none'
+                % Copy over the noise free respones so it has the expected
+                % form.
+                inSampleStimResponsesCell{n} = zeros(nTrain,nResponse,nFrames);
+                for ii = 1:nTrain
+                    inSampleStimResponsesCell{n}(ii,:,:) = inSampleNoiseFreeStimResponsesCell{n};
+                end
+
+            case 'random'
+                [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
+                    inSampleNoiseFreeStimResponsesCell{n}, ...
+                    temporalSupport, ...
+                    nTrain);
+
+            otherwise
+                error('Train flag must be ''none'' or ''random''');
+        end
     end
 
-    %if the classifier is either rcePoisson or rcePoissonTAFC or 
+    % If the classifier is either rcePoisson or rcePoissonTAFC or 
     % rcePoissonNWay_OneStimulusPerTrial, those are the only classifiers
     % that currently can be used for NWay_OneStimulusPerTrial
     if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',10)
-        %If the task is TAFC, then we need to do the following 
+        % If the task is TAFC, then we need to do the following 
         % reorganization of the data
         if isTAFC
-            %concatenate them along the 3rd dimension (cones)
+            % Concatenate them along the 3rd dimension (cones)
             cat1 = cat(3, inSampleStimResponsesCell{1}(trainNoiseFlag), ...
                 inSampleStimResponsesCell{2}(trainNoiseFlag)); %[null, test]
             cat2 = cat(3, inSampleStimResponsesCell{2}(trainNoiseFlag), ...
                 inSampleStimResponsesCell{1}(trainNoiseFlag)); %[test, null]
-            %nicely put the concatenated cells back to the container
+
+            % Nicely put the concatenated cells back to the container
             inSampleStimResponses = containers.Map(trainNoiseFlag, {cat1, cat2});
         else %NWay_OneStimulusPerTrial
             inSampleStimResponses = combineContainers(inSampleStimResponsesCell);
@@ -213,8 +231,6 @@ for n = 1:nScenes
         theScenes{n}, ...
         temporalSupport, ...
         nTests_eachScene, ...
-        'noiseFlags', {testNoiseFlag},...
-        'amputateScenes', amputateScenes,...
         'theBackgroundRetinalImage',theBackgroundRetinalImage);
 end
 e = toc(eStart);
@@ -223,8 +239,8 @@ fprintf('computePerformance: Took %0.1f secs to generate mean responses for all 
 %if the classifier is either rcePoisson or rcePoissonTAFC or
 %rcePoissonNWay_OneStimulusPerTrial
 if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',10)
-    %If the task is TAFC, then we need to do the following reorganization
-    %of the data
+    % If the task is TAFC, then we need to do the following reorganization
+    % of the data
     if isTAFC
         %get the responses given the null stimulus
         outSampleNullStimResponses = outSampleStimResponsesCell{1}(testNoiseFlag);
@@ -240,6 +256,7 @@ if strncmp(func2str(theClassifierEngine.classifierComputeFunction),'rcePoisson',
     else
         outSampleStimResponses = combineContainersMat(outSampleStimResponsesCell);
     end
+    
     % Do the prediction
     dataOut = theClassifierEngine.compute('predict', ...
         outSampleStimResponses(testNoiseFlag),whichAlternatives);

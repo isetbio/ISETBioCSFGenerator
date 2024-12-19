@@ -126,7 +126,11 @@ function dataOut = nreNoiseFreeSceneAsResposes(...
     end
     
     % Parse the input arguments
+    %   %
+    % Allow for possibility that other nre's take key/value pairs that we
+    % can ignore, so set KeepUnmatched to true.
     p = inputParser;
+    p.KeepUnmatched = true;
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     
