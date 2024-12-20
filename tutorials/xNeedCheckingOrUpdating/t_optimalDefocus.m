@@ -30,6 +30,11 @@ Fig. 3-4: same as Figs.1-2 except that we added the optimal amount of defocus so
 that the PSF can be the most compact given the in-focus wavelength = 550nm
 %}
 
+%% Default subject
+if (nargin == 0)
+    Subj = 1;
+end
+
 %% Parse input
 p = inputParser;
 p.addParameter('measuredPupilMM', 4,@isscalar);  %measured pupil size (mm)
@@ -154,6 +159,7 @@ for counter = 1:2
     end 
 
     %% Compute the optimal defocus 
+    %
     % Call func compactness_maxVal to get the peak of all the PSF's
     maxPSF = compactness_maxVal(calcWvl, addedDefocus, psf);
     
@@ -204,8 +210,9 @@ for counter = 1:2
     end
 end
 
-%do some simple checks
-%the optimal amount of defocus (found either by grid search or fmincon)
+% Do some simple checks
+%
+% The optimal amount of defocus (found either by grid search or fmincon)
 % after an adjustment is implemented should be 0
 assert(abs(optDefocus_diopters_gridSearch(end)) <= 1e-2 && ...
     abs(optDefocus_diopters_fmincon(end)) <= 1e-2, ['After the adjustment, ',...
@@ -221,7 +228,7 @@ defocus_adj_microns = wvfDefocusDioptersToMicrons(-defocus_adj_diopters, measure
 
 end
 
-%% HELPING FUNCTIONS
+%% HELPER FUNCTIONS
 function [maxPSF, optCalcW, optDefocus, maxVal] = compactness_maxVal(...
     calcW, defocus, PSF)
     %{
@@ -239,7 +246,7 @@ function [maxPSF, optCalcW, optDefocus, maxVal] = compactness_maxVal(...
         corresponding to optCalcW & optDefocus)
     %}
 
-    %initialize 
+    % Initialize 
     maxPSF = NaN(length(calcW), length(defocus));
     %loop through all the combinations of the in-focus wvl and added
     %defocus
@@ -249,8 +256,9 @@ function [maxPSF, optCalcW, optDefocus, maxVal] = compactness_maxVal(...
             maxPSF(l,d) = max(PSF{l,d}(:));
         end
     end
-    %find the in-focus wvl and added defocus that correspond to the
-    %greatest peak 
+
+    % Find the in-focus wvl and added defocus that correspond to the
+    % greatest peak 
     [maxVal, idx] = max(maxPSF(:));
     [row, col]    = ind2sub([length(calcW), length(defocus)], idx);
     optCalcW      = calcW(row);
@@ -275,20 +283,23 @@ function [strehlRatio, optCalcW, optDefocus, maxStrehlRatio] = ...
         corresponding to optCalcW & optDefocus)
     %}
 
-    %initialize
+    % Initialize
     strehlRatio = NaN(length(calcW), length(defocus));
-    %get the peak of the PSF given diffraction-limited optics
+
+    % Get the peak of the PSF given diffraction-limited optics
     PSF_peak = max(PSF_diffractionLimited{1}(:));
-    %loop through all the combinations of the in-focus wvl and added
-    %defocus
+
+    % Loop through all the combinations of the in-focus wvl and added
+    % defocus
     for l = 1:length(calcW)
         for d = 1:length(defocus)
             %compute the strehl ratio
             strehlRatio(l,d) = max(PSF{l,d}(:))./PSF_peak;
         end
     end
-    %find the in-focus wvl and added defocus that correspond to the
-    %greatest peak 
+
+    % Find the in-focus wvl and added defocus that correspond to the
+    % greatest peak 
     [maxStrehlRatio, idx] = max(strehlRatio(:));
     [row, col]            = ind2sub([length(calcW), length(defocus)], idx);
     optCalcW              = calcW(row);
@@ -311,22 +322,27 @@ function [peakPSF, psf] = psf_addedDefocus(defocus_added, defocus_wvf,...
     peakPSF: the peak of the psf
     %}
 
-    %convert diopter to micron
+    % Convert diopter to micron
     lcaMicrons   = wvfDefocusDioptersToMicrons(-defocus_added, measuredPupilMM);
-    %then we just add the defocus (microns)
+    
+    % Then we just add the defocus (microns)
     defocus_wvf  = defocus_wvf + lcaMicrons;
-    %replace the defocus value with the new one
+    
+    % Replace the defocus value with the new one
     wvf          = wvfSet(wvf, 'zcoeffs', defocus_wvf, {'defocus'});
-    %compute the point spread function
+    
+    % Compute the point spread function
     if (humanlca)
         wvf          = wvfSet(wvf,'lcaMethod','human');
     else
         wvf          = wvfSet(wvf,'lcaMethod','none');
     end
     wvf          = wvfCompute(wvf);
-    %get the psf
+    
+    % Get the psf
     psf          = wvf.psf{1};
-    %get the peak
+    
+    % Get the peak
     peakPSF      = max(psf(:));
 end
 
@@ -350,13 +366,14 @@ function [optDefocus, maxPSF] = findOptDefocus_fmincon(defocus_wvf, ...
         added defocus
     %}
 
-    %call psf_addedDefocus to get the peak psf
-    %a minus sign is added because fmincon finds the minimum
+    % Call psf_addedDefocus to get the peak psf
+    % a minus sign is added because fmincon finds the minimum
     humanlca = true;
     invertedPeakPSF = @(d) -psf_addedDefocus(d + defocus_adjustment, ...
                 defocus_wvf, wvf, measuredPupilMM,humanlca);
-    %have different initial points to avoid fmincon from getting stuck at
-    %some places
+    
+    % Have different initial points to avoid fmincon from getting stuck at
+    % some places
     N_runs  = 20;
     init    = rand(1,N_runs).*(ub-lb) + lb;
     options = optimoptions(@fmincon, 'MaxIterations', 1e5, 'Display','off');
@@ -366,10 +383,12 @@ function [optDefocus, maxPSF] = findOptDefocus_fmincon(defocus_wvf, ...
         [optDefocus_n(n), minNegPSF_n(n)] = fmincon(invertedPeakPSF, init(n), ...
             [],[],[],[],lb,ub,[],options);
     end
-    %find the index that corresponds to the minimum value
+
+    % Find the index that corresponds to the minimum value
     [~,idx_min] = min(minNegPSF_n);
-    %find the corresponding optimal focus that leads to the highest peak of
-    %the psf's
+
+    % Find the corresponding optimal focus that leads to the highest peak of
+    % the psf's
     maxPSF      = -minNegPSF_n(idx_min);
     optDefocus  = optDefocus_n(idx_min);
 end
@@ -377,7 +396,8 @@ end
 %% PLOTTING FUNCTIONS
 function plotMaxPSF(calcWvl, addedDefocus, maxPSF, maxPSF_slc, StrehlR_slc,...
     optDefocus_wvl550,maxPSFVal_slc, maxStrehlR_slc, measuredPupilMM, saveFigs)
-    %convert it to microns
+
+    % Convert it to microns
     lcaMicrons = wvfDefocusDioptersToMicrons(-addedDefocus, measuredPupilMM);
     c = [143,188,143]./255;
     cmap = [linspace(c(1), 1, 255)', linspace(c(2), 1, 255)',...

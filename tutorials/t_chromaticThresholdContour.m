@@ -6,7 +6,7 @@
 %    windowed gratings of constant size and one spatial frequency.
 %
 % See also: t_spatialCSF, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           computeThresholdTAFC, computePerformanceTAFC,
+%           computeThreshold, computePerformance,
 %           createGratingScene.
 %
 
@@ -44,7 +44,7 @@ for ii = 1:nDirs
     assert(abs(norm(theDirs(:,ii)) - rmsContrast) <= 1e-10);
 end
 
-%% Instantiate the PoissonTAFC responseClassifierEngine
+%% Instantiate the Poisson responseClassifierEngine
 %
 % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
 % Also set up parameters associated with use of this classifier.
@@ -88,10 +88,15 @@ for ii = 1:nDirs
     if (ii == 1)
         % This calculations isomerizations in a patch of cone mosaic with Poisson
         % noise, and includes optical blur.
-        neuralParams = nrePhotopigmentExcitationsCmosaic;
-        neuralParams.coneMosaicParams.timeIntegrationSeconds = theSceneEngine.sceneParams.frameDurationSeconds;
-        neuralParams.coneMosaicParams.sizeDegs = [0.25 0.25];
-        theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+        noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCmosaic;
+        noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.25 0.25];
+        noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
+        noisyInstancesParams = nreNoisyInstancesPoisson;
+        theNeuralEngine = neuralResponseEngine( ...
+            @nreNoiseFreePhotopigmentExcitationsCmosaic, ...
+            @nreNoisyInstancesPoisson, ...
+            noiseFreeResponseParams, ...
+            noisyInstancesParams);
     end
     
     % Compute the threshold for our grating scene with the previously
