@@ -22,6 +22,7 @@
 %                       & computePerformance.m & rcePossion.m
 %    04/17/24  dhb  Deep six oldWay option. Ever forward.  Gratings in sine
 %                   phase.
+%    12/20/24  dhb  Update for new architecture
 
 %% Clear and close
 clear; close all;
@@ -47,10 +48,15 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nrePhotopigmentExcitationsCmosaic;
-neuralParams.coneMosaicParams.sizeDegs = [0.25 0.25];
-neuralParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
-theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCmosaic, neuralParams);
+ noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCmosaic;
+    noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.25 0.25];
+    noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
+    noisyInstancesParams = nreNoisyInstancesPoisson;
+    theNeuralEngine = neuralResponseEngine( ...
+        @nreNoiseFreePhotopigmentExcitationsCmosaic, ...
+        @nreNoisyInstancesPoisson, ...
+        noiseFreeResponseParams, ...
+        noisyInstancesParams);
 
 %% Instantiate the PoissonTAFC responseClassifierEngine
 %
@@ -123,8 +129,8 @@ for idx = 1:nAList
     for t = 1:nAlternativesList(idx)
         gratingScenes{t} = createGratingScene(chromaDir, spatialFreq,...
             'orientation',orientations(t), ...
-            'fovDegs', min(neuralParams.coneMosaicParams.sizeDegs), ...
-            'duration', neuralParams.coneMosaicParams.timeIntegrationSeconds, ...
+            'fovDegs', min(noiseFreeResponseParams.coneMosaicParams.sizeDegs), ...
+            'duration', noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds, ...
             'spatialPhase', 90);
     end
     

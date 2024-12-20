@@ -98,6 +98,10 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                   a key/pair pair specifying whether the task is TAFC or 
 %                   NWay_OneStimulusPerTrial.
 
+% Close figs
+close all;
+
+% Parse input
 p = inputParser;
 p.addParameter('TAFC', false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
@@ -229,7 +233,7 @@ else
     whichAlternatives = whichAlternatives(:); 
 end
 
-% Generate responses for training
+% Generate responses for prediction
 %
 % The responses are a 3 dimensional
 % matrix, with the dimensions indexing [instancesNum x mNeuralDim x tTimeBins].
@@ -259,7 +263,7 @@ if (p.Results.verbose)
     fprintf('computePerformance: Took %0.1f secs to generate test responses for all alternatives\n',e);
 end
 
-% Classifier specific massaging for training
+% Classifier specific massaging 
 switch (func2str(theClassifierEngine.classifierComputeFunction))
     case 'rcePoisson'
         % If it's TAFC and rcePoisson, massage the responses to be
@@ -280,17 +284,23 @@ switch (func2str(theClassifierEngine.classifierComputeFunction))
             % null/test order.  We don't need to intermix test/cell as well
             % because the observer is not biased and doesn't care about the
             % order.
-            cat1 = cat(2, outSampleStimResponsesCell{1}, outSampleStimResponsesCell{2});
-
-            % Stash the concatenated trials
-            outSampleStimResponsesMassagedCell = {cat1};
+            outSampleStimResponsesMassaged = [];
+            for nn = 1:nScenes
+                outSampleStimResponsesMassaged = ...
+                    cat(2, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
+            end
         else
-            outSampleStimResponsesMassagedCell = outSampleStimResponsesCell;
+            % Stack up the responses for each alternative
+            outSampleStimResponsesMassaged = [];
+            for nn = 1:nScenes
+                outSampleStimResponsesMassaged = ...
+                    cat(1, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
+            end
         end
 
         % Train the rcePoisson classifier.
-        dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassagedCell{1}, whichAlternatives);
-        clear outSampleStimResponsesMassagedCell
+        dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassaged, whichAlternatives);
+        clear outSampleStimResponsesMassaged
 
     otherwise
         % Our other classifiers are designed for TAFC and we pass the
