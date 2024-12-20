@@ -60,6 +60,7 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
 %                                   parent object has an empty parameters
 %                                   struct. For this routine, it has
 %                                   information about the oi and cMosaic.
+% 
 % See Also:
 %     t_neuralResponseCompute
 

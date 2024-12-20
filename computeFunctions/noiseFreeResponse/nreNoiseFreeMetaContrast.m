@@ -1,25 +1,28 @@
-function dataOut = nreMetaContrast(...
+function dataOut = nreNoiseFreeMetaContrast(...
     metaNeuralEngineOBJ, metaNeuralParams, metaSceneSequence, ...
     metaSceneSequenceTemporalSupport, instancesNum, varargin)
-% Meta contrast scene engine
+% Meta contrast scene engine, noise free compute
 %
 % Syntax:
-%   dataOut = nreMetaContrast(...
-%    neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
+%   dataOut = nreNoiseFreeMetaContrast(...
+%    neuralEngineOBJ, noiseFreeResponseParams, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
 % Description:
 %    Function serving as the computeFunctionHandle for a @neuralResponseEngine
-%    object for the meta contrast scheme. There are 2 ways to use this function.
+%    object.  This is an illustrative function that just adds Poisson photon noise
+%    to each pixel in the scene.
 %
-%       [1] If called directly and with no arguments,
-%           dataOut = nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements()
-%       it does not compute anything and simply returns a struct with the
-%       defaultParams that define the neural
+%    There are 2 ways to use this function.
+%
+%       [1] If called directly and with no arguments, 
+%           dataOut = nreScenePhotonNoise()
+%       it does not compute anything and simply returns a struct with the 
+%       defaultParams (optics and coneMosaic params) that define the neural 
 %       compute pipeline for this computation.
 %
-%       [2] If called from a parent @neuralResponseEngine object,
-%       it computes 'instancesNum' of response sequences
+%       [2] If called from a parent @neuralResponseEngine object, 
+%       it computes 'instancesNum' of cone photopigment excitation sequences 
 %       in response to the passed 'sceneSequence'.
 %
 %    It is not a good idea to try to call this function with arguments
@@ -27,72 +30,51 @@ function dataOut = nreMetaContrast(...
 %    @neuralResponseEngine.
 %
 % Inputs:
-%    neuralEngineOBJ                - the parent @neuralResponseEngine object that
+%    neuralEngine                   - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
-%    neuralResponseParamsStruct     - a struct containing properties of the
-%                                     employed neural chain.
+%    noiseFreeComputeParams         - a struct containing properties of the employed neural chain.
+%                                     This should just be empty for this
+%                                     compute function.
 %    sceneSequence                  - a cell array of scenes defining the frames of a stimulus
 %    sceneSequenceTemporalSupport   - the temporal support for the stimulus frames, in seconds
-%    instancesNum                   - the number of response instances to compute
-%
-% Optional key/value input arguments:
-%    'amputateScenes'               - Logical. Whether we want to just
-%                                       select the first scene and generate
-%                                       cone excitations and amputate the
-%                                       rest. Default: false.
-%    'noiseFlags'                   - Cell array of strings containing labels
-%                                     that encode the type of noise to be included
-%                                     Valid values are:
-%                                        - 'none' (noise-free responses)
-%                                        - 'random' (noisy response instances)
-%                                     Default is {'random'}.
-%   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
-%                                     seed.
 %
 % Outputs:
-%    dataOut  - A struct that depends on the input arguments.
+%    dataOut  - A struct that depends on the input arguments. 
 %
 %               If called directly with no input arguments, the returned struct contains
-%               the defaultParams (optics and coneMosaic) that define the neural
-%               compute pipeline for this computation.  This can be useful
-%               for a user interested in knowing what needs to be supplied
-%               to this.
+%               the defaultParams, which here is the empty struct.
 %
 %             - If called from a parent @neuralResponseEngine), the returned
 %               struct is organized as follows:
-%                .neuralResponses : dictionary of responses indexed with
-%                                   labels corresponding to the entries of
-%                                   the 'noiseFlags'  optional argument
-%                .temporalSupport : the temporal support of the neural
+%
+%              .neuralResponses : matrix of neural responses.  Each column
+%                                 is the response vector for one frame of the input.
+%              .temporalSupport : the temporal support of the neural
 %                                   responses, in seconds
-%                .neuralPipeline  : a struct containing the optics and cone mosaic
-%                                   employed in the computation (only returned if
-%                                   the parent @neuralResponseEngine object has
-%                                   an empty neuralPipeline property)
+%              .noiseFreeResponsePipeline : a struct that the parent
+%                                   @neuralResponseEngine
+%                                   can tuck away.  Only returned if the
+%                                   parent object has an empty parameters
+%                                   struct. For this routine, it has
+%                                   information about the oi and cMosaic.
 %
-%       The computed neural responses can be extracted as:
-%           neuralResponses('one of the entries of noiseFlags') 
-%       and are arranged in a matrix of:
-%           [instancesNum x nTimeBins x mResponses]
-%       where mResponses is the dimensionality of the response vector returned
-%       by the actual underlying nre (e.g. mCones in the case of a cMosaic).
 %
-%       BUT: If you ask for multiple instances in the noise free case, you
-%            only get one instance.  An exception to may be if the
-%            underlying nre involves a set of eye movement paths that are
-%            not all zeros, where one noise free instance is returned per
-%            eye movement path.
-%
-%       NOTE: MATLAB always drops the last dimension of an matrix that has
-%             more than two dimensions, if that dimension has only 1 entry.
-%             So if mCones is 1, the returned array will be [instancesNum x
-%             nTimeBins], NOT [instancesNum x nTimeBins x mResponses].
-%
+% Optional key/value input arguments:
+%   'theBackgroundRetinalImage'       - oi containing the computed retinal
+%                                     image of the background.  Used by
+%                                     some nre's to convert cone
+%                                     excitations to modulation/contrast.
+%                                     By default this is set to a stub oi
+%                                     that doesn't do anything, so this
+%                                     only needs to be passed explicitly if
+%                                     the underlying nre needs it.
+% 
 % See Also:
 %     t_metaContrastCSF
 
 % History:
 %    08/11/24    dhb  Wrote it.
+%    12/20/2024  dhb  Rewrite for major architecture redo.
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0)
@@ -102,21 +84,11 @@ end
 
 % Parse the input arguments
 p = inputParser;
-p.addParameter('noiseFlags', {'random'});
-p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x)));
-p.addParameter('amputateScenes', false, @islogical);
 p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 
-% We need amputation scenes parameter to match calling routines, but we
-% never want it to be true
-if (p.Results.amputateScenes)
-    error('The amputateScenes option was a temporary hack.  Rewrite code so that it is not needed.');
-end
-
 % Retrieve the response noiseFlag labels and validate them.
-noiseFlags = p.Results.noiseFlags;
 rngSeed = p.Results.rngSeed;
 metaNeuralEngineOBJ.validateNoiseFlags(noiseFlags);
 
@@ -138,29 +110,25 @@ if (isempty(metaNeuralEngineOBJ.neuralPipeline))
     % Compute the contrast 0 response
     neuralPipeline.contrast0 = metaNeuralParams.contrast0;
     [actualSceneSequence, actualTemporalSupport] = metaNeuralParams.sceneEngine.compute(metaNeuralParams.contrast0);
-    [contrast0Response, ~] = metaNeuralParams.neuralEngine.compute(...
+    [contrast0Response, ~] = metaNeuralParams.neuralEngine.computeNoiseFree(...
         actualSceneSequence, ...
         actualTemporalSupport, ...
-        1, ...
-        'noiseFlags', {'none'}, ...
         'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage);
 
-    neuralPipeline.response0 = contrast0Response('none');
+    neuralPipeline.response0 = contrast0Response;
     clear contrast0Response
 
     % Compute the passed contrast1 response
     neuralPipeline.contrast1 = metaNeuralParams.contrast1;
     [actualSceneSequence, actualTemporalSupport] = metaNeuralParams.sceneEngine.compute(metaNeuralParams.contrast1);
-    [contrast1Response, ~] = metaNeuralParams.neuralEngine.compute(...
+    [contrast1Response, ~] = metaNeuralParams.neuralEngine.computeNoiseFree(...
         actualSceneSequence, ...
         actualTemporalSupport, ...
-        1, ...
-        'noiseFlags', {'none'}, ...
         'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage);
     
     % Store in canonical form that we can compute the real response quickly as done
     % below.
-    neuralPipeline.response1 = (contrast1Response('none')-neuralPipeline.response0)/neuralPipeline.contrast1;
+    neuralPipeline.response1 = (contrast1Response-neuralPipeline.response0)/neuralPipeline.contrast1;
     clear contrast1Response
     
     % Save actual temporal support
