@@ -151,7 +151,7 @@ if (~isempty(trainNoiseFlag))
 
     % Classifier specific massaging for training
     switch (func2str(theClassifierEngine.classifierComputeFunction))
-        case 'rcePoisson'
+        case {'rcePoisson', 'rceTemplateDistance'}
             % If it's TAFC and rcePoisson, massage the responses to be
             % the concatenation of the responses to the two
             % stimuli that were actually passed. This is because rcePoisson is set up to

@@ -132,8 +132,28 @@ function dataOut = nreNoisyInstancesPoisson(...
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     switch (noiseFlag)
         case {'random'}
+            % Find index to low mean noise free responses
+            poissonCriterion = 25;
+            idx = find(noiseFreeResponses(:) < poissonCriterion);
+            
             for ii = 1:instancesNum
-                noisyResponseInstances(ii,:,:) = poissrnd(noiseFreeResponses);
+                % You might think that you could just use Matlab's
+                % poissnrnd as in this commented out code.  But it is very
+                % slow. So instead we use the Gaussian appoximation once
+                % the mean gets reasonably large.  The Gaussian
+                % approximation still keeps variance proportional to mean,
+                % and we round so will still always get an integer.  It is
+                % considerably faster.
+                %
+                % noisyResponseInstances(ii,:,:) = poissrnd(noiseFreeResponses);
+                
+                % Gaussian approximation for large mean; for small counts (less
+                % than poissonCriterion) create a true Poisson sample.
+                noise = sqrt(noiseFreeResponses) .* randn(size(noiseFreeResponses));
+                noisyResponseInstances(ii,:,:) = round(noiseFreeResponses + noise);
+                if ~isempty(idx)
+                    noisyResponseInstances(ii,idx) = poissrnd(noiseFreeResponses(idx));
+                end
             end
         case {'none'}
             for ii = 1:instancesNum

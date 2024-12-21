@@ -1,8 +1,8 @@
-function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
-% Compute function for ideal signal-known Poisson noise classifier for TAFC and N-way forced choice.
+function dataOut = rceTemplateDistanceTAFC(obj, operationMode, ~, theResponses, whichAlternatives)
+% Compute function for ideal signal-known Poisson noise classifier for TAFC
 %
 % Syntax:
-%     dataOut = rcePoisson(obj, operationMode,classifierParamsStruct, theReponses, whichAlternatives)
+%     dataOut = rceTemplateDistanceTAFC(obj, operationMode, classifierParamsStruct, theResponses, whichAlternatives)
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a
@@ -14,15 +14,16 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %    keep the calling machinery happy.
 %
 %    When called from a parent @responseClassifierEngine object with
-%    operationMode set to 'train', it sets up the Poission log-likehood
-%    ratio (LL) for the decision, using the mean of the passed N responses
-%    as a template.  Pass noise free responses to get the signal known
-%    exactly version.
+%    operationMode set to 'train', it sets up template (nearest neighbor)
+%    classifier, using the mean of the passed null and test responses as a
+%    template.  Pass noise free responses to get the signal known exactly
+%    version.
 %
 %    When this is called from a parent @responseClassifierEngine object
 %    with operationMode set to 'predict', it makes correct/incorrect
 %    predictions for the passed instances. The predictions are made using a
-%    maximum likelihood classifier for N-way forced choice and Poisson noise.
+%    minimum L2-norm distance to the templates for each alternative as its
+%    decision rule.
 %
 %    This function models an N-way forced choice task with one stimulus
 %    presented per trial, so that each trial is has responses to be one of the
@@ -32,11 +33,12 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %    one long response, which is done (e.g.) in computePerformance when the
 %    TAFC flag is set.
 %
-%    Typically, training will be with one noise free instances of each of
-%    the N alternatives, while testing will be on noisy instances.  For
-%    training, however, the means of the passed instances are taken as the
-%    noise free template, so that you can in fact pass multiple instances
-%    per alternative and they can be noisy.
+%    Typically, training will be with one noise free instances of the null
+%    and test responses, while testing will be on noisy instances.  For
+%    training, however, the means of the passed null and test instances are
+%    taken as the noise free template, so that you can in fact pass
+%    multiple instances and they can be noisy.
+%
 %
 % Inputs:
 %    obj                      - The calling @responseClassifierEngine.
@@ -107,15 +109,11 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 % Optional key/value pairs:
 %   None.
 %
-% See also: t_responseClassifer, computePerformance
-%           PoissonDecisionLogLikelihood,
-%           PoissonIdealObserverNAlternativeFC.           
+% See also: computePerformance, t_responseClassifer.
 
 % History:
-%   12/03/21  dhb  Started on this.
-%   04/10/23  fh   Changed the title and edited the comments
-%   11/17/24  dhb  Handle case where an entry of template is 0.  Taking log
-%                  of 0 does not work well, so we set this to a small number.
+%   10/17/20  dhb  Wrote it from rcePoissonTAFC.
+%   12/21/d4  dhb  Generalize away from TAFC.  We handle TAFC in the call now.
 
 % For consistency with the interface
 if (nargin == 0)
@@ -129,9 +127,9 @@ end
 if (~strcmp(operationMode,'train') && ~strcmp(operationMode,'predict'))
     error('Unknown operation mode passed.  Must be ''train'' or ''predict''');
 end
-    
-if (strcmp(operationMode, 'train'))  
-    % No noise response template for each alternative stimulus 
+
+if (strcmp(operationMode, 'train'))
+   % No noise response template for each alternative stimulus 
     %
     % This code stretches the responses x time out along the columns,
     % with each instances a row, and then takes the mean over rows.
@@ -140,7 +138,6 @@ if (strcmp(operationMode, 'train'))
     % instances you can get the template as the mean of all of them.
     for ii = 1:length(theResponses)
         theTemplates{ii} = mean(theResponses{ii}(:, :), 1);
-        theTemplates{ii}(theTemplates{ii} == 0) = 1e-6;
     end
     dataOut.trainedClassifier = [];
     dataOut.preProcessingConstants.theTemplates = theTemplates;
@@ -167,11 +164,11 @@ if (strcmp(operationMode, 'predict'))
     for tt = 1:nTrials
         % Find the decision likelihood
         for aa = 1:nAlternatives
-            trialDecisionLikelihoods(tt,aa) = PoissonDecisionLogLikelihoood(theResponses(tt, :), theTemplates{aa});
+            trialDecisionDistances(tt,aa) = norm(theResponses(tt, :) - theTemplates{aa});
         end
 
         % Pick the winner
-        [~,whichAlternativeList] = max(trialDecisionLikelihoods(tt,:));
+        [~,whichAlternativeList] = min(trialDecisionDistances(tt,:));
         whichAlternativesPredicted(tt) = whichAlternativeList(1);
 
         % See if it was correct
@@ -194,6 +191,6 @@ if (strcmp(operationMode, 'predict'))
     return;
 end
 
+
+
 end
-
-

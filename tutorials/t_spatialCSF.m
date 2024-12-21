@@ -100,7 +100,7 @@ end
 %                 distance.
 %
 % Also set up parameters associated with use of this classifier.
-classifierEngine = 'rceTemplateDistance';
+classifierEngine = 'rcePoisson';
 switch (classifierEngine)
     case {'rcePoisson'}
         classifierEngine = responseClassifierEngine(@rcePoisson);
@@ -112,6 +112,7 @@ switch (classifierEngine)
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
+        doValidationCheck = false;
     otherwise
         error('Unsupported rce specified')
 end
@@ -215,7 +216,7 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 % tracked down. But this validation generally passes.  Might fail
 % sometimes.
 if (doValidationCheck)
-    validationThresholds = [0.0351    0.0827    0.1534    0.5529];
+    validationThresholds = [0.0418    0.0783    0.1540    0.6759];
     if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
         error('Do not replicate validation thresholds to 25%. Check that parameters match, or for a bug.');
     end
