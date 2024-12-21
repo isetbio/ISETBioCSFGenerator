@@ -98,9 +98,6 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                   a key/pair pair specifying whether the task is TAFC or 
 %                   NWay_OneStimulusPerTrial.
 
-% Close figs
-close all;
-
 % Parse input
 p = inputParser;
 p.addParameter('TAFC', false, @islogical);
