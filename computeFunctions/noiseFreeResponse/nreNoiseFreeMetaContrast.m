@@ -1,12 +1,12 @@
 function dataOut = nreNoiseFreeMetaContrast(...
-    metaNeuralEngineOBJ, metaNeuralParams, metaSceneSequence, ...
-    metaSceneSequenceTemporalSupport, instancesNum, varargin)
-% Meta contrast scene engine, noise free compute
+    neuralEngine, metaNeuralParams, metaSceneSequence, ...
+    metaSceneSequenceTemporalSupport, varargin)
+% Meta contrast nre noise free compute function
 %
 % Syntax:
 %   dataOut = nreNoiseFreeMetaContrast(...
-%    neuralEngineOBJ, noiseFreeResponseParams, sceneSequence, ...
-%    sceneSequenceTemporalSupport, instancesNum, varargin);
+%    metaNeuralEngine, noiseFreeResponseParams, sceneSequence, ...
+%    sceneSequenceTemporalSupport, varargin);
 %
 % Description:
 %    Function serving as the computeFunctionHandle for a @neuralResponseEngine
@@ -30,7 +30,7 @@ function dataOut = nreNoiseFreeMetaContrast(...
 %    @neuralResponseEngine.
 %
 % Inputs:
-%    neuralEngine                   - the parent @neuralResponseEngine object that
+%    metaNeuralEngine               - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
 %    noiseFreeComputeParams         - a struct containing properties of the employed neural chain.
 %                                     This should just be empty for this
@@ -70,7 +70,7 @@ function dataOut = nreNoiseFreeMetaContrast(...
 %                                     the underlying nre needs it.
 % 
 % See Also:
-%     t_metaContrastCSF
+%     nreNoisyInstancesMetaContrast, t_metaContrastCSF
 
 % History:
 %    08/11/24    dhb  Wrote it.
@@ -88,38 +88,26 @@ p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @iss
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 
-% Retrieve the response noiseFlag labels and validate them.
-rngSeed = p.Results.rngSeed;
-metaNeuralEngineOBJ.validateNoiseFlags(noiseFlags);
-
-% For each noise flag we generate a corresponing neural response, and all
-% neural responses are stored in a dictionary indexed by the noiseFlag label.
-% Setup theNeuralResponses dictionary, loading empty responses for now
-theNeuralResponses = containers.Map();
-for idx = 1:length(noiseFlags)
-    theNeuralResponses(noiseFlags{idx}) = [];
-end
-
 % We will use the neural pipeline to store the precomputed response
 % vectors we need to then compute for any contrast
-if (isempty(metaNeuralEngineOBJ.neuralPipeline))
+if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noiseFreeResponse'))
     if (metaNeuralParams.contrast0 ~= 0)
         error('We assume that contrast0 is 0 in our meta contrast logic');
     end
 
     % Compute the contrast 0 response
-    neuralPipeline.contrast0 = metaNeuralParams.contrast0;
+    noiseFreeResponsePipeline.contrast0 = metaNeuralParams.contrast0;
     [actualSceneSequence, actualTemporalSupport] = metaNeuralParams.sceneEngine.compute(metaNeuralParams.contrast0);
     [contrast0Response, ~] = metaNeuralParams.neuralEngine.computeNoiseFree(...
         actualSceneSequence, ...
         actualTemporalSupport, ...
         'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage);
 
-    neuralPipeline.response0 = contrast0Response;
+    noiseFreeResponsePipeline.response0 = contrast0Response;
     clear contrast0Response
 
     % Compute the passed contrast1 response
-    neuralPipeline.contrast1 = metaNeuralParams.contrast1;
+    noiseFreeResponsePipeline.contrast1 = metaNeuralParams.contrast1;
     [actualSceneSequence, actualTemporalSupport] = metaNeuralParams.sceneEngine.compute(metaNeuralParams.contrast1);
     [contrast1Response, ~] = metaNeuralParams.neuralEngine.computeNoiseFree(...
         actualSceneSequence, ...
@@ -128,11 +116,12 @@ if (isempty(metaNeuralEngineOBJ.neuralPipeline))
     
     % Store in canonical form that we can compute the real response quickly as done
     % below.
-    neuralPipeline.response1 = (contrast1Response-neuralPipeline.response0)/neuralPipeline.contrast1;
+    noiseFreeResponsePipeline.response1 = ...
+        (contrast1Response-noiseFreeResponsePipeline.response0)/noiseFreeResponsePipeline.contrast1;
     clear contrast1Response
     
     % Save actual temporal support
-    neuralPipeline.temporalSupportSecs = actualTemporalSupport;
+    noiseFreeResponsePipeline.temporalSupportSecs = actualTemporalSupport;
 
     % Flag that we need to store what we computed here
     returnTheNeuralPipeline = true;
@@ -141,83 +130,33 @@ else
 end
 
 %% Pipeline is initialized, can compute fast based on what has been precomputed.
-
-% Set rng seed if one was passed. Not clear we need to do this because
-% all the randomness is in the @coneMosaic compute object, but it
-% doesn't hurt to do so, if we ever choose a random number at this
-% level.
-if (~isempty(rngSeed))
-    oldSeed = rng(rngSeed);
-end
-
+%
 % Compute noise free responses
 theContrast = sceneGet(metaSceneSequence{1},'photons');
 if (numel(theContrast) ~= 1)
     error('Something went wrong, scene photons should contain one number');
 end
 if (returnTheNeuralPipeline)
-    theNoiseFreeNeuralResponses = neuralPipeline.response0 + ...
-        theContrast*neuralPipeline.response1;
-    theNoiseFreeTemporalSupport = neuralPipeline.temporalSupportSecs;
+    theNoiseFreeNeuralResponses = noiseFreeResponsePipeline.response0 + ...
+        theContrast*noiseFreeResponsePipeline.response1;
+    theNoiseFreeTemporalSupport = noiseFreeResponsePipeline.temporalSupportSecs;
 else
-    theNoiseFreeNeuralResponses = metaNeuralEngineOBJ.neuralPipeline.response0 + ...
-        theContrast*metaNeuralEngineOBJ.neuralPipeline.response1;
-    theNoiseFreeTemporalSupport = metaNeuralEngineOBJ.neuralPipeline.temporalSupportSecs;
-end
-
-% Compute responses for each type of noise flag requested
-for idx = 1:length(noiseFlags)
-    % Return noise free response
-    if (contains(ieParamFormat(noiseFlags{idx}), 'none'))
-
-        % Store noise-free response instances.  By convention, we only 
-        % return one instance here, independent of how many are requested.
-        theNeuralResponses(noiseFlags{idx}) = theNoiseFreeNeuralResponses;
-
-    else
-        % We already have the noise free response, so now just need to add
-        % noise to it to compute noisy response.
-        %
-        % If passed, set the rng seed in the hope that doing so will freeze the
-        % noise.
-        if (~isempty(rngSeed))
-            rng(rngSeed);
-        end
- 
-        % Add noise to each response instance
-        [~,m,n] = size(theNoiseFreeNeuralResponses);
-        theNoisyNeuralResponses = zeros(instancesNum,m,n);
-        for iii = 1:instancesNum
-            % useSeed = randi(32000,1,1);
-            [theNoisyNeuralResponsesOneInstance] = metaNeuralParams.neuralEngine.compute(...
-                theNoiseFreeNeuralResponses, ...
-                theNoiseFreeTemporalSupport, ...
-                1, ...
-                'noiseFlags', {'random'}, ...
-                'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage, ...
-                'justAddNoise', true, 'rngSeed',[]);
-            theNoisyNeuralResponses(iii,:,:) = theNoisyNeuralResponsesOneInstance('random');
-        end
-        theNeuralResponses(noiseFlags{idx}) = theNoisyNeuralResponses;
-    end
-end
-
-% Restore rng seed if we set it
-if (~isempty(rngSeed))
-    rng(oldSeed);
+    theNoiseFreeNeuralResponses = neuralEngine.neuralPipeline.noiseFreeResponse.response0 + ...
+        theContrast*neuralEngine.neuralPipeline.noiseFreeResponse.response1;
+    theNoiseFreeTemporalSupport = neuralEngine.neuralPipeline.noiseFreeResponse.temporalSupportSecs;
 end
 
 % Assemble the dataOut struct
 if (returnTheNeuralPipeline)
     dataOut = struct(...
-    'neuralResponses', theNeuralResponses, ...
-    'temporalSupport', neuralPipeline.temporalSupportSecs);
-    dataOut.neuralPipeline = neuralPipeline;
+    'neuralResponses', theNoiseFreeNeuralResponses, ...
+    'temporalSupport', noiseFreeResponsePipeline.temporalSupportSecs);
+    dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
 
 else
      dataOut = struct(...
-    'neuralResponses', theNeuralResponses);
-     dataOut.temporalSupport = metaNeuralEngineOBJ.neuralPipeline.temporalSupportSecs;
+    'neuralResponses', theNoiseFreeNeuralResponses);
+     dataOut.temporalSupport = neuralEngine.neuralPipeline.noiseFreeResponse.temporalSupportSecs;
 end
 
 end
@@ -228,8 +167,7 @@ p = struct( ...
     'contrast0', 0, ...
     'contrast1', 0.5, ...
     'sceneEngine',[], ...
-    'neuralEngine', [], ...
-    'noiseAddMethod', 'nre' ...
+    'neuralEngine', [] ...
     );
 end
 

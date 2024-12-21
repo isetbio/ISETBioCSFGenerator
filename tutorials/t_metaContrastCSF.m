@@ -1,41 +1,51 @@
-function thresholdRet = t_spatialCSF(varargin)
-% Compute spatial CSF in different color directions
+function thresholdRet = t_metaContastCSF(varargin)
+% Meta contrast computation of spatial CSF in different color directions
 %
 % Syntax:
-%   thresholdRet = t_spatialCSF;
+%    thresholdRet = t_metaContastCSF
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.
 %    This example uses an ideal Poisson observer and circularly
-%    windowed gratings of constant size.
+%    windowed gratings of constant size, and is set up to illustrate the
+%    meta contrast approach.
 %
+%    The meta contrast approach works by taking advantage of the function that
+%    for fixed spatial parameters, we can compute responses to any scene
+%    by synthesis from the responses from just two precomputed contrasts.
 %
-% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
-%           t_chromaticThresholdContour, computeThreshold, computePerformance
+%    Here's the idea, which also works for a scene sequence. Let's suppose
+%    that r0 is the noise-free response to a background scene, and r1 is the
+%    noise-free response to a scene with a contrast of c1.  We can rewrite
+%       r1 = r0 + c1*[(r1-r0)/c1] = r0 + c1*deltaR
+%    Let deltaR = [(r1-r0)/c1].  If I then consider some other contrast c2
+%    where I want the noise-free response, I can then compute it as
+%       r2 = r0 + c2*deltaR
+%    when the nre's noise-free responses are linear in the photons.  The
+%    calculation above is much faster than recomputing r2 through the nre,
+%    at least in realistic case.
+%
+%    In addition, adding the noise to the noise-free response is
+%    comptuationally fast.
+%
+%    The name meta contrast here has nothing to do with the concept of meta
+%    contrast masking.
+%
+% See also: t_spatialCSF
 
 % History:
-%   10/20/20  lqz   Wrote it.
-%   10/21/20  dhb   More commments.
-%   10/22/20  lqz   Restructure the code
-%   10/23/20  dhb   More commments.
-%   10/25/20  dhb   Change contrast vectors to column vectors.  This is PTB
-%                   convention, and also the convention of my brain.
-%   05/10/23  fh    Edited it to call the new functions computeThreshold.m
-%                       & computePerformance.m & rcePossion.m
-%   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine
-%                   phase.
+%   08/11/24  dhb   Wrote it.
 %   12/19/24  dhb   Update for new architecture.
 
-% Close figs
-close all
-
-% Parse input
 p = inputParser;
 p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
 p.addParameter('doValidationCheck', true, @islogical);
 parse(p, varargin{:});
 filter = p.Results.filter;
 doValidationCheck = p.Results.doValidationCheck;
+
+% Close out old figs
+close all;
 
 % Freeze rng for replicatbility
 rng(1);
@@ -69,7 +79,7 @@ rmsContrast = 0.1;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
-%% Create neural response engine
+%% Create actaul neural response engine
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
@@ -139,35 +149,53 @@ questEnginePara = struct( ...
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
-    % Create a static grating scene with a particular chromatic direction,
+    % Create a grating scene engine with a particular chromatic direction,
     % spatial frequency, and temporal duration.  Put grating in sine phase
     % becuase that keeps the spatial mean constant across spatial
     % frequencies.
     %
     % Create scene produces square scenes.  We use the min of the mosaic
     % field size to pick a reasonable size
-    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx),...
+    gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(idx),...
         'fovDegs', min(noiseFreeResponseParams.coneMosaicParams.sizeDegs), ...
         'duration', noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds, ...
         'spatialPhase', 90, ...
         'filter', filter...
         );
 
-    % Compute the threshold for our grating scene with the previously
-    % defined neural and classifier engine.  This function does a lot of
+    % Create the sceMetaContrast scene engine
+    metaSceneEngineParams = sceMetaContrast;
+    theMetaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+
+    % Create nreMetaContrast using the actual scene and neural engines
+    metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
+    metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
+    metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
+    metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
+    metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
+
+    metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
+    metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
+    theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
+        @nreNoisyInstancesMetaContrast, ...
+        metaNeuralResponseEngineNoiseFreeParams, ...
+        metaNeuralResponseEngineNoisyInstanceParams);
+
+    % Compute the threshold for our grating scene with meta scene and
+    % and neural response engines. This function does a lot of
     % work, see t_tresholdEngine and the function itself, as well as
     % function computePerformance.
     [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara, 'TAFC',true);
+        computeThreshold(theMetaSceneEngine, theMetaNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
 
     % Plot stimulus
     figure(dataFig);
     subplot(length(spatialFreqs), 2, idx * 2 - 1);
 
     visualizationContrast = 1.0;
-    [theSceneSequence] = gratingScene.compute(visualizationContrast);
-    gratingScene.visualizeStaticFrame(theSceneSequence);
+    [theSceneSequence] = gratingSceneEngine.compute(visualizationContrast);
+    gratingSceneEngine.visualizeStaticFrame(theSceneSequence);
 
     % Plot data and psychometric curve
     % with a marker size of 2.5
@@ -191,12 +219,7 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 %% Do a check on the answer
 %
 % So that if we break something in the future we will have
-% a chance of knowing it. The current numbers don't quite
-% match the old version, but I think that is because of a change
-% away from iePoisson which was not freezing the rng, and also
-% other changes somewhere in stochasticity that I have not quite
-% tracked down. But this validation generally passes.  Might fail
-% sometimes.
+% a chance of knowing it.
 if (doValidationCheck)
     validationThresholds = [0.0351    0.0827    0.1534    0.5529];
     if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
