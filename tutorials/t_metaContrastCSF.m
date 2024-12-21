@@ -227,8 +227,7 @@ if (doValidationCheck)
     end
 end
 
-%% Return a value if it was requested
-if (nargout > 0)
+%% Return a value if it was requesteif (nargout > 0)
     thresholdRet = threshold;
 end
-end
+
