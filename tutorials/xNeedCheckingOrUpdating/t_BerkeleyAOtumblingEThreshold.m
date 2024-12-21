@@ -84,7 +84,7 @@ params = struct(...
     'letterSizesNumExamined',  9, ...                           % How many sizes to use for sampling the psychometric curve (9 used in the paper)
     'maxLetterSizeDegs', 0.2, ...                               % The maximum letter size in degrees of visual angle
     'sceneUpSampleFactor', 4, ...                               % Upsample scene, so that the pixel for the smallest scene is < cone aperture
-    'mosaicIntegrationTimeSeconds', 500/1000, ...               % Integration time, here 500 msec
+    'mosaicIntegrationTimeSeconds', 1/backgroundSceneEngine.sceneParams.temporalModulationParams.frameRateHz, ... % Integration time, here one scene frame
     'nTest', 512, ...                                           % Number of trial to use for computing Pcorrect
     'thresholdP', 0.781, ...                                    % Probability correct level for estimating threshold performance
     'customLensAgeYears', [], ...                               % Lens age in years (valid range: 20-80), or empty to use the default age of 32.
@@ -123,7 +123,7 @@ params = struct(...
 % Unpack simulation params
 letterSizesNumExamined = params.letterSizesNumExamined;
 maxLetterSizeDegs = params.maxLetterSizeDegs;
-%mosaicIntegrationTimeSeconds = params.mosaicIntegrationTimeSeconds;
+mosaicIntegrationTimeSeconds = params.mosaicIntegrationTimeSeconds;
 nTest = params.nTest;
 thresholdP = params.thresholdP;
 
@@ -193,8 +193,8 @@ if (ILLUSTRATIVE_COMPUTATION)
     end
 end
 
-% Poisson n-way AFC
-classifierEngine = responseClassifierEngineNWay(@rcePoisson);
+% Poisson N-way classifier
+classifierEngine = responseClassifierEngine(@rcePoisson);
 
 % Parameters associated with use of the Poisson classifier.
 classifierPara = struct('trainFlag', 'none', ...

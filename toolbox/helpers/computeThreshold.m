@@ -66,9 +66,6 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           the mRGC mosaic attached to an MRGC neural engine
 %   'TAFC'                - logical. Whether this is a two-interval forced-choice task
 %                           or N-way one-stimulus-per-trial task. Default false.
-%   'amputateScenes'      - Logical. Whether we want to just select the first 
-%                           scene and generate cone excitations and amputate the
-%                           rest. Default: false.
 %
 % See also:
 %    t_spatialCSF, t_spatialCSF, computePerformance
@@ -88,12 +85,11 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);
-p.addParameter('extraVerbose',false, @islogical);
+p.addParameter('extraVerbose', false, @islogical);
 p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
-p.addParameter('amputateScenes', false, @islogical);
 p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
 p.addParameter('parameterIsContrast',true,@islogical);
 
@@ -104,7 +100,6 @@ visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 isTAFC = p.Results.TAFC;
 theBackgroundRetinalImage = p.Results.theBackgroundRetinalImage;
-amputateScenes = p.Results.amputateScenes;
 
 % Construct a QUEST threshold estimator estimate threshold
 %
@@ -457,7 +452,7 @@ if (beVerbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
             fittedPsychometricParams(1), fittedPsychometricParams(2),...
             fittedPsychometricParams(3), fittedPsychometricParams(4));
-    fprintf('Threshold (criterion proportion correct %0.4f: %0.2f (log10 units)\n', ...
+    fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units)\n', ...
         thresholdCriterion,logThreshold);
 end
 
