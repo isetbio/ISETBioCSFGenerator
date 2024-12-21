@@ -116,8 +116,8 @@ function presentationDisplay = generatePresentationDisplay(...
     ambientSPD = ambientSPD/ (ambientWave(2)-ambientWave(1));
     
     % Load the RGB SPDs
-    fprintf('Loading SPDs from %s\n', fullfile(getpref('ISETBioJandJ','dataDir'),spdDataFile));
-    load(fullfile(getpref('ISETBioJandJ','dataDir'),spdDataFile), 'spd');
+    fprintf('Loading SPDs from %s\n', fullfile(projectBaseDir,'sampledata',spdDataFile));
+    load(fullfile(projectBaseDir,'sampledata',spdDataFile), 'spd');
     
     % Check data consistency
     assert(size(spd, 2) == 4, 'The SPD matrix must be an N x 4 matrix, with the first column being the spectral support');
