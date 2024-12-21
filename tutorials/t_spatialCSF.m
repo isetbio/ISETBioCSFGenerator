@@ -92,12 +92,29 @@ end
 
 %% Instantiate the Poisson responseClassifierEngine
 %
-% rcePoisson makes decision by performing the Poisson likelihood ratio test
+% rcePoisson makes decision by performing the Poisson likelihood ratio
+% test. This is the ideal observer for the Poisson noice cone excitations
+% illustrated in this script.  But you can run other rce's as well.
+%    rcePoisson - signal known exactly Poission max likelihood
+%    rceTemplateDistance - signal known exactly nearest L2 template
+%                 distance.
+%
 % Also set up parameters associated with use of this classifier.
-classifierEngine = responseClassifierEngine(@rcePoisson);
-classifierPara = struct('trainFlag', 'none', ...
-    'testFlag', 'random', ...
-    'nTrain', 1, 'nTest', 128);
+classifierEngine = 'rceTemplateDistance';
+switch (classifierEngine)
+    case {'rcePoisson'}
+        classifierEngine = responseClassifierEngine(@rcePoisson);
+        classifierPara = struct('trainFlag', 'none', ...
+            'testFlag', 'random', ...
+            'nTrain', 1, 'nTest', 128);
+    case {'rceTemplateDistance'}
+        classifierEngine = responseClassifierEngine(@rcePoisson);
+        classifierPara = struct('trainFlag', 'none', ...
+            'testFlag', 'random', ...
+            'nTrain', 1, 'nTest', 128);
+    otherwise
+        error('Unsupported rce specified')
+end
 
 %% Parameters for threshold estimation/quest engine
 % The actual threshold varies enough with the different engines that we
