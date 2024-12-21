@@ -30,7 +30,7 @@ classdef responseClassifierEngine < matlab.mixin.Copyable
 %
 %
 % See Also:
-%    t_responseClassifier, rcePoisson, rcePcaSVMClassifier, responseClassifierEngineNWay
+%    rcePoisson, rcePcaSVM 
 %
 
 % History:

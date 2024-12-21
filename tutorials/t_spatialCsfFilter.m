@@ -5,7 +5,7 @@
 %    different filtering conditions. It evaluates the effect of filters with
 %    varying levels of light transmission on contrast sensitivity.
 %
-% See also: t_spatialCSF, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 

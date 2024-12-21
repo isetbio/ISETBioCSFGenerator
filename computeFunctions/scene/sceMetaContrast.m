@@ -57,7 +57,7 @@ function dataOut = sceMetaContrast(sceneEngineOBJ,testContrast,sceneParamsStruct
 %    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration, t_thresholdEngine
+%     t_sceneGeneration, t_spatialCSF
 
 % History:
 %    08/09/2024  dhb  Wrote it.

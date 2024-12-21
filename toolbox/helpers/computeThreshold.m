@@ -20,7 +20,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %    things such as how many trianing and test instances to use with the
 %    classifier, how densely to tell Quest+ to sample the stimulus space
 %    and over what range, etc.  The the three passed parameter structs
-%    provide this control.  See t_thresholdEngine and t_spatialCSF for what
+%    provide this control.  See t_spatialCSF and t_spatialCSF for what
 %    they control and some advice on how to set them. Indeed, understanding
 %    those two tutorials should allow you to make effective use of this
 %    function.
@@ -45,8 +45,6 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                               psychometric fuction that has a column vector for each contrast level
 %                               that gives the trial-by-trial stimulus alternative (integer 1-N) for
 %                               each trial at that contrast level.
-%                               Currently this is only meaningful for
-%                               rcePoisson classifier engines.
 %   trialByTrialPerformance   - One more dictionary matched to
 %                               trialByTrialStimulusAlternatives that gives correct (1) or incorrect
 %                               (0) for each trial.
@@ -73,7 +71,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           rest. Default: false.
 %
 % See also:
-%    t_spatialCSF, t_thresholdEngine, computePerformance
+%    t_spatialCSF, t_spatialCSF, computePerformance
 %  
 
 % History: 
@@ -313,9 +311,6 @@ while (nextFlag)
         % need to use a copy method to do the caching.  Otherwise the
         % cached pointer will simply continue to point to the same
         % object, and be updated by future training.
-        %
-        % The which alternatives vector is meaningful for the rcePoisson
-        % classification engines, but not other ones.
         eStart = tic;
         [predictions, tempClassifierEngine, responses, whichAlternatives] = computePerformance(...
             theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...

@@ -10,7 +10,7 @@ function thresholdRet = t_spatialCSF(varargin)
 %    windowed gratings of constant size.
 %
 %
-% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+% See also: t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
 % History:
@@ -100,18 +100,30 @@ end
 %                 distance.
 %
 % Also set up parameters associated with use of this classifier.
-classifierEngine = 'rcePoisson';
+classifierEngine = 'rceTemplateDistance';
 switch (classifierEngine)
     case {'rcePoisson'}
         classifierEngine = responseClassifierEngine(@rcePoisson);
-        classifierPara = struct('trainFlag', 'none', ...
+        classifierUsePara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
     case {'rceTemplateDistance'}
         classifierEngine = responseClassifierEngine(@rcePoisson);
-        classifierPara = struct('trainFlag', 'none', ...
+        classifierUsePara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
+        doValidationCheck = false;
+    case 'rcePcaSVM'
+        pcaSVMParams = struct(...
+            'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
+            'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear
+            'kernelFunction', 'linear', ...     % linear
+            'classifierType', 'svm' ...         % binary SVM classifier
+            );
+        classifierEngine = responseClassifierEngine(@rcePcaSVM,pcaSVMParams);
+        classifierUsePara = struct('trainFlag', 'none', ...
+            'testFlag', 'random', ...
+            'nTrain', 128, 'nTest', 128);  
         doValidationCheck = false;
     otherwise
         error('Unsupported rce specified')
@@ -135,7 +147,7 @@ end
 % between them is not entirely clear.  These are interpretted by
 % computeThreshold.
 %
-% See t_thresholdEngine.m for more on options of the two different mode of
+% See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 thresholdPara = struct('logThreshLimitLow', 2.4, ...
     'logThreshLimitHigh', 0.0, ...
@@ -177,7 +189,7 @@ for idx = 1:length(spatialFreqs)
     % function computePerformance.
     [logThreshold(idx), questObj, ~, para(idx,:)] = ...
         computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara, 'TAFC',true);
+        classifierUsePara, thresholdPara, questEnginePara, 'TAFC',true);
 
     % Plot stimulus
     figure(dataFig);

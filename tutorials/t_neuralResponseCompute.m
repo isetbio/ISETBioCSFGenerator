@@ -17,7 +17,7 @@ function t_neuralResponseCompute
 % Optional key/value pairs:
 %    None.
 %
-% See also: t_thresholdEngine, t_sceneGeneration, t_responseClassifier
+% See also:  t_sceneGeneration, t_spatialCSF
 %
 
 % History:

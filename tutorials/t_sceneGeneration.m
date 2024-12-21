@@ -23,8 +23,8 @@ function t_sceneGeneration
 %    None.
 %
 % See Also:
-%   t_neuralResponseCompute, t_thresholdEngine, t_neuralResponseCompute,
-%   t_responseClassifier.
+%   t_neuralResponseCompute, t_neuralResponseCompute,
+%   t_spatialCSF, computePerformance
 %
 
 % History:

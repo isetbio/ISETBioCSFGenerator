@@ -6,7 +6,7 @@ function t_spatialCSFmRGCMosaicOISequence
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions 
 %    using an mRGCMosaic neural respone engine with dynamic stimuli.
 %
-% See also: t_spatialCSFCMosaic, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSFCMosaic, t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 
@@ -207,7 +207,7 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
                        'slopeDelta', 0.25);
 
 % Parameter for running the QUEST+
-% See t_thresholdEngine.m for more on options of the two different mode of
+% See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 
 % Sample the contrast-response psychometric curve at this number of

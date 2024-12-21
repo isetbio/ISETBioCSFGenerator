@@ -5,7 +5,7 @@ function t_chromaticThresholdContourmRGCMosaic
 %    Use ISETBioCSFGenerator to run out an isothreshold contour in the LM
 %    contrast plane using mRGCMosaic neural respone engines.
 %
-% See also: t_spatialCSFCMosaic, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSFCMosaic, t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThresholdTAFC, computePerformanceTAFC
 %
 
@@ -199,7 +199,7 @@ thresholdParams = struct('logThreshLimitLow', 1.5, ...
                        'slopeDelta', 1.0);
 
 % Parameter for running the QUEST+
-% See t_thresholdEngine.m for more on options of the two different mode of
+% See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 
 % Sample the contrast-response psychometric curve at this number of

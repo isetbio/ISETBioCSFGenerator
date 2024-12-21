@@ -49,7 +49,7 @@ function dataOut = compute(obj, operationMode, nullResponses, testResponses)
 %                   .trialPredictions        : vector of the trial-by-trial performance 
 %                                              (0 == incorrect, 1 == correct)
 % See Also:
-%     t_responseClassifier
+%     computePerformance, t_spatialCSF
 
 % History:
 %    9/20/2020  NPC Wrote it

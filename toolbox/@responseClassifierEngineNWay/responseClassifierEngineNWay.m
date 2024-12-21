@@ -29,7 +29,7 @@ classdef responseClassifierEngineNWay < matlab.mixin.Copyable
 % Optional key/value pairs: None
 %
 % See Also:
-%    t_responseClassifier, rcePoissonTAFC, rcePcaSVMClassifier,
+%    rcePoisson, rcePcaSVM,
 %    responseClassifierEngine
 %
 

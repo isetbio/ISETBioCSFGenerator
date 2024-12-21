@@ -88,7 +88,7 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                             compute modulations and/or contrast.
 %
 % See also
-%   t_thresholdEngine, t_spatialCsf, computeThreshold
+%   t_spatialCSF, t_spatialCsf, computeThreshold
 %
 
 % History:
@@ -151,7 +151,7 @@ if (~isempty(trainNoiseFlag))
 
     % Classifier specific massaging for training
     switch (func2str(theClassifierEngine.classifierComputeFunction))
-        case {'rcePoisson', 'rceTemplateDistance'}
+        case {'rcePoisson', 'rceTemplateDistance', 'rcePcaSVM'}
             % If it's TAFC and rcePoisson, massage the responses to be
             % the concatenation of the responses to the two
             % stimuli that were actually passed. This is because rcePoisson is set up to
@@ -262,7 +262,7 @@ end
 
 % Classifier specific massaging 
 switch (func2str(theClassifierEngine.classifierComputeFunction))
-    case 'rcePoisson'
+    case {'rcePoisson', 'rceTemplateDistance', 'rcePcaSVM'}
         % If it's TAFC and rcePoisson, massage the responses to be
         % the concatenation of the responses to the two
         % stimuli that were actually passed. This is because rcePoisson is set up to
@@ -295,7 +295,7 @@ switch (func2str(theClassifierEngine.classifierComputeFunction))
             end
         end
 
-        % Train the rcePoisson classifier.
+        % Train the classifier.
         dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassaged, whichAlternatives);
         clear outSampleStimResponsesMassaged
 

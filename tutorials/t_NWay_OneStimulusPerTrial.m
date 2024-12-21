@@ -12,7 +12,7 @@
 %    which one alternative of N alternatives is presented on each trial,
 %    and the subject indicates which.
 %
-% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_spatialCSF, t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 

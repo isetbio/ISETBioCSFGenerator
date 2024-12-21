@@ -5,7 +5,7 @@
 %    contrast plane. This example uses an ideal Poisson TAFC observer and circularly
 %    windowed gratings of constant size and one spatial frequency.
 %
-% See also: t_spatialCSF, t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           computeThreshold, computePerformance,
 %           createGratingScene.
 %
@@ -66,7 +66,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'slopeDelta', 2.5);
 
 % Parameter for running the QUEST+
-% See t_thresholdEngine.m for more on options of the two different mode of
+% See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 questEnginePara = struct('minTrial', 1280*2, 'maxTrial', 1280*2, ...
                          'numEstimator', 1, 'stopCriterion', 0.05);

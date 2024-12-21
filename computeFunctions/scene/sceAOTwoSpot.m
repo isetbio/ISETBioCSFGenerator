@@ -52,7 +52,7 @@ function dataOut = sceAOTwoSpot(sceneEngineOBJ, testContrast, twoSpotParams)
 %    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration, t_thresholdEngine
+%     t_sceneGeneration, t_spatialCSF
 
 % History:
 %    03/16/2021  dhb  Wrote it.

@@ -55,7 +55,7 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
 %    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration, t_thresholdEngine
+%     t_sceneGeneration, t_spatialCSF
 
 % History:
 %    09/26/2020  NPC  Wrote it.

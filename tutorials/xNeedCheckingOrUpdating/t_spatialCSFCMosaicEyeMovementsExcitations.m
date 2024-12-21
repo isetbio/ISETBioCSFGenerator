@@ -8,7 +8,7 @@ edit % Compute spatial CSF in the achromatic direction in the presence of fEM
 %    operating on the output of a quadrature energy spatial pooling mechanism
 %    and square windowed gratings of constant size.
 %
-% See also: t_thresholdEngine, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 %
 
@@ -113,7 +113,7 @@ thresholdPara = struct('logThreshLimitLow', 2.4, ...
                        'slopeDelta', 1.0);
 
 % Parameter for running the QUEST+
-% See t_thresholdEngine.m for more on options of the two different mode of
+% See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
 contrastLevelsExamined = 8;
 questEnginePara = struct('minTrial', nTest*contrastLevelsExamined, ...

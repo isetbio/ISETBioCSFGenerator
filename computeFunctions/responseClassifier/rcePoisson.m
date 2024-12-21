@@ -107,7 +107,7 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 % Optional key/value pairs:
 %   None.
 %
-% See also: t_responseClassifer, computePerformance
+% See also: t_spatialCSF, computePerformance
 %           PoissonDecisionLogLikelihood,
 %           PoissonIdealObserverNAlternativeFC.           
 

@@ -16,7 +16,7 @@ function t_neuralResponseComputeCustomizedPipeline
 % Optional key/value pairs:
 %    None.
 %
-% See also: t_thresholdEngine, t_sceneGeneration, t_responseClassifier
+% See also: t_spatialCSF, t_sceneGeneration, t_spatialCSF
 %
 
 % History:

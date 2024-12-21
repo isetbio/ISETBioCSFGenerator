@@ -109,7 +109,7 @@ function dataOut = rceTemplateDistanceTAFC(obj, operationMode, ~, theResponses, 
 % Optional key/value pairs:
 %   None.
 %
-% See also: computePerformance, t_responseClassifer.
+% See also: computePerformance, t_spatialCSF
 
 % History:
 %   10/17/20  dhb  Wrote it from rcePoissonTAFC.
