@@ -65,7 +65,16 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           'saveMRGCResponses' which saved responses of
 %                           the mRGC mosaic attached to an MRGC neural engine
 %   'TAFC'                - logical. Whether this is a two-interval forced-choice task
-%                           or N-way one-stimulus-per-trial task. Default false.
+%                           or N-way one-stimulus-per-trial task. Default
+%                           false.  When it is true, this routine expects
+%                           to receive a single scene engine and figures
+%                           out "contrast" threshold for discriinating
+%                           that against a contrast of 0.  There are other
+%                           sorts of TAFC tasks one could consider, and
+%                           this routine would need to be elaborated to
+%                           handle them, or else the caller would need to
+%                           explicitly formulate the TAFC version as an
+%                           2-alternative with one stimulus per trial problem.
 %
 % See also:
 %    t_spatialCSF, t_spatialCSF, computePerformance
@@ -151,22 +160,6 @@ else
         'qpPF', qpPF, 'guessRate', guessRate, 'lapseRate', lapseRate);
 end
 
-% Some diagnosis.  This currently crashes if true, because
-% theNullSceneSequence is not defined at this point in the code.
-if (p.Results.extraVerbose)
-    theWl = 400;
-    theFrame = 1;
-    index = find(theNullSceneSequence{theFrame}.spectrum.wave == theWl);
-    temp = theNullSceneSequence{theFrame}.data.photons(:,:,index);
-    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',...
-        theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
-    theWl = 550;
-    index = find(theNullSceneSequence{theFrame}.spectrum.wave == theWl);
-    temp = theNullSceneSequence{theFrame}.data.photons(:,:,index);
-    fprintf('At %d nm, frame %d, null scene mean, min, max: %g, %g, %g\n',...
-        theWl,theFrame,mean(temp(:)),min(temp(:)),max(temp(:)));
-end
-
 % Threshold estimation with QUEST+
 % Get the initial stimulus contrast from QUEST+
 [logContrast, nextFlag] = estimator.nextStimulus();
@@ -174,7 +167,9 @@ end
 % Loop over trials.
 testedContrasts = [];
 
-% Generate the NULL stimulus (zero contrast) if this is a TAFC task
+% Generate the NULL stimulus (zero contrast) if this is a TAFC task.
+% Doing this here means we only do it once across the range of test
+% contrasts studied.
 if isTAFC
     nullContrast = 0.0;
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
@@ -201,7 +196,7 @@ while (nextFlag)
     % Convert log contrast -> contrast
     testContrast = 10 ^ logContrast;
     
-    % Label for pCorrect dictionary
+    % Contrast label for pCorrect dictionary
     contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
     if (beVerbose)
         if (p.Results.parameterIsContrast)
@@ -219,6 +214,7 @@ while (nextFlag)
         testedIndex = find(testContrast == testedContrasts);
 
         % NWay: Generate the scenes for each alternative, at the test contrast
+        % TAFC: Use the null scene and generate the test scene 
         if ~isTAFC
             for oo = 1:length(theSceneEngine)
                 [theSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
@@ -229,7 +225,6 @@ while (nextFlag)
         else
             [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine.compute(testContrast);
-            %concatenate theNullSceneSequences and theTestSceneSequences 
             theSceneSequences{testedIndex} = {theNullSceneSequence,...
                 theSceneSequence{testedIndex}};
         end
@@ -261,7 +256,9 @@ while (nextFlag)
                 theSceneTemporalSupportSeconds);
         end
         
-        % The following if ... end is only applicable to TAFC data
+        % The following if ... end is only applicable to TAFC data and a
+        % pooling rce.
+        %
         % Update the classifier engine pooling params for this particular test contrast
         if isTAFC && (isfield(classifierEngine.classifierParams, 'pooling')) && ...
            (~strcmp(classifierEngine.classifierParams.pooling, 'none'))
@@ -358,7 +355,6 @@ while (nextFlag)
             save(responseFileName, 'responses',  '-v7.3');
         end
     else
-
         % Reality check
         if (estimator.validation & estimator.blocked)
              error('Should not be repeating any constrast for validation blocked method');
@@ -417,9 +413,7 @@ while (nextFlag)
     if (beVerbose)
             fprintf('computeThreshold: Updating took %0.1f secs\n',e);
     end
-
-end  % while (nextFlag)
-
+end 
 
 if (beVerbose)
    fprintf('computeThreshold: Ran %d test levels of %d trials per block of tests\n',...
@@ -446,7 +440,6 @@ end
 [logThreshold, fittedPsychometricParams, thresholdDataOut] = ...
     estimator.thresholdMLE('showPlot', false, ...
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
-
 
 if (beVerbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
