@@ -65,7 +65,6 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 classifierPara = struct('trainFlag', 'none', ...
                         'testFlag', 'random', ...
                         'nTrain', 1, 'nTest', 128);
-classifierEngine = responseClassifierEngine(@rcePoissonNWay_OneStimulusPerTrial, classifierPara);
 classifierEngine = responseClassifierEngine(@rcePoisson, classifierPara);
 
 %% Parameters for threshold estimation/quest engine

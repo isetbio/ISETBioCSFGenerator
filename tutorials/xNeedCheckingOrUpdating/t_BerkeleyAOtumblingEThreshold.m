@@ -123,7 +123,7 @@ params = struct(...
 % Unpack simulation params
 letterSizesNumExamined = params.letterSizesNumExamined;
 maxLetterSizeDegs = params.maxLetterSizeDegs;
-mosaicIntegrationTimeSeconds = params.mosaicIntegrationTimeSeconds;
+%mosaicIntegrationTimeSeconds = params.mosaicIntegrationTimeSeconds;
 nTest = params.nTest;
 thresholdP = params.thresholdP;
 
@@ -131,7 +131,7 @@ thresholdP = params.thresholdP;
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-neuralParams = nreAOPhotopigmentExcitationsWithNoEyeMovementsCMosaic;
+noiseFreeResponseParams = nreNoiseFreeAOPhotopigmentExcitationsCMosaic;
 
 % Set optics params
 wls = sceneParams.wave;
@@ -140,18 +140,28 @@ accommodatedWl = sceneParams.AOPrimaryWls(1);
 pupilDiameterMm = options.pupilDiameterMm;
 defocusDiopters = options.defocusDiopters;
 
-neuralParams.opticsParams.wls = wls;
-neuralParams.opticsParams.pupilDiameterMM = pupilDiameterMm;
-neuralParams.opticsParams.defocusAmount = defocusDiopters;
-neuralParams.opticsParams.accommodatedWl = accommodatedWl;
-neuralParams.opticsParams.zCoeffs = zeros(66,1);
-neuralParams.opticsParams.defeatLCA = true;
-neuralParams.verbose = options.verbose;
+noiseFreeResponseParams.opticsParams.wls = wls;
+noiseFreeResponseParams.opticsParams.pupilDiameterMM = pupilDiameterMm;
+noiseFreeResponseParams.opticsParams.defocusAmount = defocusDiopters;
+noiseFreeResponseParams.opticsParams.accommodatedWl = accommodatedWl;
+noiseFreeResponseParams.opticsParams.zCoeffs = zeros(66,1);
+noiseFreeResponseParams.opticsParams.defeatLCA = true;
+noiseFreeResponseParams.verbose = options.verbose;
 
 % Cone params
-neuralParams.coneMosaicParams.wave = wls;
-neuralParams.coneMosaicParams.fovDegs = fieldSizeDegs;
-theNeuralEngine = neuralResponseEngine(@nreAOPhotopigmentExcitationsWithNoEyeMovementsCMosaic, neuralParams);
+noiseFreeResponseParams.coneMosaicParams.wave = wls;
+noiseFreeResponseParams.coneMosaicParams.fovDegs = fieldSizeDegs;
+
+noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCmosaic;
+noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
+noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = mosaicIntegrationTimeSeconds;
+
+noisyInstancesParams = nreNoisyInstancesPoisson;
+theNeuralEngine = neuralResponseEngine( ...
+    @nreNoiseFreePhotopigmentExcitationsCmosaic, ...
+    @nreNoisyInstancesPoisson, ...
+    noiseFreeResponseParams, ...
+    noisyInstancesParams);
 
 % For interest in how things work in general, use scene engines and neural
 % engine to compute some neural responses.  We don't actually need this to

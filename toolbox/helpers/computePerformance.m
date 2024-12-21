@@ -184,15 +184,7 @@ if (~isempty(trainNoiseFlag))
             clear inSampleStimResponsesMassagedCell
 
         otherwise
-            % Our other classifiers are designed for TAFC and we pass the
-            % two individual stimulus responses explicitly in to them, rather than a
-            % cell array of the responses to the N stimuli.  Typically
-            % these are the responses to null and test stimuli, but
-            % actually they can be any two stimuli.  These classifiers are
-            % responsible for the concatenation manuever that we do for the
-            % TAFC rcePoisson case above.
-            theClassifierEngine.compute('train', inSampleStimResponsesCell{1}, ...
-                inSampleStimResponsesCell{2});
+            error('Unsupported response classifier passed');
     end
 
     % Visualization the cone excitation for selected stimulus
@@ -216,17 +208,17 @@ end
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
 if isTAFC
-    nTests_eachScene = nTest;
+    nTest_eachScene = nTest;
 
     % The first template the always the correct answer [nullStim, testStim]
     % since the responses are organized as [nullResps, testResps]
-    whichAlternatives = ones(nTests_eachScene, 1); 
+    whichAlternatives = ones(nTest_eachScene, 1); 
 else
-    % Alternative implementation here ...
-    nTests_eachScene = nTest/nScenes;
+    % N-alternative one stimulus per trial.
+    nTest_eachScene = nTest/nScenes;
     assert(mod(nTest, nScenes) == 0, ['The number of test trials must be an',...
         ' integer multiple of the number of alternative choices']);
-    whichAlternatives = repmat(1:nScenes,[nTests_eachScene, 1]);
+    whichAlternatives = repmat(1:nScenes,[nTest_eachScene, 1]);
     whichAlternatives = whichAlternatives(:); 
 end
 
@@ -252,7 +244,7 @@ for n = 1:nScenes
     [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
         outSampleNoiseFreeStimResponsesCell{n}, ...
         temporalSupport, ...
-        nTests_eachScene, ...
+        nTest_eachScene, ...
         testNoiseFlag);
 end
 e = toc(eStart);
@@ -300,15 +292,8 @@ switch (func2str(theClassifierEngine.classifierComputeFunction))
         clear outSampleStimResponsesMassaged
 
     otherwise
-        % Our other classifiers are designed for TAFC and we pass the
-        % two individual stimulus responses explicitly in to them, rather than a
-        % cell array of the responses to the N stimuli.  Typically
-        % these are the responses to null and test stimuli, but
-        % actually they can be any two stimuli.  These classifiers are
-        % responsible for the concatenation manuever that we do for the
-        % TAFC rcePoisson case above.
-        dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesCell{1}, ...
-            outSampleStimResponsesCell{2});
+        error('Unsupported response classifier passed');
+
 end
 
 % Save computed response instances

@@ -110,75 +110,7 @@ function dataOut = rcePcaSVMTAFC(obj, operationMode, classifierParamsStruct, the
 
 % History:
 %    09/26/2020  NPC  Wrote it.
-
-%   Examples:
-%{
-    % Usage case #1. Just return the default classifier params
-    defaultParams =  rcePcaSVMTAFC()
-
-    % Usage case #2. Train a binary SVM classifier on a data set  using a parent 
-    % @responseClassifierEngine object and the default classifier params
-
-    % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements);
-
-    % Instantiate a @sceneEngine object and generate a test scene sequence
-    theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
-    testContrast = 1.2/100;
-    [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
-        theSceneEngineOBJ.compute(testContrast);
-    % Generate the null scene sequence
-    [theNullSceneSequence, theNullSceneTemporalSupportSeconds] = ...
-        theSceneEngineOBJ.compute(0.0);
-
-    % Compute a set of 128 training (in-sample) response instances to the test stimulus
-    instancesNum = 128;
-    noiseFlags = {'random'};
-    [inSampleTestResponses, theResponseTemporalSupportSeconds] = theNeuralEngineOBJ.compute(...
-            theTestSceneSequence, ...
-            theTestSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-    % Compute a set of 128 training (in-sample) response instances to the null stimulus
-    inSampleNullResponses = theNeuralEngineOBJ.compute(...
-            theNullSceneSequence, ...
-            theNullSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-
-    % Instantiate a responseClassifierEngine with the @rcePcaSVMClassifier compute function
-    theClassifierEngine = responseClassifierEngine(@rcePcaSVMTAFC);
-   
-    % Train a binary SVM classifier on the in-sample data set
-    trainingData = theClassifierEngine.compute('train',...
-        inSampleNullResponses('random'), ...
-        inSampleTestResponses('random'));
-
-    % Generate 10 instances of (out-of-sample) responses to test the classifier performance
-    instancesNum = 10;
-    noiseFlags = {'random'};
-    outOfSampleTestResponses = theNeuralEngineOBJ.compute(...
-            theTestSceneSequence, ...
-            theTestSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-    outOfSampleNullResponses = theNeuralEngineOBJ.compute(...
-            theNullSceneSequence, ...
-            theNullSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-
-    % Employ the trained classifier to compute its performance on the
-    % out-of-sample data set.
-    predictedData = theClassifierEngine.compute('predict',...
-            outOfSampleNullResponses('random'), ...
-            outOfSampleTestResponses('random'))
-    
-%}
+%    12/21/2024  dhb  Update not to specialize for TAFC here.
 
 % For consistency with the interface
 if (nargin == 0)
@@ -346,42 +278,6 @@ for nn = 1:length(theResponses)
     classLabels = cat(1, classLabels, nn*ones(nTrialsHere,1));
 end
 
-% 
-% % Arange responses simulating a 2-interval task
-% if (nTrials == 1)
-%     % If we are given only one trial data, arrange randomly in a
-%     % class 0: NULL-TEST or in a class 1: % TEST-NULL
-%     if (rand(1,1) > 0.5)
-%         features(1,:) = [nullResponses testResponses];
-%         classLabels(1) = 0;
-%         fprintf('Arrangle single instance in NULL-TEST (class 0)')
-%     else
-%         features(1,:) = [testResponses nullResponses];
-%         classLabels(1) = 1;
-%         fprintf('Arrangle single instance in TEST-NULL (class 1)')
-%     end
-%     return;
-% end
-% 
-% % More than 1 trial data. Split the first half as NULL-TEST pairs and
-% % the second half as TEST-NULL pairs
-% halfTrials = floor(nTrials/2);
-% features = zeros(2*halfTrials, 2*responseSize);
-% classLabels = zeros(2*halfTrials, 1);
-% 
-% % Class 0 data contain the null responses in the 1st interval
-% % (NULL-TEST)
-% features(1:halfTrials,:) = cat(2, ...
-%     nullResponses(1:halfTrials,:), ...
-%     testResponses(1:halfTrials,:));
-% classLabels(1:halfTrials,1) = 0;
-% 
-% % Class 1 data contain the null responses in the 2nd interval
-% % (TEST-NULL)
-% features(halfTrials+(1:halfTrials),:) = cat(2, ...
-%     testResponses(halfTrials+(1:halfTrials),:), ...
-%     nullResponses(halfTrials+(1:halfTrials),:));
-% classLabels(halfTrials+(1:halfTrials),1) = 1;
 end
 
 

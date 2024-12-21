@@ -76,6 +76,7 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCmosaic;
 noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
 noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
+
 noisyInstancesParams = nreNoisyInstancesPoisson;
 theNeuralEngine = neuralResponseEngine( ...
     @nreNoiseFreePhotopigmentExcitationsCmosaic, ...
@@ -100,7 +101,7 @@ end
 %                 distance.
 %
 % Also set up parameters associated with use of this classifier.
-classifierEngine = 'rceTemplateDistance';
+classifierEngine = 'rcePoisson';
 switch (classifierEngine)
     case {'rcePoisson'}
         classifierEngine = responseClassifierEngine(@rcePoisson);
