@@ -142,6 +142,7 @@ function dataOut = rcePoolingSVMTAFC(responseClassifierOBJ, operationMode, class
             outOfSampleTestResponses('random'));
     
 %}
+    error('December 2024 - this needs to be updated for new architecture')
 
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
@@ -155,7 +156,6 @@ function dataOut = rcePoolingSVMTAFC(responseClassifierOBJ, operationMode, class
         error('Unknown operation mode passed.  Must be ''train'' or ''predict''');
     end
     
-
     if (strcmp(operationMode, 'train'))
         % Baseline activation: mean response to the null stimulus
         baselineActivation = classifierParamsStruct.pooling.noiseFreeNullResponse;

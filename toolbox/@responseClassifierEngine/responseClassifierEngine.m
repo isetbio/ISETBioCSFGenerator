@@ -10,12 +10,6 @@ classdef responseClassifierEngine < matlab.mixin.Copyable
 %    constants returned by its computeFunction while in 'train' mode, so that when its 
 %    computeFunction is called in the 'predict' operation mode, it can have access to them.
 %
-%    The responseClassifierEngine is written to for experiments involving
-%    the discrimination of two stimulus alternatives, a "null" and "test"
-%    stimulus, with the details of how these are handled implemented in the
-%    compute function.  See responseClassifierEngineNWay for an engine
-%    written for experiments with more stimulus alternatives.
-%
 % Inputs:
 %    classifierComputeFunctionHandle  - Function handle to the computeFunction that defines the
 %                                       operation of the classifier
@@ -23,6 +17,7 @@ classdef responseClassifierEngine < matlab.mixin.Copyable
 %    classifierParamsStruct           - Struct with parameters specific to the computeFunction. 
 %                                       Optional. If not defined, the default params
 %                                       defined in the computeFunction are used
+%
 % Outputs:
 %    The created responseClassifierEngine object.
 %

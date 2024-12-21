@@ -155,7 +155,7 @@ neuralParams.coneMosaicParams.fovDegs = fieldSizeDegs;
 theNeuralEngine = neuralResponseEngine(@nreAOPhotocurrentWithNoEyeMovementsCMosaic, neuralParams);
 
 % Poisson n-way AFC
-classifierEngine = responseClassifierEngineNWay(@rcePoisson);
+classifierEngine = responseClassifierEngine(@rcePoisson);
 
 % Parameters associated with use of the Poisson classifier.
 classifierPara = struct('trainFlag', 'none', ...

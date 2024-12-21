@@ -149,43 +149,36 @@ if (~isempty(trainNoiseFlag))
             trainNoiseFlag);
     end
 
-    % Classifier specific massaging for training
-    switch (func2str(theClassifierEngine.classifierComputeFunction))
-        case {'rcePoisson', 'rceTemplateDistance', 'rcePcaSVM'}
-            % If it's TAFC and rcePoisson, massage the responses to be
-            % the concatenation of the responses to the two
-            % stimuli that were actually passed. This is because rcePoisson is set up to
-            % handle N alternatives, one stimulus per trial and doing this turns
-            % the TAFC case work into that format.
-            %
-            % If rcePoisson and not TAFC, then we just continue on with the cell
-            % array we already have because we are explictly doing an N-alternative
-            % one stimulus per trial task.
-            %
-            % We don't overwrite the original inSampleStimResonsesCell
-            % array, because for visualization below it is convenient to
-            % have the responses to the individual stimuli still available.
-            if (isTAFC)
-                % Concatenate them along the 2nd dimension (responses) in both
-                % orders
-                cat1 = cat(2, inSampleStimResponsesCell{1}, ...
-                    inSampleStimResponsesCell{2}); %[null, test]
-                cat2 = cat(2, inSampleStimResponsesCell{2}, ...
-                    inSampleStimResponsesCell{1}); %[test, null]
+    % If it's TAFC, massage the responses to be the concatenation
+    % of the responses to the two stimuli that were actually
+    % passed. This is because rcePoisson is set up to handle N
+    % alternatives, one stimulus per trial and doing this turns the
+    % TAFC case work into that format.
+    %
+    % If rcePoisson and not TAFC, then we just continue on with the cell
+    % array we already have because we are explictly doing an N-alternative
+    % one stimulus per trial task.
+    %
+    % We don't overwrite the original inSampleStimResonsesCell
+    % array, because for visualization below it is convenient to
+    % have the responses to the individual stimuli still available.
+    if (isTAFC)
+        % Concatenate them along the 2nd dimension (responses) in both
+        % orders
+        cat1 = cat(2, inSampleStimResponsesCell{1}, ...
+            inSampleStimResponsesCell{2}); %[null, test]
+        cat2 = cat(2, inSampleStimResponsesCell{2}, ...
+            inSampleStimResponsesCell{1}); %[test, null]
 
-                % Nicely put the concatenated cells back to the container
-                inSampleStimResponsesMassagedCell = {cat1, cat2};
-            else
-                inSampleStimResponsesMassagedCell = inSampleStimResponsesCell;
-            end
-
-            % Train the rcePoisson classifier.
-            theClassifierEngine.compute('train', inSampleStimResponsesMassagedCell,[]);
-            clear inSampleStimResponsesMassagedCell
-
-        otherwise
-            error('Unsupported response classifier passed');
+        % Nicely put the concatenated cells back to the container
+        inSampleStimResponsesMassagedCell = {cat1, cat2};
+    else
+        inSampleStimResponsesMassagedCell = inSampleStimResponsesCell;
     end
+
+    % Train the classifier.
+    theClassifierEngine.compute('train', inSampleStimResponsesMassagedCell,[]);
+    clear inSampleStimResponsesMassagedCell
 
     % Visualization the cone excitation for selected stimulus
     if visualizeAllComponents
@@ -207,20 +200,7 @@ end
 % Generate stimulus for prediction, NULL stimulus.  The variable testFlag
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
-if isTAFC
-    nTest_eachScene = nTest;
 
-    % The first template the always the correct answer [nullStim, testStim]
-    % since the responses are organized as [nullResps, testResps]
-    whichAlternatives = ones(nTest_eachScene, 1); 
-else
-    % N-alternative one stimulus per trial.
-    nTest_eachScene = nTest/nScenes;
-    assert(mod(nTest, nScenes) == 0, ['The number of test trials must be an',...
-        ' integer multiple of the number of alternative choices']);
-    whichAlternatives = repmat(1:nScenes,[nTest_eachScene, 1]);
-    whichAlternatives = whichAlternatives(:); 
-end
 
 % Generate responses for prediction
 %
@@ -231,7 +211,17 @@ end
 %   tTimeBins      - number of time points in stimulus sequence.
 % Note that if nTimeBins is 1, the last dimension is implicit,
 % following Matlab conventions.
+%
+% The way nTest gets passed to the neural engine is a little different for
+% TAFC than true N-way.  We handle that here.
 outSampleStimResponsesCell = cell(1,nScenes);
+if isTAFC
+    nTest_eachScene = nTest;
+else
+    nTest_eachScene = nTest/nScenes;
+    assert(mod(nTest, nScenes) == 0, ['The number of test trials must be an',...
+        ' integer multiple of the number of alternative choices']);
+end
 eStart = tic;
 for n = 1:nScenes
     % Noise free response for nth alternative scene sequence
@@ -252,49 +242,44 @@ if (p.Results.verbose)
     fprintf('computePerformance: Took %0.1f secs to generate test responses for all alternatives\n',e);
 end
 
-% Classifier specific massaging 
-switch (func2str(theClassifierEngine.classifierComputeFunction))
-    case {'rcePoisson', 'rceTemplateDistance', 'rcePcaSVM'}
-        % If it's TAFC and rcePoisson, massage the responses to be
-        % the concatenation of the responses to the two
-        % stimuli that were actually passed. This is because rcePoisson is set up to
-        % handle N alternatives, one stimulus per trial and doing this turns
-        % the TAFC case work into that format.
-        %
-        % If rcePoisson and not TAFC, then we just continue on with the cell
-        % array we already have because we are explictly doing an N-alternative
-        % one stimulus per trial task.
-        %
-        % We don't overwrite the original outSampleStimResonsesCell
-        % array, because for visualization below it is convenient to
-        % have the responses to the individual stimuli still available.
-        if (isTAFC)
-            % Concatenate them along the 2nd dimension (responses) in
-            % null/test order.  We don't need to intermix test/cell as well
-            % because the observer is not biased and doesn't care about the
-            % order.
-            outSampleStimResponsesMassaged = [];
-            for nn = 1:nScenes
-                outSampleStimResponsesMassaged = ...
-                    cat(2, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
-            end
-        else
-            % Stack up the responses for each alternative
-            outSampleStimResponsesMassaged = [];
-            for nn = 1:nScenes
-                outSampleStimResponsesMassaged = ...
-                    cat(1, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
-            end
-        end
-
-        % Train the classifier.
-        dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassaged, whichAlternatives);
-        clear outSampleStimResponsesMassaged
-
-    otherwise
-        error('Unsupported response classifier passed');
-
+% If it's TAFC , massage the responses to be
+% the concatenation of the responses to the two
+% stimuli that were actually passed. This is because rcePoisson is set up to
+% handle N alternatives, one stimulus per trial and doing this turns
+% the TAFC case work into that format.
+%
+% If not TAFC, then we just continue on with the cell
+% array we already have because we are explictly doing an N-alternative
+% one stimulus per trial task.
+%
+% We don't overwrite the original outSampleStimResonsesCell
+% array, because for visualization below it is convenient to
+% have the responses to the individual stimuli still available.
+if (isTAFC)
+    % Concatenate them along the 2nd dimension (responses) in
+    % null/test order.  We don't need to intermix test/cell as well
+    % because the observer is not biased and doesn't care about the
+    % order.
+    outSampleStimResponsesMassaged = [];
+    for nn = 1:nScenes
+        outSampleStimResponsesMassaged = ...
+            cat(2, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
+    end
+    whichAlternatives = ones(nTest_eachScene, 1);
+else
+    % Stack up the responses for each alternative
+    outSampleStimResponsesMassaged = [];
+    for nn = 1:nScenes
+        outSampleStimResponsesMassaged = ...
+            cat(1, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
+    end
+    whichAlternatives = repmat(1:nScenes,[nTest_eachScene, 1]);
+    whichAlternatives = whichAlternatives(:); 
 end
+
+% Predict
+dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassaged, whichAlternatives);
+clear outSampleStimResponsesMassaged
 
 % Save computed response instances
 if (saveResponses)
