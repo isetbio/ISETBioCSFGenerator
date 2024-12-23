@@ -142,6 +142,13 @@ function dataOut = rcePoolingSVMTAFC(responseClassifierOBJ, operationMode, class
             outOfSampleTestResponses('random'));
     
 %}
+
+    % If this ever gets updated, we need to think about whether we should
+    % do it this way, or add a neural response stage that does the pooling.
+    % The latter is much more consistent with our design philosophy.  This
+    % was quick way to do it, and it also involved code to compute the
+    % pooling weights in computeThreshold as a special case, which has now
+    % been removed for simplicity.
     error('December 2024 - this needs to be updated for new architecture')
 
     % Check input arguments. If called with zero input arguments, just return the default params struct

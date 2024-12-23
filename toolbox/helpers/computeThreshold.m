@@ -77,7 +77,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           2-alternative with one stimulus per trial problem.
 %
 % See also:
-%    t_spatialCSF, t_spatialCSF, computePerformance
+%    t_spatialCSF, computePerformance
 %  
 
 % History: 
@@ -89,8 +89,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                 (copyable responseClassifierEngine)
 %  04/10/24  fh   Merged computeThresholdTAFC.m and
 %                   computeThresholdNWay_OneStimulusPerTrial.m by adding 
-%                   a key/pair pair specifying whether the task is TAFC or 
-%                   NWay_OneStimulusPerTrial.
+%                   a key/pair pair specifying whether the task is TAFC.
 
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);
@@ -151,7 +150,6 @@ else
     else
         blockedVal = false;
     end
-
     estimator = questThresholdEngine('blocked',blockedVal,...
         'minTrial', questEnginePara.minTrial, 'maxTrial', questEnginePara.maxTrial, ...
         'estDomain', estDomain, 'slopeRange', slopeRange, ...
@@ -175,6 +173,7 @@ if isTAFC
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 end
 
+% Set up for saving diagnostic information if desired.
 if ((isstruct(datasavePara)) && isfield(datasavePara, 'saveMRGCResponses') && (datasavePara.saveMRGCResponses) && ...
         (isfield(datasavePara, 'destDir')) && (ischar(datasavePara.destDir)) && ...
         (isfield(datasavePara, 'condExamined')))
@@ -209,7 +208,9 @@ while (nextFlag)
     % Have we already built the classifier for this contrast?
     testedIndex = find(testContrast == testedContrasts);
     if (isempty(testedIndex))
-        % No.  Save contrast in list
+        % No. We need to train and predict.
+        % 
+        % Save contrast in list
         testedContrasts(numel(testedContrasts)+1) = testContrast;
         testedIndex = find(testContrast == testedContrasts);
 
@@ -221,7 +222,8 @@ while (nextFlag)
                     theSceneEngine{oo}.compute(testContrast);
             end
             
-        % TAFC: Generate the test scene and the null scene
+        % TAFC: Generate the test scene; we have the null from outside the
+        % trial loop above.
         else
             [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine.compute(testContrast);
@@ -249,53 +251,17 @@ while (nextFlag)
         % Visualize the drifting sequence.  This seems to crash for the
         % 4AFC version.
         if (visualizeStimulus)
-            theStim = 2; %TAFC: 2nd stim is the test
-            if length(theSceneEngine) > 1; sE = theSceneEngine{theStim};
-            else; sE = theSceneEngine; end
+            theStim = 2;
+            if (length(theSceneEngine) > 1)
+                sE = theSceneEngine{theStim};
+            else
+                sE = theSceneEngine;
+            end
             sE.visualizeSceneSequence(theSceneSequences{testedIndex}{theStim},...
                 theSceneTemporalSupportSeconds);
         end
         
-        % The following if ... end is only applicable to TAFC data and a
-        % pooling rce.
-        %
-        % Update the classifier engine pooling params for this particular test contrast
-        if isTAFC && (isfield(classifierEngine.classifierParams, 'pooling')) && ...
-           (~strcmp(classifierEngine.classifierParams.pooling, 'none'))
-            
-            fprintf('Computing pooling kernels for contrast %f\n', testContrast*100);
-       
-            % Compute pooling weights
-            switch (classifierEngine.classifierParams.pooling.type)
-                case 'linear'
-                   [poolingWeights.direct, ~, ...
-                       noiseFreeNullResponse, noiseFreeTestResponse] = ...
-                       spatioTemporalPoolingWeights(theNeuralEngine,...
-                       theNullSceneSequence,... %null
-                       theSceneSequence{testedIndex},... %test
-                       theSceneTemporalSupportSeconds,...
-                       'theBackgroundRetinalImage',theBackgroundRetinalImage);
-                   
-                case 'quadratureEnergy'
-                   [poolingWeights.direct, poolingWeights.quadrature, ...
-                       noiseFreeNullResponse, noiseFreeTestResponse] = ...
-                       spatioTemporalPoolingWeights(theNeuralEngine,...
-                       theNullSceneSequence,... %null
-                       theSceneSequence{testedIndex},... %test
-                       theSceneTemporalSupportSeconds,...
-                       'theBackgroundRetinalImage',theBackgroundRetinalImage);
-                   
-                otherwise
-                    error('Unknown classifier engine pooling type: ''%s''.',...
-                        classifierEngine.classifierParams.pooling.type)
-            end
-            
-            % Update the classifier engine's pooling weights
-            classifierEngine.updateSpatioTemporalPoolingWeightsAndNoiseFreeResponses(...
-                poolingWeights,noiseFreeNullResponse, noiseFreeTestResponse);
-        end
-        
-        % Train classifier for this TEST contrast and get predicted
+        % Train classifier and get predicted
         % correct/incorrect predictions.  This function also computes the
         % neural responses needed to train and predict.
         %
@@ -355,14 +321,15 @@ while (nextFlag)
             save(responseFileName, 'responses',  '-v7.3');
         end
     else
+        % Classifier is already trained, just get predictions.  The
+        % whichAlternatives returned variable is only meaningful at present
+        % for the rcePoisson classification engines.
+
         % Reality check
         if (estimator.validation & estimator.blocked)
              error('Should not be repeating any constrast for validation blocked method');
         end
 
-        % Classifier is already trained, just get predictions.  The
-        % whichAlternatives returned variable is only meaningful at present
-        % for the rcePoisson classification engines.
         eStart = tic;
         [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
