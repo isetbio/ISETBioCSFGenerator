@@ -1,12 +1,11 @@
-function dataOut = nreMidgetRGCMosaicSingleShot(...
-    neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
-    sceneSequenceTemporalSupport, instancesNum, varargin)
-% Compute function for computation of mRGCMosaic activations witout eye
-% movements and a static stimulus (1 frame)
+function dataOut = nreNoiseFreeMidgetRGCMosaic(...
+    neuralEngine, noiseFreeComputeParams, sceneSequence, ...
+    sceneSequenceTemporalSupport, varargin)
+% Compute function for computation of mRGCMosaic activations
 %
 % Syntax:
-%   dataOut = nreMidgetRGCMosaicSingleShot(...
-%    neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
+%   dataOut = nreNoiseFreeMidgetRGCMosaic(...
+%    neuralEngine, noiseFreeComputeParams, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
 % Description:
@@ -28,49 +27,39 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 %    @neuralResponseEngine.
 %
 % Inputs:
-%    neuralEngineOBJ                - the parent @neuralResponseEngine object that
+%    neuralEngine                   - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
-%    neuralResponseParamsStruct     - a struct containing properties of the
+%    noiseFreeComputeParams         - a struct containing properties of the
 %                                     employed neural chain.
 %    sceneSequence                  - a cell array of scenes defining the frames of a stimulus
 %    sceneSequenceTemporalSupport   - the temporal support for the stimulus frames, in seconds
-%    instancesNum                   - the number of response instances to compute
-%
-% Optional key/value input arguments:
-%    'noiseFlags'                   - Cell array of strings containing labels
-%                                     that encode the type of noise to be included
-%                                     Valid values are: 
-%                                        - 'none' (noise-free responses)
-%                                        - 'random' (noisy response instances)
-%                                     Default is {'random'}.
-%   'rngSeed'                       - Integer.  Set rng seed. Empty (default) means don't touch the
-%                                     seed.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
 %
 %               If called directly with no input arguments, the returned struct contains
-%               the defaultParams (optics and midget RGC mosaic params) that define the neural 
-%               compute pipeline for this computation.  This can be useful
-%               for a user interested in knowing what needs to be supplied
-%               to this.
+%               the defaultParams, which here is the empty struct.
 %
 %             - If called from a parent @neuralResponseEngine), the returned
 %               struct is organized as follows:
-%                .neuralResponses : dictionary of responses indexed with 
-%                                   labels corresponding to the entries of
-%                                   the 'noiseFlags'  optional argument
-%                .temporalSupport : the temporal support of the neural
-%                                   responses, in seconds
-%                .neuralPipeline  : a struct containing the optics and the mRGC mosaic
-%                                   employed in the computation (only returned if 
-%                                   the parent @neuralResponseEngine object has 
-%                                   an empty neuralPipeline property)
 %
-%       The computed neural responses can be extracted as:
-%           neuralResponses('one of the entries of noiseFlags') 
-%       and are arranged in a matrix of:
-%           [instancesNum x tTimeBins x mRGCs] 
+%              .neuralResponses : matrix of neural responses.  Each column
+%                                 is the response vector for one frame of the input.
+%              .temporalSupport : the temporal support of the neural
+%                                   responses, in seconds
+%              .noiseFreeResponsePipeline : a struct that the parent
+%                                   @neuralResponseEngine
+%                                   can tuck away.  Only returned if the
+%                                   parent object has an empty parameters
+%                                   struct. For this routine, it has
+%                                   information about the oi and cMosaic.
+%
+% Optional key/value input arguments:
+%   'theBackgroundRetinalImage'       - oi containing the computed retinal
+%                                     image of the background.  Usedto convert cone
+%                                     excitations to modulation/contrast.
+%                                     By default this is set to a stub oi
+%                                     that doesn't do anything.
 %
 % See Also:
 %     t_neuralResponseCompute
@@ -78,6 +67,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 % History:
 %    05/04/23  NPC  Wrote it
 %    11/03/24  FH   Edited it to incorporate metaContrast
+%    12/23/24  dhb  Rewrite for major architecture redo.
 
 % Examples:
 %{
@@ -94,15 +84,15 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     defaultNeuralEnginePipelineParams = nreMidgetRGCMosaicSingleShot();
 
     % Modify certain params of interest
-    neuralResponsePipelineParams = defaultNeuralEnginePipelineParams;
+    noiseFreeResponsePipelineParams = defaultNeuralEnginePipelineParams;
 
     % Perhaps we want to use custom optics (not the optics that were used to optimize
     % the mRGCMosaic). We can pass the optics here.
-    % neuralResponsePipelineParams.customOpticsToEmploy = oiCreate();
+    % noiseFreeResponsePipelineParams.customOpticsToEmploy = oiCreate();
 
     % Perhaps we want to set the input cone mosaic integration time. 
     % Here, we set it to 200 msec
-    neuralResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
+    noiseFreeResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
 
     % Perhaps we want to manipulate noise in the input cone mosaic as well
     % as the mRGC mosaic. Here we set no (Poisson) noise for input cone mosaic
@@ -111,17 +101,17 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     % must be appropriate to the units of the inputConeMosaic response. By
     % default, the inputConeMosaic response is excitations/integration time
     % So here, we set the noise sigma to 400 excitations/integration time
-    neuralResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
-    neuralResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
-    neuralResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 500;
+    noiseFreeResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
+    noiseFreeResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
+    noiseFreeResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 500;
 
     % Perhaps we want to compute mRGCMosaic responses not on the raw cone
     % mosaic excitation responses, but on their modulation with respect to
     % the cone excitation response to a null stimulus. This can be done as follows:
-    % neuralResponsePipelineParams.theNullStimulusScene = nullStimulusScene;
+    % noiseFreeResponsePipelineParams.theNullStimulusScene = nullStimulusScene;
     % See t_spatialCSFmRGCMosaic.m to see exactly how to do this
 
-    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicSingleShot, neuralResponsePipelineParams);
+    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicSingleShot, noiseFreeResponsePipelineParams);
 
     % Instantiate a @sceneEngine object
     defaultGratingParams = sceGrating();
@@ -192,55 +182,47 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     end
 
     % Parse the input arguments
+    %
+    % Allow for possibility that other nre's take key/value pairs that we
+    % can ignore, so set KeepUnmatched to true.
     p = inputParser;
-    p.addParameter('noiseFlags', {'random'});
-    p.addParameter('rngSeed',[], @(x) (isempty(x) || isnumeric(x)));
-    p.addParameter('amputatescenes',true,@islogical)
-    p.addParameter('justAddNoise',false,@islogical)
+    p.KeepUnmatched = true;
     p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
-    
-    % Retrieve the response noiseFlag labels and validate them.
-    noiseFlags = p.Results.noiseFlags;
-    passedRngSeed = p.Results.rngSeed;
-    neuralEngineOBJ.validateNoiseFlags(noiseFlags);
 
-    % For each noise flag we generate a corresponing neural response, and all 
-    % neural responses are stored in a dictionary indexed by the noiseFlag label.
-    % Setup theNeuralResponses dictionary, loading empty responses for now
-    theNeuralResponses = containers.Map();
-    for idx = 1:length(noiseFlags)
-        theNeuralResponses(noiseFlags{idx}) = [];
-    end
+    % Get the number of scene sequence frames
+    framesNum = numel(sceneSequence);
 
-    if (isempty(neuralEngineOBJ.neuralPipeline))
+% Create/get key objects
+    if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noiseFreeResponse'))
+    if (isempty(neuralEngine.neuralPipeline))
         % Generate neural pipeline here
         % Step1. Load a compute-ready mRGC mosaic given the passed params
         theMRGCmosaic = mRGCMosaic.loadComputeReadyRGCMosaic(...
-            neuralResponseParamsStruct.mRGCMosaicParams, ...
-            neuralResponseParamsStruct.opticsParams, ...
-            neuralResponseParamsStruct.mRGCMosaicParams.retinalRFmodelParams);
+            noiseFreeComputeParams.mRGCMosaicParams, ...
+            noiseFreeComputeParams.opticsParams, ...
+            noiseFreeComputeParams.mRGCMosaicParams.retinalRFmodelParams);
 
         % Crop it to desired size
         theMRGCmosaic.cropToSizeAtEccentricity(...
-            neuralResponseParamsStruct.mRGCMosaicParams.cropParams.sizeDegs, ...
-            neuralResponseParamsStruct.mRGCMosaicParams.cropParams.eccentricityDegs);
+            noiseFreeComputeParams.mRGCMosaicParams.cropParams.sizeDegs, ...
+            noiseFreeComputeParams.mRGCMosaicParams.cropParams.eccentricityDegs);
 
         % Set input cone mosaic integration time
         theMRGCmosaic.inputConeMosaic.integrationTime = ...
-            neuralResponseParamsStruct.mRGCMosaicParams.coneIntegrationTimeSeconds;
+            noiseFreeComputeParams.mRGCMosaicParams.coneIntegrationTimeSeconds;
 
         % Set the mRGCMosaic noise flag
-        theMRGCmosaic.noiseFlag = neuralResponseParamsStruct.noiseParams.mRGCMosaicNoiseFlag;
+        theMRGCmosaic.noiseFlag = noiseFreeComputeParams.noiseParams.mRGCMosaicNoiseFlag;
 
         % Set the mRGCMosaic noise
         theMRGCmosaic.vMembraneGaussianNoiseSigma = ...
-            neuralResponseParamsStruct.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma;
+            noiseFreeComputeParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma;
 
-        if (~isempty(neuralResponseParamsStruct.customOpticsToEmploy))
+        if (~isempty(noiseFreeComputeParams.customOpticsToEmploy))
             % Employ the passed optics
-            theOptics = neuralResponseParamsStruct.customOpticsToEmploy;
+            theOptics = noiseFreeComputeParams.customOpticsToEmploy;
         else
             % Retrieve the optics that were used to optimize theMRGCmosaic
             if (~isempty(theMRGCmosaic.theNativeOptics))
@@ -252,13 +234,14 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
             end
         end
 
-        returnTheNeuralPipeline = true;
+        returnTheNoiseFreePipeline = true;
     else
         % Load the optics from the previously computed neural pipeline
-        theOptics = neuralEngineOBJ.neuralPipeline.optics;
+        theOptics = neuralEngine.neuralPipeline.optics;
+
         % Load the mRGC mosaic from the previously computed neural pipeline
-        theMRGCmosaic = neuralEngineOBJ.neuralPipeline.mRGCMosaic;
-        returnTheNeuralPipeline = false;
+        theMRGCmosaic = neuralEngine.neuralPipeline.mRGCMosaic;
+        returnTheNoiseFreePipeline = false;
     end
     
     % Compute the sequence of optical images corresponding to the sequence 
@@ -277,12 +260,12 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
     % Compute theConeMosaicNullResponse if the inputSignalType is set to
     % 'cone modulations' and if we have theNullStimulusScene
-    if (strcmp(neuralResponseParamsStruct.mRGCMosaicParams.inputSignalType, 'cone_modulations')) && ...
-       (~isempty(neuralResponseParamsStruct.theNullStimulusScene)) && (~p.Results.justAddNoise)
+    if (strcmp(noiseFreeComputeParams.mRGCMosaicParams.inputSignalType, 'cone_modulations')) && ...
+       (~isempty(noiseFreeComputeParams.theNullStimulusScene)) && (~p.Results.justAddNoise)
         
         fprintf('Operating on cone modulations\n');
         % Retrieve the null stimulus scene
-        theNullStimulusScene = neuralResponseParamsStruct.theNullStimulusScene;
+        theNullStimulusScene = noiseFreeComputeParams.theNullStimulusScene;
 
         % Compute the optical image of the null scene
         theNullSceneOI = oiCompute(theOptics, theNullStimulusScene,'padvalue','mean');
@@ -313,7 +296,7 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
 
     % Don't need to compute if we are just adding noise
     if (~p.Results.justAddNoise)
-        switch (neuralResponseParamsStruct.noiseParams.inputConeMosaicNoiseFlag)
+        switch (noiseFreeComputeParams.noiseParams.inputConeMosaicNoiseFlag)
             case 'none'
                 % Compute noise-free cone mosaic response instances
                 fprintf('\tComputing noise-free cone mosaic responses\n');
@@ -438,9 +421,9 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         'neuralResponses', theNeuralResponses, ...
     	'temporalSupport', temporalSupportSeconds);
     
-    if (returnTheNeuralPipeline)
-        dataOut.neuralPipeline.optics = theOptics;
-        dataOut.neuralPipeline.mRGCMosaic = theMRGCmosaic;
+    if (returnTheNoiseFreePipeline)
+        dataOut.noiseFreeResponsePipeline.optics = theOptics;
+        dataOut.noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
     end
 
 end
