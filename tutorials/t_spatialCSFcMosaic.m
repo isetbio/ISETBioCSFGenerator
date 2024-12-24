@@ -1,8 +1,8 @@
-function thresholdRet = t_spatialCSF(varargin)
+function thresholdRet = t_spatialCSFcMosaic(varargin)
 % Compute spatial CSF in different color directions
 %
 % Syntax:
-%   thresholdRet = t_spatialCSF;
+%   thresholdRet = t_spatialCSFcMosaic;
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.

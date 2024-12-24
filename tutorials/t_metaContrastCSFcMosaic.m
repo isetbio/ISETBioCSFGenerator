@@ -1,8 +1,8 @@
-function thresholdRet = t_metaContastCSF(varargin)
+function thresholdRet = t_metaContrastCSFcMosaic(varargin)
 % Meta contrast computation of spatial CSF in different color directions
 %
 % Syntax:
-%    thresholdRet = t_metaContastCSF
+%    thresholdRet = t_metaContastCSFcMosaic
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.
