@@ -6,7 +6,9 @@ function t_spatialCSFmRGCMosaicDynamicStimulus
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions 
 %    using an mRGCMosaic neural respone engine with dynamic stimuli.
 %
-% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
+%    You can turn use of meta contrast method on or off.
+%
+% See also: t_spatialCSF, t_metaContrastCSF, t_spatialCSFmRGCMosaic, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
 % History:
@@ -15,6 +17,9 @@ function t_spatialCSFmRGCMosaicDynamicStimulus
 
 % Clear and close
 close all;
+
+% This can either use meta contrast method or not.
+useMetaContrast = true;
 
 % Grab root folder for figure output
 csfGeneratorRootPath = ISETBioCSFGeneratorRootPath;
@@ -183,7 +188,7 @@ clear dummyNeuralEngine
 %    rcePcaSVM  - support vector machine linear classifier after PCA.
 %
 % Also set up parameters associated with use of this classifier.
-classifierEngine = 'rcePoisson';
+classifierEngine = 'rceTemplateDistance';
 switch (classifierEngine)
     case {'rcePoisson'}
         nTest = 128;
@@ -194,7 +199,7 @@ switch (classifierEngine)
         doValidationCheck = false;
     case {'rceTemplateDistance'}
         nTest = 128;
-        classifierEngine = responseClassifierEngine(@rcePoisson);
+        classifierEngine = responseClassifierEngine(@rceTemplateDistance);
         classifierUseParams = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', nTest);
@@ -237,9 +242,9 @@ thresholdParams = struct('logThreshLimitLow', 3, ...
 %
 % Might want to up the number for the non-fastParameters case.
 if (fastParameters)
-    contrastLevelsSampled = 5;
-else
     contrastLevelsSampled = 6;
+else
+    contrastLevelsSampled = 10;
 end
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
@@ -290,6 +295,12 @@ minSF = 0.5/theStimulusFOVdegs;
 maxSF = 10;
 spatialFreqs = [0 logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled)];
 
+% Create the sceMetaContrast scene engine
+if (useMetaContrast)
+    metaSceneEngineParams = sceMetaContrast;
+    metaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+end
+
 %% Compute threshold for each spatial frequency
 % 
 logThreshold = zeros(1, length(spatialFreqs));
@@ -311,7 +322,7 @@ for iSF = 1:length(spatialFreqs)
         thePresentationModeForThisSF = thePresentationMode;
     end
 
-    fprintf('Computing contrast sensitivity at %2.1f c/deg using a %s stimulus\n', ...
+    fprintf('\nComputing contrast sensitivity at %2.1f c/deg using a %s stimulus\n', ...
         spatialFreqs(iSF), thePresentationModeForThisSF);
 
     % Generate the dynamic grating scene engine for this SF
@@ -347,12 +358,36 @@ for iSF = 1:length(spatialFreqs)
             noisyInstancesParams);
     end
 
-    % Compute the threshold for our grating scene with the previously
-    % defined neural and classifier engine.
-    [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThreshold(theDynamicGratingSceneEngine, theNeuralEngine, classifierEngine, ...
-        classifierUseParams, thresholdParams, questEngineParams, 'TAFC', true);
-    
+    % Use meta contrast or not
+    if (useMetaContrast)
+        % Create nreMetaContrast using the actual scene and neural engines
+        metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
+        metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
+        metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
+        metaNeuralResponseEngineNoiseFreeParams.sceneEngine = theDynamicGratingSceneEngine;
+        metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
+
+        metaNeuralResponseEngineNoisyInstanceParams = nreNoisyInstancesMetaContrast;
+        metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
+        theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
+            @nreNoisyInstancesMetaContrast, ...
+            metaNeuralResponseEngineNoiseFreeParams, ...
+            metaNeuralResponseEngineNoisyInstanceParams);
+
+        % Compute the threshold for our grating scene with the previously
+        % defined neural and classifier engine.
+        [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
+            computeThreshold(metaSceneEngine, theMetaNeuralEngine, classifierEngine, ...
+            classifierUseParams, thresholdParams, questEngineParams, 'TAFC', true);
+    else
+
+        % Compute the threshold for our grating scene with the previously
+        % defined neural and classifier engine.
+        [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
+            computeThreshold(theDynamicGratingSceneEngine, theNeuralEngine, classifierEngine, ...
+            classifierUseParams, thresholdParams, questEngineParams, 'TAFC', true);
+    end
+
     % Plot stimulus
     figure(dataFig);
     subplot(plotRows, plotCols, iSF * 2 - 1);

@@ -278,13 +278,18 @@ while (nextFlag)
             'visualizeAllComponents', visualizeAllComponents,...
             'theBackgroundRetinalImage', theBackgroundRetinalImage);
         
-        % Copy the trained classifier
-        theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
-
         testCounter = testCounter + 1;
         e = toc(eStart);
         if (beVerbose)
                 fprintf('computeThreshold: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
+        end
+        
+        % Copy the trained classifier
+        eStart = tic;
+        theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
+        e = toc(eStart);
+        if (beVerbose)
+                fprintf('computeThreshold: Copying classifer took %0.1f secs\n',e);
         end
 
         % Update the psychometric function with data point for this

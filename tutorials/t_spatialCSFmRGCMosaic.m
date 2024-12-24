@@ -193,10 +193,15 @@ switch (classifierChoice)
     case 'idealObserver'
         % PoissonTAFC makes decision by performing the Poisson likelihood ratio test
         % Also set up parameters associated with use of this classifier.
-        theClassifierEngine = responseClassifierEngine(@rcePoissonTAFC);
+        theClassifierEngine = responseClassifierEngine(@rcePoisson);
         
         % Train classifier using 1 noise-free instance, 
         % Test performance using a set of 512 noisy instances
+        if (fastParameters)
+            nTest = 32;
+        else
+            nTest = 1024;
+        end
         nTest = 512;
         classifierParams = struct('trainFlag', 'none', ...
                                 'testFlag', 'random', ...
@@ -210,8 +215,8 @@ switch (classifierChoice)
             nTest = 32;
         else
             crossValidationFolds = 10;
-            nTrain = 1024*4;
-            nTest = 1024*4;
+            nTrain = 1024;
+            nTest = 1024;
         end
 
         % Instantiate a computational observer consisting of a linear SVM 
@@ -356,7 +361,7 @@ for iSF = 1:length(spatialFreqs)
         metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
         metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
 
-        metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
+        metaNeuralResponseEngineNoisyInstanceParams = nreNoisyInstancesMetaContrast;
         metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
         theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
             @nreNoisyInstancesMetaContrast, ...
