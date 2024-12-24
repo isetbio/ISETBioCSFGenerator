@@ -1,4 +1,4 @@
-function t_metaContrastCSFmRGCMosaic
+function t_spatialCSFmRGCMosaic
 % Compute spatial CSF in different color directions, using the ON-center
 % mRGCMosaics. This script illustrates use with and without meta contrast
 % method for mRGC calculations.
@@ -85,17 +85,17 @@ noiseFreeParams.mRGCMosaicParams.sizeDegs = [2.0 2.0];
 noiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
 
 % 2. We can crop the mRGCmosaic to some desired size. 
-%     Passing [] for sizeDegs will not crop.
-%     Passing [] for eccentricityDegs will crop the mosaic at its center.
-% if (fastParameters)
-%     cropSize = [0.5 0.5];
-% else
-%     cropSize = [1.5 1.5];
-% end
-% noiseFreeParams.mRGCMosaicParams.cropParams = struct(...
-%     'sizeDegs', cropSize, ...
-%     'eccentricityDegs', [] ...
-% );
+%    Passing [] for sizeDegs will not crop.
+%    Passing [] for eccentricityDegs will crop the mosaic at its center.
+if (fastParameters)
+    cropSize = [0.5 0.5];
+else
+    cropSize = [1.5 1.5];
+end
+noiseFreeParams.mRGCMosaicParams.cropParams = struct(...
+    'sizeDegs', cropSize, ...
+    'eccentricityDegs', [] ...
+);
 
 % 3. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here. This is commented out but
@@ -246,15 +246,18 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
                        'slopeRangeHigh', 200, ...
                        'slopeDelta', 1.0);
 
-% Parameter for running the QUEST+
+% Parameters for running the QUEST+
+%
 % See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-
+%
 % Sample the contrast-response psychometric curve at this number of
 % contrast levels.
-%
-% Might want to up the number for the non-fastParameters case.
-contrastLevelsSampled = 15;
+if (fastParameters)
+    contrastLevelsSampled = 8;
+else
+    contrastLevelsSampled = 8;
+end
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
     'maxTrial', contrastLevelsSampled*nTest, ...
@@ -262,10 +265,10 @@ questEngineParams = struct(...
     'stopCriterion', 0.05);
 
 % This will run faster if you reduce theStimulusPixelsNum to something
-% smaller, but then you will get an annoying limit about the precision
+% smaller, but then you might get an annoying limit about the precision
 % of the cone aperture blurring.
 if (fastParameters)
-    theStimulusPixelsNum = 512;
+    theStimulusPixelsNum = 256;
     minPixelsNumPerCycle = 4;
 else
     theStimulusPixelsNum = 512;
