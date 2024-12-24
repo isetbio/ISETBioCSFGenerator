@@ -31,7 +31,7 @@ end
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version relatively run time relatively short.
-fastParameters = true;
+fastParameters = false;
 
 % Grating orientation
 theStimulusOrientationDegs = 0;
@@ -239,13 +239,20 @@ thresholdParams = struct('logThreshLimitLow', 4.5, ...
 if (fastParameters)
     contrastLevelsSampled = 5;
 else
-    constrastLevelsSampled = 6;
+    contrastLevelsSampled = 6;
 end
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
     'maxTrial', contrastLevelsSampled*nTest, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
+
+% Contrast for the nullStimulusSceneSequence, typically zero
+nullContrast = 0.0;
+
+% Dynamic stimulus parameters
+thePresentationMode = 'drifted';
+theTemporalFrequencyHz = 5.0;
 
 % This will run faster if you reduce theStimulusPixelsNum to something
 % smaller, but then you will get an annoying limit about the precision
@@ -265,13 +272,6 @@ else
     % One full temporal cycle
     theStimulusDurationSeconds = 1.0/theTemporalFrequencyHz;
 end
-
-% Contrast for the nullStimulusSceneSequence, typically zero
-nullContrast = 0.0;
-
-% Dynamic stimulus parameters
-thePresentationMode = 'drifted';
-theTemporalFrequencyHz = 5.0;
 
 % Generate Matlab filename for saving computed data
 % 
