@@ -59,7 +59,7 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 % frame duration. Here, set it to 50 mseconds.
 %
 % Match frame duration to integration time
-coneIntegrationTimeSeconds = 50/1000;
+coneIntegrationTimeSeconds = 200/1000;
 theFrameDurationSeconds = coneIntegrationTimeSeconds;
 
 %% Create an mRGCMosaic-based neural response engine
@@ -82,15 +82,15 @@ noiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
 % 2. We can crop the mRGCmosaic to some desired size. 
 %     Passing [] for sizeDegs will not crop.
 %     Passing [] for eccentricityDegs will crop the mosaic at its center.
-if (fastParameters)
-    cropSize = [0.5 0.5];
-else
-    cropSize = [1.5 1.5];
-end
-noiseFreeParams.mRGCMosaicParams.cropParams = struct(...
-    'sizeDegs', cropSize, ...
-    'eccentricityDegs', [] ...
-);
+% if (fastParameters)
+%     cropSize = [0.5 0.5];
+% else
+%     cropSize = [1.5 1.5];
+% end
+% noiseFreeParams.mRGCMosaicParams.cropParams = struct(...
+%     'sizeDegs', cropSize, ...
+%     'eccentricityDegs', [] ...
+% );
 
 % 3. If we want to use custom optics (not the optics that were used to optimize
 % the mRGCMosaic), pass the optics here. This is commented out but
