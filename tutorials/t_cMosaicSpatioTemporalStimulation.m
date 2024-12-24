@@ -28,9 +28,9 @@ function t_cMosaicSpatioTemporalStimulation
     mosaicSizeDegs = [1 1]*0.5;
     mosaicEcc = [0 0];
     
-    
     % Stimulus params
     meanLuminancdCdPerM2 = 100;
+    
     % This mean chromaticity maximizes the achievable acrhomatic contrast
     meanChromaticityXY = [0.31 0.34];
     chromaDir = [1 1 1];
@@ -78,12 +78,10 @@ function t_cMosaicSpatioTemporalStimulation
     [theDriftingGratingSequence, theStimulusTemporalSupportSeconds] = ...
         driftingGratingSceneEngine.compute(stimContrast);
 
-
     % Visualize the stimulus
     driftingGratingSceneEngine.visualizeSceneSequence(...
             theDriftingGratingSequence, theStimulusTemporalSupportSeconds);
   
-
     % Generate mosaic centered at target eccentricity
     fprintf('\t Computing mosaic\n');
     theConeMosaic = cMosaic(...
@@ -92,8 +90,7 @@ function t_cMosaicSpatioTemporalStimulation
                 'opticalImagePositionDegs', 'mosaic-centered', ...
                 'integrationTime', displayFrameDurationSeconds ...
                 );
-
-    
+  
     fprintf('\t Computing optics\n');
     % Select ranking of displayed subject
     rankedSujectIDs = PolansOptics.constants.subjectRanking;
@@ -112,7 +109,6 @@ function t_cMosaicSpatioTemporalStimulation
     % Extract the optics
     theOptics = oiEnsemble{1};
    
-
     % Compute the sequence of optical images corresponding to the drifting grating
     fprintf('Computing the optical image sequence');
     

@@ -1,4 +1,4 @@
-function t_spatialCSFromRGCMosaic
+function t_spatialCSFmRGCMosaic
 % Compute spatial CSF in different color directions, using the ON-center
 % mRGCMosaics and dynamic stimuli (drifted/counter-phase modulated)
 %
