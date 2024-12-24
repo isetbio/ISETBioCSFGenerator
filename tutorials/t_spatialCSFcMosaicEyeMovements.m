@@ -1,4 +1,4 @@
-function thresholdRet = t_spatialCSFEyeMovements(varargin)
+function thresholdRet = t_spatialCSFcMosaicEyeMovements(varargin)
 % Compute spatial CSF in different color directions, with fEM
 %
 % Syntax:
@@ -10,7 +10,7 @@ function thresholdRet = t_spatialCSFEyeMovements(varargin)
 %    windowed gratings of constant size, with fixational eye movements.
 %
 %
-% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSFcMosaic, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
 % History:

@@ -7,7 +7,7 @@ function t_spatialCSFmRGC
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions 
 %    using mRGCMosaic neural respone engine and (optionally) the meta contrast method.
 %
-% See also: t_spatialCSF, t_metaContrastCSF, t_spatialCSFmRGCMosaicDynamicStimulus
+% See also: t_spatialCSFcMosaic, t_metaContrastCSFcMosaic, t_spatialCSFmRGCDynamicStimulus
 
 % History:
 %   11/02/2024  FH   Adopted based on t_spatialCSFmRGCMosaic.m
