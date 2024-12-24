@@ -234,11 +234,11 @@ end
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
-thresholdParams = struct('logThreshLimitLow', 5, ...
-                       'logThreshLimitHigh', 1, ...
+thresholdParams = struct('logThreshLimitLow', 2.5, ...
+                       'logThreshLimitHigh', 0, ...
                        'logThreshLimitDelta', 0.05, ...
                        'slopeRangeLow', 1, ...
-                       'slopeRangeHigh', 100, ...
+                       'slopeRangeHigh', 200, ...
                        'slopeDelta', 1.0);
 
 % Parameter for running the QUEST+
@@ -272,20 +272,21 @@ theStimulusOrientationDegs = 90;
 
 %% With access to theGratingSceneEngine, we can compute theNullStimulusScene
 nullContrast = 0.0;
-theGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD, ...
+nullGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD, ...
         'spatialEnvelope', 'soft', ...
         'orientation', theStimulusOrientationDegs, ...
         'fovDegs', theStimulusFOVdegs, ...
         'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
         'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
         'pixelsNum', theStimulusPixelsNum);
-theNullStimulusSceneSequence = theGratingSceneEngine.compute(nullContrast);
+nullStimulusSceneSequence = nullGratingSceneEngine.compute(nullContrast);
+noiseFreeParams.nullStimulusSceneSequence = nullStimulusSceneSequence;
 
 % Save theNullStimulusScene in the noiseFreeParams, so
 % that the neural engine can use it to compute mRGCmosaic responses
 % operating on cone contrast (modulation) responses, instead of operating
 % on raw cone excitation responses
-noiseFreeParams.theNullStimulusScene = theNullStimulusSceneSequence{1};
+noiseFreeParams.theNullStimulusScene = nullStimulusSceneSequence{1};
 
 % And instruct the mRGCMosaic neural response engine to operate on cone
 % modulations
@@ -338,7 +339,7 @@ plotCols = 8;
 for iSF = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, orientation, FOV, and size
-    theGratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(iSF), ...
+    gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(iSF), ...
         'spatialEnvelope', 'rect', ...
         'orientation', theStimulusOrientationDegs, ...
         'fovDegs', theStimulusFOVdegs, ...
@@ -352,7 +353,7 @@ for iSF = 1:length(spatialFreqs)
     metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
     metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
     metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
-    metaNeuralResponseEngineNoiseFreeParams.sceneEngine = theGratingSceneEngine;
+    metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
     metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
 
     metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
@@ -373,8 +374,8 @@ for iSF = 1:length(spatialFreqs)
     subplot(plotRows, plotCols, iSF * 2 - 1);
     
     visualizationContrast = 1.0;
-    [theSceneSequence] = theGratingSceneEngine.compute(visualizationContrast);
-    theGratingSceneEngine.visualizeStaticFrame(theSceneSequence);
+    [theSceneSequence] = gratingSceneEngine.compute(visualizationContrast);
+    gratingSceneEngine.visualizeStaticFrame(theSceneSequence);
 
     % Plot data and psychometric curve 
     % with a marker size of 2.5
