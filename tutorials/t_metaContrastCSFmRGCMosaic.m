@@ -133,7 +133,41 @@ switch (noiseFreeParams.mRGCMosaicParams.inputSignalType)
         error('Unknown mRGC signal type specified: ''%s''.', noiseFreeParams.mRGCMosaicParams.inputSignalType)
 end
 
-% Instantiate theNeuralEngine!
+%% Instantiate a dummy neural engine.
+%
+% We use this to figure out some sizes, as described and done just below.
+dummyNeuralEngine = neuralResponseEngine(noiseFreeComputeFunction, ...
+    noisyInstancesComputeFunction, ...
+    noiseFreeParams, ...
+    noisyInstancesParams);
+
+% We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
+% to the size of the inputConeMosaic. This is because the mRGC object creates a cone mosaic
+% that is big enough to allow computation of the surrounds, and we don't know how big this
+% will be until we try it.
+%
+% We make the stimulusFOV 25% larger than the input cone mosaic size
+% to avoid OI artifacts that arise when the test image has a mean radiance that is
+% different than the mean radiance of the null stimulus, and which can
+% result in the test stimulus being discriminable from the null stimulus
+% just because of differences in the value with which the OI is padded at
+% the edges.
+%
+% Just some dummy params for the grating so we can get the mosaic size.
+dummySpatialFrequencyCPD = 1.0;
+dummyFOVdegs = 1.0;
+theDummyGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD , ...
+        'spatialEnvelope', 'rect', ...
+        'fovDegs', dummyFOVdegs, ...
+        'minPixelsNumPerCycle', 5, ...
+        'pixelsNum', 256);
+[dummySceneSequence,dummyTemporalSupport] = theDummyGratingSceneEngine.compute(0);
+dummyNeuralEngine.computeNoiseFree(dummySceneSequence,dummyTemporalSupport);
+theStimulusFOVdegs = max(dummyNeuralEngine.neuralPipeline.noiseFreeResponse.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
+theStimulusSpatialEnvelopeRadiusDegs = 0.5*theStimulusFOVdegs;
+clear dummyNeuralEngine
+
+%% Create real neural engine
 theNeuralEngine = neuralResponseEngine(noiseFreeComputeFunction, ...
     noisyInstancesComputeFunction, ...
     noiseFreeParams, ...
@@ -204,7 +238,7 @@ thresholdParams = struct('logThreshLimitLow', 5, ...
                        'logThreshLimitHigh', 1, ...
                        'logThreshLimitDelta', 0.05, ...
                        'slopeRangeLow', 1, ...
-                       'slopeRangeHigh', 50, ...
+                       'slopeRangeHigh', 100, ...
                        'slopeDelta', 1.0);
 
 % Parameter for running the QUEST+
@@ -216,52 +250,11 @@ thresholdParams = struct('logThreshLimitLow', 5, ...
 %
 % Might want to up the number for the non-fastParameters case.
 contrastLevelsSampled = 15;
-
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
     'maxTrial', contrastLevelsSampled*nTest, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
-
-% We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
-% to the size of the inputConeMosaic. We also need theGratingSceneEngine to
-% compute the theNullStimulusScene (which is used by the midgetRGCMosaic 
-% neural response engine to compute mRGC responses based on cone mosaic contrast responses)
-% To obtain these 2 engines, we call computeThresholdTAFC as with some dummy params as follows:
-
-% Just some dummy params for the grating.
-dummySpatialFrequencyCPD = 4.0;
-dummyFOVdegs = 2.0;
-theGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD , ...
-        'spatialEnvelope', 'rect', ...
-        'fovDegs', dummyFOVdegs, ...
-        'minPixelsNumPerCycle', 5, ...
-        'pixelsNum', 512);
-
-% Some low res quest params so it can run fast
-questEngineParamsDummy = struct(...
-    'minTrial', 16, ...
-    'maxTrial', 16, ...
-    'numEstimator', 1, ...
-    'stopCriterion', 0.5);
-
-% Run the dummy TAFC, just to generate theNeuralEngine and theGratingSceneEngine
-computeThreshold(theGratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParamsDummy,'TAFC', true);
-
-% Having ran the computeThresholdTAFC() function, theNeuralEngine has been generated,
-% so we can retrieve from it the size of the inputConeMosaic, and therefore match
-% the stimulus spatial params to it as follows.
-% The stimulus spatial envelope radius = 1/2 the inputConeMosaic size
-theStimulusSpatialEnvelopeRadiusDegs = 0.5*max(theNeuralEngine.neuralPipeline.noiseFreeResponse.mRGCMosaic.inputConeMosaic.sizeDegs);
-
-% We make the stimulusFOV 25% larger than the input cone mosaic size
-% to avoid OI artifacts that arise when the test image has a mean radiance that is
-% different than the mean radiance of the null stimulus, and which can
-% result in the test stimulus being discriminable from the null stimulus
-% just because of differences in the value with which the OI is padded at
-% the edgesƒcom
-theStimulusFOVdegs = max(theNeuralEngine.neuralPipeline.noiseFreeResponse.mRGCMosaic.inputConeMosaic.sizeDegs)*1.25;
 
 % This will run faster if you reduce theStimulusPixelsNum to something
 % smaller, but then you will get an annoying limit about the precision
@@ -316,7 +309,7 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
 %% Ready to compute thresholds at a set of examined spatial frequencies
 % Choose the minSF so that it contains 1 full cycle within the smallest
 % dimension of the input cone  mosaic
-minSF = 0.5/(min(theNeuralEngine.neuralPipeline.noiseFreeResponse.mRGCMosaic.inputConeMosaic.sizeDegs));
+minSF = 0.5/theStimulusFOVdegs;
 maxSF = 60;
 if (fastParameters)
     spatialFrequenciesSampled = 8;
