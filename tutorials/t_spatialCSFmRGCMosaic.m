@@ -8,7 +8,6 @@ function t_spatialCSFromRGCMosaic
 %
 % See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
-%
 
 % History:
 %   05/20/23  NPC   Wrote it
@@ -16,6 +15,17 @@ function t_spatialCSFromRGCMosaic
 
 % Clear and close
 close all;
+
+% Grab root folder for figure output
+csfGeneratorRootPath = ISETBioCSFGeneratorRootPath;
+figurePath = fullfile(csfGeneratorRootPath,'local','figures');
+resultsPath = fullfile(csfGeneratorRootPath,'local','results');
+if (~exist(figurePath,'dir'))
+    mkdir(figurePath);
+end
+if (~exist(resultsPath,'dir'))
+    mkdir(resultsPath);
+end
 
 % Set fastParameters that make this take less time
 %
@@ -51,8 +61,11 @@ chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 
 % Set the cone mosaic intergration time. This will also be the stimulus
-% frame duration. Here, set it to 50 mseconds
+% frame duration. Here, set it to 50 mseconds.
+%
+% Match frame duration to integration time
 coneIntegrationTimeSeconds = 50/1000;
+theFrameDurationSeconds = coneIntegrationTimeSeconds;
 
 %% Create an mRGCMosaic-based neural response engine
 %
@@ -178,6 +191,7 @@ switch (classifierEngine)
         classifierUseParams = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', nTest);
+        doValidationCheck = false;
     case {'rceTemplateDistance'}
         nTest = 128;
         classifierEngine = responseClassifierEngine(@rcePoisson);
@@ -186,7 +200,7 @@ switch (classifierEngine)
             'nTrain', 1, 'nTest', nTest);
         doValidationCheck = false;
     case 'rcePcaSVM'
-        nTest = 128;
+        nTest = 512;
         pcaSVMParams = struct(...
             'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
             'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear
@@ -196,7 +210,7 @@ switch (classifierEngine)
         classifierEngine = responseClassifierEngine(@rcePcaSVM,pcaSVMParams);
         classifierUseParams = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
-            'nTrain', 128, 'nTest', nTest);  
+            'nTrain', 512, 'nTest', nTest);  
         doValidationCheck = false;
     otherwise
         error('Unsupported rce specified')
@@ -208,7 +222,7 @@ end
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
 thresholdParams = struct('logThreshLimitLow', 4.5, ...
-                       'logThreshLimitHigh', 2, ...
+                       'logThreshLimitHigh', 1, ...
                        'logThreshLimitDelta', 0.05, ...
                        'slopeRangeLow', 1, ...
                        'slopeRangeHigh', 100, ...
@@ -225,7 +239,7 @@ thresholdParams = struct('logThreshLimitLow', 4.5, ...
 if (fastParameters)
     contrastLevelsSampled = 5;
 else
-    constrastLevelsSampled = 5;
+    constrastLevelsSampled = 6;
 end
 questEngineParams = struct(...
     'minTrial', contrastLevelsSampled*nTest, ...
@@ -239,9 +253,17 @@ questEngineParams = struct(...
 if (fastParameters)
     theStimulusPixelsNum = 128;
     minPixelsNumPerCycle = 4;
+    spatialFrequenciesSampled = 2;
+
+    % Just two frames
+    theStimulusDurationSeconds = 2*theFrameDurationSeconds;
 else
     theStimulusPixelsNum = 512;
     minPixelsNumPerCycle = 8;
+    spatialFrequenciesSampled = 6;
+
+    % One full temporal cycle
+    theStimulusDurationSeconds = 1.0/theTemporalFrequencyHz;
 end
 
 % Contrast for the nullStimulusSceneSequence, typically zero
@@ -250,20 +272,6 @@ nullContrast = 0.0;
 % Dynamic stimulus parameters
 thePresentationMode = 'drifted';
 theTemporalFrequencyHz = 5.0;
-
-% Match the frame duration to the cone integration time
-theFrameDurationSeconds = coneIntegrationTimeSeconds;
-
-if (fastParameters)
-    % Just do two frames in fastParameters mode.
-    theStimulusDurationSeconds = 2*theFrameDurationSeconds;
-else
-    % Make the stimulus last for 1 full temporal cycle
-    theStimulusDurationSeconds = 1.0/theTemporalFrequencyHz;
-end
-
-% And instruct the mRGCMosaic neural response engine to operate on cone
-% modulations
 
 % Generate Matlab filename for saving computed data
 % 
@@ -277,19 +285,9 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
     regexprep(noiseFreeParams.mRGCMosaicParams.inputSignalType, '_+(\w)', '${upper($1)}'), ...
     noisyInstancesParams.sigma);
 
-%% Ready to compute thresholds at a set of examined spatial frequencies
-%
-% Choose the minSF so that it contains 1 full cycle within the smallest
-% dimension of the input cone mosaic
+%% Ready to compute thresholds at a set of spatial frequencies
 minSF = 2;
 maxSF = 10;
-if (fastParameters)
-    spatialFrequenciesSampled = 2;
-else
-    spatialFrequenciesSampled = 16;
-end
-
-% List of spatial frequencies to be tested.
 spatialFreqs = [0 logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled)];
 
 %% Compute threshold for each spatial frequency
@@ -370,16 +368,10 @@ for iSF = 1:length(spatialFreqs)
     questObj.plotMLE(2.5);
     drawnow;
 
-    % Also visualize the entire scene sequence
-    %
-    % This saves stuff into the github repository, which is a no-no.
-    % Left in case someone is inspired to generate a reasonable path,
-    % say to the local directory with a subfolder of this tutorial's name,
-    % and reinstate.
-    %
-    % theDynamicGratingSceneEngine.visualizeSceneSequence(...
-    %     theSceneSequence, theSceneSequenceTemporalSupportSeconds, ...
-    %     'videoFilename', sprintf('stimulus_%2.2fcpd', spatialFreqs(iSF)));
+    % Visualize the entire scene sequence
+    theDynamicGratingSceneEngine.visualizeSceneSequence( ...
+        theSceneSequence, theSceneSequenceTemporalSupportSeconds, ...
+        'videoFilename', fullfile(figurePath,sprintf('stimulus_%2.2fcpd', spatialFreqs(iSF))));
 
     % Save data for off-line visualizations
     theComputedQuestObjects{iSF} = questObj;
@@ -404,16 +396,12 @@ ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 
 %% Export computed data. 
-%
-% Commented out. If you want to save data like this from a tutorial, put it
-% into a local directory and make sure that is gitignored so it doesn't
-% clog up the repository.
-%
-% fprintf('Results will be saved in %s.\n', matFileName);
-% save(matFileName, 'spatialFreqs', 'threshold', 'chromaDir', ...
-%     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
-%     'theTemporalFrequencyHz', 'theFrameDurationSeconds',  'theStimulusDurationSeconds', ... 
-%     'theNeuralComputePipelineFunction', 'neuralResponsePipelineParams', ...
-%     'classifierChoice', 'classifierUseParams', 'thresholdParams', ...
-%     'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams', '-v7.3');
+fprintf('Results will be saved in %s.\n', matFileName);
+save(fullfile(resultsPath,matFileName), 'spatialFreqs', 'threshold', 'chromaDir', ...
+    'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
+    'theTemporalFrequencyHz', 'theFrameDurationSeconds',  'theStimulusDurationSeconds', ... 
+    'noiseFreeComputeFunction', 'noiseFreeParams', ...
+    'noisyInstancesComputeFunction', 'noisyInstancesParams', ...
+    'classifierEngine', 'classifierUseParams', 'thresholdParams', ...
+    'theComputedQuestObjects', 'thePsychometricFunctions', 'theFittedPsychometricParams', '-v7.3');
 end

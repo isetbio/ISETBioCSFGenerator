@@ -77,7 +77,6 @@ end
 % can ignore, so set KeepUnmatched to true.
 p = inputParser;
 p.KeepUnmatched = true;
-%p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
 p.addParameter('verbose',true,@islogical);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
