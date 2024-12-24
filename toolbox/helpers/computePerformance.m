@@ -74,8 +74,6 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                              with 'rcePoisson'.  
 %
 % Optional key/value pairs:
-%
-% Optional key/value pairs:
 %     TAFC                  - logical. Whether this is a two-interval 
 %                             forced-choice task or N-way one-stimulus-per
 %                             -trial task. Default false.
@@ -83,9 +81,16 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                             response instances
 %     visualizeAllComponents - Logical (default false). Whether to visualize or not.
 %     verbose               - Logical (default true). Print out stuff.
-%     theBackgroundRetinalImage - Optical image (default a blank oi
-%                             struct). Some neural response engines expect this so that they can
-%                             compute modulations and/or contrast.
+%     trainFixationalEM     - Empty (default) or a fixationalEM object
+%                             that describes one eye movement path.  If
+%                             the latter, this must have one position per
+%                             frame of the passed scene sequence, in which
+%                             case it is applied on training trials.
+%     testFixationalEM      - Empty (default) or a fixationalEM object
+%                             that describes one eye movement path.  If
+%                             the latter, this must have one position per
+%                             frame of the passed scene sequence, in which
+%                             case it is applied on testing trials.
 %
 % See also
 %   t_spatialCSF, t_spatialCsf, computeThreshold
@@ -104,13 +109,16 @@ p.addParameter('TAFC', false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('verbose', true, @islogical);
-p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
+p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
+p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
+p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
 saveResponses = p.Results.saveResponses;
 visualizeAllComponents = p.Results.visualizeAllComponents;
-theBackgroundRetinalImage = p.Results.theBackgroundRetinalImage;
+trainFixationalEMObj = p.Results.trainFixationalEM;
+testFixationalEMObj = p.Results.testFixationalEM;
 
 % Empty responses
 responses = [];
@@ -139,7 +147,7 @@ if (~isempty(trainNoiseFlag))
         [inSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine.computeNoiseFree(...
             theScenes{n}, ...
             temporalSupport, ...
-            'theBackgroundRetinalImage',theBackgroundRetinalImage);
+            'fixationalEM',trainFixationalEMObj);
 
         % Add noise (or not) to nth alternative responses
         [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
@@ -201,7 +209,6 @@ end
 % indicates what type of noise is used to generate the stimuli used for
 % prediction.  Typically 'random'.
 
-
 % Generate responses for prediction
 %
 % The responses are a 3 dimensional
@@ -228,7 +235,7 @@ for n = 1:nScenes
     [outSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine.computeNoiseFree(...
         theScenes{n}, ...
         temporalSupport, ...
-        'theBackgroundRetinalImage',theBackgroundRetinalImage);
+        'fixationalEM',testFixationalEMObj);
 
     % Add noise (or not) to nth alternative responses
     [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...

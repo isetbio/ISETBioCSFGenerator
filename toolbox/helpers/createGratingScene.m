@@ -46,7 +46,8 @@ p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
 p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
-p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ismember(x,{'flashed', 'drifted', 'counter phase modulated'})));
+p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ...
+    ismember(x,{'flashed', 'flashedmultiframe', 'drifted', 'counter phase modulated'})));
 p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isscalar(x)));
@@ -94,7 +95,15 @@ switch (p.Results.presentationMode)
         gratingParams.temporalModulation = 'flashed';
         gratingParams.temporalModulationParams =  struct(...
             'stimOnFrameIndices', 1, 'stimDurationFramesNum', 1);
-        
+     
+    case 'flashedmultiframe'
+        % Multiple frame presentation
+        gratingParams.frameDurationSeconds = 1/p.Results.temporalFrequencyHz;
+        framesNum = round(p.Results.duration/gratingParams.frameDurationSeconds);
+        gratingParams.temporalModulation = 'flashed';
+        gratingParams.temporalModulationParams =  struct(...
+            'stimOnFrameIndices', 1:framesNum, 'stimDurationFramesNum', framesNum);
+
     case 'drifted'
         gratingParams.temporalModulation = 'drifted';
         gratingParams.frameDurationSeconds = 1.0/(p.Results.temporalFrequencyHz*360/p.Results.spatialPhaseAdvanceDegs);

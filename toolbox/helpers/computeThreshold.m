@@ -92,14 +92,15 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %  12/23/24  dhb  Simplified as part of new architecture push.
 
 p = inputParser;
+p.KeepUnmatched = true;
 p.addParameter('beVerbose',  true, @islogical);
 p.addParameter('extraVerbose', false, @islogical);
 p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
-p.addParameter('datasavePara', [], @(x)(isempty(x)||(isstruct(x))));
+p.addParameter('datasavePara', [], @(x)(isempty(x) || (isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
-p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
-p.addParameter('parameterIsContrast',true,@islogical);
+p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
+p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
 
 parse(p, varargin{:});
 beVerbose = p.Results.beVerbose;
@@ -107,7 +108,8 @@ visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 isTAFC = p.Results.TAFC;
-theBackgroundRetinalImage = p.Results.theBackgroundRetinalImage;
+trainFixationalEMObj = p.Results.trainFixationalEM;
+testFixationalEMObj = p.Results.testFixationalEM;
 
 % Construct a QUEST threshold estimator estimate threshold
 %
@@ -198,11 +200,7 @@ while (nextFlag)
     % Contrast label for pCorrect dictionary
     contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
     if (beVerbose)
-        if (p.Results.parameterIsContrast)
-            fprintf('Testing %s\n', contrastLabel);
-        else
-            fprintf('Testing parameter value %0.4g\n',testContrast)
-        end
+        fprintf('Testing parameter value %0.4g\n',testContrast)
     end
     
     % Have we already built the classifier for this contrast?
@@ -275,8 +273,9 @@ while (nextFlag)
             classifierPara.nTrain, classifierPara.nTest, theNeuralEngine,...
             classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
             'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
-            'visualizeAllComponents', visualizeAllComponents,...
-            'theBackgroundRetinalImage', theBackgroundRetinalImage);
+            'visualizeAllComponents', visualizeAllComponents, ...
+            'fixationalEM', testFixationalEMObj ...
+        );
         
         testCounter = testCounter + 1;
         e = toc(eStart);
@@ -339,8 +338,10 @@ while (nextFlag)
         [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
-            'TAFC', isTAFC, 'theBackgroundRetinalImage',theBackgroundRetinalImage,...
-            'saveResponses', false, 'visualizeAllComponents', false);
+            'TAFC', isTAFC, ...
+            'saveResponses', false, 'visualizeAllComponents', false, ...
+            'fixationalEM', testFixationalEMObj ...
+        );
         
         testCounter = testCounter + 1;
         e = toc(eStart);

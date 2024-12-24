@@ -56,7 +56,11 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
 %                                   information about the oi and cMosaic.
 %
 % Optional key/value input arguments:
-%   None
+%   'fixationalEM'           - Empty (default) or a fixationalEM object
+%                              that describes one eye movement path.  If
+%                              the latter, this must have one position per
+%                              frame of the passed scene sequence, in which
+%                              case it is applied.
 % 
 % See Also:
 %     t_neuralResponseCompute
@@ -129,8 +133,10 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
     % can ignore, so set KeepUnmatched to true.
     p = inputParser;
     p.KeepUnmatched = true;
+    p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
+    fixationalEMObj = p.Results.fixationalEM;
 
     % Get the number of scene sequence frames
     framesNum = numel(sceneSequence);
@@ -177,12 +183,29 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
         theOIsequence = oiArbitrarySequence(theListOfOpticalImages, sceneSequenceTemporalSupport);
     end
 
-    % Compute responses for each type of noise flag requested
-    [theNeuralResponsesRaw, ~, ~, ~, temporalSupportSeconds] = ...
-        theConeMosaic.compute(theOIsequence, ...
-        'nTrials', 1, ...
-        'withFixationalEyeMovements', false ...
-        );
+    % Compute responses depending on whether there is a fixationalEM or
+    % not.
+    if (isempty(fixationalEMObj))
+        % No fixationalEM passed. So don't move the eyes.
+        [theNeuralResponsesRaw, ~, ~, ~, temporalSupportSeconds] = ...
+            theConeMosaic.compute(theOIsequence, ...
+            'nTrials', 1, ...
+            'withFixationalEyeMovements', false ...
+            );
+    else
+        % We were passed a fixational EM.  Check that it is OK for our
+        % purposes, and then comptue with it.
+        %
+        % Check
+
+        % Compute
+        theConeMosaic.fixEMobj = fixationalEMObj;
+        [theNeuralResponsesRaw, ~, ~, ~, temporalSupportSeconds] = ...
+            theConeMosaic.compute(theOIsequence, ...
+            'nTrials', 1, ...
+            'withFixationalEyeMovements', true ...
+            );
+    end
 
     % Convert cMosaic return convention to nre return convention.  We have
     % to deal with unfortunate special casing because of the way Matlab

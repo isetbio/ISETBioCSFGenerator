@@ -1,9 +1,10 @@
-edit % Compute spatial CSF in the achromatic direction in the presence of fEM
+% Compute spatial CSF in the achromatic direction in the presence of fEM
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in the achromatic color direction
 %    in the presence of fixatinal eye movements using the cone excitations
 %    signal.
+%
 %    This example uses the new @cMosaic object, an SVM computational observer,
 %    operating on the output of a quadrature energy spatial pooling mechanism
 %    and square windowed gratings of constant size.
