@@ -60,14 +60,7 @@ function dataOut = nreNoiseFreeMetaContrast(...
 %
 %
 % Optional key/value input arguments:
-%   'theBackgroundRetinalImage'       - oi containing the computed retinal
-%                                     image of the background.  Used by
-%                                     some nre's to convert cone
-%                                     excitations to modulation/contrast.
-%                                     By default this is set to a stub oi
-%                                     that doesn't do anything, so this
-%                                     only needs to be passed explicitly if
-%                                     the underlying nre needs it.
+%   None.
 % 
 % See Also:
 %     nreNoisyInstancesMetaContrast, t_metaContrastCSF
@@ -84,7 +77,7 @@ end
 
 % Parse the input arguments
 p = inputParser;
-p.addParameter('theBackgroundRetinalImage', struct('type', 'opticalimage'), @isstruct);
+p.KeepUnmatched = true;
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 
@@ -101,7 +94,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
     [contrast0Response, ~] = metaNeuralParams.neuralEngine.computeNoiseFree(...
         actualSceneSequence, ...
         actualTemporalSupport, ...
-        'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage);
+        varargin{:});
 
     noiseFreeResponsePipeline.response0 = contrast0Response;
     clear contrast0Response
@@ -112,7 +105,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
     [contrast1Response, ~] = metaNeuralParams.neuralEngine.computeNoiseFree(...
         actualSceneSequence, ...
         actualTemporalSupport, ...
-        'theBackgroundRetinalImage',p.Results.theBackgroundRetinalImage);
+        varargin{:});
     
     % Store in canonical form that we can compute the real response quickly as done
     % below.
