@@ -300,6 +300,8 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
     elseif (~p.Results.justAddNoise)
         theConeMosaicNullResponse = [];
         fprintf('Operating on cone excitations\n');
+    else
+        theConeMosaicNullResponse = [];
     end
 
      % Set rng seed if one was passed. 
