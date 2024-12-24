@@ -71,6 +71,13 @@ if (nargin == 0)
     return;
 end
 
+% Set oi pad method.  Can be 'mean' or 'zero'. Using 'zero' seems a little
+% safer because then the pad value is stimulus independent and less likely
+% to produce an artifact that we don't want.  Although the example usage
+% for the mRGC works to ensure that the stimulus is large enough to avoid
+% padding artifacts in any case.
+oiPadMethod = 'zero';
+
 % Parse the input arguments
 %
 % Allow for possibility that other nre's take key/value pairs that we
@@ -137,7 +144,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
         framesNum = numel(sceneSequence);
         listOfNullOpticalImages = cell(1, framesNum);
         for frame = 1:framesNum
-            listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue','zero');
+            listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',oiPadMethod);
         end
         nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
         clear listOfNullOpticalImages;
@@ -182,7 +189,7 @@ end
 framesNum = numel(sceneSequence);
 listOfOpticalImages = cell(1, framesNum);
 for frame = 1:framesNum
-    listOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','zero');
+    listOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue',oiPadMethod);
 end
 theOIsequence = oiArbitrarySequence(listOfOpticalImages, sceneSequenceTemporalSupport);
 clear listOfOpticalImages;
