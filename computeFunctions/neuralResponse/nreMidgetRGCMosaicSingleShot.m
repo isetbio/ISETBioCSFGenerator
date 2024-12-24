@@ -297,9 +297,9 @@ function dataOut = nreMidgetRGCMosaicSingleShot(...
         coneMosaicNormalizingResponse = 1./theConeMosaicNullResponse;
         coneMosaicNormalizingResponse(coneIndicesWithZeroNullResponse) = 0;
         coneMosaicNormalizingResponse = reshape(coneMosaicNormalizingResponse, [1 1 numel(coneMosaicNormalizingResponse)]);
-    else
+    elseif (~p.Results.justAddNoise)
         theConeMosaicNullResponse = [];
-         fprintf('Operating on cone excitations\n');
+        fprintf('Operating on cone excitations\n');
     end
 
      % Set rng seed if one was passed. 
