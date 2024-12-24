@@ -20,7 +20,7 @@ clear; close all;
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version relatively run time relatively short.
-fastParameters = true;
+fastParameters = false;
 
 % Grating orientation
 theStimulusOrientationDegs = 0;
@@ -217,7 +217,7 @@ thresholdParams = struct('logThreshLimitLow', 2.5, ...
 if (fastParameters)
     contrastLevelsSampled = 5;
 else
-    constrastLevelsSampled = 5;
+    contrastLevelsSampled = 5;
 end
 
 questEngineParams = struct(...
