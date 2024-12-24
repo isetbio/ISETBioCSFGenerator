@@ -1,13 +1,13 @@
 function t_metaContrastCSFmRGCMosaic
 % Compute spatial CSF in different color directions, using the ON-center
-% mRGCMosaics. This script illustrates use of meta contrast method for
-% mRGC calculations.
+% mRGCMosaics. This script illustrates use with and without meta contrast
+% method for mRGC calculations.
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions 
-%    using mRGCMosaic neural respone engine and the meta contrast method.
+%    using mRGCMosaic neural respone engine and (optionally) the meta contrast method.
 %
-% See also: t_spatialCSFmRGCMosaic.m
+% See also: t_spatialCSF, t_metaContrastCSF, t_spatialCSFmRGCMosaicDynamicStimulus
 
 % History:
 %   11/02/2024  FH   Adopted based on t_spatialCSFmRGCMosaic.m
@@ -15,7 +15,12 @@ function t_metaContrastCSFmRGCMosaic
 
 % Clear and close
 close all;
+
+% Start timing
 tic
+
+% This can either use meta contrast method or not.
+useMetaContrast = true;
 
 % Make sure figures directory exists so that output writes
 % don't fail
@@ -272,21 +277,18 @@ theStimulusOrientationDegs = 90;
 
 %% With access to theGratingSceneEngine, we can compute theNullStimulusScene
 nullContrast = 0.0;
+gratingEngineParams = struct( ...
+    'spatialEnvelope', 'soft', ...
+    'orientation', theStimulusOrientationDegs, ...
+    'fovDegs', theStimulusFOVdegs, ...
+    'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
+    'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
+    'pixelsNum', theStimulusPixelsNum ...
+);
 nullGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD, ...
-        'spatialEnvelope', 'soft', ...
-        'orientation', theStimulusOrientationDegs, ...
-        'fovDegs', theStimulusFOVdegs, ...
-        'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
-        'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
-        'pixelsNum', theStimulusPixelsNum);
+        gratingEngineParams);
 nullStimulusSceneSequence = nullGratingSceneEngine.compute(nullContrast);
 noiseFreeParams.nullStimulusSceneSequence = nullStimulusSceneSequence;
-
-% Save theNullStimulusScene in the noiseFreeParams, so
-% that the neural engine can use it to compute mRGCmosaic responses
-% operating on cone contrast (modulation) responses, instead of operating
-% on raw cone excitation responses
-noiseFreeParams.theNullStimulusScene = nullStimulusSceneSequence{1};
 
 % And instruct the mRGCMosaic neural response engine to operate on cone
 % modulations
@@ -322,7 +324,10 @@ end
 spatialFreqs = logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled);
 
 % Create the sceMetaContrast scene engine
-metaSceneEngineParams = sceMetaContrast;
+if (useMetaContrast)
+    metaSceneEngineParams = sceMetaContrast;
+    metaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+end
 
 %% Compute threshold for each spatial frequency
 % 
@@ -331,7 +336,6 @@ theComputedQuestObjects = cell(1, length(spatialFreqs));
 thePsychometricFunctions = cell(1, length(spatialFreqs));
 theFittedPsychometricParams = cell(1, length(spatialFreqs));
 theStimulusScenes = cell(1, length(spatialFreqs));
-[theMetaSceneEngine, theMetaNeuralEngine] = deal(cell(1, length(spatialFreqs)));
 
 dataFig = figure();
 plotRows = 4;
@@ -339,35 +343,33 @@ plotCols = 8;
 for iSF = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, orientation, FOV, and size
-    gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(iSF), ...
-        'spatialEnvelope', 'rect', ...
-        'orientation', theStimulusOrientationDegs, ...
-        'fovDegs', theStimulusFOVdegs, ...
-        'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
-        'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
-        'pixelsNum', theStimulusPixelsNum);
+    gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(iSF), gratingEngineParams);
 
-    theMetaSceneEngine{iSF} = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+    if (useMetaContrast)
+        % Create nreMetaContrast using the actual scene and neural engines
+        metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
+        metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
+        metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
+        metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
+        metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
 
-    % Create nreMetaContrast using the actual scene and neural engines
-    metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
-    metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
-    metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
-    metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
-    metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
+        metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
+        metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
+        theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
+            @nreNoisyInstancesMetaContrast, ...
+            metaNeuralResponseEngineNoiseFreeParams, ...
+            metaNeuralResponseEngineNoisyInstanceParams);
 
-    metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
-    metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
-    theMetaNeuralEngine{iSF} = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
-        @nreNoisyInstancesMetaContrast, ...
-        metaNeuralResponseEngineNoiseFreeParams, ...
-        metaNeuralResponseEngineNoisyInstanceParams);
-    
-    % Compute the threshold for our grating scene with the previously
-    % defined neural and classifier engine.
-    [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThreshold(theMetaSceneEngine{iSF}, theMetaNeuralEngine{iSF}, theClassifierEngine, ...
-        classifierParams, thresholdParams, questEngineParams,'TAFC', true);
+        % Compute the threshold for our grating scene with the previously
+        % defined neural and classifier engine.
+        [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
+            computeThreshold(metaSceneEngine, theMetaNeuralEngine, theClassifierEngine, ...
+            classifierParams, thresholdParams, questEngineParams,'TAFC', true);
+    else
+        [logThreshold(iSF), questObj, psychometricFunction, fittedPsychometricParams] = ...
+            computeThreshold(gratingSceneEngine, theNeuralEngine, theClassifierEngine, ...
+            classifierParams, thresholdParams, questEngineParams,'TAFC', true);
+    end
     
     % Plot stimulus
     figure(dataFig);
