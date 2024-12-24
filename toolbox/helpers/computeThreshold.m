@@ -77,8 +77,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           2-alternative with one stimulus per trial problem.
 %
 % See also:
-%    t_spatialCSF, computePerformance
-%  
+%    t_spatialCSF, computePerformance  
 
 % History: 
 %  10/23/20  dhb  Added commments.
@@ -90,6 +89,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %  04/10/24  fh   Merged computeThresholdTAFC.m and
 %                   computeThresholdNWay_OneStimulusPerTrial.m by adding 
 %                   a key/pair pair specifying whether the task is TAFC.
+%  12/23/24  dhb  Simplified as part of new architecture push.
 
 p = inputParser;
 p.addParameter('beVerbose',  true, @islogical);
