@@ -133,7 +133,7 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
     % can ignore, so set KeepUnmatched to true.
     p = inputParser;
     p.KeepUnmatched = true;
-    p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
+    p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     fixationalEMObj = p.Results.fixationalEM;

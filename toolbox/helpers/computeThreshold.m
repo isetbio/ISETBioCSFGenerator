@@ -99,8 +99,8 @@ p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x) || (isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
-p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
-p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
+p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
+p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 
 parse(p, varargin{:});
 beVerbose = p.Results.beVerbose;
@@ -274,7 +274,8 @@ while (nextFlag)
             classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
             'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
             'visualizeAllComponents', visualizeAllComponents, ...
-            'fixationalEM', testFixationalEMObj ...
+            'trainFixationalEM', trainFixationalEMObj, ...
+            'testFixationalEM', testFixationalEMObj ...
         );
         
         testCounter = testCounter + 1;

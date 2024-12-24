@@ -96,6 +96,24 @@ if (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
     doValidationCheck = false;
 end
 
+%% Set up EM object to define fixational eye movement paths
+%
+% There are lots of things we can control. In any case, the path
+% defined here is used for training.
+%
+% Setting the seed to -1 means don't change the seed.
+trainFixationalEMObj = fixationalEM;              
+trainFixationalEMObj.microSaccadeType = 'none';  
+trainFixationalEMObj.randomSeed = -1;
+femDuration = stimulusDuration;   
+femTimeStep = frameDurationSeconds;   
+femNumberFEMs = 1;
+femComputeVelocity = false;
+trainFixationalEMObj.compute(femDuration, femTimeStep, femNumberFEMs, femComputeVelocity);
+
+% And this one for testing.  
+testFixationalEMObj = trainFixationalEMObj;
+
 %% Instantiate the responseClassifierEngine
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio
@@ -198,8 +216,8 @@ for idx = 1:length(spatialFreqs)
         computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
         classifierUsePara, thresholdPara, questEnginePara, ...
         'TAFC', true, ...
-        'trainFixationalEM', [], ...
-        'testFixationalEM', []);
+        'trainFixationalEM', trainFixationalEMObj, ...
+        'testFixationalEM', testFixationalEMObj);
 
     % Plot stimulus
     figure(dataFig);

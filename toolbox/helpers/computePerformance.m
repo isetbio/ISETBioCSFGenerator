@@ -110,8 +110,8 @@ p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('verbose', true, @islogical);
 p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
-p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
-p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,fixationalEM))));
+p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
+p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
