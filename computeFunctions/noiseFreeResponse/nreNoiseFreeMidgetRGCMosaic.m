@@ -65,112 +65,6 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %    11/03/24  FH   Edited it to incorporate metaContrast
 %    12/23/24  dhb  Rewrite for major architecture redo.
 
-% Examples:
-%{
-    % Usage case #1. Just return the default neural response params
-    defaultParams = nreMidgetRGCMosaicSingleShot()
-
-    % Usage case #2. Compute noise free, noisy, and repeatable noisy response instances
-    % using a parent @neuralResponseEngine object and the default neural response params
-
-    % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicSingleShot);
-
-    % Retrieve the default params
-    defaultNeuralEnginePipelineParams = nreMidgetRGCMosaicSingleShot();
-
-    % Modify certain params of interest
-    noiseFreeResponsePipelineParams = defaultNeuralEnginePipelineParams;
-
-    % Perhaps we want to use custom optics (not the optics that were used to optimize
-    % the mRGCMosaic). We can pass the optics here.
-    % noiseFreeResponsePipelineParams.customOpticsToEmploy = oiCreate();
-
-    % Perhaps we want to set the input cone mosaic integration time. 
-    % Here, we set it to 200 msec
-    noiseFreeResponsePipelineParams.mRGCMosaicParams.coneIntegrationTimeSeconds = 200/1000;
-
-    % Perhaps we want to manipulate noise in the input cone mosaic as well
-    % as the mRGC mosaic. Here we set no (Poisson) noise for input cone mosaic
-    % and we set random (not frozen) Gaussian noise in the mRGC responses
-    % with a standard deviation of 400. The units of the Gaussian noise
-    % must be appropriate to the units of the inputConeMosaic response. By
-    % default, the inputConeMosaic response is excitations/integration time
-    % So here, we set the noise sigma to 400 excitations/integration time
-    noiseFreeResponsePipelineParams.noiseParams.inputConeMosaicNoiseFlag = 'random';
-    noiseFreeResponsePipelineParams.noiseParams.mRGCMosaicNoiseFlag = 'random';
-    noiseFreeResponsePipelineParams.noiseParams.mRGCMosaicVMembraneGaussianNoiseSigma = 500;
-
-    % Perhaps we want to compute mRGCMosaic responses not on the raw cone
-    % mosaic excitation responses, but on their modulation with respect to
-    % the cone excitation response to a null stimulus. This can be done as follows:
-    % noiseFreeResponsePipelineParams.theNullStimulusScene = nullStimulusScene;
-    % See t_spatialCSFmRGCMosaic.m to see exactly how to do this
-
-    theNeuralEngineOBJ = neuralResponseEngine(@nreMidgetRGCMosaicSingleShot, noiseFreeResponsePipelineParams);
-
-    % Instantiate a @sceneEngine object
-    defaultGratingParams = sceGrating();
-
-    % Modify some scene properties
-    gratingParams = defaultGratingParams;
-
-    % Make it an achromatic stimulus
-    gratingParams.coneContrastModulation = 0.6*[1 1 1];
-
-    % Make it 2 c/deg
-    gratingParams.spatialFrequencyCyclesPerDeg = 2.0;
-
-    % Make it a horizontally oriented grating
-    gratingParams.orientationDegs = 0;
-
-    % Make it 5x5 degs wide
-    gratingParams.fovDegs = 5
-    gratingParams.spatialEnvelopeRadiusDegs = gratingParams.fovDegs/6;
-
-    % Make the grating a single-frame stimulus
-    gratingParams.temporalModulationParams.stimDurationFramesNum = 1;
-    gratingParams.temporalModulationParams.stimOnFrameIndices = 1;
-    theSceneEngineOBJ = sceneEngine(@sceGrating, gratingParams);
-    testContrast = 1.0;
-    [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
-        theSceneEngineOBJ.compute(testContrast);
-
-    % Compute 16 response instances for a number of different noise flags
-    instancesNum = 16;
-    noiseFlags = {'random', 'none'};
-    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngineOBJ.compute(...
-            theTestSceneSequence, ...
-            theTestSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-
-    % Retrieve the noise-free responses and the noisy response instances
-    noiseFreeResponses = theResponses('none');
-    noisyResponseInstances = theResponses('random');
-    activationRange = [-1 1] * ...
-        max([prctile(abs(noiseFreeResponses(:)),90) ...
-             prctile(abs(noisyResponseInstances(:)),90)...
-            ]);
-
-    % Visualize the noise-free response
-    instanceNo = 1;
-    theNeuralEngineOBJ.neuralPipeline.mRGCMosaic.visualize(...
-        'activation', noiseFreeResponses(instanceNo,:,:), ...
-        'activationRange', activationRange, ...
-        'verticalActivationColorBarInside', true, ...
-        'plotTitle', 'noise-free response');
-
-    % Visualize a noisy response instance
-    instanceNo = 1;
-    theNeuralEngineOBJ.neuralPipeline.mRGCMosaic.visualize(...
-        'activation', noisyResponseInstances(instanceNo,:,:), ...
-        'activationRange', activationRange, ...
-        'verticalActivationColorBarInside', true, ...
-        'plotTitle', 'noisy response instance');
-%}
-
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0)
     dataOut = generateDefaultParams();
@@ -229,32 +123,38 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
     end
 
     % Compute theConeMosaicNullResponse if the inputSignalType is set to
-    % 'cone modulations' and if we have theNullStimulusScene
+    % 'cone modulations' and if we have nullStimulusSceneSequence
     if ( (strcmp(noiseFreeComputeParams.mRGCMosaicParams.inputSignalType,'cone_modulations')) && ...
-            (~isempty(noiseFreeComputeParams.theNullStimulusScene)) )
+            (~isempty(noiseFreeComputeParams.nullStimulusSceneSequence)) )
 
         if (verbose)
             fprintf('Operating on cone modulations\n');
         end
 
-        % Retrieve the null stimulus scene
-        nullStimulusScene = noiseFreeComputeParams.theNullStimulusScene;
+        % Retrieve the null stimulus scene sequence
+        nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
 
         % Compute the optical image of the null scene
-        nullSceneOI = oiCompute(theOptics, nullStimulusScene,'padvalue','mean');
+        framesNum = numel(sceneSequence);
+        listOfNullOpticalImages = cell(1, framesNum);
+        for frame = 1:framesNum
+            listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue','zero');
+        end
+        nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
+        clear listOfNullOpticalImages;
 
         % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
         coneMosaicNullResponse = theMRGCmosaic.inputConeMosaic.compute(...
-            nullSceneOI, ...
+            nullOIsequence, ...
             'nTrials', 1);
 
         % Compute normalizing response (for computing the  modulated response)
         coneIndicesWithZeroNullResponse = find(coneMosaicNullResponse == 0);
         coneMosaicNormalizingResponse = 1./coneMosaicNullResponse;
         coneMosaicNormalizingResponse(coneIndicesWithZeroNullResponse) = 0;
-        coneMosaicNormalizingResponse = reshape(coneMosaicNormalizingResponse, [1 1 numel(coneMosaicNormalizingResponse)]);
     else
         coneMosaicNullResponse = [];
+        coneMosaicNormalizingResponse = [];
         if (verbose)
             fprintf('Operating on cone excitations\n');
         end
@@ -283,21 +183,28 @@ end
 framesNum = numel(sceneSequence);
 listOfOpticalImages = cell(1, framesNum);
 for frame = 1:framesNum
-    listOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
+    listOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','zero');
 end
 theOIsequence = oiArbitrarySequence(listOfOpticalImages, sceneSequenceTemporalSupport);
+clear listOfOpticalImages;
 
 % Compute cone reponses to oiSequence
-
+if (verbose)
+    fprintf('\tComputing noise-free cone mosaic responses\n');
+end
+[noiseFreeConeMosaicResponses, ~, ~, ~, temporalSupportSeconds] = ...
+    theMRGCmosaic.inputConeMosaic.compute(theOIsequence, ...
+    'nTrials', 1 ...
+    );
 
 % Transform the cone excitation responses to cone modulation responses
-if (~isempty(neuralEngine.neuralPipeline.noiseFreeResponse.coneMosaicNullResponse))
+if (~isempty(coneMosaicNullResponse))
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
     % This mimics the photocurrent response which is normalized with respect to the
     % mean cone activation
     theConeMosaicResponses = ...
-        bsxfun(@times, bsxfun(@minus, theConeMosaicResponses, ...
+        bsxfun(@times, bsxfun(@minus, noiseFreeConeMosaicResponses, ...
         coneMosaicNullResponse), ...
         coneMosaicNormalizingResponse);
 end
@@ -307,7 +214,9 @@ if (verbose)
     fprintf('\tComputing noise-free mRGC responses \n');
 end
 [theNeuralResponses, ~, temporalSupportSeconds] = theMRGCmosaic.compute( ...
-    theConeMosaicResponses, coneMosaicTemporalSupportSeconds);
+    noiseFreeConeMosaicResponses, temporalSupportSeconds);
+theNeuralResponses = permute(theNeuralResponses,[1, 3, 2]);
+theNeuralResponses = squeeze(theNeuralResponses(1,:,:));
 
 % Assemble the dataOut struct
 dataOut = struct(...
@@ -319,8 +228,8 @@ if (returnTheNoiseFreePipeline)
     dataOut.noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
     dataOut.noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
     dataOut.noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
-    dataOut.noiseFreeResponsePipeline.coneMosaicNullResponse.coneMosaicNormalizingResponse ...
-        = dataOut.noiseFreeResponsePipeline.coneMosaicNullResponse;
+    dataOut.noiseFreeResponsePipeline.coneMosaicNormalizingResponse ...
+        = coneMosaicNormalizingResponse;
 end
 
 end
@@ -366,25 +275,17 @@ mRGCMosaicParams = struct(...
 % the mRGCMosaic
 customOpticsToEmploy = [];
 
-% Noise params
-noiseParams = struct(...
-    'inputConeMosaicNoiseFlag', 'random', ...
-    'mRGCMosaicNoiseFlag', 'random', ...
-    'mRGCMosaicVMembraneGaussianNoiseSigma', 0.15 ...
-    );
-
-% If the user sets the nullStimulusScene, then mRGC responses are
+% If the user sets the NullStimulusSceneSequence, then mRGC responses are
 % computed on modulated cone responses with respect to the cone
-% response to the null stimulus scene. This is computed ...
-theNullStimulusScene = [];
+% response to the null stimulus scene sequence.
+nullStimulusSceneSequence = [];
 
 % Assemble all params in a struct
 p = struct(...
     'opticsParams', opticsParams, ...
     'mRGCMosaicParams', mRGCMosaicParams, ...
-    'noiseParams', noiseParams, ...
     'customOpticsToEmploy', customOpticsToEmploy, ...
-    'theNullStimulusScene', theNullStimulusScene ...
+    'nullStimulusSceneSequence', nullStimulusSceneSequence ...
     );
 
 end

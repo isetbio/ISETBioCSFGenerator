@@ -91,7 +91,7 @@ if (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
     doValidationCheck = false;
 end
 
-%% Instantiate the Poisson responseClassifierEngine
+%% Instantiate the responseClassifierEngine
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio
 % test. This is the ideal observer for the Poisson noice cone excitations
@@ -99,6 +99,7 @@ end
 %    rcePoisson - signal known exactly Poission max likelihood
 %    rceTemplateDistance - signal known exactly nearest L2 template
 %                 distance.
+%    rcePcaSVM  - support vector machine linear classifier after PCA.
 %
 % Also set up parameters associated with use of this classifier.
 classifierEngine = 'rcePoisson';
