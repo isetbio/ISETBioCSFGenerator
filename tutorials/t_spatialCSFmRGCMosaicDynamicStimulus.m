@@ -31,7 +31,7 @@ end
 %
 % Setting to false provides more realistic values for real work, but we
 % try to keep the demo version relatively run time relatively short.
-fastParameters = false;
+fastParameters = true;
 
 % Grating orientation
 theStimulusOrientationDegs = 0;
@@ -221,11 +221,11 @@ end
 % need to adjust the contrast range that Quest+ searches over, as well as
 % the range of psychometric function slopes. Threshold limits are computed
 % as 10^-logThreshLimitVal.
-thresholdParams = struct('logThreshLimitLow', 4.5, ...
-                       'logThreshLimitHigh', 1, ...
+thresholdParams = struct('logThreshLimitLow', 3, ...
+                       'logThreshLimitHigh', 0, ...
                        'logThreshLimitDelta', 0.05, ...
                        'slopeRangeLow', 1, ...
-                       'slopeRangeHigh', 100, ...
+                       'slopeRangeHigh', 200, ...
                        'slopeDelta', 1);
 
 % Parameter for running the QUEST+
@@ -286,7 +286,7 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
     noisyInstancesParams.sigma);
 
 %% Ready to compute thresholds at a set of spatial frequencies
-minSF = 2;
+minSF = 0.5/theStimulusFOVdegs;
 maxSF = 10;
 spatialFreqs = [0 logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled)];
 
