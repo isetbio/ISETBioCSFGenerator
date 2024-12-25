@@ -194,12 +194,12 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCmosaic(...
             );
     else
         % We were passed a fixational EM.  Check that it is OK for our
-        % purposes, and then comptue with it.
+        % purposes, and then comptute with it.
         %
         % Check
 
         % Compute
-        theConeMosaic.fixEMobj = fixationalEMObj;
+        theConeMosaic.emSetFixationalEMObj(fixationalEMObj);
         [theNeuralResponsesRaw, ~, ~, ~, temporalSupportSeconds] = ...
             theConeMosaic.compute(theOIsequence, ...
             'nTrials', 1, ...

@@ -22,14 +22,13 @@ function thresholdRet = t_spatialCSFcMosaicEyeMovements(varargin)
 %                   convention, and also the convention of my brain.
 %   05/10/23  fh    Edited it to call the new functions computeThreshold.m
 %                       & computePerformance.m & rcePossion.m
-%   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine
-%                   phase.
+%   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine phase.
 %   12/19/24  dhb   Update for new architecture.
 
-% Close figs
-close all
+%% Close any stray figs
+close all;
 
-% Parse input
+%% Parse input and set variables
 p = inputParser;
 p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
 p.addParameter('doValidationCheck', true, @islogical);
@@ -37,15 +36,27 @@ parse(p, varargin{:});
 filter = p.Results.filter;
 doValidationCheck = p.Results.doValidationCheck;
 
-% Freeze rng for replicatbility
+%% Set some parameters that control what we do
+useFixationalEMs = false;
+useMetaContrast = false;
+if (~useFixationalEMs)
+    framesNum = 1;
+else
+    framesNum = 4;
+    doValidationCheck = false;
+end
+
+%% Freeze rng for replicatbility
 rng(1);
 
-% List of spatial frequencies to be tested.
+%% List of spatial frequencies to be tested.
 spatialFreqs = [4, 8, 16, 32];
 if (length(spatialFreqs) ~= 4 | ~all(spatialFreqs == [4, 8, 16, 32]))
     doValidationCheck = false;
 end
 
+%% Chromatic direction and contrast
+%
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
@@ -79,7 +90,6 @@ noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
 
 % Stimulus timing parameters
 frameDurationSeconds = noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds;
-framesNum = 4;
 stimulusDuration = framesNum*frameDurationSeconds;
 
 noisyInstancesParams = nreNoisyInstancesPoisson;
@@ -96,24 +106,6 @@ if (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
     doValidationCheck = false;
 end
 
-%% Set up EM object to define fixational eye movement paths
-%
-% There are lots of things we can control. In any case, the path
-% defined here is used for training.
-%
-% Setting the seed to -1 means don't change the seed.
-trainFixationalEMObj = fixationalEM;              
-trainFixationalEMObj.microSaccadeType = 'none';  
-trainFixationalEMObj.randomSeed = -1;
-femDuration = stimulusDuration;   
-femTimeStep = frameDurationSeconds;   
-femNumberFEMs = 1;
-femComputeVelocity = false;
-trainFixationalEMObj.compute(femDuration, femTimeStep, femNumberFEMs, femComputeVelocity);
-
-% And this one for testing.  
-testFixationalEMObj = trainFixationalEMObj;
-
 %% Instantiate the responseClassifierEngine
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio
@@ -129,12 +121,12 @@ classifierEngine = 'rcePoisson';
 switch (classifierEngine)
     case {'rcePoisson'}
         classifierEngine = responseClassifierEngine(@rcePoisson);
-        classifierUsePara = struct('trainFlag', 'none', ...
+        classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
     case {'rceTemplateDistance'}
         classifierEngine = responseClassifierEngine(@rcePoisson);
-        classifierUsePara = struct('trainFlag', 'none', ...
+        classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
         doValidationCheck = false;
@@ -146,7 +138,7 @@ switch (classifierEngine)
             'classifierType', 'svm' ...         % binary SVM classifier
             );
         classifierEngine = responseClassifierEngine(@rcePcaSVM,pcaSVMParams);
-        classifierUsePara = struct('trainFlag', 'none', ...
+        classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 128, 'nTest', 128);  
         doValidationCheck = false;
@@ -189,6 +181,44 @@ questEnginePara = struct( ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
 
+%% Set up EM object to define fixational eye movement paths
+%
+% There are lots of things we can control. In any case, the path
+% defined here is used for training.
+%
+% Setting the seed to -1 means don't touch the seed or call rng().
+if (useFixationalEMs)
+    trainFixationalEMObj = fixationalEM;
+    trainFixationalEMObj.microSaccadeType = 'none';
+    trainFixationalEMObj.randomSeed = -1;
+    femDuration = stimulusDuration;
+    femTimeStep = frameDurationSeconds;
+    femNumberFEMs = 1;
+    femComputeVelocity = false;
+    trainFixationalEMObj.compute(femDuration, femTimeStep, femNumberFEMs, femComputeVelocity);
+
+    % And this one for testing.
+    testFixationalEMObj = trainFixationalEMObj;
+else
+    trainFixationalEMObj = [];
+    testFixationalEMObj = [];
+end
+
+%% If using meta contrast, set this up.
+if (useMetaContrast)
+    metaSceneEngineParams = sceMetaContrast;
+    theMetaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+
+    % Create nreMetaContrast using the actual scene and neural engines
+    metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
+    metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
+    metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
+    metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
+
+    metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
+    metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
+end
+
 %% Compute threshold for each spatial frequency
 % See toolbox/helpers for functions createGratingScene computeThreshold
 dataFig = figure();
@@ -201,31 +231,52 @@ for idx = 1:length(spatialFreqs)
     %
     % Create scene produces square scenes.  We use the min of the mosaic
     % field size to pick a reasonable size
-    gratingScene = createGratingScene(chromaDir, spatialFreqs(idx),...
+    gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(idx),...
         'fovDegs', min(noiseFreeResponseParams.coneMosaicParams.sizeDegs), ...
         'presentationMode', 'flashedmultiframe', ...
         'duration', stimulusDuration, ...
-        'temporalFrequency', framesNum/stimulusDuration ...
+        'temporalFrequency', framesNum/stimulusDuration, ...
+        'spatialPhase', 90, ...
+        'filter', filter...
         );
 
-    % Compute the threshold for our grating scene with the previously
-    % defined neural and classifier engine.  This function does a lot of
-    % work, see t_tresholdEngine and the function itself, as well as
-    % function computePerformance.
-    [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-        computeThreshold(gratingScene, theNeuralEngine, classifierEngine, ...
-        classifierUsePara, thresholdPara, questEnginePara, ...
-        'TAFC', true, ...
-        'trainFixationalEM', trainFixationalEMObj, ...
-        'testFixationalEM', testFixationalEMObj);
+    % Create the sceMetaContrast scene engine
+    if (useMetaContrast)
+        % Instantiate meta contrast neural engine for this spatial
+        % frequency and use it to compute threshold
+        metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
+        theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
+            @nreNoisyInstancesMetaContrast, ...
+            metaNeuralResponseEngineNoiseFreeParams, ...
+            metaNeuralResponseEngineNoisyInstanceParams);
+
+        % Compute the threshold for our grating scene with meta scene and
+        % and neural response engines. This function does a lot of
+        % work, see t_tresholdEngine and the function itself, as well as
+        % function computePerformance.
+        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
+            computeThreshold(theMetaSceneEngine, theMetaNeuralEngine, classifierEngine, ...
+            classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
+    else
+        % Compute the threshold for our grating scene with the previously
+        % defined neural and classifier engine.  This function does a lot of
+        % work, see t_tresholdEngine and the function itself, as well as
+        % function computePerformance.
+        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
+            computeThreshold(gratingSceneEngine, theNeuralEngine, classifierEngine, ...
+            classifierPara, thresholdPara, questEnginePara, ...
+            'TAFC', true, ...
+            'trainFixationalEM', trainFixationalEMObj, ...
+            'testFixationalEM', testFixationalEMObj);
+    end
 
     % Plot stimulus
     figure(dataFig);
     subplot(length(spatialFreqs), 2, idx * 2 - 1);
 
     visualizationContrast = 1.0;
-    [theSceneSequence] = gratingScene.compute(visualizationContrast);
-    gratingScene.visualizeStaticFrame(theSceneSequence);
+    [theSceneSequence] = gratingSceneEngine.compute(visualizationContrast);
+    gratingSceneEngine.visualizeStaticFrame(theSceneSequence);
 
     % Plot data and psychometric curve
     % with a marker size of 2.5
@@ -257,14 +308,20 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 % tracked down. But this validation generally passes.  Might fail
 % sometimes.
 if (doValidationCheck)
-    % validationThresholds = [0.0418    0.0783    0.1540    0.6759];
-    % if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
-    %     error('Do not replicate validation thresholds to 25%. Check that parameters match, or for a bug.');
-    % end
+    validationThresholds = [0.0418    0.0783    0.1540    0.6759];
+    if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
+        error('Do not replicate validation thresholds to 25%. Check that parameters match, or for a bug.');
+    else
+        fprintf('Validation regression check passes\n');
+    end
+else
+    fprintf('Validation regression check not run, presumably because of parameter change\n');
+
 end
 
 %% Return a value if it was requested
 if (nargout > 0)
     thresholdRet = threshold;
 end
+
 end
