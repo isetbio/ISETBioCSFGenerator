@@ -5,21 +5,27 @@
 %    different filtering conditions. It evaluates the effect of filters with
 %    varying levels of light transmission on contrast sensitivity.
 %
+%    Note that the underlying work is done by a call into
+%    t_spatialCSFcMosaic; this just sets up the filters and passes them
+%    into that routine.
+%
 % See also: t_spatialCSFcMosaic, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
-%
+
 
 % History:
 %   07/09/24  fh   Wrote it.
 
+%% Clear out
 clear; close all;
 
-% Compute the baseline contrast sensitivity function without any filter
-threshold0 = t_spatialCSF('doValidationCheck', false); %no input filter
+%% Compute the baseline contrast sensitivity function without any filter
+threshold0 = t_spatialCSFcMosaic('doValidationCheck', false); 
+
 % Convert threshold to sensitivity (sensitivity is the inverse of threshold)
 sensitivity0 = 1./threshold0;
 
-%% filter 1
+%% Filter 1
 % Define the spectral range for the filter
 wave = 400:20:740; % Wavelength range from 400 to 740 nm, stepping by 20 nm
 
@@ -31,10 +37,10 @@ transmission_func1 = ones(length(wave),1);
 filter1 = struct('spectralSupport', wave, 'transmission', transmission_func1);
 
 % Compute CSF threshold using the perfect transmission filter
-threshold1 = t_spatialCSF('filter', filter1,'doValidationCheck', false);
+threshold1 = t_spatialCSFcMosaic('filter', filter1,'doValidationCheck', false);
 sensitivity1 = 1./threshold1;
 
-%% filter 2
+%% Filter 2
 % Create a neutral density filter with 25% transmittance
 transmission_func2 = 0.25.*ones(length(wave),1);
 
@@ -42,7 +48,7 @@ transmission_func2 = 0.25.*ones(length(wave),1);
 filter2 = struct('spectralSupport', wave, 'transmission', transmission_func2);
 
 % Compute CSF threshold using the neutral density filter
-threshold2 = t_spatialCSF('filter', filter2,'doValidationCheck', false);
+threshold2 = t_spatialCSFcMosaic('filter', filter2,'doValidationCheck', false);
 sensitivity2 = 1./threshold2;
 
 %% Plot the results using logarithmic scales for both axes
@@ -73,7 +79,8 @@ lgd2 = legend([h2, h4, h1, h3], {'Perfect filter (100% transmittance)',...
 title(lgd2, 'Filter type');
 set(gca,'FontSize',12)
 
-%%
+%% More plotting
+%
 % This block handles spectral mismatch between the scene's sampled wavelengths 
 % and the filter by applying linear interpolation to adjust the filter's data.
 
