@@ -129,9 +129,9 @@ thresholdP = params.thresholdP;
 
 %% Create neural response engine
 %
-% This calculations isomerizations in a patch of cone mosaic with Poisson
+% This calculates excitations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-noiseFreeResponseParams = nreNoiseFreeAOPhotopigmentExcitationsCMosaic;
+noiseFreeResponseParams = nreNoiseFreePbotopigmentExcitationsCMosaic([],[],[],[],'opticsType','BerkeleyAO');
 
 % Set optics params
 wls = sceneParams.wave;
@@ -152,13 +152,13 @@ noiseFreeResponseParams.verbose = options.verbose;
 noiseFreeResponseParams.coneMosaicParams.wave = wls;
 noiseFreeResponseParams.coneMosaicParams.fovDegs = fieldSizeDegs;
 
-noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCmosaic;
+noiseFreeResponseParams = nreNoiseFreePbotopigmentExcitationsCMosaic;
 noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
 noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = mosaicIntegrationTimeSeconds;
 
 noisyInstancesParams = nreNoisyInstancesPoisson;
 theNeuralEngine = neuralResponseEngine( ...
-    @nreNoiseFreePhotopigmentExcitationsCmosaic, ...
+    @nreNoiseFreePbotopigmentExcitationsCMosaic, ...
     @nreNoisyInstancesPoisson, ...
     noiseFreeResponseParams, ...
     noisyInstancesParams);
