@@ -1,4 +1,4 @@
-function dataOut = nrePbotopigmentExcitationsCMosaicEyeMovements(...
+function dataOut = nrePhotopigmentExcitationsCMosaicEyeMovements(...
     neuralEngineOBJ, neuralResponseParamsStruct, sceneSequence, ...
     sceneSequenceTemporalSupport, instancesNum, varargin)
 % Compute function for computation of cone excitations witout eye movements 
@@ -81,13 +81,13 @@ function dataOut = nrePbotopigmentExcitationsCMosaicEyeMovements(...
 % Examples:
 %{
     % Usage case #1. Just return the default neural response params
-    defaultParams = nrePbotopigmentExcitationsCMosaicEyeMovements()
+    defaultParams = nrePhotopigmentExcitationsCMosaicEyeMovements()
 
     % Usage case #2. Compute noise free, noisy, and repeatable (seed: 346) noisy response instances
     % using a parent @neuralResponseEngine object and the default neural response params
 
     % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nrePbotopigmentExcitationsCMosaicEyeMovements);
+    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsCMosaicEyeMovements);
 
     % Instantiate a @sceneEngine object and generate a test scene
     theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);

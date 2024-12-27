@@ -57,7 +57,7 @@ oiEnsemble = theConeMosaic.oiEnsembleGenerate(theConeMosaic.eccentricityDegs, ..
 theOptics = oiEnsemble{1};      
   
 % The neural compute function to employ
-neuralComputeFunction = @nrePbotopigmentExcitationsCMosaic;
+neuralComputeFunction = @nrePhotopigmentExcitationsCMosaic;
 
 % Obtain default neural response engine params
 neuralParams = neuralComputeFunction();

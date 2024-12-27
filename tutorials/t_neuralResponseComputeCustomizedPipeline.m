@@ -55,7 +55,7 @@ function t_neuralResponseComputeCustomizedPipeline
     % Instantiate a neural response engine using desired neural engine 
     % noiseFree and noisyInstances compute functions.  Here we illustrate
     % a cMosaic-based nre.
-    theNeuralEngine = neuralResponseEngine(@nreNoiseFreePbotopigmentExcitationsCMosaic, ...
+    theNeuralEngine = neuralResponseEngine(@nreNoiseFreePhotopigmentExcitationsCMosaic, ...
         @nreNoisyInstancesPoisson);
     
     % Install an  an externally-supplied pipeline (here the @cMosaic and

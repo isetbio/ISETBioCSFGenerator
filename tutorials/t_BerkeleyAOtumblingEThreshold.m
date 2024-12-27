@@ -2,6 +2,7 @@ function t_BerkeleyAOtumblingEThreshold(options)
 
 %% Pick up optional arguments
 arguments
+    options.useMetaContrast (1,1) logical = false;
     options.defocusDiopters (1,1) double = 0.05;
     options.pupilDiameterMm (1,1) double = 6;
     options.visualizeStimulus (1,1) logical = false;
@@ -131,7 +132,7 @@ thresholdP = params.thresholdP;
 %
 % This calculates excitations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-noiseFreeResponseParams = nreNoiseFreePbotopigmentExcitationsCMosaic([],[],[],[],'opticsType','BerkeleyAO');
+noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic([],[],[],[],'opticsType','BerkeleyAO');
 
 % Set optics params
 wls = sceneParams.wave;
@@ -141,6 +142,7 @@ pupilDiameterMm = options.pupilDiameterMm;
 defocusDiopters = options.defocusDiopters;
 
 noiseFreeResponseParams.opticsParams.wls = wls;
+noiseFreeResponseParams.opticsParams.opticsType = 'BerkeleyAO';
 noiseFreeResponseParams.opticsParams.pupilDiameterMM = pupilDiameterMm;
 noiseFreeResponseParams.opticsParams.defocusAmount = defocusDiopters;
 noiseFreeResponseParams.opticsParams.accommodatedWl = accommodatedWl;
@@ -152,13 +154,13 @@ noiseFreeResponseParams.verbose = options.verbose;
 noiseFreeResponseParams.coneMosaicParams.wave = wls;
 noiseFreeResponseParams.coneMosaicParams.fovDegs = fieldSizeDegs;
 
-noiseFreeResponseParams = nreNoiseFreePbotopigmentExcitationsCMosaic;
+noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic;
 noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
 noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = mosaicIntegrationTimeSeconds;
 
 noisyInstancesParams = nreNoisyInstancesPoisson;
 theNeuralEngine = neuralResponseEngine( ...
-    @nreNoiseFreePbotopigmentExcitationsCMosaic, ...
+    @nreNoiseFreePhotopigmentExcitationsCMosaic, ...
     @nreNoisyInstancesPoisson, ...
     noiseFreeResponseParams, ...
     noisyInstancesParams);
@@ -202,7 +204,7 @@ classifierPara = struct('trainFlag', 'none', ...
     'nTrain', 1, 'nTest', nTest);
 
 %% Parameters for threshold estimation/quest engine
-thresholdParameters = struct(...
+thresholdPara = struct(...
     'maxParamValue', maxLetterSizeDegs, ...    % The maximum value of the examined param (letter size in degs)
     'logThreshLimitLow', 2.0, ...              % minimum log10(normalized param value)
     'logThreshLimitHigh', 0.0, ...             % maximum log10(normalized param value)
@@ -222,14 +224,42 @@ questEnginePara = struct( ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
 
-% Compute psychometric function for the 4AFC paradigm with the 4 E scenes
-[threshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(...
-    tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
-    classifierPara, thresholdParameters, questEnginePara, ...
-    'TAFC', false, ...
-    'visualizeAllComponents', ~true, ...
-    'beVerbose', true, ...
-    'parameterIsContrast',false);
+%% If using meta contrast, set this up.
+if (useMetaContrast)
+    metaSceneEngineParams = sceMetaContrast;
+    theMetaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+
+    % Create nreMetaContrast using the actual scene and neural engines
+    metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
+    metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
+    metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
+    metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
+
+    metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
+    metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
+
+    % Instantiate meta contrast neural engine for this spatial
+    % frequency and use it to compute threshold
+    metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
+    theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
+        @nreNoisyInstancesMetaContrast, ...
+        metaNeuralResponseEngineNoiseFreeParams, ...
+        metaNeuralResponseEngineNoisyInstanceParams);
+
+    % Compute psychometric function for the 4AFC paradigm with the 4 E scenes
+    [threshold, questObj, psychometricFunction, fittedPsychometricParams] = ...
+        computeThreshold(theMetaSceneEngine, theMetaNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
+else
+    % Compute psychometric function for the 4AFC paradigm with the 4 E scenes
+    [threshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(...
+        tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
+        classifierPara, thresholdPara, questEnginePara, ...
+        'TAFC', false, ...
+        'visualizeAllComponents', ~true, ...
+        'beVerbose', true, ...
+        'parameterIsContrast',false);
+end
 
 % Plot the derived psychometric function and other things.  The lower
 % level routines put this in ISETBioJandJRootPath/figures.

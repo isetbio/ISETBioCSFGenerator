@@ -16,8 +16,8 @@ function [csfData, psychometricFunctionData, stopRun] = contrastSensitivityFunct
     
 
     % Instantiate a neural response engine using the
-    % @nrePbotopigmentExcitationsCMosaicSingleShot compute function
-    theNeuralEngine = neuralResponseEngine(@nrePbotopigmentExcitationsCMosaicSingleShot);
+    % @nrePhotopigmentExcitationsCMosaicSingleShot compute function
+    theNeuralEngine = neuralResponseEngine(@nrePhotopigmentExcitationsCMosaicSingleShot);
     theNeuralEngine.customNeuralPipeline(struct(...
           'coneMosaic', app.components.coneMosaic, ...
           'optics', app.components.optics));
