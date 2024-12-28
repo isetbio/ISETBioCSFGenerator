@@ -13,17 +13,7 @@ function t_BerkeleyAOtumblingEThreshold(options)
 arguments
     options.defocusDiopters (1,1) double = 0.05;
     options.pupilDiameterMm (1,1) double = 6;
-    options.visualizeStimulus (1,1) logical = false;
-    options.visualizeMosaicResponses (1,1) logical = false;
-    options.testing (1,1) logical = false;
-    options.write (1,1) logical = true;
     options.verbose (1,1) logical = false;
-    options.spotWidthDegs (1,1) double = 1.286/60;
-    options.spotHeightDegs (1,1) double = 1/60; 
-    options.spotVerticalSepDegs (1,1) double =  1/60
-    options.degsPerPixel = 1/415; 
-    options.conditionName (1,1) string = 'IncrDecr1';
-    options.angleList = [];
 end
 
 % Initialize
@@ -47,7 +37,7 @@ if (~exist(fullfile(rootPath,'local','results'),'dir'))
 end
 
 % Define the AO scene parameters for the experiment we are modeling
-
+%
 % Get the tumbling E scene engines.
 %
 % At the moment cannot vary the set of orientations, but would be easy
@@ -173,40 +163,8 @@ theNeuralEngine = neuralResponseEngine( ...
     noiseFreeResponseParams, ...
     noisyInstancesParams);
 
-% For interest in how things work in general, use scene engines and neural
-% engine to compute some neural responses.  We don't actually need this to
-% compute thresholds, because essentially the same thing happens inside of
-% function computeThreshold().  
-ILLUSTRATIVE_COMPUTATION = false;
-if (ILLUSTRATIVE_COMPUTATION)
-    % Loop through each orientation and calculate the neural response
-    for orientationIndex = 1:length(orientations)
-        % Retrieve the scene sequence and temporal support from the scene engine
-        theSceneEngine = tumblingEsceneEngines{orientationIndex};
-        theTestSceneSequence = theSceneEngine.sceneSequence;
-        theTestSceneTemporalSupportSeconds = theSceneEngine.temporalSupport;
-
-        % Calculate neural response for the entire scene sequence
-        instancesNum = 1; % Number of instances for Poisson noise
-        noiseFlags = {'random', 'none'};
-        [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
-            theTestSceneSequence, ...
-            theTestSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-
-        % Pull out the noise free and noisy response instances from the
-        % container.
-        noiseFreeResponses = theResponses('none');
-        randomNoiseResponseInstances = theResponses('random');
-    end
-end
-
 % Poisson N-way classifier
 classifierEngine = responseClassifierEngine(@rcePoisson);
-
-% Parameters associated with use of the Poisson classifier.
 classifierPara = struct('trainFlag', 'none', ...
     'testFlag', 'random', ...
     'nTrain', 1, 'nTest', nTest);
