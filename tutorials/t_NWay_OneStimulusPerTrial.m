@@ -27,9 +27,18 @@
 %% Clear and close
 clear; close all;
 
+% Freeze rng
+rng(0);
+
 %% Set number of alternatives
 nAlternativesList = [2 4 8];
 nAList = length(nAlternativesList);
+
+% Use meta contrast or not
+useMetaContrast = true;
+
+% Use fixational eye movements or not
+useFixationalEMs = false;
 
 % Run just one spatial frequency.
 spatialFreq = 15;
@@ -111,6 +120,29 @@ questEnginePara = struct( ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
 
+%% Set up EM object to define fixational eye movement paths
+%
+% There are lots of things we can control. In any case, the path
+% defined here is used for training.
+%
+% Setting the seed to -1 means don't touch the seed or call rng().
+if (useFixationalEMs)
+    trainFixationalEMObj = fixationalEM;
+    trainFixationalEMObj.microSaccadeType = 'none';
+    trainFixationalEMObj.randomSeed = -1;
+    femDuration = stimulusDuration;
+    femTimeStep = frameDurationSeconds;
+    femNumberFEMs = 1;
+    femComputeVelocity = false;
+    trainFixationalEMObj.compute(femDuration, femTimeStep, femNumberFEMs, femComputeVelocity);
+
+    % And this one for testing.
+    testFixationalEMObj = trainFixationalEMObj;
+else
+    trainFixationalEMObj = [];
+    testFixationalEMObj = [];
+end
+
 %% Compute threshold for each number of alternatives specified
 % 
 % See toolbox/helpers for functions createGratingScene computeThreshold
@@ -124,34 +156,69 @@ for idx = 1:nAList
     % truncated given scene size.
     orientations = linspace(0,(nAlternativesList(idx)-1)*...
         180/nAlternativesList(idx),nAlternativesList(idx));
-    gratingScenes = cell(1,nAlternativesList(idx));
+    gratingSceneEngines = cell(1,nAlternativesList(idx));
     for t = 1:nAlternativesList(idx)
-        gratingScenes{t} = createGratingScene(chromaDir, spatialFreq,...
+        gratingSceneEngines{t} = createGratingScene(chromaDir, spatialFreq,...
             'orientation',orientations(t), ...
             'fovDegs', min(noiseFreeResponseParams.coneMosaicParams.sizeDegs), ...
             'duration', noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds, ...
             'spatialPhase', 90);
     end
-    
+
     % Respecify the threshold and the guess rate
     thresholdPara.thresholdCriterion = (1- 1/nAlternativesList(idx))/2 + 1/nAlternativesList(idx);
     thresholdPara.guessRate = 1/nAlternativesList(idx);
 
-    % Compute the threshold for our grating scene with the previously
-    % defined neural and classifier engine.  This function does a lot of
-    % work, see t_tresholdEngine and the function itself, as well as
-    % function computePerformance.
-    [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
-        gratingScenes, theNeuralEngine, classifierEngine,...
-        classifierPara, thresholdPara, questEnginePara,'TAFC',false);
+    % If using meta contrast, set this up.
+    if (useMetaContrast)
+        metaSceneEngineParams = sceMetaContrast;
+        theMetaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
+
+        % Create nreMetaContrast using the actual scene and neural engines
+        for t = 1:nAlternativesList(idx)
+            metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
+            metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
+            metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
+            metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
+
+            metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
+            metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
+
+            metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngines{t};
+            theMetaNeuralEngines{t} = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
+                @nreNoisyInstancesMetaContrast, ...
+                metaNeuralResponseEngineNoiseFreeParams, ...
+                metaNeuralResponseEngineNoisyInstanceParams);
+        end
+
+        % Compute the threshold for our grating scene with meta scene and
+        % and neural response engines. This function does a lot of
+        % work, well as function computePerformance.
+        [logThreshold(idx), questObj, ~, para(idx,:)] = ...
+            computeThreshold(theMetaSceneEngine, theMetaNeuralEngines, classifierEngine, ...
+            classifierPara, thresholdPara, questEnginePara, ...
+            'trainFixationalEM', trainFixationalEMObj, ...
+            'testFixationalEM', testFixationalEMObj, ...
+            'TAFC', false, 'useMetaContrast', true);
+    else
+        % Compute the threshold for our grating scene with the previously
+        % defined neural and classifier engine.  This function does a lot of
+        % work, as well as function computePerformance.
+        [logThreshold(idx), questObj, ~, para(idx,:)] = computeThreshold(...
+            gratingSceneEngines, theNeuralEngine, classifierEngine,...
+            classifierPara, thresholdPara, questEnginePara, ...
+            'trainFixationalEM', trainFixationalEMObj, ...
+            'testFixationalEM', testFixationalEMObj, ...
+            'TAFC',false, 'useMetaContrast', false);
+    end
     
     % Plot stimulus
     figure(idx)
     visualizationContrast = 1.0;
     for t = 1:nAlternativesList(idx)
         subplot(8, 4, t);
-        theSceneSequence = gratingScenes{t}.compute(visualizationContrast);
-        gratingScenes{t}.visualizeStaticFrame(theSceneSequence);
+        theSceneSequence = gratingSceneEngines{t}.compute(visualizationContrast);
+        gratingSceneEngines{t}.visualizeStaticFrame(theSceneSequence);
     end
     
     % Plot data and psychometric curve 
@@ -171,3 +238,9 @@ loglog(nAlternativesList, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xlabel('Number of Alternatives');
 ylabel('Sensitivity');
 set(theNwayFig, 'Position',  [800, 0, 600, 800]);
+
+%% These are the thresholds obtained in December 2024
+%
+% Both with and without meta contrast
+%   threshold = 0.0365    0.0503    0.0633
+

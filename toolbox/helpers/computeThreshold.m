@@ -75,6 +75,8 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           handle them, or else the caller would need to
 %                           explicitly formulate the TAFC version as an
 %                           2-alternative with one stimulus per trial problem.
+%     useMetaContrast       - Passed arguments are for meta contrast setup
+
 %
 % See also:
 %    t_spatialCSF, computePerformance  
@@ -99,6 +101,7 @@ p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x) || (isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
+p.addParameter('useMetaContrast', false, @islogical);
 p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 
@@ -211,22 +214,36 @@ while (nextFlag)
         % Save contrast in list
         testedContrasts(numel(testedContrasts)+1) = testContrast;
         testedIndex = find(testContrast == testedContrasts);
-
-        % NWay: Generate the scenes for each alternative, at the test contrast
-        % TAFC: Use the null scene and generate the test scene 
-        if ~isTAFC
-            for oo = 1:length(theSceneEngine)
-                [theSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
-                    theSceneEngine{oo}.compute(testContrast);
-            end
-            
-        % TAFC: Generate the test scene; we have the null from outside the
-        % trial loop above.
-        else
-            [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
+        if (p.Results.useMetaContrast)
+            if ~isTAFC
+                % NWay: Generate the scenes for each alternative, at the test contrast
+                % TAFC: Use the null scene and generate the test scene
+                [theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds] = ...
                     theSceneEngine.compute(testContrast);
-            theSceneSequences{testedIndex} = {theNullSceneSequence,...
-                theSceneSequence{testedIndex}};
+            else
+                % TAFC: Generate the test scene; we have the null from outside the
+                % trial loop above.
+                [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
+                    theSceneEngine.compute(testContrast);
+                theSceneSequences{testedIndex} = {theNullSceneSequence,...
+                    theSceneSequence{testedIndex}};
+            end
+        else
+            if ~isTAFC
+                % NWay: Generate the scenes for each alternative, at the test contrast
+                % TAFC: Use the null scene and generate the test scene
+                for oo = 1:length(theSceneEngine)
+                    [theSceneSequences{testedIndex}{oo}, theSceneTemporalSupportSeconds] = ...
+                        theSceneEngine{oo}.compute(testContrast);
+                end
+            else
+                % TAFC: Generate the test scene; we have the null from outside the
+                % trial loop above.
+                [theSceneSequence{testedIndex}, theSceneTemporalSupportSeconds] = ...
+                    theSceneEngine.compute(testContrast);
+                theSceneSequences{testedIndex} = {theNullSceneSequence,...
+                    theSceneSequence{testedIndex}};
+            end
         end
         
         % Some diagnosis
@@ -275,7 +292,8 @@ while (nextFlag)
             'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
             'visualizeAllComponents', visualizeAllComponents, ...
             'trainFixationalEM', trainFixationalEMObj, ...
-            'testFixationalEM', testFixationalEMObj ...
+            'testFixationalEM', testFixationalEMObj, ...
+            'useMetaContrast', p.Results.useMetaContrast ...
         );
         
         testCounter = testCounter + 1;
@@ -341,7 +359,8 @@ while (nextFlag)
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
             'TAFC', isTAFC, ...
             'saveResponses', false, 'visualizeAllComponents', false, ...
-            'fixationalEM', testFixationalEMObj ...
+            'fixationalEM', testFixationalEMObj, ...
+            'useMetaContrast', p.Results.useMetaContrast ...
         );
         
         testCounter = testCounter + 1;

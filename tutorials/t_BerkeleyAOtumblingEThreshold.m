@@ -1,8 +1,16 @@
 function t_BerkeleyAOtumblingEThreshold(options)
+% Compute tumbling E threshold with AO optics
+%
+% This takes a number of key/value pairs that control its detailed
+% conditions.
+%
+% Note, in case you are tempted, that this can't be run with the meta
+% contrast method because the parameter is stimulus size rather than
+% contrast, and responses do not scale as a linear function of size the way
+% they do with contrast.
 
 %% Pick up optional arguments
 arguments
-    options.useMetaContrast (1,1) logical = false;
     options.defocusDiopters (1,1) double = 0.05;
     options.pupilDiameterMm (1,1) double = 6;
     options.visualizeStimulus (1,1) logical = false;
@@ -224,42 +232,13 @@ questEnginePara = struct( ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
 
-%% If using meta contrast, set this up.
-if (useMetaContrast)
-    metaSceneEngineParams = sceMetaContrast;
-    theMetaSceneEngine = sceneEngine(@sceMetaContrast,metaSceneEngineParams);
-
-    % Create nreMetaContrast using the actual scene and neural engines
-    metaNeuralResponseEngineNoiseFreeParams = nreNoiseFreeMetaContrast;
-    metaNeuralResponseEngineNoiseFreeParams.contrast0 = 0;
-    metaNeuralResponseEngineNoiseFreeParams.contrast1 = 1;
-    metaNeuralResponseEngineNoiseFreeParams.neuralEngine = theNeuralEngine;
-
-    metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
-    metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
-
-    % Instantiate meta contrast neural engine for this spatial
-    % frequency and use it to compute threshold
-    metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
-    theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
-        @nreNoisyInstancesMetaContrast, ...
-        metaNeuralResponseEngineNoiseFreeParams, ...
-        metaNeuralResponseEngineNoisyInstanceParams);
-
-    % Compute psychometric function for the 4AFC paradigm with the 4 E scenes
-    [threshold, questObj, psychometricFunction, fittedPsychometricParams] = ...
-        computeThreshold(theMetaSceneEngine, theMetaNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara, 'TAFC', true);
-else
-    % Compute psychometric function for the 4AFC paradigm with the 4 E scenes
-    [threshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(...
-        tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
-        classifierPara, thresholdPara, questEnginePara, ...
-        'TAFC', false, ...
-        'visualizeAllComponents', ~true, ...
-        'beVerbose', true, ...
-        'parameterIsContrast',false);
-end
+% Compute psychometric function for the 4AFC paradigm with the 4 E scenes
+[threshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(...
+    tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
+    classifierPara, thresholdPara, questEnginePara, ...
+    'visualizeAllComponents', ~true, ...
+    'beVerbose', true, ...
+    'TAFC', false, 'useMetaContrast', false);
 
 % Plot the derived psychometric function and other things.  The lower
 % level routines put this in ISETBioJandJRootPath/figures.
@@ -299,6 +278,5 @@ end
 % Save summary,  This allows examination of the numbers and/or
 % replotting.
 % save(fullfile(params.outputResultsDir,summaryFileName),"examinedPSFDataFiles","threshold","logMAR","LCA","TCA","theConeMosaic");
-
 
 end
