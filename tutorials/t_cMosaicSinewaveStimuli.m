@@ -206,7 +206,7 @@ function [cm, thePSFData, noiseFreeConeMosaicTestStimulusActivation, ...
  
     % Compute the test and null stimulus scenes
     [stimulusSceneSequence, theNullStimulusScene, statusReport] = ...
-        CSFGeneratorApp.generate.gratingSceneEngine(sParams, []);
+        gratingSceneEngine(sParams, []);
     theTestStimulusScene = stimulusSceneSequence{1};
     
     if (isempty(cm))
