@@ -18,8 +18,20 @@ function t_spatialCSFmRGCDynamicStimulus
 % Clear and close
 close all;
 
+% Set fastParameters that make this take less time
+%
+% Setting to false provides more realistic values for real work, but we
+% try to keep the demo version relatively run time relatively short.
+fastParameters = true;
+
 % This can either use meta contrast method or not.
 useMetaContrast = true;
+
+% Operate on cone contrast rather the mRGC response
+useConeContrastAsSignal = true;
+
+% Apply temporal filter
+useTemporalFilter = true;
 
 % Grab root folder for figure output
 csfGeneratorRootPath = ISETBioCSFGeneratorRootPath;
@@ -31,12 +43,6 @@ end
 if (~exist(resultsPath,'dir'))
     mkdir(resultsPath);
 end
-
-% Set fastParameters that make this take less time
-%
-% Setting to false provides more realistic values for real work, but we
-% try to keep the demo version relatively run time relatively short.
-fastParameters = true;
 
 % Grating orientation
 theStimulusOrientationDegs = 0;
@@ -70,7 +76,20 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % Match frame duration to integration time
 coneIntegrationTimeSeconds = 50/1000;
-theFrameDurationSeconds = coneIntegrationTimeSeconds;
+frameDurationSeconds = coneIntegrationTimeSeconds;
+
+%% Set up temporal filter if we have one. 
+%
+% Note that the nre returns the same number of frames it was passed.  So if
+% you want post-stimulus responses produced by the temporal filter, you
+% need to pad your input appropriately. That padding process is not
+% illustrated in this tutorial script.
+if (useTemporalFilter)
+    temporalFilter.filterValues = [1 1 1]/3;
+    temporalFilter.temporalSupport = [0 frameDurationSeconds 2*frameDurationSeconds];
+else
+    temporalFilter = [];
+end
 
 %% Create an mRGCMosaic-based neural response engine
 %
@@ -88,6 +107,13 @@ noisyInstancesParams = noisyInstancesComputeFunction();
 noiseFreeParams.mRGCMosaicParams.eccDegs = [0 0];
 noiseFreeParams.mRGCMosaicParams.sizeDegs = [2.0 2.0];
 noiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
+noiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
+if (useConeContrastAsSignal)
+    noiseFreeParams.mRGCMosaicParams.outputSignalType = 'cones';
+else
+    noiseFreeParams.mRGCMosaicParams.outputSignalType = 'mRGCs';
+end
+noiseFreeParams.temporalFilter = temporalFilter;
 
 % 2. We can crop the mRGCmosaic to some desired size. 
 %     Passing [] for sizeDegs will not crop.
@@ -123,7 +149,7 @@ noisyInstancesParams.sigma = 0.015;
 % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
 % the specified neuralResponsePipelineParams.mRGCMosaicParams.inputSignalType 
 switch (noiseFreeParams.mRGCMosaicParams.inputSignalType)
-    case 'cone_modulations'
+    case 'coneContrast'
         % Cone modulations which are in the range of [-1 1]
         if (noisyInstancesParams.sigma > 1)
             error('Gaussian noise sigma (%f) is too large when operating on ''%s''.', ...
@@ -146,9 +172,11 @@ end
 %% Instantiate a dummy neural engine.
 %
 % We use this to figure out some sizes, as described and done just below.
+dummyNoiseFreeParams = noiseFreeParams;
+dummyNoiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
 dummyNeuralEngine = neuralResponseEngine(noiseFreeComputeFunction, ...
     noisyInstancesComputeFunction, ...
-    noiseFreeParams, ...
+    dummyNoiseFreeParams, ...
     noisyInstancesParams);
 
 % We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
@@ -164,6 +192,7 @@ dummyNeuralEngine = neuralResponseEngine(noiseFreeComputeFunction, ...
 % the edges.
 %
 % Just some dummy params for the grating so we can get the mosaic size.
+% Don't use anything else about the response.
 dummySpatialFrequencyCPD = 1.0;
 dummyFOVdegs = 1.0;
 theDummyGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD , ...
@@ -268,7 +297,7 @@ if (fastParameters)
     spatialFrequenciesSampled = 2;
 
     % Just two frames
-    theStimulusDurationSeconds = 2*theFrameDurationSeconds;
+    theStimulusDurationSeconds = 2*frameDurationSeconds;
 else
     theStimulusPixelsNum = 512;
     minPixelsNumPerCycle = 8;
@@ -335,7 +364,7 @@ for iSF = 1:length(spatialFreqs)
         'pixelsNum', theStimulusPixelsNum, ...
         'presentationMode', thePresentationModeForThisSF, ...
         'temporalFrequencyHz', theTemporalFrequencyHz, ...
-        'spatialPhaseAdvanceDegs', 360*(theFrameDurationSeconds*theTemporalFrequencyHz), ...
+        'spatialPhaseAdvanceDegs', 360*(frameDurationSeconds*theTemporalFrequencyHz), ...
         'duration', theStimulusDurationSeconds);
 
     % First time through, need to compute the null scene and set up the nre
@@ -348,7 +377,7 @@ for iSF = 1:length(spatialFreqs)
         % (modulation) responses, instead of operating on raw cone
         % excitation responses
         nullStimulusSceneSequence = theDynamicGratingSceneEngine.compute(nullContrast);
-        noiseFreeParams.mRGCMosaicParams.inputSignalType = 'cone_modulations';
+        noiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
         noiseFreeParams.nullStimulusSceneSequence = nullStimulusSceneSequence;
 
         % Re-instantiate theNeuralEngine with the null scene now computed
@@ -434,7 +463,7 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 fprintf('Results will be saved in %s.\n', matFileName);
 save(fullfile(resultsPath,matFileName), 'spatialFreqs', 'threshold', 'chromaDir', ...
     'theStimulusFOVdegs', 'theStimulusSpatialEnvelopeRadiusDegs', 'theStimulusScenes',...
-    'theTemporalFrequencyHz', 'theFrameDurationSeconds',  'theStimulusDurationSeconds', ... 
+    'theTemporalFrequencyHz', 'frameDurationSeconds',  'theStimulusDurationSeconds', ... 
     'noiseFreeComputeFunction', 'noiseFreeParams', ...
     'noisyInstancesComputeFunction', 'noisyInstancesParams', ...
     'classifierEngine', 'classifierUseParams', 'thresholdParams', ...
