@@ -128,42 +128,50 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
         end
     end
 
-    % Compute theConeMosaicNullResponse if the inputSignalType is set to
-    % 'cone modulations' and if we have nullStimulusSceneSequence
-    if ( (strcmp(noiseFreeComputeParams.mRGCMosaicParams.inputSignalType,'cone_modulations')) && ...
-            (~isempty(noiseFreeComputeParams.nullStimulusSceneSequence)) )
+    % Handle contrast versus excitations
+    if (strcmp(noiseFreeComputeParams.mRGCMosaicParams.inputSignalType,'coneContrast'))
+        % Compute theConeMosaicNullResponse if the inputSignalType is set to
+        % 'coneContrast' and if we have nullStimulusSceneSequence.
+        if (~isempty(noiseFreeComputeParams.nullStimulusSceneSequence))
 
-        if (verbose)
-            fprintf('Operating on cone modulations\n');
+            if (verbose)
+                fprintf('Operating on cone modulations\n');
+            end
+
+            % Retrieve the null stimulus scene sequence
+            nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
+
+            % Compute the optical image of the null scene
+            framesNum = numel(sceneSequence);
+            listOfNullOpticalImages = cell(1, framesNum);
+            for frame = 1:framesNum
+                listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',oiPadMethod);
+            end
+            nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
+            clear listOfNullOpticalImages;
+
+            % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
+            coneMosaicNullResponse = theMRGCmosaic.inputConeMosaic.compute(...
+                nullOIsequence, ...
+                'nTrials', 1);
+
+            % Compute normalizing response (for computing the  modulated response)
+            coneIndicesWithZeroNullResponse = find(coneMosaicNullResponse == 0);
+            coneMosaicNormalizingResponse = 1./coneMosaicNullResponse;
+            coneMosaicNormalizingResponse(coneIndicesWithZeroNullResponse) = 0;
+        else
+            error('Input type ''coneContrast'' specified, but no normalizing stimulus provided.');
         end
 
-        % Retrieve the null stimulus scene sequence
-        nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
-
-        % Compute the optical image of the null scene
-        framesNum = numel(sceneSequence);
-        listOfNullOpticalImages = cell(1, framesNum);
-        for frame = 1:framesNum
-            listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',oiPadMethod);
-        end
-        nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
-        clear listOfNullOpticalImages;
-
-        % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
-        coneMosaicNullResponse = theMRGCmosaic.inputConeMosaic.compute(...
-            nullOIsequence, ...
-            'nTrials', 1);
-
-        % Compute normalizing response (for computing the  modulated response)
-        coneIndicesWithZeroNullResponse = find(coneMosaicNullResponse == 0);
-        coneMosaicNormalizingResponse = 1./coneMosaicNullResponse;
-        coneMosaicNormalizingResponse(coneIndicesWithZeroNullResponse) = 0;
-    else
+    elseif (strcmp(noiseFreeComputeParams.mRGCMosaicParams.inputSignalType,'coneExcitations'))
+        % Operating on cone excitations
         coneMosaicNullResponse = [];
         coneMosaicNormalizingResponse = [];
         if (verbose)
             fprintf('Operating on cone excitations\n');
         end
+    else
+        error('The input signal type must be ''coneContrasts'' or ''coneExciations''');
     end
 
     % Flag that we need to tuck this stuff away on return
@@ -203,7 +211,8 @@ end
     'nTrials', 1 ...
     );
 
-% Transform the cone excitation responses to cone modulation responses
+% Transform the cone excitation responses to cone modulation responses if
+% needed.
 if (~isempty(coneMosaicNullResponse))
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
@@ -215,14 +224,57 @@ if (~isempty(coneMosaicNullResponse))
         coneMosaicNormalizingResponse);
 end
 
-% Compute the mRGC response
-if (verbose)
-    fprintf('\tComputing noise-free mRGC responses \n');
+switch (noiseFreeComputeParams.mRGCMosaicParams.outputSignalType)
+    case 'cones'
+        if (verbose)
+            fprintf('\tReturning cone signals rather than mRGC responses\n');
+        end
+
+        % Just use the cone signals.  We have their temporal support set
+        % above.
+        theNeuralResponses = noiseFreeConeMosaicResponses;
+        theNeuralResponses = permute(theNeuralResponses,[1, 3, 2]);
+    
+    case 'mRGCs'
+        % Compute the mRGC response
+        if (verbose)
+            fprintf('\tComputing noise-free mRGC responses \n');
+        end
+        [theNeuralResponses, ~, temporalSupportSeconds] = theMRGCmosaic.compute( ...
+            noiseFreeConeMosaicResponses, temporalSupportSeconds);
+        theNeuralResponses = permute(theNeuralResponses,[1, 3, 2]);
 end
-[theNeuralResponses, ~, temporalSupportSeconds] = theMRGCmosaic.compute( ...
-    noiseFreeConeMosaicResponses, temporalSupportSeconds);
-theNeuralResponses = permute(theNeuralResponses,[1, 3, 2]);
-theNeuralResponses = squeeze(theNeuralResponses(1,:,:))';
+
+%% Apply temporal filter if needed
+if (~isempty(noiseFreeComputeParams.temporalFilter))
+    filterTemporalSupport = noiseFreeComputeParams.temporalFilter.temporalSupport;
+    filterValues = noiseFreeComputeParams.temporalFilter.filterValues;
+
+    % Loop over instances and responses
+    nInstances = size(theNeuralResponses,1);
+    mResponses = size(theNeuralResponses,2);
+    nTimePoints = size(theNeuralResponses,3);
+
+    newNeuralResponses = zeros(nInstances,mResponses,nTimePoints);
+    for ii = 1:nInstances
+        for jj = 1:mResponses
+            % Get the temporal response for this instance/response dim
+            theResponse = squeeze(theNeuralResponses(ii,jj,:));
+
+            % Apply temporal filter.  We don't explicitly pad here.  If you
+            % want the end of the response generated by the filter, you'll
+            % want to pad the input with extra zero frames.
+            filteredResponse = conv(theResponse,filterValues,'same');
+
+            % Put it back
+            newNeuralResponses(ii,jj,:) = filteredResponse;
+        end
+    end
+
+    % Get new values into output variable
+    theNeuralResponses = newNeuralResponses;
+    clear newNeuralResponses;
+end
 
 % Assemble the dataOut struct
 dataOut = struct(...
@@ -274,24 +326,34 @@ mRGCMosaicParams = struct(...
     'rgcType', 'ONcenterMidgetRGC', ...
     'cropParams', cropParams, ...
     'retinalRFmodelParams', retinalRFmodelParams, ...
-    'inputSignalType', 'cone_modulations', ...
+    'inputSignalType', 'coneExcitations', ...
+    'outputSignalType', 'mRGCs', ...
     'coneIntegrationTimeSeconds', 10/1000);
 
 % If opticsToEmploy is [], we use the optics that were used to optimize
 % the mRGCMosaic
 customOpticsToEmploy = [];
 
-% If the user sets the NullStimulusSceneSequence, then mRGC responses are
+% If the user sets the nullStimulusSceneSequence, then mRGC responses are
 % computed on modulated cone responses with respect to the cone
 % response to the null stimulus scene sequence.
 nullStimulusSceneSequence = [];
+
+% Temporal filter
+%
+% The user can supply a temporal filter.  It is applied
+% to each output sequence, on the assumption that its time
+% base matches that of the signal, but we do pass the filter
+% time base so that this could be generalized in the future.
+temporalFilter = [];
 
 % Assemble all params in a struct
 p = struct(...
     'opticsParams', opticsParams, ...
     'mRGCMosaicParams', mRGCMosaicParams, ...
     'customOpticsToEmploy', customOpticsToEmploy, ...
-    'nullStimulusSceneSequence', nullStimulusSceneSequence ...
+    'nullStimulusSceneSequence', nullStimulusSceneSequence, ...
+    'temporalFilter', temporalFilter ...
     );
 
 end
