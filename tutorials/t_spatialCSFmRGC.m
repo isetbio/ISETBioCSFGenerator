@@ -13,7 +13,7 @@ function t_spatialCSFmRGC
 %   11/02/2024  FH   Adopted based on t_spatialCSFmRGCMosaic.m
 %   12/24/2024  dhb  Update for new architecture
 
-% Clear and close
+% Clear out stay figures
 close all;
 
 % Start timing
@@ -82,6 +82,7 @@ noisyInstancesParams = noisyInstancesComputeFunction();
 % eccentricityDegs & sizeDegs asnd its center type
 noiseFreeParams.mRGCMosaicParams.eccDegs = [0 0];
 noiseFreeParams.mRGCMosaicParams.sizeDegs = [2.0 2.0];
+noiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
 noiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
 
 % 2. We can crop the mRGCmosaic to some desired size. 
@@ -118,7 +119,7 @@ noisyInstancesParams.sigma = 0.015;
 % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
 % the specified noiseFreeParams.mRGCMosaicParams.inputSignalType 
 switch (noiseFreeParams.mRGCMosaicParams.inputSignalType)
-    case 'cone_modulations'
+    case 'coneContrast'
         % Cone modulations which are in the range of [-1 1]
         if (noisyInstancesParams.sigma > 1)
             error('Gaussian noise sigma (%f) is too large when operating on ''%s''.', ...
@@ -126,7 +127,7 @@ switch (noiseFreeParams.mRGCMosaicParams.inputSignalType)
                 noiseFreeParams.mRGCMosaicParams.inputSignalType);
         end
 
-    case 'cone_excitations'
+    case 'coneExcitations'
         % Excitations are unlikely to be of order 1.
         if (noisyInstancesParams.sigma < 1)
             error('Gaussian noise sigma (%f) is too small when operating on ''%s''.', ...
@@ -141,9 +142,11 @@ end
 %% Instantiate a dummy neural engine.
 %
 % We use this to figure out some sizes, as described and done just below.
+dummyNoiseFreeParams = noiseFreeParams;
+dummyNoiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
 dummyNeuralEngine = neuralResponseEngine(noiseFreeComputeFunction, ...
     noisyInstancesComputeFunction, ...
-    noiseFreeParams, ...
+    dummyNoiseFreeParams, ...
     noisyInstancesParams);
 
 % We need access to the generated neuralResponseEngine to determine a stimulus FOV that is matched
@@ -300,7 +303,7 @@ noiseFreeParams.nullStimulusSceneSequence = nullStimulusSceneSequence;
 
 % And instruct the mRGCMosaic neural response engine to operate on cone
 % modulations
-noiseFreeParams.mRGCMosaicParams.inputSignalType = 'cone_modulations';
+noiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
 
 % Update theNeuralEngine with the new noiseFreeParams
 theNeuralEngine.updateParamsStruct(noiseFreeParams,noisyInstancesParams);
