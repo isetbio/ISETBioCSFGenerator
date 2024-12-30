@@ -321,7 +321,7 @@ matFileName = sprintf('mRGCMosaicSpatialCSF_eccDegs_%2.1f_%2.1f_coneContrasts_%2
 
 %% Ready to compute thresholds at a set of spatial frequencies
 minSF = 0.5/theStimulusFOVdegs;
-maxSF = 10;
+maxSF = 20;
 spatialFreqs = [0 logspace(log10(minSF), log10(maxSF), spatialFrequenciesSampled)];
 
 % Create the sceMetaContrast scene engine
