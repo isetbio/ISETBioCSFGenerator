@@ -227,11 +227,12 @@ end
 % to deal with unfortunate special casing because of the way Matlab
 % and/or cMosaic handle singleton dimensions, so that the returned
 % responses always have the responses in the column(s).
-theNeuralResponses(:,:) = theNeuralResponsesRaw(1,:,:);
-clear theNeuralResponsesRaw
 if (length(temporalSupportSeconds) > 1)
-    theNeuralResponses = theNeuralResponses';
+    theNeuralResponses = permute(theNeuralResponsesRaw,[1 3 2]);
+else
+    theNeuralResponses(:,:) = theNeuralResponsesRaw(1,:,:);
 end
+clear theNeuralResponsesRaw
 
 % Assemble the dataOut struct
 dataOut = struct(...
