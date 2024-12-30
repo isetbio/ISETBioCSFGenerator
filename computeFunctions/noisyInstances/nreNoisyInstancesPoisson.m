@@ -128,7 +128,10 @@ function dataOut = nreNoisyInstancesPoisson(...
     end
 
     % Compute noisy response instances
-    [responseDim, framesNum] = size(noiseFreeResponses);
+    [noiseFreeInstancesNum, responseDim, framesNum] = size(noiseFreeResponses);
+    if (noiseFreeInstancesNum ~= 1)
+        error('Need to generalize beyond one noise-free instance');
+    end
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     switch (noiseFlag)
         case {'random'}
