@@ -13,10 +13,13 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %    object. There are 2 ways to use this function.
 %
 %       [1] If called directly and with no arguments,
-%           dataOut = nreMidgetRGCMosaicSingleShot()
+%           dataOut = nreScenePhotonNoise()
+%           dataOut = nreScenePhotonNoise([],[],[],[],varargin)
+
 %       it does not compute anything and simply returns a struct with the
-%       defaultParams (optics and midget RGC mosaic params) that define the neural
-%       compute pipeline for this computation.
+%       defaultParams (optics and coneMosaic params) that define the neural
+%       compute pipeline for this computation.  In the second usage form,
+%       key/value pairs might be used to control the default parameters.
 %
 %       [2] If called from a parent @neuralResponseEngine object,
 %       it computes 'instancesNum' of midget RGC response sequences
@@ -40,9 +43,15 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %               If called directly with no input arguments, the returned struct contains
 %               the defaultParams, which here is the empty struct.
 %
+%             - If called directly with no input arguments or just
+%               key/value pairs, the returned struct contains
+%               the defaultParams. These describe the optics and cMosaic.
+%               Passing key/value pairs allows control of the details of
+%               the components generated, etc.
+%
 %             - If called from a parent @neuralResponseEngine), the returned
 %               struct is organized as follows:
-%
+%%
 %              .neuralResponses : matrix of neural responses.  The first dimension
 %                                 is number of instances.  Often there is just one.
 %                                 Each "column" of the second dimension 
@@ -59,6 +68,10 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %
 % Optional key/value input arguments:
 %   'verbose'               - Logical (default true). Print things out.
+%   'oiPadMethod'           - String (default 'zero'). Passed to the oi
+%                             compute method to determine how image is
+%                             padded for convolution with PSF.  Options are
+%                             'zero' and 'mean'.
 %
 % See Also:
 %   t_neuralResponseCompute
@@ -68,29 +81,27 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %    11/03/24  FH   Edited it to incorporate metaContrast
 %    12/23/24  dhb  Rewrite for major architecture redo.
 
-% Check input arguments. If called with zero input arguments, just return the default params struct
-if (nargin == 0)
-    dataOut = generateDefaultParams();
-    return;
-end
-
-% Set oi pad method.  Can be 'mean' or 'zero'. Using 'zero' seems a little
-% safer because then the pad value is stimulus independent and less likely
-% to produce an artifact that we don't want.  Although the example usage
-% for the mRGC works to ensure that the stimulus is large enough to avoid
-% padding artifacts in any case.
-oiPadMethod = 'zero';
-
 % Parse the input arguments
 %
 % Allow for possibility that other nre's take key/value pairs that we
 % can ignore, so set KeepUnmatched to true.
 p = inputParser;
 p.KeepUnmatched = true;
+p.addParameter('oiPadMethod','zero',@ischar)
 p.addParameter('verbose',true,@islogical);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
+oiPadMethod = p.Results.oiPadMethod;
 verbose = p.Results.verbose;
+
+% Check input arguments. If called with zero input arguments, just return the default params struct
+if (nargin == 0 | isempty(neuralEngine))
+    dataOut = generateDefaultParams();
+    return;
+end
+
+% Get number of frames
+framesNum = numel(sceneSequence);
 
 % Create/get key objects on first call
 if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noiseFreeResponse'))
@@ -145,7 +156,6 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
             nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
 
             % Compute the optical image of the null scene
-            framesNum = numel(sceneSequence);
             listOfNullOpticalImages = cell(1, framesNum);
             for frame = 1:framesNum
                 listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',oiPadMethod);
@@ -296,6 +306,7 @@ end
 end
 
 function p = generateDefaultParams()
+
 % Default params for this compute function
 opticsParams = struct(...
     'ZernikeDataBase', 'Polans2015', ...

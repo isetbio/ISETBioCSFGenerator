@@ -194,8 +194,8 @@ switch (whichNoiseFreeNre)
         sizeDegs = [0.5 0.5];
         frameDurationSeconds = 0.1;
         pixelsNum = 128;
-        nreNoiseFreeResponse = @nreNoiseFreePhotopigmentExcitationsCMosaic;
-        noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic;
+        nreNoiseFreeResponse = @nreNoiseFreeCMosaic;
+        noiseFreeResponseParams = nreNoiseFreeCMosaic;
         noiseFreeResponseParams.coneMosaicParams.sizeDegs = sizeDegs;
         noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = frameDurationSeconds;
         if (~all(noiseFreeResponseParams.coneMosaicParams.sizeDegs == [0.5 0.5]))

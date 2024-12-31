@@ -1,10 +1,10 @@
-function dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
+function dataOut = nreNoiseFreeCMosaic(...
     neuralEngine, noiseFreeComputeParams, sceneSequence, ...
     sceneSequenceTemporalSupport, varargin)
 % Compute function for computation of cone excitations
 %
 % Syntax:
-%   dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
+%   dataOut = nreNoiseFreeCMosaic(...
 %    neuralEngine, noiseFreeComputeParams, sceneSequence, ...
 %    sceneSequenceTemporalSupport, varargin);
 %
@@ -16,9 +16,12 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
 %
 %       [1] If called directly and with no arguments,
 %           dataOut = nreScenePhotonNoise()
+%           dataOut = nreScenePhotonNoise([],[],[],[],varargin)
+
 %       it does not compute anything and simply returns a struct with the
 %       defaultParams (optics and coneMosaic params) that define the neural
-%       compute pipeline for this computation.
+%       compute pipeline for this computation.  In the second usage form,
+%       key/value pairs might be used to control the default parameters.
 %
 %       [2] If called from a parent @neuralResponseEngine object,
 %       it computes 'instancesNum' of cone photopigment excitation sequences
@@ -38,8 +41,8 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments.
 %
-%               If called directly with no input arguments or just
-%               key value pairs, the returned struct contains
+%             - If called directly with no input arguments or just
+%               key/value pairs, the returned struct contains
 %               the defaultParams. These describe the optics and cMosaic.
 %               Passing key/value pairs allows control of the details of
 %               the components generated, etc.
@@ -66,21 +69,26 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
 %   four arguments.  If you are just trying to get the default parameters,
 %   these can all be empty.
 %
-%   'fixationalEM'           - Empty (default) or a fixationalEM object
-%                              that describes one eye movement path.  If
-%                              the latter, this must have one position per
-%                              frame of the passed scene sequence, in which
-%                              case it is applied.
-%   'opticsType'             - String (default 'wavefront'). Specify type
-%                              of optics to use.
-%                                 - 'wavefront' - Reasonable human
-%                                 wavefront optics.
-%                                 - 'BerkeleyAO' - Models optics of subject in
-%                                 some of the Berkeley AO psychophysics
-%                                 systems.
+%   'fixationalEM'         - Empty (default) or a fixationalEM object
+%                            that describes one eye movement path.  If
+%                            the latter, this must have one position per
+%                            frame of the passed scene sequence, in which
+%                            case it is applied.
+%   'opticsType'           - String (default 'wavefront'). Specify type
+%                            of optics to use.
+%                               - 'wavefront' - Reasonable human
+%                               wavefront optics.
+%                               - 'BerkeleyAO' - Models optics of subject in
+%                               some of the Berkeley AO psychophysics
+%                               systems.
+%   'verbose'               - Logical (default true). Print things out.
+%   'oiPadMethod'           - String (default 'zero'). Passed to the oi
+%                             compute method to determine how image is
+%                             padded for convolution with PSF.  Options are
+%                             'zero' and 'mean'.
 %
 % See Also:
-%     t_neuralResponseCompute
+%     t_neuralResponseCompute, t_spatialCSFcMosaic
 
 % History:
 %    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements
@@ -101,7 +109,7 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
         theSceneEngine.compute(testContrast);
 
     % Usage case #1. Just return the default neural response params
-    nreParams = nreNoiseFreePhotopigmentExcitationsCMosaic()
+    nreParams = nreNoiseFreeCMosaic()
     nreParams.coneMosaicParams.timeIntegrationSeconds = ...
         sceneTemporalSupportSeconds(2)-sceneTemporalSupportSeconds(1);
     
@@ -109,7 +117,7 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
     % using a parent @neuralResponseEngine object and the default neural response params
     %
     % Instantiate the parent @neuralResponseEngine object, with Poisson noise
-    theNeuralEngine = neuralResponseEngine(@nreNoiseFreePhotopigmentExcitationsCMosaic, ...
+    theNeuralEngine = neuralResponseEngine(@nreNoiseFreeCMosaic, ...
         @nreNoisyInstancesPoisson, ...
         nreParams, []);
     
@@ -146,10 +154,14 @@ p = inputParser;
 p.KeepUnmatched = true;
 p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 p.addParameter('opticsType','wavefront',@ischar);
+p.addParameter('oiPadMethod','zero',@ischar)
+p.addParameter('verbose',true,@islogical);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 fixationalEMObj = p.Results.fixationalEM;
 opticsType = p.Results.opticsType;
+oiPadMethod = p.Results.oiPadMethod;
+verbose = p.Results.verbose;
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0 | isempty(neuralEngine))
@@ -178,6 +190,51 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
         'pupilDiameterMM', noiseFreeComputeParams.opticsParams.pupilDiameterMM);
     theOptics = oiEnsemble{1};
     clear oiEnsemble
+
+    % Handle contrast versus excitations
+    if (strcmp(noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneContrast'))
+        % Compute theConeMosaicNullResponse if the inputSignalType is set to
+        % 'coneContrast' and if we have nullStimulusSceneSequence.
+        if (~isempty(noiseFreeComputeParams.nullStimulusSceneSequence))
+            if (verbose)
+                fprintf('Operating on cone contrast\n');
+            end
+
+            % Retrieve the null stimulus scene sequence
+            nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
+            
+            % Compute the optical image of the null scene
+            listOfNullOpticalImages = cell(1, framesNum);
+            for frame = 1:framesNum
+                listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',oiPadMethod);
+            end
+            nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
+            clear listOfNullOpticalImages;
+
+            % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
+            coneMosaicNullResponse = theMRGCmosaic.inputConeMosaic.compute(...
+                nullOIsequence, ...
+                'nTrials', 1);
+
+            % Compute normalizing response (for computing the  modulated response)
+            coneIndicesWithZeroNullResponse = find(coneMosaicNullResponse == 0);
+            coneMosaicNormalizingResponse = 1./coneMosaicNullResponse;
+            coneMosaicNormalizingResponse(coneIndicesWithZeroNullResponse) = 0;
+        else
+            error('Input type ''coneContrast'' specified, but no normalizing stimulus provided.');
+        end
+
+    elseif (strcmp(noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneExcitations'))
+        % Operating on cone excitations
+        coneMosaicNullResponse = [];
+        coneMosaicNormalizingResponse = [];
+        if (verbose)
+            fprintf('Operating on cone excitations\n');
+        end
+    else
+        error('The input signal type must be ''coneContrasts'' or ''coneExciations''');
+    end
+
     returnTheNoiseFreePipeline = true;
 else
     % Get the optics from the previously computed neural pipeline
@@ -191,11 +248,11 @@ end
 
 % Compute the sequence of optical images corresponding to the sequence of scenes
 if framesNum == 1
-    theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue','mean');
+    theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue',oiPadMethod);
 else
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue','mean');
+        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue',oiPadMethod);
     end
 
     % Generate an @oiSequence object containing the list of computed optical images
@@ -244,6 +301,7 @@ end
 end
 
 function p = generateDefaultParams(opticsType)
+
 switch (opticsType)
     case 'BerkeleyAO'
         opticsParams = struct(...
@@ -255,25 +313,45 @@ switch (opticsType)
             'zCoeffs', zeros(66,1), ...
             'defeatLCA', false ...
             );
+
     case 'wavefront'
         opticsParams = struct(...
             'type', 'wavefront', ...
             'PolansSubject', 10, ...
             'pupilDiameterMM', 3.0 ...
             );
+
     otherwise
         error('Unknown optics type specified');
 end
 
-% Default params for this compute function
-p = struct(...
-    'opticsParams', opticsParams, ...
-    'coneMosaicParams', ...
-    struct(...
+% cMosaic params
+coneMosaicParams = struct(...
     'wave', 400:10:700, ...
     'sizeDegs', 0.3*[1 1], ...
     'eccDegs', [0 0], ...
-    'timeIntegrationSeconds', 5/1000 ...
-    ) ...
+    'timeIntegrationSeconds', 5/1000, ...
+    'inputSignalType', 'coneExcitations' ...
+);
+
+% If the user sets the nullStimulusSceneSequence, then mRGC responses are
+% computed on modulated cone responses with respect to the cone
+% response to the null stimulus scene sequence.
+nullStimulusSceneSequence = [];
+
+% Temporal filter
+%
+% The user can supply a temporal filter.  It is applied
+% to each output sequence, on the assumption that its time
+% base matches that of the signal, but we do pass the filter
+% time base so that this could be generalized in the future.
+temporalFilter = [];
+
+% Default params for this compute function
+p = struct(...
+    'opticsParams', opticsParams, ...
+    'coneMosaicParams', coneMosaicParams, ...
+    'nullStimulusSceneSequence', nullStimulusSceneSequence, ...
+    'temporalFilter', temporalFilter ...
     );
 end

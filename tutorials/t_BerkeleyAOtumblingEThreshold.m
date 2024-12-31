@@ -137,7 +137,7 @@ thresholdP = params.thresholdP;
 %
 % This calculates excitations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic([],[],[],[],'opticsType','BerkeleyAO');
+noiseFreeResponseParams = nreNoiseFreeCMosaic([],[],[],[],'opticsType','BerkeleyAO');
 
 % Set optics params
 wls = sceneParams.wave;
@@ -159,13 +159,13 @@ noiseFreeResponseParams.verbose = options.verbose;
 noiseFreeResponseParams.coneMosaicParams.wave = wls;
 noiseFreeResponseParams.coneMosaicParams.fovDegs = fieldSizeDegs;
 
-noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic;
+noiseFreeResponseParams = nreNoiseFreeCMosaic;
 noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
 noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = mosaicIntegrationTimeSeconds;
 
 noisyInstancesParams = nreNoisyInstancesPoisson;
 theNeuralEngine = neuralResponseEngine( ...
-    @nreNoiseFreePhotopigmentExcitationsCMosaic, ...
+    @nreNoiseFreeCMosaic, ...
     @nreNoisyInstancesPoisson, ...
     noiseFreeResponseParams, ...
     noisyInstancesParams);
