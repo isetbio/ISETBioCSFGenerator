@@ -42,7 +42,7 @@ function t_neuralResponseCompute
     noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic;
     noiseFreeResponseParams.opticsParams.pupilDiameterMM = 2.0;
     noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.25 0.25];
-    noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = sceneParams.frameDurationSeconds;;
+    noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = sceneParams.frameDurationSeconds;
     noisyInstancesParams = nreNoisyInstancesPoisson;
     theNeuralEngine = neuralResponseEngine( ...
         @nreNoiseFreePhotopigmentExcitationsCMosaic, ...
