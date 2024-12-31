@@ -67,8 +67,6 @@ function dataOut = nreNoisyInstancesNoNoise(...
 %                                   that instance/frame pair.  So the
 %                                   dimension of the 3D matrix is
 %                                   [instancesNum x mResponses x tTimeBins].
-%                                   Here mResponses is the number of pixels times the
-%                                   number of frames.
 %              .temporalSupport : the temporal support of the neural
 %                                   responses, in seconds.  This is just
 %                                   returned as what was passed.

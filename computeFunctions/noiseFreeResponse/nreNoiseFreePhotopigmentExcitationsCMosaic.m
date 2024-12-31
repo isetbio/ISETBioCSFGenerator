@@ -47,8 +47,11 @@ function dataOut = nreNoiseFreePhotopigmentExcitationsCMosaic(...
 %             - If called from a parent @neuralResponseEngine), the returned
 %               struct is organized as follows:
 %
-%              .neuralResponses : matrix of neural responses.  Each column
+%              .neuralResponses : matrix of neural responses.  The first dimension
+%                                 is number of instances.  Often there is just one.
+%                                 Each "column" of the second dimension 
 %                                 is the response vector for one frame of the input.
+%                                 The third dimension indexes the frames.
 %              .temporalSupport : the temporal support of the neural
 %                                   responses, in seconds
 %              .noiseFreeResponsePipeline : a struct that the parent
