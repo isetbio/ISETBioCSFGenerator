@@ -31,7 +31,7 @@ function thresholdRet = t_spatialCSFcMosaic(options)
 %{
     t_spatialCSFcMosaic('useMetaContrast',false);
 
-}%
+%}
 
 arguments
     % Run the validation check?  This gets overridden to false if other
