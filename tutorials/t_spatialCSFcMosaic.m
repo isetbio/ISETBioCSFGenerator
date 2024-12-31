@@ -9,6 +9,11 @@ function thresholdRet = t_spatialCSFcMosaic(options)
 %    This example uses an ideal Poisson observer and circularly
 %    windowed gratings of constant size, with fixational eye movements.
 %
+%    This is set up with key/value pairs that demonstate how to mix and
+%    match noise free neural response models, noisy instance models, and
+%    classifier engines. Different choices are illustrated in the examples
+%    in the source code.
+%
 % Optional key/value pairs
 %    See source code arguments block for a list of key/value pairs.
 
@@ -29,7 +34,35 @@ function thresholdRet = t_spatialCSFcMosaic(options)
 
 % Examples:
 %{
-    t_spatialCSFcMosaic('useMetaContrast',false);
+     t_spatialCSFcMosaic('useMetaContrast', false, ...
+        'useFixationalEMs', false, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson');
+
+    t_spatialCSFcMosaic('useMetaContrast', true, ...
+        'useFixationalEMs', false, ...
+        'whichNoiseFreeNre', 'sceneAsResponses', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson');
+
+    t_spatialCSFcMosaic('useMetaContrast', true, ...
+        'useFixationalEMs', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson');
+
+     t_spatialCSFcMosaic('useMetaContrast', true, ...
+        'useFixationalEMs', false, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'whichClassifierEngine', 'rceTemplateDistance');
+
+    t_spatialCSFcMosaic('useMetaContrast', true, ...
+        'useFixationalEMs', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePcaSVM');
 
 %}
 
@@ -48,6 +81,23 @@ arguments
 
     % Use fixational eye movements?
     options.useFixationalEMs (1,1) logical = false;
+
+    % Choose noise free neural model
+    %   Choices: 'excitationsCmosaic'
+    %            'sceneAsResponses'
+    options.whichNoiseFreeNre (1,:) char  = 'excitationsCmosaic'
+
+    % Choose noise model
+    %   Choices: 'Poisson'
+    %            'Gaussian'
+    options.whichNoisyInstanceNre (1,:) char = 'Poisson'
+
+    % Choose classifier engine
+    %    rcePoisson - signal known exactly Poission max likelihood
+    %    rceTemplateDistance - signal known exactly nearest L2 template
+    %                 distance.
+    %    rcePcaSVM  - support vector machine linear classifier after PCA.
+    options.whichClassifierEngine (1,:) char = 'rcePoisson'
 end
 
 %% Close any stray figs
@@ -58,6 +108,10 @@ filter = options.filter;
 doValidationCheck = options.doValidationCheck;
 useMetaContrast = options.useMetaContrast;
 useFixationalEMs = options.useFixationalEMs;
+whichNoiseFreeNre = options.whichNoiseFreeNre;
+whichNoisyInstanceNre = options.whichNoisyInstanceNre;
+whichClassifierEngine = options.whichClassifierEngine;
+
 
 %% Set some parameters that control what we do
 if (~useFixationalEMs)
@@ -66,6 +120,8 @@ else
     framesNum = 4;
     doValidationCheck = false;
 end
+sizeDegs = [0.5 0.5];
+frameDurationSeconds = 0.1;
 
 %% Freeze rng for replicatbility
 rng(1);
@@ -105,52 +161,92 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 %
 % This calculations isomerizations in a patch of cone mosaic with Poisson
 % noise, and includes optical blur.
-noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic;
-noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
-noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = 0.1;
+switch (whichNoiseFreeNre)
+    case 'excitationsCmosaic'
+        nreNoiseFreeResponse = @nreNoiseFreePhotopigmentExcitationsCMosaic;
+        noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic;
+        noiseFreeResponseParams.coneMosaicParams.sizeDegs = sizeDegs;
+        noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = frameDurationSeconds;
+        if (~all(noiseFreeResponseParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
+            doValidationCheck = false;
+        end
+        if (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
+            doValidationCheck = false;
+        end
 
-% Stimulus timing parameters
-frameDurationSeconds = noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds;
+        % These are tuned to match range of nre performance. See Quest
+        % structure below for comments on what they mean.
+        logThresholdLimitLow = 2.4;
+        logThresholdLimitHigh = 0;
+        logThresholdLimitDelta = 0.02;
+        slopeRangeLow = 1/20;
+        slopeRangeHigh = 50/20;
+        slopeDelta = 2.5/20;
+
+    case 'sceneAsResponses'
+        % This is image photon counts, and thus provides an estimate of the
+        % upper bound on performance for a photon limited system.
+        nreNoiseFreeResponse = @nreNoiseFreeSceneAsResponses;
+        noiseFreeResponseParams = nreNoiseFreeSceneAsResponses;
+        doValidationCheck = false;
+
+        % These are tuned to match range of nre performance. See Quest
+        % structure below for comments on what they mean.
+        logThresholdLimitLow = 12;
+        logThresholdLimitHigh = 6;
+        logThresholdLimitDelta = 0.05;
+        slopeRangeLow = 1e-2/20;
+        slopeRangeHigh = 1/20;
+        slopeDelta = 1e-1/20;
+
+    otherwise
+        error('Unsupported noise free nre specified');
+end
+
+switch (whichNoisyInstanceNre)
+    case 'Poisson'
+        nreNoisyInstances = @nreNoisyInstancesPoisson;
+        noisyInstancesParams = nreNoisyInstancesPoisson;
+
+    case 'Gaussian'
+        nreNoisyInstances = @nreNoisyInstancesGaussian;
+        noisyInstancesParams = nreNoisyInstancesGaussian;
+        doValidationCheck = false;
+
+    otherwise
+        error('Unsupported noisy instances nre specified');
+end
+
+% Stimulus timing parametersf
 stimulusDuration = framesNum*frameDurationSeconds;
 
-noisyInstancesParams = nreNoisyInstancesPoisson;
 theNeuralEngine = neuralResponseEngine( ...
-    @nreNoiseFreePhotopigmentExcitationsCMosaic, ...
-    @nreNoisyInstancesPoisson, ...
+    nreNoiseFreeResponse, ...
+    nreNoisyInstances, ...
     noiseFreeResponseParams, ...
     noisyInstancesParams);
-
-if (~all(noiseFreeResponseParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
-    doValidationCheck = false;
-end
-if (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
-    doValidationCheck = false;
-end
 
 %% Instantiate the responseClassifierEngine
 %
 % rcePoisson makes decision by performing the Poisson likelihood ratio
 % test. This is the ideal observer for the Poisson noice cone excitations
 % illustrated in this script.  But you can run other rce's as well.
-%    rcePoisson - signal known exactly Poission max likelihood
-%    rceTemplateDistance - signal known exactly nearest L2 template
-%                 distance.
-%    rcePcaSVM  - support vector machine linear classifier after PCA.
 %
-% Also set up parameters associated with use of this classifier.
-classifierEngine = 'rcePoisson';
-switch (classifierEngine)
+% Set up parameters associated with use of this classifier.
+switch (whichClassifierEngine)
     case {'rcePoisson'}
-        classifierEngine = responseClassifierEngine(@rcePoisson);
+        whichClassifierEngine = responseClassifierEngine(@rcePoisson);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
+
     case {'rceTemplateDistance'}
-        classifierEngine = responseClassifierEngine(@rcePoisson);
+        whichClassifierEngine = responseClassifierEngine(@rcePoisson);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
         doValidationCheck = false;
+
     case 'rcePcaSVM'
         pcaSVMParams = struct(...
             'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
@@ -158,11 +254,12 @@ switch (classifierEngine)
             'kernelFunction', 'linear', ...     % linear
             'classifierType', 'svm' ...         % binary SVM classifier
             );
-        classifierEngine = responseClassifierEngine(@rcePcaSVM,pcaSVMParams);
+        whichClassifierEngine = responseClassifierEngine(@rcePcaSVM,pcaSVMParams);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 128, 'nTest', 128);  
         doValidationCheck = false;
+
     otherwise
         error('Unsupported rce specified')
 end
@@ -187,12 +284,12 @@ end
 %
 % See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive)
-thresholdPara = struct('logThreshLimitLow', 2.4, ...
-    'logThreshLimitHigh', 0.0, ...
-    'logThreshLimitDelta', 0.02, ...
-    'slopeRangeLow', 1/20, ...
-    'slopeRangeHigh', 50/20, ...
-    'slopeDelta', 2.5/20, ...
+thresholdPara = struct('logThreshLimitLow', logThresholdLimitLow, ...
+    'logThreshLimitHigh', logThresholdLimitHigh, ...
+    'logThreshLimitDelta', logThresholdLimitDelta, ...
+    'slopeRangeLow', slopeRangeLow, ...
+    'slopeRangeHigh', slopeRangeHigh, ...
+    'slopeDelta', slopeDelta, ...
     'thresholdCriterion', 0.81606);
 
 questEnginePara = struct( ...
@@ -253,7 +350,7 @@ for idx = 1:length(spatialFreqs)
     % Create scene produces square scenes.  We use the min of the mosaic
     % field size to pick a reasonable size
     gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(idx),...
-        'fovDegs', min(noiseFreeResponseParams.coneMosaicParams.sizeDegs), ...
+        'fovDegs', min(sizeDegs), ...
         'presentationMode', 'flashedmultiframe', ...
         'duration', stimulusDuration, ...
         'temporalFrequency', framesNum/stimulusDuration, ...
@@ -275,7 +372,7 @@ for idx = 1:length(spatialFreqs)
         % and neural response engines. This function does a lot of work,
         % see the function itself, as well as function computePerformance.
         [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-            computeThreshold(theMetaSceneEngine, theMetaNeuralEngine, classifierEngine, ...
+            computeThreshold(theMetaSceneEngine, theMetaNeuralEngine, whichClassifierEngine, ...
             classifierPara, thresholdPara, questEnginePara, ...
             'TAFC', true, 'useMetaContrast', true, ...
             'trainFixationalEM', trainFixationalEMObj, ...
@@ -286,7 +383,7 @@ for idx = 1:length(spatialFreqs)
         % of work, see the function itself, as well as function
         % computePerformance.
         [logThreshold(idx), questObj, ~, para(idx,:)] = ...
-            computeThreshold(gratingSceneEngine, theNeuralEngine, classifierEngine, ...
+            computeThreshold(gratingSceneEngine, theNeuralEngine, whichClassifierEngine, ...
             classifierPara, thresholdPara, questEnginePara, ...
             'TAFC', true, 'useMetaContrast', false, ...
             'trainFixationalEM', trainFixationalEMObj, ...
