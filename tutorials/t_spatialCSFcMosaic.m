@@ -34,43 +34,59 @@ function thresholdRet = t_spatialCSFcMosaic(options)
 
 % Examples:
 %{
+     % Validate without meta contrast
      t_spatialCSFcMosaic('useMetaContrast', false, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Poisson', ...
-        'whichClassifierEngine', 'rcePoisson');
+        'whichClassifierEngine', 'rcePoisson', ...
+        'validationThresholds', [0.0418    0.0783    0.1540    0.6759]);
 
+     % Validate with meta contrast
+     t_spatialCSFcMosaic('useMetaContrast', true, ...
+        'useFixationalEMs', false, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson', ...
+        'validationThresholds', [0.0418    0.0783    0.1540    0.6759]);
+
+    % Verify that sceneAsresponses sce works
     t_spatialCSFcMosaic('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'sceneAsResponses', ...
         'whichNoisyInstanceNre', 'Poisson', ...
-        'whichClassifierEngine', 'rcePoisson');
+        'whichClassifierEngine', 'rcePoisson', ...
+        'validationThresholds', [0.3520    0.1895    0.1572    0.1554]);
 
+    % Verify that FEMs work without crashing
     t_spatialCSFcMosaic('useMetaContrast', true, ...
         'useFixationalEMs', true, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Poisson', ...
         'whichClassifierEngine', 'rcePoisson');
 
-     t_spatialCSFcMosaic('useMetaContrast', true, ...
+    % Verify that Gaussian noise works as well as template classifier
+    t_spatialCSFcMosaic('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Gaussian', ...
-        'whichClassifierEngine', 'rceTemplateDistance');
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'validationThresholds', [0.0993    0.1673    0.3377    1.0000]);
 
+    % Verify that rcePcaSVM works
     t_spatialCSFcMosaic('useMetaContrast', true, ...
-        'useFixationalEMs', true, ...
+        'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Poisson', ...
-        'whichClassifierEngine', 'rcePcaSVM');
-
+        'whichClassifierEngine', 'rcePcaSVM', ...
+        'validationThresholds', [0.0377    0.0796    0.1427    0.6956]);
 %}
 
 arguments
-    % Run the validation check?  This gets overridden to false if other
+    % Run the validation check?  This gets overridden to empty if other
     % options change the conditions so that the validation data don't
     % apply.
-    options.doValidationCheck (1,1) logical = true;
+    options.validationThresholds (1,:) double = [];
 
     % Apply a filter to the spectra before computing responses?  See
     % t_spatialCSFcMosaicFilter
@@ -78,6 +94,9 @@ arguments
 
     % Use meta contrast method to speed things up?
     options.useMetaContrast (1,1) logical = true;
+
+    % Use cone contrast rather than cone excitations
+    options.useConeContrast (1,1) logical = false;
 
     % Use fixational eye movements?
     options.useFixationalEMs (1,1) logical = false;
@@ -103,25 +122,34 @@ end
 %% Close any stray figs
 close all;
 
+%% Make sure local/figures directory exists so we can write out our figures in peace
+projectBaseDir = ISETBioCSFGeneratorRootPath;
+if (~exist(fullfile(projectBaseDir,'local','figures'),'dir'))
+    mkdir(fullfile(projectBaseDir,'local','figures'));
+end
+
 %% Set flags from key/value pairs
 filter = options.filter;
-doValidationCheck = options.doValidationCheck;
 useMetaContrast = options.useMetaContrast;
+useConeContrast = options.useConeContrast;
 useFixationalEMs = options.useFixationalEMs;
 whichNoiseFreeNre = options.whichNoiseFreeNre;
 whichNoisyInstanceNre = options.whichNoisyInstanceNre;
 whichClassifierEngine = options.whichClassifierEngine;
+validationThresholds = options.validationThresholds;
 
+%% Figure output base name
+figureFileBase = fullfile(projectBaseDir,'local','figures', ...
+    sprintf('t_spatialCSFcMosaic_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s', ...
+    useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,whichClassifierEngine));
 
 %% Set some parameters that control what we do
 if (~useFixationalEMs)
     framesNum = 1;
 else
     framesNum = 4;
-    doValidationCheck = false;
+    validationThresholds = [];
 end
-sizeDegs = [0.5 0.5];
-frameDurationSeconds = 0.1;
 
 %% Freeze rng for replicatbility
 rng(1);
@@ -129,7 +157,7 @@ rng(1);
 %% List of spatial frequencies to be tested.
 spatialFreqs = [4, 8, 16, 32];
 if (length(spatialFreqs) ~= 4 | ~all(spatialFreqs == [4, 8, 16, 32]))
-    doValidationCheck = false;
+    validationThresholds = [];
 end
 
 %% Chromatic direction and contrast
@@ -143,10 +171,10 @@ switch (stimType)
         chromaDir = [1.0, 1.0, 1.0]';
     case 'red-green'
         chromaDir = [1.0, -1.0, 0.0]';
-        doValidationCheck = false;
+        validationThresholds = [];
     case 'L-isolating'
         chromaDir = [1.0, 0.0, 0.0]';
-        doValidationCheck = false;
+        validationThresholds = [];
 end
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
@@ -163,15 +191,18 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 % noise, and includes optical blur.
 switch (whichNoiseFreeNre)
     case 'excitationsCmosaic'
+        sizeDegs = [0.5 0.5];
+        frameDurationSeconds = 0.1;
+        pixelsNum = 128;
         nreNoiseFreeResponse = @nreNoiseFreePhotopigmentExcitationsCMosaic;
         noiseFreeResponseParams = nreNoiseFreePhotopigmentExcitationsCMosaic;
         noiseFreeResponseParams.coneMosaicParams.sizeDegs = sizeDegs;
         noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = frameDurationSeconds;
         if (~all(noiseFreeResponseParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
-            doValidationCheck = false;
-        end
-        if (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
-            doValidationCheck = false;
+            validationThresholds = [];
+        elseif (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
+            validationThresholds = [];
+        else
         end
 
         % These are tuned to match range of nre performance. See Quest
@@ -185,19 +216,22 @@ switch (whichNoiseFreeNre)
 
     case 'sceneAsResponses'
         % This is image photon counts, and thus provides an estimate of the
-        % upper bound on performance for a photon limited system.
+        % upper bound on performance for a photon limited system
+        sizeDegs = [0.05 0.05];
+        frameDurationSeconds = 1e-16;
+        pixelsNum = 128;
         nreNoiseFreeResponse = @nreNoiseFreeSceneAsResponses;
-        noiseFreeResponseParams = nreNoiseFreeSceneAsResponses;
-        doValidationCheck = false;
+        noiseFreeResponseParams = nreNoiseFreeSceneAsResponses; 
+        noiseFreeResponseParams.frameDurationSeconds = frameDurationSeconds;
 
         % These are tuned to match range of nre performance. See Quest
         % structure below for comments on what they mean.
-        logThresholdLimitLow = 12;
-        logThresholdLimitHigh = 6;
-        logThresholdLimitDelta = 0.05;
-        slopeRangeLow = 1e-2/20;
-        slopeRangeHigh = 1/20;
-        slopeDelta = 1e-1/20;
+        logThresholdLimitLow = 2.4;
+        logThresholdLimitHigh = 0;
+        logThresholdLimitDelta = 0.02;
+        slopeRangeLow = 1/20;
+        slopeRangeHigh = 100/20;
+        slopeDelta = 1/20;
 
     otherwise
         error('Unsupported noise free nre specified');
@@ -211,7 +245,7 @@ switch (whichNoisyInstanceNre)
     case 'Gaussian'
         nreNoisyInstances = @nreNoisyInstancesGaussian;
         noisyInstancesParams = nreNoisyInstancesGaussian;
-        doValidationCheck = false;
+        noisyInstancesParams.sigma = 50;
 
     otherwise
         error('Unsupported noisy instances nre specified');
@@ -219,7 +253,6 @@ end
 
 % Stimulus timing parametersf
 stimulusDuration = framesNum*frameDurationSeconds;
-
 theNeuralEngine = neuralResponseEngine( ...
     nreNoiseFreeResponse, ...
     nreNoisyInstances, ...
@@ -245,7 +278,6 @@ switch (whichClassifierEngine)
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 1, 'nTest', 128);
-        doValidationCheck = false;
 
     case 'rcePcaSVM'
         pcaSVMParams = struct(...
@@ -258,7 +290,6 @@ switch (whichClassifierEngine)
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', 128, 'nTest', 128);  
-        doValidationCheck = false;
 
     otherwise
         error('Unsupported rce specified')
@@ -338,7 +369,8 @@ if (useMetaContrast)
 end
 
 %% Compute threshold for each spatial frequency
-% See toolbox/helpers for functions createGratingScene computeThreshold
+% See toolbox/helpers for functions createGratingScene, computeThreshold,
+% computePeformance
 dataFig = figure();
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
@@ -355,6 +387,7 @@ for idx = 1:length(spatialFreqs)
         'duration', stimulusDuration, ...
         'temporalFrequency', framesNum/stimulusDuration, ...
         'spatialPhase', 90, ...
+        'pixelsNum', pixelsNum, ...
         'filter', filter...
         );
 
@@ -405,6 +438,7 @@ for idx = 1:length(spatialFreqs)
     drawnow;
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
+saveas(dataFig,[figureFileBase '_Psychometric.tiff'],'tif');
 
 % Convert returned log threshold to linear threshold
 threshold = 10 .^ logThreshold;
@@ -417,6 +451,7 @@ yticks([2,5,10,20,50]); ylim([1, 50]);
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
+saveas(theCsfFig,[figureFileBase,'_CSF.tiff'],'tif');
 
 %% Do a check on the answer
 %
@@ -427,8 +462,7 @@ set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 % other changes somewhere in stochasticity that I have not quite
 % tracked down. But this validation generally passes.  Might fail
 % sometimes.
-if (doValidationCheck)
-    validationThresholds = [0.0418    0.0783    0.1540    0.6759];
+if (~isempty(validationThresholds))
     if (any(abs(threshold-validationThresholds)./validationThresholds > 0.25))
         error('Do not replicate validation thresholds to 25%. Check that parameters match, or for a bug.');
     else
