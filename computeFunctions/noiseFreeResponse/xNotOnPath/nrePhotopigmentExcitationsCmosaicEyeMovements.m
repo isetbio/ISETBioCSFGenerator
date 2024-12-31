@@ -78,38 +78,6 @@ function dataOut = nrePhotopigmentExcitationsCMosaicEyeMovements(...
 % History:
 %    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements
 
-% Examples:
-%{
-    % Usage case #1. Just return the default neural response params
-    defaultParams = nrePhotopigmentExcitationsCMosaicEyeMovements()
-
-    % Usage case #2. Compute noise free, noisy, and repeatable (seed: 346) noisy response instances
-    % using a parent @neuralResponseEngine object and the default neural response params
-
-    % Instantiate the parent @neuralResponseEngine object
-    theNeuralEngineOBJ = neuralResponseEngine(@nrePhotopigmentExcitationsCMosaicEyeMovements);
-
-    % Instantiate a @sceneEngine object and generate a test scene
-    theSceneEngineOBJ = sceneEngine(@sceUniformFieldTemporalModulation);
-    testContrast = 0.1;
-    [theTestSceneSequence, theTestSceneTemporalSupportSeconds] = ...
-        theSceneEngineOBJ.compute(testContrast);
-    
-    % Compute 16 response instances for a number of different noise flags
-    instancesNum = 16;
-    noiseFlags = {'random', 'none'};
-    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngineOBJ.compute(...
-            theTestSceneSequence, ...
-            theTestSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags ...
-            );
-
-    % Retrieve the different computed responses
-    noiseFreeResponses = theResponses('none');
-    randomNoiseResponseInstances = theResponses('random');
-%}
-
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
