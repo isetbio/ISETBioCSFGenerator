@@ -113,7 +113,8 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
                 % Initially we set the stimulus contrast of all the frames
                 % to testContrast
                 frameContrastSequence(frameIndex) = testContrast;
-                % if the stimulus should disappear in any given frame, then
+
+                % If the stimulus should disappear in any given frame, then
                 % the contrast is reset to 0
                 if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
                     frameContrastSequence(frameIndex) = 0;
@@ -123,10 +124,13 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
         case 'drifted'
             % Compute the time (in sec) needed to complete 1 cycle
             stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
+
             % Compute the time (in frame) needed to compute 1 cycle
             stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
+
             % Compute the phase needed to shift for each frame
             deltaSpatialPhaseDegs = 360/stimDurationOneCycleFrames;
+
             % Compute the total number of frames 
             % = total drifting cycles x number of frames needed for 1 cycle
             stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
@@ -149,6 +153,7 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
                 frameContrastSequence(frameIndex) = testContrast * sind((frameIndex-1)*deltaTemporalPhaseDegs);
+                
                 % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
             end

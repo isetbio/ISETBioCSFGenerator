@@ -141,26 +141,33 @@ function dataOut = nreNoiseFreeSceneAsResposes(...
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
     
-    % Return a dummy neural pipeline struct to keep parent object happy if
-    % it hasn't yet stored one.
-     
+    % Return pipeline struct with key parameters  
     if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noiseFreeResponse'))
-        noiseFreeResponsePipeline.dummyfield = 1;
+        noiseFreeResponsePipeline.dummyParameter = 1;
+        frameDurationSeconds = noiseFreeComputeParams.frameDurationSeconds;
         returnTheNoiseFreePipeline = true;
     else
+        frameDurationSeconds = neuralEngine.noiseFreeComputeParams.frameDurationSeconds;
         returnTheNoiseFreePipeline =  false;
     end
+
+    % Temporal support for the neural response
+    temporalSupportSeconds = sceneSequenceTemporalSupport; 
+    if (length(temporalSupportSeconds) > 1)
+        if (abs( (temporalSupportSeconds(2)-temporalSupportSeconds(1)) - frameDurationSeconds) > 1e-5)
+            error('Specified frame duration not consistent with passed temporal support');
+        end
+    end
     
-    % Compute the noise-free response
+    % Compute the noise-free response.  The scene photons are photons/sec,
+    % so we multiply everthing by the frame duration.
     responseDim = length(sceneSequence{1}.data.photons(:));
     framesNum = numel(sceneSequence);
     theNeuralResponses = zeros(1,responseDim,framesNum);
     for jj = 1:framesNum
         theNeuralResponses(1,:,jj) = sceneSequence{jj}.data.photons(:);
     end
-          
-    % Temporal support for the neural response
-    temporalSupportSeconds = sceneSequenceTemporalSupport; 
+    theNeuralResponses = theNeuralResponses*frameDurationSeconds;
     
     % Assemble the dataOut struct
     dataOut = struct(...
@@ -175,5 +182,5 @@ end
 
 function p = generateDefaultParams()
     % Default params for this compute function
-    p = struct([]);
+    p.frameDurationSeconds = 1;
 end
