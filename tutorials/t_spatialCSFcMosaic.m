@@ -1,15 +1,17 @@
-function thresholdRet = t_spatialCSFcMosaicEyeMovements(varargin)
+function thresholdRet = t_spatialCSFcMosaic(options)
 % Compute spatial CSF in different color directions, with fEM
 %
 % Syntax:
-%   thresholdRet = t_spatialCSF;
+%   thresholdRet = t_spatialCSFcMosaic;
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.
 %    This example uses an ideal Poisson observer and circularly
 %    windowed gratings of constant size, with fixational eye movements.
 %
-%
+% Optional key/value pairs
+%    See source code arguments block for a list of key/value pairs.
+
 % See also: t_spatialCSFcMosaic, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
@@ -25,20 +27,39 @@ function thresholdRet = t_spatialCSFcMosaicEyeMovements(varargin)
 %   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine phase.
 %   12/19/24  dhb   Update for new architecture.
 
+% Examples:
+%{
+    t_spatialCSFcMosaic('useMetaContrast',false);
+
+}%
+
+arguments
+    % Run the validation check?  This gets overridden to false if other
+    % options change the conditions so that the validation data don't
+    % apply.
+    options.doValidationCheck (1,1) logical = true;
+
+    % Apply a filter to the spectra before computing responses?  See
+    % t_spatialCSFcMosaicFilter
+    options.filter (1,1) = struct('spectralSupport',[],'transmission',[]);
+
+    % Use meta contrast method to speed things up?
+    options.useMetaContrast (1,1) logical = true;
+
+    % Use fixational eye movements?
+    options.useFixationalEMs (1,1) logical = false;
+end
+
 %% Close any stray figs
 close all;
 
-%% Parse input and set variables
-p = inputParser;
-p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
-p.addParameter('doValidationCheck', true, @islogical);
-parse(p, varargin{:});
-filter = p.Results.filter;
-doValidationCheck = p.Results.doValidationCheck;
+%% Set flags from key/value pairs
+filter = options.filter;
+doValidationCheck = options.doValidationCheck;
+useMetaContrast = options.useMetaContrast;
+useFixationalEMs = options.useFixationalEMs;
 
 %% Set some parameters that control what we do
-useFixationalEMs = false;
-useMetaContrast = false;
 if (~useFixationalEMs)
     framesNum = 1;
 else

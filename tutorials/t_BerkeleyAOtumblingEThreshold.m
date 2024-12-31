@@ -2,17 +2,24 @@ function t_BerkeleyAOtumblingEThreshold(options)
 % Compute tumbling E threshold with AO optics
 %
 % This takes a number of key/value pairs that control its detailed
-% conditions.
+% conditions.  See comments under options block below.
 %
 % Note, in case you are tempted, that this can't be run with the meta
 % contrast method because the parameter is stimulus size rather than
 % contrast, and responses do not scale as a linear function of size the way
 % they do with contrast.
+%
+% See also t_BerkeleyAOtumblingESceneEngine.
 
 %% Pick up optional arguments
 arguments
+    % Add this amount of defocus to the diffraction limited optics
     options.defocusDiopters (1,1) double = 0.05;
+
+    % Pupil diameter in mm.
     options.pupilDiameterMm (1,1) double = 6;
+
+    % Print out more diagnostics, or not
     options.verbose (1,1) logical = false;
 end
 
