@@ -1,6 +1,8 @@
 function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOtumblingESceneEngine(options)
-
-% Will's description of the stimulus parameters for this experiment.
+% Show how to describe and control a tumbling E stimulus as presented in
+% the Berkeley (Tuten lab) AO system.
+%
+% Tuten's description of the stimulus parameters for this experiment.
 %   - Wavelength: the tumbling-E was modulated in the imaging channel. The
 %   center wavelength is 840 nm. We don't have a spectroradiometer that
 %   operates in this part of the spectrum, so we haven't measured the
@@ -53,6 +55,9 @@ function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOtumblingESce
 %
 % Need pupil diameter to convert corneal power to appropriate equivalent
 % radiance.  Probably around 6 mm.
+%
+% This rouine takes a number of key value pairs. See arguments block below
+% for a list and their defaults.
 
 arguments
     options.visualizeScene (1,1) logical = true;
