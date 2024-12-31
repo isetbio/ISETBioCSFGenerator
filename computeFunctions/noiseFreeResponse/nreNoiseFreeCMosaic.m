@@ -52,7 +52,7 @@ function dataOut = nreNoiseFreeCMosaic(...
 %
 %              .neuralResponses : matrix of neural responses.  The first dimension
 %                                 is number of instances.  Often there is just one.
-%                                 Each "column" of the second dimension 
+%                                 Each "column" of the second dimension
 %                                 is the response vector for one frame of the input.
 %                                 The third dimension indexes the frames.
 %              .temporalSupport : the temporal support of the neural
@@ -74,13 +74,15 @@ function dataOut = nreNoiseFreeCMosaic(...
 %                            the latter, this must have one position per
 %                            frame of the passed scene sequence, in which
 %                            case it is applied.
-%   'opticsType'           - String (default 'wavefront'). Specify type
+%   'opticsType'           - String or struct (default 'wavefront'). Specify type
 %                            of optics to use.
 %                               - 'wavefront' - Reasonable human
 %                               wavefront optics.
 %                               - 'BerkeleyAO' - Models optics of subject in
 %                               some of the Berkeley AO psychophysics
 %                               systems.
+%                             If it is a struct, it is taken to be the
+%                             desired oi to use
 %   'verbose'               - Logical (default true). Print things out.
 %   'oiPadMethod'           - String (default 'zero'). Passed to the oi
 %                             compute method to determine how image is
@@ -153,7 +155,7 @@ function dataOut = nreNoiseFreeCMosaic(...
 p = inputParser;
 p.KeepUnmatched = true;
 p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
-p.addParameter('opticsType','wavefront',@ischar);
+p.addParameter('opticsType','wavefront',@(x)(@ischar(x) | isstruct(x));
 p.addParameter('oiPadMethod','zero',@ischar)
 p.addParameter('verbose',true,@islogical);
 varargin = ieParamFormat(varargin);
@@ -183,13 +185,69 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
         'noiseFlag', 'none' ...
         );
 
-    % Generate optics appropriate for the mosaic's eccentricity
-    oiEnsemble = theConeMosaic.oiEnsembleGenerate(noiseFreeComputeParams.coneMosaicParams.eccDegs, ...
-        'zernikeDataBase', 'Polans2015', ...
-        'subjectID', noiseFreeComputeParams.opticsParams.PolansSubject, ...
-        'pupilDiameterMM', noiseFreeComputeParams.opticsParams.pupilDiameterMM);
-    theOptics = oiEnsemble{1};
-    clear oiEnsemble
+    % Generate optics
+    if (isstruct(opticsType))
+        theOptics = opticsType;
+    else
+        switch (opticsType)
+            case 'wavefront'
+                % Check parameter structure type
+                if (~strcmp(noiseFreeComputeParams.opticsParams.type,'wavefront'))
+                    error('Expecting neuralResponseParamsStruct.opticsParams.type to be ''wavefront''');
+                end
+
+                % Generate wavefront optics appropriate for the mosaic's eccentricity
+                oiEnsemble = theConeMosaic.oiEnsembleGenerate(noiseFreeComputeParams.coneMosaicParams.eccDegs, ...
+                    'zernikeDataBase', 'Polans2015', ...
+                    'subjectID', noiseFreeComputeParams.opticsParams.PolansSubject, ...
+                    'pupilDiameterMM', noiseFreeComputeParams.opticsParams.pupilDiameterMM);
+                theOptics = oiEnsemble{1};
+                clear oiEnsemble
+
+            case 'BerkeleyAO'
+                % Check parameter structure type
+                if (~strcmp(noiseFreeComputeParams.opticsParams.type,'BerkeleyAO'))
+                    error('Expecting neuralResponseParamsStruct.opticsParams.type to be ''BerkeleyAO''');
+                end
+
+                % Set up wavefront optics object
+                %
+                % Compute pupil function using 'no lca' key/value pair to turn off LCA.
+                % You can turn it back on to compare the effect.
+                %
+                % Deal with best focus by specifying that the wavefront parameters
+                % were measured at the wavelength we want to say is in focus. This
+                % is a little bit of a hack but seems OK for the diffraction limited case
+                % we're using here.
+                wvfP = wvfCreate('calc wavelengths', neuralResponseParamsStruct.opticsParams.wls, ...
+                    'zcoeffs', neuralResponseParamsStruct.opticsParams.zCoeffs, ...
+                    'name', sprintf('humanAO-%d', neuralResponseParamsStruct.opticsParams.pupilDiameterMM));
+                wvfP = wvfSet(wvfP, 'measured wavelength', neuralResponseParamsStruct.opticsParams.accommodatedWl);
+                wvfP = wvfSet(wvfP, 'measured pupil size', neuralResponseParamsStruct.opticsParams.pupilDiameterMM);
+                wvfP = wvfSet(wvfP, 'calc pupil size', neuralResponseParamsStruct.opticsParams.pupilDiameterMM);
+                wvfP = wvfSet(wvfP,'zcoeffs', neuralResponseParamsStruct.opticsParams.defocusAmount, 'defocus');
+                if (~neuralResponseParamsStruct.opticsParams.defeatLCA)
+                    wvfP = wvfSet(wvfP,'lcaMethod','human');
+                end
+
+                % Compute pupil function and PSF
+                %
+                % Whether LCA should be included depends on your apparatus and
+                % is controlled by the boolean defeatLCA in the computation of
+                % the pupil function.
+                wvfP = wvfCompute(wvfP);
+
+                % Generate optical image object from the wavefront object
+                theOptics = wvf2oi(wvfP,'humanlens',true);
+
+                % Set the fNumber to correspond to the pupil size
+                focalLengthMM = oiGet(theOptics,'focal length')*1000;
+                theOptics = oiSet(theOptics, 'optics fnumber', focalLengthMM/neuralResponseParamsStruct.opticsParams.pupilDiameterMM);
+
+            otherwise
+                error('Unknown opticsType specified');
+        end
+    end
 
     % Handle contrast versus excitations
     if (strcmp(noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneContrast'))
@@ -202,7 +260,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
 
             % Retrieve the null stimulus scene sequence
             nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
-            
+
             % Compute the optical image of the null scene
             listOfNullOpticalImages = cell(1, framesNum);
             for frame = 1:framesNum
@@ -306,7 +364,7 @@ switch (opticsType)
     case 'BerkeleyAO'
         opticsParams = struct(...
             'wls', 400:10:700, ...
-            'type', 'AO', ...
+            'type', 'BerkeleyAO', ...
             'pupilDiameterMM', 6.0, ...
             'defocusAmount', 0.1, ...
             'accommodatedWl', 550, ...
@@ -332,7 +390,7 @@ coneMosaicParams = struct(...
     'eccDegs', [0 0], ...
     'timeIntegrationSeconds', 5/1000, ...
     'inputSignalType', 'coneExcitations' ...
-);
+    );
 
 % If the user sets the nullStimulusSceneSequence, then mRGC responses are
 % computed on modulated cone responses with respect to the cone

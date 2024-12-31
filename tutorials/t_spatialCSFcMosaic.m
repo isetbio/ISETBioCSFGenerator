@@ -124,8 +124,8 @@ close all;
 
 %% Make sure local/figures directory exists so we can write out our figures in peace
 projectBaseDir = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(projectBaseDir,'local','figures'),'dir'))
-    mkdir(fullfile(projectBaseDir,'local','figures'));
+if (~exist(fullfile(projectBaseDir,'local',mfilename,'figures'),'dir'))
+    mkdir(fullfile(projectBaseDir,'local',mfilename,'figures'));
 end
 
 %% Set flags from key/value pairs
@@ -139,7 +139,7 @@ whichClassifierEngine = options.whichClassifierEngine;
 validationThresholds = options.validationThresholds;
 
 %% Figure output base name
-figureFileBase = fullfile(projectBaseDir,'local','figures', ...
+figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
     sprintf('t_spatialCSFcMosaic_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s', ...
     useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,whichClassifierEngine));
 

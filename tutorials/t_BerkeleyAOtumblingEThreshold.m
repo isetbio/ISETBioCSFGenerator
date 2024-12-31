@@ -29,18 +29,11 @@ close all;
 % Make sure figures and results directories exist so that output writes
 % don't fail
 rootPath = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(rootPath,'local','figures'),'dir'))
-    mkdir(fullfile(rootPath,'local','figures'));
+if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
+    mkdir(fullfile(rootPath,'local',mfilename,'figures'));
 end
-
-% Make sure figures and results directories exist so that output writes
-% don't fail
-rootPath = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(rootPath,'local','figures'),'dir'))
-    mkdir(fullfile(rootPath,'local','figures'));
-end
-if (~exist(fullfile(rootPath,'local','results'),'dir'))
-    mkdir(fullfile(rootPath,'local','results'));
+if (~exist(fullfile(rootPath,'local',mfilename,'results'),'dir'))
+    mkdir(fullfile(rootPath,'local',mfilename,'results'));
 end
 
 % Define the AO scene parameters for the experiment we are modeling
@@ -117,8 +110,8 @@ params = struct(...
 % if (~isempty(params.customLensAgeYears))
 %     summaryFileName = strrep(summaryFileName, '.mat', sprintf('_lensAge_%d.mat', params.customLensAgeYears));
 % end
-% params.outputResultsDir = fullfile(ISETBioCSFGeneratorRootPath,'local','results',strrep(summaryFileName, '.mat',''));
-% params.outputFiguresDir =  fullfile(ISETBioCSFGeneratorRootPath,'local','figures',strrep(summaryFileName, '.mat',''));
+% params.outputResultsDir = fullfile(ISETBioCSFGeneratorrootPath,'local',mfilename,'results',strrep(summaryFileName, '.mat',''));
+% params.outputFiguresDir =  fullfile(ISETBioCSFGeneratorrootPath,'local',mfilename,'figures',strrep(summaryFileName, '.mat',''));
 % if (~exist(params.outputResultsDir,'dir'))
 %     mkdir(params.outputResultsDir);
 % end
