@@ -151,9 +151,9 @@ function dataOut = nreNoiseFreeSceneAsResposes(...
     % Compute the noise-free response
     responseDim = length(sceneSequence{1}.data.photons(:));
     framesNum = numel(sceneSequence);
-    theNeuralResponses = zeros(responseDim,framesNum);
+    theNeuralResponses = zeros(1,responseDim,framesNum);
     for jj = 1:framesNum
-        theNeuralResponses(:,jj) = sceneSequence{jj}.data.photons(:);
+        theNeuralResponses(1,:,jj) = sceneSequence{jj}.data.photons(:);
     end
           
     % Temporal support for the neural response
