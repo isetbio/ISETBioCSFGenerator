@@ -184,8 +184,8 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
         noiseFreeComputeParams.coneMosaicParams);
 
     % Handle contrast versus excitations
-    if (strcmp(noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneContrast'))
-        % Compute theConeMosaicNullResponse if the inputSignalType is set to
+    if (strcmp(noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast'))
+        % Compute theConeMosaicNullResponse if the outputSignalType is set to
         % 'coneContrast' and if we have nullStimulusSceneSequence.
         if (~isempty(noiseFreeComputeParams.nullStimulusSceneSequence))
             if (verbose)
@@ -216,7 +216,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
             error('Input type ''coneContrast'' specified, but no normalizing stimulus provided.');
         end
 
-    elseif (strcmp(noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneExcitations'))
+    elseif (strcmp(noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneExcitations'))
         % Operating on cone excitations
         coneMosaicNullResponse = [];
         coneMosaicNormalizingResponse = [];
@@ -304,7 +304,7 @@ mosaicParams = struct(...
     'sizeDegs', 0.3*[1 1], ...
     'eccDegs', [0 0], ...
     'timeIntegrationSeconds', 5/1000, ...
-    'inputSignalType', 'coneExcitations' ...
+    'outputSignalType', 'coneExcitations' ...
     );
 
 % If the user sets the nullStimulusSceneSequence, then mRGC responses are

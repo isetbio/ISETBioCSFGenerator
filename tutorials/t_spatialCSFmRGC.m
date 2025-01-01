@@ -1,4 +1,4 @@
-function t_spatialCSFmRGC
+function t_spatialCSFmRGC(options)
 % Compute spatial CSF in different color directions, using the ON-center
 % mRGCMosaics. This script illustrates use with and without meta contrast
 % method for mRGC calculations.
@@ -13,22 +13,66 @@ function t_spatialCSFmRGC
 %   11/02/2024  FH   Adopted based on t_spatialCSFmRGCMosaic.m
 %   12/24/2024  dhb  Update for new architecture
 
+arguments
+    % Run the validation check?  This gets overridden to empty if other
+    % options change the conditions so that the validation data don't
+    % apply.
+    options.validationThresholds (1,:) double = [];
+
+    % Apply a filter to the spectra before computing responses?  See
+    % t_spatialCSFcMosaicFilter
+    options.filter (1,1) = struct('spectralSupport',[],'transmission',[]);
+
+    % Use meta contrast method to speed things up?
+    options.useMetaContrast (1,1) logical = true;
+
+    % Use cone contrast rather than cone excitations
+    options.useConeContrast (1,1) logical = false;
+
+    % Use fixational eye movements?
+    options.useFixationalEMs (1,1) logical = false;
+
+    % Choose noise free neural model
+    %   Choices: 'excitationsCmosaic'
+    %            'sceneAsResponses'
+    options.whichNoiseFreeNre (1,:) char  = 'excitationsCmosaic'
+
+    % Choose noise model
+    %   Choices: 'Poisson'
+    %            'Gaussian'
+    options.whichNoisyInstanceNre (1,:) char = 'Poisson'
+
+    % Choose classifier engine
+    %    rcePoisson - signal known exactly Poission max likelihood
+    %    rceTemplateDistance - signal known exactly nearest L2 template
+    %                 distance.
+    %    rcePcaSVM  - support vector machine linear classifier after PCA.
+    options.whichClassifierEngine (1,:) char = 'rcePoisson'
+end
+
+%% Make sure local/figures directory exists so we can write out our figures in peace
+projectBaseDir = ISETBioCSFGeneratorRootPath;
+if (~exist(fullfile(projectBaseDir,'local',mfilename,'figures'),'dir'))
+    mkdir(fullfile(projectBaseDir,'local',mfilename,'figures'));
+end
+
+%% Set flags from key/value pairs
+filter = options.filter;
+useMetaContrast = options.useMetaContrast;
+useConeContrast = options.useConeContrast;
+useFixationalEMs = options.useFixationalEMs;
+whichNoiseFreeNre = options.whichNoiseFreeNre;
+whichNoisyInstanceNre = options.whichNoisyInstanceNre;
+whichClassifierEngine = options.whichClassifierEngine;
+validationThresholds = options.validationThresholds;
+
 % Clear out stay figures
 close all;
 
-% Start timing
-tic
-
-% This can either use meta contrast method or not.
-useMetaContrast = true;
-
-% Make sure figures directory exists so that output writes
-% don't fail
-rootPath = ISETBioCSFGeneratorRootPath;
-myName = mfilename;
-if (~exist(fullfile(rootPath,'local',myName),'dir'))
-    mkdir(fullfile(rootPath,'local',myName));
-end
+%% Figure output base name
+figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
+    sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s', mfilename, ...
+    useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,whichClassifierEngine));
 figureTypeStr = '.tif';
 
 % Set fastParameters that make this take less time
@@ -283,8 +327,7 @@ else
     minPixelsNumPerCycle = 12;
 end
 
-% Grating orientation
-theStimulusOrientationDegs = 90;
+
 
 %% With access to theGratingSceneEngine, we can compute theNullStimulusScene
 nullContrast = 0.0;

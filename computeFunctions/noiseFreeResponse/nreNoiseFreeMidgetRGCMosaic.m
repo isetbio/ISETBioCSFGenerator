@@ -72,13 +72,17 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %                            the latter, this must have one position per
 %                            frame of the passed scene sequence, in which
 %                            case it is applied.
-%   'opticsType'           - String or struct (default 'oiEnsembleGenerate'). Specify type
+%   'opticsType'           - String or struct (default 'loadComputeReadyRGCMosaic'). Specify type
 %                            of optics to use.
+%                               - 'loadComputeReadyRGCMosaic' - Produced by
+%                               the loadComputeReadRGCMosaic machinery.
 %                               - 'oiEnsembleGenerate' - Reasonable human
 %                               wavefront optics.
 %                               - 'BerkeleyAO' - Models optics of subject in
 %                               some of the Berkeley AO psychophysics
 %                               systems.
+%                             If it is a struct, it is taken to be the
+%                             desired oi to use
 %   'verbose'               - Logical (default true). Print things out.
 %   'oiPadMethod'           - String (default 'zero'). Passed to the oi
 %                             compute method to determine how image is
@@ -124,10 +128,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
     % Step1. Load a compute-ready mRGC mosaic given the passed params.
     %
     % This also produces the cone mosaic on which the RGC mosaic is built.
-    % theMRGCmosaic = mRGCMosaic.loadComputeReadyRGCMosaic(...
-    %     noiseFreeComputeParams.mRGCMosaicParams, ...
-    %     noiseFreeComputeParams.opticsParams, ...
-    %     noiseFreeComputeParams.mRGCMosaicParams.retinalRFmodelParams);
+    % The calling routine generates optics as well.
     [theOptics,theMRGCmosaic] = generateOpticsAndMosaicFromParams(...
         noiseFreeComputeParams.opticsParams, ...
         [], ...
