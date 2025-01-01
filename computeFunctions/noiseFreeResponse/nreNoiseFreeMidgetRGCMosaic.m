@@ -67,6 +67,18 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %                                   information about the oi and cMosaic.
 %
 % Optional key/value input arguments:
+%   'fixationalEM'         - Empty (default) or a fixationalEM object
+%                            that describes one eye movement path.  If
+%                            the latter, this must have one position per
+%                            frame of the passed scene sequence, in which
+%                            case it is applied.
+%   'opticsType'           - String or struct (default 'oiEnsembleGenerate'). Specify type
+%                            of optics to use.
+%                               - 'oiEnsembleGenerate' - Reasonable human
+%                               wavefront optics.
+%                               - 'BerkeleyAO' - Models optics of subject in
+%                               some of the Berkeley AO psychophysics
+%                               systems.
 %   'verbose'               - Logical (default true). Print things out.
 %   'oiPadMethod'           - String (default 'zero'). Passed to the oi
 %                             compute method to determine how image is
@@ -87,16 +99,20 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 % can ignore, so set KeepUnmatched to true.
 p = inputParser;
 p.KeepUnmatched = true;
-p.addParameter('oiPadMethod','zero',@ischar)
+p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
+p.addParameter('opticsType','loadComputeReadyRGCMosaic',@(x)(ischar(x) | isstruct(x)));
+p.addParameter('oiPadMethod','zero',@ischar);
 p.addParameter('verbose',true,@islogical);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
+fixationalEMObj = p.Results.fixationalEM;
+opticsType = p.Results.opticsType;
 oiPadMethod = p.Results.oiPadMethod;
 verbose = p.Results.verbose;
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0 | isempty(neuralEngine))
-    dataOut = generateDefaultParams();
+    dataOut = generateDefaultParams(opticsType);
     return;
 end
 
@@ -126,20 +142,13 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
     theMRGCmosaic.inputConeMosaic.noiseFlag = 'none';
     theMRGCmosaic.noiseFlag = 'none';
 
-    % Set the optics if passed.  This can be used to overrride the default
-    % optics that were used to compute the mRGC object.
-    if (~isempty(noiseFreeComputeParams.customOpticsToEmploy))
-        % Employ the passed optics
-        theOptics = noiseFreeComputeParams.customOpticsToEmploy;
+    % Retrieve the optics that were used to optimize theMRGCmosaic
+    if (~isempty(theMRGCmosaic.theNativeOptics))
+        theOptics = theMRGCmosaic.theNativeOptics;
+    elseif (~isempty(theMRGCmosaic.theCustomOptics))
+        theOptics = theMRGCmosaic.theCustomOptics;
     else
-        % Retrieve the optics that were used to optimize theMRGCmosaic
-        if (~isempty(theMRGCmosaic.theNativeOptics))
-            theOptics = theMRGCmosaic.theNativeOptics;
-        elseif (~isempty(theMRGCmosaic.theCustomOptics))
-            theOptics = theMRGCmosaic.theCustomOptics;
-        else
-            error('No optics found in the mRGCMosaic object!')
-        end
+        error('No optics found in the mRGCMosaic object!')
     end
 
     % Handle contrast versus excitations
@@ -305,17 +314,10 @@ end
 
 end
 
-function p = generateDefaultParams()
+function p = generateDefaultParams(opticsType)
 
-% Default params for this compute function
-opticsParams = struct(...
-    'ZernikeDataBase', 'Polans2015', ...
-    'examinedSubjectRankOrder', 6, ...
-    'pupilDiameterMM', 3.0, ...
-    'analyzedEye', 'right eye', ...
-    'refractiveErrorDiopters', 0.0, ...
-    'positionDegs', [] ...
-    );
+% Genrate optics params through common bottleneck
+opticsParams = generateOpticsParams(opticsType);
 
 % Neurons of the pre-computed mRGCMosaic have spatial RFs that were
 % optimized using a double exponential surround model with parameters around
@@ -344,10 +346,6 @@ mRGCMosaicParams = struct(...
     'outputSignalType', 'mRGCs', ...
     'coneIntegrationTimeSeconds', 10/1000);
 
-% If opticsToEmploy is [], we use the optics that were used to optimize
-% the mRGCMosaic
-customOpticsToEmploy = [];
-
 % If the user sets the nullStimulusSceneSequence, then mRGC responses are
 % computed on modulated cone responses with respect to the cone
 % response to the null stimulus scene sequence.
@@ -365,7 +363,6 @@ temporalFilter = [];
 p = struct(...
     'opticsParams', opticsParams, ...
     'mRGCMosaicParams', mRGCMosaicParams, ...
-    'customOpticsToEmploy', customOpticsToEmploy, ...
     'nullStimulusSceneSequence', nullStimulusSceneSequence, ...
     'temporalFilter', temporalFilter ...
     );
