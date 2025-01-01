@@ -50,7 +50,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                               (0) for each trial.
 %
 % Optional key/value pairs:
-%   'beVerbose'           - Logical. Provide some printout? Default true.
+%   'verbose'           - Logical. Provide some printout? Default true.
 %   'extraVerbose'        - Logical.  More detailed printout? Default false.
 %   'visualizeStimulus'   - Logical. Provide stimulus visualization.
 %                           Default false.
@@ -95,7 +95,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 
 p = inputParser;
 p.KeepUnmatched = true;
-p.addParameter('beVerbose',  true, @islogical);
+p.addParameter('verbose',  true, @islogical);
 p.addParameter('extraVerbose', false, @islogical);
 p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
@@ -106,7 +106,7 @@ p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'
 p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 
 parse(p, varargin{:});
-beVerbose = p.Results.beVerbose;
+verbose = p.Results.verbose;
 visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
@@ -202,7 +202,7 @@ while (nextFlag)
     
     % Contrast label for pCorrect dictionary
     contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
-    if (beVerbose)
+    if (verbose)
         fprintf('Testing parameter value %0.4g\n',testContrast)
     end
     
@@ -298,7 +298,7 @@ while (nextFlag)
         
         testCounter = testCounter + 1;
         e = toc(eStart);
-        if (beVerbose)
+        if (verbose)
                 fprintf('computeThreshold: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
         end
         
@@ -306,7 +306,7 @@ while (nextFlag)
         eStart = tic;
         theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
         e = toc(eStart);
-        if (beVerbose)
+        if (verbose)
                 fprintf('computeThreshold: Copying classifer took %0.1f secs\n',e);
         end
 
@@ -316,7 +316,7 @@ while (nextFlag)
         trialByTrialStimulusAlternatives(contrastLabel) = whichAlternatives;
         trialByTrialPerformance(contrastLabel) = predictions';
         
-        if (beVerbose)
+        if (verbose)
             fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
                 length(psychometricFunction),testCounter);
         end
@@ -365,7 +365,7 @@ while (nextFlag)
         
         testCounter = testCounter + 1;
         e = toc(eStart);
-        if (beVerbose)
+        if (verbose)
             fprintf('computeThreshold: Predicting test block %d no training took %0.1f secs\n',testCounter,e);
         end
 
@@ -383,7 +383,7 @@ while (nextFlag)
         currentTemp = cat(1,prevTemp,predictions');
         trialByTrialPerformance(contrastLabel) = currentTemp;
 
-        if (beVerbose)
+        if (verbose)
            fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
                length(psychometricFunction),testCounter);
         end
@@ -403,12 +403,12 @@ while (nextFlag)
     end
 
     e = toc(eStart);
-    if (beVerbose)
+    if (verbose)
             fprintf('computeThreshold: Updating took %0.1f secs\n',e);
     end
 end 
 
-if (beVerbose)
+if (verbose)
    fprintf('computeThreshold: Ran %d test levels of %d trials per block of tests\n',...
        testCounter,classifierPara.nTest);
    if (estimator.validation)
@@ -434,7 +434,7 @@ end
     estimator.thresholdMLE('showPlot', false, ...
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
 
-if (beVerbose)
+if (verbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
             fittedPsychometricParams(1), fittedPsychometricParams(2),...
             fittedPsychometricParams(3), fittedPsychometricParams(4));

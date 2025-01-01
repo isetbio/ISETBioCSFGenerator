@@ -90,7 +90,7 @@ function dataOut = nreNoiseFreeCMosaic(...
 %                             'zero' and 'mean'.
 %
 % See Also:
-%     t_neuralResponseCompute, t_spatialCSFcMosaic
+%     t_neuralResponseCompute, t_spatialCSF
 
 % History:
 %    03/29/2021  npc  Wrote it by adapting nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements
@@ -154,10 +154,15 @@ function dataOut = nreNoiseFreeCMosaic(...
 % can ignore, so set KeepUnmatched to true.
 p = inputParser;
 p.KeepUnmatched = true;
+
+% The nre knows about these and can call this function with them set
+% appropriately.
 p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
+p.addParameter('verbose',true,@islogical);
+
+% These affect the default parameters returned
 p.addParameter('opticsType','oiEnsembleGenerate',@(x)(ischar(x) | isstruct(x)));
 p.addParameter('oiPadMethod','zero',@ischar)
-p.addParameter('verbose',true,@islogical);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 fixationalEMObj = p.Results.fixationalEM;
@@ -167,7 +172,7 @@ verbose = p.Results.verbose;
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0 | isempty(neuralEngine))
-    dataOut = generateDefaultParams(opticsType);
+    dataOut = generateDefaultParams(opticsType,oiPadMethod);
     return;
 end
 
@@ -198,7 +203,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
             % Compute the optical image of the null scene
             listOfNullOpticalImages = cell(1, framesNum);
             for frame = 1:framesNum
-                listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',oiPadMethod);
+                listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',noiseFreeComputeParams.opticsParams.oiPadMethod);
             end
             nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
             clear listOfNullOpticalImages;
@@ -240,11 +245,11 @@ end
 
 % Compute the sequence of optical images corresponding to the sequence of scenes
 if framesNum == 1
-    theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue',oiPadMethod);
+    theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue',noiseFreeComputeParams.opticsParams.oiPadMethod);
 else
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue',oiPadMethod);
+        theListOfOpticalImages{frame} = oiCompute(theOptics, sceneSequence{frame},'padvalue',noiseFreeComputeParams.opticsParams.oiPadMethod);
     end
 
     % Generate an @oiSequence object containing the list of computed optical images
@@ -292,10 +297,10 @@ if (returnTheNoiseFreePipeline)
 end
 end
 
-function p = generateDefaultParams(opticsType)
+function p = generateDefaultParams(opticsType,oiPadMethod)
 
 % Generate optics parameters
-opticsParams = generateOpticsParams(opticsType);
+opticsParams = generateOpticsParams(opticsType,oiPadMethod);
 
 % cMosaic params
 mosaicParams = struct(...

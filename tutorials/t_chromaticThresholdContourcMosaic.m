@@ -5,13 +5,13 @@
 %    contrast plane. This example uses an ideal Poisson TAFC observer and circularly
 %    windowed gratings of constant size and one spatial frequency.
 %
-% See also: t_spatialCSFcMosaic, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           computeThreshold, computePerformance,
 %           createGratingScene.
 %
 
 % History:
-%   10/23/20  dhb   Wrote it from what is now called t_spatialCSFcMosaic
+%   10/23/20  dhb   Wrote it from what is now called t_spatialCSF
 
 % Clear and close
 clear; close all;

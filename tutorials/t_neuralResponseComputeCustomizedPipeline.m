@@ -16,7 +16,7 @@ function t_neuralResponseComputeCustomizedPipeline
 % Optional key/value pairs:
 %    None.
 %
-% See also: t_spatialCSFcMosaic, t_sceneGeneration
+% See also: t_spatialCSF, t_sceneGeneration
 
 % History:
 %    03/30/2021  NPC  Wrote it.

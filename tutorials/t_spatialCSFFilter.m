@@ -6,10 +6,10 @@
 %    varying levels of light transmission on contrast sensitivity.
 %
 %    Note that the underlying work is done by a call into
-%    t_spatialCSFcMosaic; this just sets up the filters and passes them
+%    t_spatialCSF; this just sets up the filters and passes them
 %    into that routine.
 %
-% See also: t_spatialCSFcMosaic, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
 
@@ -20,7 +20,7 @@
 clear; close all;
 
 %% Compute the baseline contrast sensitivity function without any filter
-threshold0 = t_spatialCSFcMosaic('doValidationCheck', false); 
+threshold0 = t_spatialCSF('doValidationCheck', false); 
 
 % Convert threshold to sensitivity (sensitivity is the inverse of threshold)
 sensitivity0 = 1./threshold0;
@@ -37,7 +37,7 @@ transmission_func1 = ones(length(wave),1);
 filter1 = struct('spectralSupport', wave, 'transmission', transmission_func1);
 
 % Compute CSF threshold using the perfect transmission filter
-threshold1 = t_spatialCSFcMosaic('filter', filter1,'doValidationCheck', false);
+threshold1 = t_spatialCSF('filter', filter1,'doValidationCheck', false);
 sensitivity1 = 1./threshold1;
 
 %% Filter 2
@@ -48,7 +48,7 @@ transmission_func2 = 0.25.*ones(length(wave),1);
 filter2 = struct('spectralSupport', wave, 'transmission', transmission_func2);
 
 % Compute CSF threshold using the neutral density filter
-threshold2 = t_spatialCSFcMosaic('filter', filter2,'doValidationCheck', false);
+threshold2 = t_spatialCSF('filter', filter2,'doValidationCheck', false);
 sensitivity2 = 1./threshold2;
 
 %% Plot the results using logarithmic scales for both axes

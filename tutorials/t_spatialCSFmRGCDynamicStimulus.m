@@ -8,7 +8,7 @@ function t_spatialCSFmRGCDynamicStimulus
 %
 %    You can turn use of meta contrast method on or off.
 %
-% See also: t_spatialCSFcMosaic, t_metaContrastCSFcMosaic, t_spatialCSFmRGC, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_metaContrastCSFcMosaic, t_spatialCSFmRGC, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
 % History:

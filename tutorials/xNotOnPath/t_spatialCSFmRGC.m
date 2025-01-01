@@ -7,7 +7,7 @@ function t_spatialCSFmRGC(options)
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions 
 %    using mRGCMosaic neural respone engine and (optionally) the meta contrast method.
 %
-% See also: t_spatialCSFcMosaic, t_metaContrastCSFcMosaic, t_spatialCSFmRGCDynamicStimulus
+% See also: t_spatialCSF, t_metaContrastCSFcMosaic, t_spatialCSFmRGCDynamicStimulus
 
 % History:
 %   11/02/2024  FH   Adopted based on t_spatialCSFmRGCMosaic.m
@@ -20,7 +20,7 @@ arguments
     options.validationThresholds (1,:) double = [];
 
     % Apply a filter to the spectra before computing responses?  See
-    % t_spatialCSFcMosaicFilter
+    % t_spatialCSFFilter
     options.filter (1,1) = struct('spectralSupport',[],'transmission',[]);
 
     % Use meta contrast method to speed things up?

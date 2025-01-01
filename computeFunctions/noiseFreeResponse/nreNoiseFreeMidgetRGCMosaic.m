@@ -116,7 +116,7 @@ verbose = p.Results.verbose;
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0 | isempty(neuralEngine))
-    dataOut = generateDefaultParams(opticsType);
+    dataOut = generateDefaultParams(opticsType,oiPadMethod);
     return;
 end
 
@@ -310,10 +310,10 @@ end
 
 end
 
-function p = generateDefaultParams(opticsType)
+function p = generateDefaultParams(opticsType,oiPadMethod)
 
 % Genrate optics params through common bottleneck
-opticsParams = generateOpticsParams(opticsType);
+opticsParams = generateOpticsParams(opticsType,oiPadMethod);
 
 % Neurons of the pre-computed mRGCMosaic have spatial RFs that were
 % optimized using a double exponential surround model with parameters around

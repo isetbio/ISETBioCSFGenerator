@@ -1,8 +1,8 @@
-function thresholdRet = t_spatialCSFcMosaic(options)
+function thresholdRet = t_spatialCSF(options)
 % Compute spatial CSF in different color directions, with fEM
 %
 % Syntax:
-%   thresholdRet = t_spatialCSFcMosaic;
+%   thresholdRet = t_spatialCSF;
 %
 % Description:
 %    Use ISETBioCSFGenerator to run out CSFs in different color directions.
@@ -17,7 +17,7 @@ function thresholdRet = t_spatialCSFcMosaic(options)
 % Optional key/value pairs
 %    See source code arguments block for a list of key/value pairs.
 
-% See also: t_spatialCSFcMosaic, t_modulatedGratingsSceneGeneration,
+% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
 % History:
@@ -35,59 +35,65 @@ function thresholdRet = t_spatialCSFcMosaic(options)
 % Examples:
 %{
      % Validate without meta contrast
-     t_spatialCSFcMosaic('useMetaContrast', false, ...
+     t_spatialCSF('useMetaContrast', false, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Poisson', ...
         'whichClassifierEngine', 'rcePoisson', ...
+        'oiPadMethod', 'mean', ...
         'validationThresholds', [0.0418    0.0783    0.1540    0.6759]);
 
      % Validate with meta contrast
-     t_spatialCSFcMosaic('useMetaContrast', true, ...
+     t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Poisson', ...
         'whichClassifierEngine', 'rcePoisson', ...
+        'oiPadMethod', 'mean', ...
         'validationThresholds', [0.0418    0.0783    0.1540    0.6759]);
 
     % mRGCMosaic
-    t_spatialCSFcMosaic('useMetaContrast', true, ...
+    t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
         'whichNoisyInstanceNre', 'Gaussian', ...
         'whichClassifierEngine', 'rceTemplateDistance', ...
         'useConeContrast', true, ...
+        'oiPadMethod', 'zero', ...
         'validationThresholds', []);
 
     % Verify that sceneAsresponses sce works
-    t_spatialCSFcMosaic('useMetaContrast', true, ...
+    t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'sceneAsResponses', ...
         'whichNoisyInstanceNre', 'Poisson', ...
         'whichClassifierEngine', 'rcePoisson', ...
+        'oiPadMethod', 'mean', ...
         'validationThresholds', [0.3520    0.1895    0.1572    0.1554]);
 
     % Verify that FEMs work without crashing
-    % t_spatialCSFcMosaic('useMetaContrast', true, ...
+    % t_spatialCSF('useMetaContrast', true, ...
     %     'useFixationalEMs', true, ...
     %     'whichNoiseFreeNre', 'excitationsCmosaic', ...
     %     'whichNoisyInstanceNre', 'Poisson', ...
     %     'whichClassifierEngine', 'rcePoisson');
 
     % Verify that Gaussian noise works as well as template classifier
-    t_spatialCSFcMosaic('useMetaContrast', true, ...
+    t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Gaussian', ...
         'whichClassifierEngine', 'rceTemplateDistance', ...
+        'oiPadMethod', 'mean', ...
         'validationThresholds', [0.0993    0.1673    0.3377    1.0000]);
 
     % Verify that rcePcaSVM works
-    t_spatialCSFcMosaic('useMetaContrast', true, ...
+    t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'excitationsCmosaic', ...
         'whichNoisyInstanceNre', 'Poisson', ...
         'whichClassifierEngine', 'rcePcaSVM', ...
+        'oiPadMethod', 'mean', ...
         'validationThresholds', [0.0377    0.0796    0.1427    0.6956]);
 %}
 
@@ -98,7 +104,7 @@ arguments
     options.validationThresholds (1,:) double = [];
 
     % Apply a filter to the spectra before computing responses?  See
-    % t_spatialCSFcMosaicFilter
+    % t_spatialCSFFilter
     options.filter (1,1) = struct('spectralSupport',[],'transmission',[]);
 
     % Use meta contrast method to speed things up?
@@ -130,6 +136,12 @@ arguments
 
     % Fast parameters?
     options.fastParameters (1,1) logical = true;
+
+    % Optical image pad method
+    options.oiPadMethod (1,:) char = 'zero';
+
+    % Verbose?
+    options.verbose (1,1) logical = true;
 end
 
 %% Close any stray figs
@@ -151,24 +163,31 @@ whichNoisyInstanceNre = options.whichNoisyInstanceNre;
 whichClassifierEngine = options.whichClassifierEngine;
 validationThresholds = options.validationThresholds;
 fastParameters = options.fastParameters;
+oiPadMethod = options.oiPadMethod;
+verbose = options.verbose;
 
 %% Figure output base name
 figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
     sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s', mfilename, ...
     useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,whichClassifierEngine));
 
-%% Set some parameters that control what we do
+%% Set base values for parameters that control what we do
 if (~useFixationalEMs)
     framesNum = 1;
 else
     framesNum = 4;
     validationThresholds = [];
 end
-
-%% Default frame duration.
-%
-% This might get overridden in some of the case statements below.
+sizeDegs = [0.5 0.5];
+pixelsNum = 128;
+gratingOrientationDegs = 90;
+gratingSpatialPhase = 90;
 frameDurationSeconds = 0.1;
+
+%% Null stimulus contrast
+%
+% Used when we operate with cone contrasts rather than excitations
+nullContrast = 0.0;
 
 %% Freeze rng for replicatbility
 rng(1);
@@ -210,14 +229,10 @@ assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
 % noise, and includes optical blur.
 switch (whichNoiseFreeNre)
     case 'mRGCMosaic'
-        % Set some example specific parameters
-        sizeDegs = [0.5 0.5];
-        pixelsNum = 128;
-        gratingOrientationDegs = 90;
-
         % mRGCMosaic responses
         nreNoiseFreeResponse = @nreNoiseFreeMidgetRGCMosaic;
-        noiseFreeResponseParams = nreNoiseFreeMidgetRGCMosaic;
+        noiseFreeResponseParams = nreNoiseFreeMidgetRGCMosaic([],[],[],[], ...
+            'oiPadMethod',oiPadMethod);
         noisyInstancesComputeFunction = @nreNoisyInstancesGaussian;
         noisyInstancesParams = noisyInstancesComputeFunction();
 
@@ -263,20 +278,20 @@ switch (whichNoiseFreeNre)
 
         % Handle cone contrast setting
         if (useConeContrast)
-            noiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
+            noiseFreeResponseParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
         else
-            noiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
+            noiseFreeResponseParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
         end
 
         % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
         % the specified noiseFreeParams.mRGCMosaicParams.inputSignalType
-        switch (noiseFreeParams.mRGCMosaicParams.inputSignalType)
+        switch (noiseFreeResponseParams.mRGCMosaicParams.inputSignalType)
             case 'coneContrast'
                 % Cone modulations which are in the range of [-1 1]
                 if (noisyInstancesParams.sigma > 1)
                     error('Gaussian noise sigma (%f) is too large when operating on ''%s''.', ...
                         noisyInstancesParams.sigma,...
-                        noiseFreeParams.mRGCMosaicParams.inputSignalType);
+                        noiseFreeResponseParams.mRGCMosaicParams.inputSignalType);
                 end
 
             case 'coneExcitations'
@@ -284,11 +299,11 @@ switch (whichNoiseFreeNre)
                 if (noisyInstancesParams.sigma < 1)
                     error('Gaussian noise sigma (%f) is too small when operating on ''%s''.', ...
                         noisyInstancesParams.sigma,...
-                        noiseFreeParams.mRGCMosaicParams.inputSignalType);
+                        noiseFreeResponseParams.mRGCMosaicParams.inputSignalType);
                 end
 
             otherwise
-                error('Unknown mRGC signal type specified: ''%s''.', noiseFreeParams.mRGCMosaicParams.inputSignalType)
+                error('Unknown mRGC signal type specified: ''%s''.', noiseFreeResponseParams.mRGCMosaicParams.inputSignalType)
         end
 
         % These are tuned to match range of nre performance. See Quest
@@ -301,14 +316,9 @@ switch (whichNoiseFreeNre)
         slopeDelta = 2.5/20;
 
     case 'excitationsCmosaic'
-        % Cone exciations
-        sizeDegs = [0.5 0.5];
-        pixelsNum = 128;
-        gratingOrientationDegs = 90;
-        gratingSpatialPhase = 90;
-
         nreNoiseFreeResponse = @nreNoiseFreeCMosaic;
-        noiseFreeResponseParams = nreNoiseFreeCMosaic;
+        noiseFreeResponseParams = nreNoiseFreeCMosaic([],[],[],[], ...
+            'oiPadMethod',oiPadMethod);
         noiseFreeResponseParams.coneMosaicParams.sizeDegs = sizeDegs;
         noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = frameDurationSeconds;
         if (~all(noiseFreeResponseParams.coneMosaicParams.sizeDegs == [0.5 0.5]))
@@ -336,11 +346,12 @@ switch (whichNoiseFreeNre)
     case 'sceneAsResponses'
         % This is image photon counts, and thus provides an estimate of the
         % upper bound on performance for a photon limited system
-        sizeDegs = [0.5 0.5];
-        pixelsNum = 128;
-        gratingOrientationDegs = 90;
-
+        %
+        % Override size and frame duration to put performance in reasonable range
+        sizeDegs = [0.05 0.05];
         frameDurationSeconds = 1e-16;
+
+        % Set up nre
         nreNoiseFreeResponse = @nreNoiseFreeSceneAsResponses;
         noiseFreeResponseParams = nreNoiseFreeSceneAsResponses;
         noiseFreeResponseParams.frameDurationSeconds = frameDurationSeconds;
@@ -374,14 +385,6 @@ switch (whichNoisyInstanceNre)
     otherwise
         error('Unsupported noisy instances nre specified');
 end
-
-% Stimulus timing parameters
-stimulusDuration = framesNum*frameDurationSeconds;
-theNeuralEngine = neuralResponseEngine( ...
-    nreNoiseFreeResponse, ...
-    nreNoisyInstances, ...
-    noiseFreeResponseParams, ...
-    noisyInstancesParams);
 
 %% Instantiate the responseClassifierEngine
 %
@@ -455,27 +458,34 @@ questEnginePara = struct( ...
     'stopCriterion', 0.05);
 
 %% Set grating engine parameters
-gratingEngineParams = struct( ...
+stimulusDuration = framesNum*frameDurationSeconds;
+gratingSceneParams = struct( ...
         'fovDegs', min(sizeDegs), ...
-        'orientation', gratingOrientationDegs, ...
         'presentationMode', 'flashedmultiframe', ...
         'duration', stimulusDuration, ...
-        'temporalFrequency', framesNum/stimulusDuration, ...
+        'temporalFrequencyHz', framesNum/stimulusDuration, ...
+        'orientation', gratingOrientationDegs, ...
         'spatialPhase', gratingSpatialPhase, ...
         'pixelsNum', pixelsNum, ...
         'filter', filter...
         );
-        % 'spatialEnvelope', 'soft', ...
 
 %% With access to theGratingSceneEngine, we can compute theNullStimulusScene
-if (useConeContrast)
-    nullContrast = 0.0;
-    
-    nullGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequencyCPD, ...
-        gratingEngineParams);
+if (useConeContrast) 
+    dummySpatialFrequency = 4;
+    nullGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequency, ...
+        gratingSceneParams);
     nullStimulusSceneSequence = nullGratingSceneEngine.compute(nullContrast);
-    noiseFreeParams.nullStimulusSceneSequence = nullStimulusSceneSequence;
+    noiseFreeResponseParams.nullStimulusSceneSequence = nullStimulusSceneSequence;
 end
+
+%% Create the neural engine
+theNeuralEngine = neuralResponseEngine( ...
+    nreNoiseFreeResponse, ...
+    nreNoisyInstances, ...
+    noiseFreeResponseParams, ...
+    noisyInstancesParams ...
+    );
 
 %% Set up EM object to define fixational eye movement paths
 %
@@ -529,7 +539,7 @@ for idx = 1:length(spatialFreqs)
     % Create scene produces square scenes.  We use the min of the mosaic
     % field size to pick a reasonable size
     gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(idx),...
-       gratingEngineParams);
+       gratingSceneParams);
 
     % Create the sceMetaContrast scene engine
     if (useMetaContrast)
@@ -547,9 +557,10 @@ for idx = 1:length(spatialFreqs)
         [logThreshold(idx), questObj, ~, para(idx,:)] = ...
             computeThreshold(theMetaSceneEngine, theMetaNeuralEngine, whichClassifierEngine, ...
             classifierPara, thresholdPara, questEnginePara, ...
-            'TAFC', true, 'useMetaContrast', true, ...
+            'TAFC', true, 'useMetaContrast', useMetaContrast, ...
             'trainFixationalEM', trainFixationalEMObj, ...
-            'testFixationalEM', testFixationalEMObj);
+            'testFixationalEM', testFixationalEMObj, ...
+            'verbose', verbose);
     else
         % Compute the threshold for our grating scene with the previously
         % defined neural and classifier engine.  This function does a lot
@@ -558,7 +569,7 @@ for idx = 1:length(spatialFreqs)
         [logThreshold(idx), questObj, ~, para(idx,:)] = ...
             computeThreshold(gratingSceneEngine, theNeuralEngine, whichClassifierEngine, ...
             classifierPara, thresholdPara, questEnginePara, ...
-            'TAFC', true, 'useMetaContrast', false, ...
+            'TAFC', true, 'useMetaContrast', useMetaContrast, ...
             'trainFixationalEM', trainFixationalEMObj, ...
             'testFixationalEM', testFixationalEMObj);
     end
