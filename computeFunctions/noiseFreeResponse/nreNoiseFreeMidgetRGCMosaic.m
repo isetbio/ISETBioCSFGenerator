@@ -146,7 +146,8 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
     if (~isempty(theMRGCmosaic.theNativeOptics))
         theOptics = theMRGCmosaic.theNativeOptics;
     elseif (~isempty(theMRGCmosaic.theCustomOptics))
-        theOptics = theMRGCmosaic.theCustomOptics;
+        error('Not expecting to use theCustomOptics field here');
+        % theOptics = theMRGCmosaic.theCustomOptics;
     else
         error('No optics found in the mRGCMosaic object!')
     end

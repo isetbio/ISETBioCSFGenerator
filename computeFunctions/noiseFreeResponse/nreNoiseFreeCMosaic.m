@@ -155,7 +155,7 @@ function dataOut = nreNoiseFreeCMosaic(...
 p = inputParser;
 p.KeepUnmatched = true;
 p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
-p.addParameter('opticsType','oiEnsembleGenerate',@(x) (ischar(x) | isstruct(x));
+p.addParameter('opticsType','oiEnsembleGenerate',@(x)(ischar(x) | isstruct(x)));
 p.addParameter('oiPadMethod','zero',@ischar)
 p.addParameter('verbose',true,@islogical);
 varargin = ieParamFormat(varargin);
@@ -185,8 +185,10 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
         'noiseFlag', 'none' ...
         );
 
-    % Generate optics
-    theOptics = generateOpticsFromParams(opticsType,theConeMosaic);
+    % Generate optics and mosaic
+    [theOptics,theMosaic] = generateOpticsAndMosaicFromParams(...
+        noiseFreeComputeParams.opticsParams, ...
+        noiseFreeComputeParams.coneMosaicParams);
 
     % Handle contrast versus excitations
     if (strcmp(noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneContrast'))
