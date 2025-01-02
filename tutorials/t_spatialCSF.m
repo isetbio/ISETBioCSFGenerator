@@ -52,7 +52,7 @@ function thresholdRet = t_spatialCSF(options)
         'oiPadMethod', 'mean', ...
         'validationThresholds', [0.0418    0.0783    0.1540    0.6759]);
 
-    % mRGCMosaic nre basic tes
+    % mRGCMosaic nre basic test
     t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
@@ -253,8 +253,8 @@ switch (whichNoiseFreeNre)
         nreNoiseFreeResponse = @nreNoiseFreeMidgetRGCMosaic;
         noiseFreeResponseParams = nreNoiseFreeMidgetRGCMosaic([],[],[],[], ...
             'oiPadMethod',oiPadMethod);
-        noisyInstancesComputeFunction = @nreNoisyInstancesGaussian;
-        noisyInstancesParams = noisyInstancesComputeFunction();
+        % noisyInstancesComputeFunction = @nreNoisyInstancesGaussian;
+        % noisyInstancesParams = noisyInstancesComputeFunction();
 
         % Modify certain parameters of interest
         %
@@ -294,9 +294,9 @@ switch (whichNoiseFreeNre)
         noiseFreeResponseParams.mRGCMosaicParams.outputSignalType = mRGCOutputSignalType;
         switch (mRGCOutputSignalType)
             case 'mRGCs'
-                noisyInstancesParams.sigma = 0.0001;
+                gaussianSigma = 0.0015;
             case 'cones'
-                noisyInstancesParams.sigma = 100;
+                gaussianSigma = 50;
             otherwise
                 error('Unknown mRGC output signal type specified');
         end
@@ -315,7 +315,7 @@ switch (whichNoiseFreeNre)
         switch (noiseFreeResponseParams.mRGCMosaicParams.inputSignalType)
             case 'coneContrast'
                 % Cone modulations which are in the range of [-1 1]
-                if (noisyInstancesParams.sigma > 1)
+                if (gaussianSigma > 1)
                     error('Gaussian noise sigma (%f) is too large when operating on ''%s''.', ...
                         noisyInstancesParams.sigma,...
                         noiseFreeResponseParams.mRGCMosaicParams.inputSignalType);
@@ -323,7 +323,7 @@ switch (whichNoiseFreeNre)
 
             case 'coneExcitations'
                 % Excitations are unlikely to be of order 1.
-                if (noisyInstancesParams.sigma < 1)
+                if (gaussianSigma < 1)
                     error('Gaussian noise sigma (%f) is too small when operating on ''%s''.', ...
                         noisyInstancesParams.sigma,...
                         noiseFreeResponseParams.mRGCMosaicParams.inputSignalType);
@@ -360,6 +360,9 @@ switch (whichNoiseFreeNre)
         else
             noiseFreeResponseParams.coneMosaicParams.outputSignalType = 'coneExcitations';
         end
+
+        % Set Gaussian sigma in case we're using Gaussian noise below.
+        gaussianSigma = 50;
 
         % These are tuned to match range of nre performance. See Quest
         % structure below for comments on what they mean.
@@ -407,7 +410,7 @@ switch (whichNoisyInstanceNre)
     case 'Gaussian'
         nreNoisyInstances = @nreNoisyInstancesGaussian;
         noisyInstancesParams = nreNoisyInstancesGaussian;
-        noisyInstancesParams.sigma = 50;
+        noisyInstancesParams.sigma = gaussianSigma;
 
     otherwise
         error('Unsupported noisy instances nre specified');
