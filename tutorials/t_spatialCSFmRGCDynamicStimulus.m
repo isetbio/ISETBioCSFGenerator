@@ -35,7 +35,7 @@ useTemporalFilter = true;
 
 % Grab root folder for figure output
 csfGeneratorRootPath = ISETBioCSFGeneratorRootPath;
-figurePath = fullfile(csfGeneratorRootPath,'local','figures');
+figurePath = fullfile(csfGeneratorRootPath,'local',mfilename,'figures');
 resultsPath = fullfile(csfGeneratorRootPath,'local','results');
 if (~exist(figurePath,'dir'))
     mkdir(figurePath);
