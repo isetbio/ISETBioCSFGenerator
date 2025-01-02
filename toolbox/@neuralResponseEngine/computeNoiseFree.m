@@ -30,7 +30,7 @@ function [noiseFreeResponses, temporalSupportSeconds] = computeNoiseFree(obj, ..
 %                                     of the scene sequence 
 %
 % Optional key/value input arguments:
-%    optional key/value pairs       - these are passed directly to the
+%    key/value pairs                - these are passed directly by the compute method to the
 %                                     computeFunction of the @neuralResponseEngine object
 %
 % Outputs:

@@ -56,6 +56,7 @@ function thresholdRet = t_spatialCSF(options)
     t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'mRGCOutputSignal', 'mRGCs', ...
         'whichNoisyInstanceNre', 'Gaussian', ...
         'whichClassifierEngine', 'rceTemplateDistance', ...
         'useConeContrast', true, ...
@@ -122,6 +123,12 @@ arguments
     %            'mRGCMosaic'
     options.whichNoiseFreeNre (1,:) char  = 'excitationsCmosaic'
 
+    % If the neural model is mRGCMosaic, can specify where to pick 
+    % off neural responses.
+    %    Choices: 'mRGCs' (default). Use mRGC signals.
+    %             'cones'.  Use the cone excitations (or contrast) 
+    options.mRGCOutputSignalType (1,:) char = 'mRGCs;'
+
     % Choose noise model
     %   Choices: 'Poisson'
     %            'Gaussian'
@@ -162,14 +169,16 @@ whichNoiseFreeNre = options.whichNoiseFreeNre;
 whichNoisyInstanceNre = options.whichNoisyInstanceNre;
 whichClassifierEngine = options.whichClassifierEngine;
 validationThresholds = options.validationThresholds;
+mRGCOutputSignalType = options.mRGCOutputSignalType;
 fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
 verbose = options.verbose;
 
 %% Figure output base name
 figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
-    sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s', mfilename, ...
-    useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,whichClassifierEngine));
+    sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
+    useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+    whichClassifierEngine,mRGCOutputSignalType));
 
 %% Set base values for parameters that control what we do
 if (~useFixationalEMs)
@@ -258,14 +267,11 @@ switch (whichNoiseFreeNre)
             'eccentricityDegs', [] ...
             );
 
-        % 3. If we want to use custom optics (not the optics that were used to optimize
-        % the mRGCMosaic), pass the optics here. This is commented out but
-        % illustrates where and how a custom oi would be passed.
-        %noiseFreeParams.customOpticsToEmploy = oiCreate();
-
-        % 4. Set the input cone mosaic integration time
+        % 3. Set the input cone mosaic integration time
         noiseFreeResponseParams.mRGCMosaicParams.coneIntegrationTimeSeconds = frameDurationSeconds;
 
+        % 3. Set the noise level.
+        %
         % Post-cone summation noise is additive Gaussian noise with a desired
         % sigma. When the input is raw cone excitations, the sigma should be
         % expressed in terms of cone excitations/integration time. When the input
@@ -274,7 +280,15 @@ switch (whichNoiseFreeNre)
         % So if your mRGC mosiac were operating directly on cone excitations, a
         % different value more like 100 or 1000 would be reasonable, depending on
         % light level.
-        noisyInstancesParams.sigma = 0.015;
+        noiseFreeResponseParams.mRGCMosaicParams.outputSignalType = mRGCOutputSignalType;
+        switch (mRGCOutputSignalType)
+            case 'mRGCs'
+                noisyInstancesParams.sigma = 0.005;
+            case 'cones'
+                noisyInstancesParams.sigma = 100;
+            otherwise
+                error('Unknown mRGC output signal type specified');
+        end
 
         % Handle cone contrast setting
         if (useConeContrast)
@@ -282,6 +296,8 @@ switch (whichNoiseFreeNre)
         else
             noiseFreeResponseParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
         end
+
+        % Handle mRGC output signal type
 
         % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
         % the specified noiseFreeParams.mRGCMosaicParams.inputSignalType
