@@ -89,8 +89,8 @@ close all;
 % Make sure figures directory exists so that output writes
 % don't fail
 rootPath = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(rootPath,'local','figures'),'dir'))
-    mkdir(fullfile(rootPath,'local','figures'));
+if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
+    mkdir(fullfile(rootPath,'local',mfilename,'figures'));
 end
 
 % Load in a monitor that mimics the primaries in the Berkely AO system.
@@ -288,7 +288,7 @@ for ff = 1:length(theSmallEsceneSequence0degs)
         set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
         projectBaseDir = ISETBioCSFGeneratorRootPath;
-        pdfFile = fullfile(projectBaseDir,'local','figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
+        pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
         NicePlot.exportFigToPDF(pdfFile,hFig, 300);
     end
 end
