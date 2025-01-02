@@ -1,6 +1,17 @@
 function [theOptics,theMosaic] = generateOpticsAndMosaicFromParams(opticsParams,theMosaic,mosaicParams)
+% Generate optics and mosaic from the parameters, based on parameter types.
+%
+% Syntax:
+%    [theOptics,theMosaic] = generateOpticsAndMosaicFromParams(opticsParams,theMosaic,mosaicParams)
+%
+% Description:
+%    Generate optics and mosaic objects from parameters.
+%    You can also pass the mosaic, in which case 
 
-% Generate mosaic if needed
+% You can also just pass the mosaic in which case its parameters are
+% probably not needed.
+
+% Generate theOptics
 if (isempty(theMosaic))
     switch (mosaicParams.type)
         case 'cMosaic'
