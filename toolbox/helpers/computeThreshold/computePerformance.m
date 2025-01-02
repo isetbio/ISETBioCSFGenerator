@@ -82,19 +82,13 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                             response instances
 %     visualizeAllComponents - Logical (default false). Whether to visualize or not.
 %     verbose               - Logical (default true). Print out stuff.
-%     trainFixationalEM     - Empty (default) or a fixationalEM object
+%     fixationalEM          - Empty (default) or a fixationalEM object
 %                             that describes one eye movement path.  If
 %                             the latter, this must have one position per
-%                             frame of the passed scene sequence, in which
-%                             case it is applied on training trials.
-%     testFixationalEM      - Empty (default) or a fixationalEM object
-%                             that describes one eye movement path.  If
-%                             the latter, this must have one position per
-%                             frame of the passed scene sequence, in which
-%                             case it is applied on testing trials.
+%                             frame of the passed scene sequence.
 %
 % See also
-%   t_spatialCSF, t_spatialCsf, computeThreshold
+%   t_spatialCSF,  computeThreshold
 %
 
 % History:
@@ -111,15 +105,13 @@ p.addParameter('useMetaContrast', false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('verbose', true, @islogical);
-p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
-p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
+p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
 saveResponses = p.Results.saveResponses;
 visualizeAllComponents = p.Results.visualizeAllComponents;
-trainFixationalEMObj = p.Results.trainFixationalEM;
-testFixationalEMObj = p.Results.testFixationalEM;
+fixationalEMObj = p.Results.fixationalEM;
 
 % Empty responses
 responses = [];
@@ -153,7 +145,7 @@ if (~isempty(trainNoiseFlag))
             [inSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine{n}.computeNoiseFree(...
                 theScenes, ...
                 temporalSupport, ...
-                'fixationalEM',trainFixationalEMObj);
+                'fixationalEM',fixationalEMObj);
 
             % Add noise (or not) to nth alternative responses
             [inSampleStimResponsesCell{n}, ~] = theNeuralEngine{n}.computeNoisyInstances( ...
@@ -166,7 +158,7 @@ if (~isempty(trainNoiseFlag))
             [inSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine.computeNoiseFree(...
                 theScenes{n}, ...
                 temporalSupport, ...
-                'fixationalEM',trainFixationalEMObj);
+                'fixationalEM',fixationalEMObj);
 
             % Add noise (or not) to nth alternative responses
             [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
@@ -269,7 +261,7 @@ for n = 1:nScenes
         [outSampleNoiseFreeStimResponsesCell{n}, ~] = theNeuralEngine.computeNoiseFree(...
             theScenes{n}, ...
             temporalSupport, ...
-            'fixationalEM',testFixationalEMObj);
+            'fixationalEM',fixationalEMObj);
 
         % Add noise (or not) to nth alternative responses
         [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
