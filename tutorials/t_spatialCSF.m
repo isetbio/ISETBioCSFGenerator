@@ -294,7 +294,7 @@ switch (whichNoiseFreeNre)
         noiseFreeResponseParams.mRGCMosaicParams.outputSignalType = mRGCOutputSignalType;
         switch (mRGCOutputSignalType)
             case 'mRGCs'
-                noisyInstancesParams.sigma = 0.005;
+                noisyInstancesParams.sigma = 0.0001;
             case 'cones'
                 noisyInstancesParams.sigma = 100;
             otherwise
