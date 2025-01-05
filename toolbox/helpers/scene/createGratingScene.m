@@ -23,6 +23,9 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 %                         Default 90 (vertical grating).
 %   'duration'          - The duration of the stimulus, in seconds.
 %                         Default: 0.1.
+%   'frameDuration'     - The duration of a frame, in seconds.  This
+%                         together with duration determine the number of
+%                         frames. Default 0.1.
 %   'presentationMode'  - Presentation mode, for now either 'flashed' (1
 %                         frame), or 'sampled motion', (4 frames, with
 %                         spatial phase advancing by 90 degs in each frame)
@@ -37,17 +40,19 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 
 % Set up parameters with defaults
 p = inputParser;
+varargin = ieParamFormat(varargin);
 p.addParameter('meanLuminanceCdPerM2', 40, @isscalar);
 p.addParameter('meanChromaticityXY', [0.3 0.32], @(x)(isnumeric(x) && numel(x) == 2));
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'rect', 'soft','halfcos'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('frameDuration',0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
 p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ...
-    ismember(x,{'flashed', 'flashedmultiframe', 'drifted', 'counter phase modulated'})));
+    ismember(x,{'flashed', 'flashedmultiframe', 'drifted', 'counterphasemodulated'})));
 p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isscalar(x)));
@@ -87,40 +92,40 @@ if(pixelsNum >= 1)
     gratingParams.pixelsNum = pixelsNum;
 end
 
+% Determine number of frames
+framesNum = round(p.Results.duration / p.Results.frameDuration);
+
 % Configure temporal modulation:
 switch (p.Results.presentationMode)
     case 'flashed'
         % Single frame presentation
-        gratingParams.frameDurationSeconds = p.Results.duration;
         gratingParams.temporalModulation = 'flashed';
+        gratingParams.frameDurationSeconds = p.Results.frameDuration;
         gratingParams.temporalModulationParams =  struct(...
             'stimOnFrameIndices', 1, 'stimDurationFramesNum', 1);
      
     case 'flashedmultiframe'
         % Multiple frame presentation
-        gratingParams.frameDurationSeconds = 1/p.Results.temporalFrequencyHz;
-        framesNum = round(p.Results.duration/gratingParams.frameDurationSeconds);
         gratingParams.temporalModulation = 'flashed';
         gratingParams.temporalModulationParams =  struct(...
             'stimOnFrameIndices', 1:framesNum, 'stimDurationFramesNum', framesNum);
 
     case 'drifted'
         gratingParams.temporalModulation = 'drifted';
-        gratingParams.frameDurationSeconds = 1.0/(p.Results.temporalFrequencyHz*360/p.Results.spatialPhaseAdvanceDegs);
+        gratingParams.frameDurationSeconds = p.Results.frameDuration;
         gratingParams.temporalModulationParams =  struct(...
             'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
-            'stimDurationTemporalCycles', p.Results.duration * p.Results.temporalFrequencyHz);
+            'stimDurationFramesNum', framesNum);
         
-    case 'counter phase modulated'
-        gratingParams.temporalModulation = 'counter phase modulated';
-        gratingParams.frameDurationSeconds = 1.0/(p.Results.temporalFrequencyHz*360/p.Results.spatialPhaseAdvanceDegs);
+    case 'counterphasemodulated'
+        gratingParams.temporalModulation = 'counterphasemodulated';
+        gratingParams.frameDurationSeconds = p.Results.frameDuration;
         gratingParams.temporalModulationParams =  struct(...
             'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
-            'stimDurationTemporalCycles', p.Results.duration * p.Results.temporalFrequencyHz);
+            'stimDurationFramesNum', framesNum);
         
     otherwise
-        error('Unknown presentationMode: ''%s''.', p.Results.presentationMode);
-        
+        error('Unknown presentationMode: ''%s''.', p.Results.presentationMode);    
 end
 
 % Instantiate a sceneEngine with the above sceneComputeFunctionHandle

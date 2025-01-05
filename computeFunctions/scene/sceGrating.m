@@ -131,24 +131,24 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             % Compute the phase needed to shift for each frame
             deltaSpatialPhaseDegs = 360/stimDurationOneCycleFrames;
 
-            % Compute the total number of frames 
-            % = total drifting cycles x number of frames needed for 1 cycle
-            stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
+            % Number of frames 
+            stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
             
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is kept constant throughout all frames
                 frameContrastSequence(frameIndex) = testContrast;
+                
                 % Spatial phase is advanced
                 frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs;
             end
     
     
-        case 'counter phase modulated'
+        case 'counterphasemodulated'
             % See the comments for case 'drifted' for the four lines below
             stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
             stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
             deltaTemporalPhaseDegs = 360/stimDurationOneCycleFrames;
-            stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
+            stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
 
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
@@ -449,6 +449,7 @@ function validateParams(gratingParamsStruct)
     end
     
     % Further validations
+    %
     % spatialEnvelope
     if (isfield(gratingParamsStruct, 'spatialEnvelope'))
         assert(ismember(gratingParamsStruct.spatialEnvelope, {'none', 'disk', 'rect', 'soft','halfcos'}), ...
@@ -465,7 +466,7 @@ function validateParams(gratingParamsStruct)
     
     % temporalModulationParams
     if (isfield(gratingParamsStruct, 'temporalModulation'))
-        assert(ismember(gratingParamsStruct.temporalModulation, {'flashed', 'drifted', 'counter phase modulated'}), ...
+        assert(ismember(gratingParamsStruct.temporalModulation, {'flashed', 'drifted', 'counterphasemodulated'}), ...
             sprintf('>> Invalid value for temporalModulation: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
             gratingParamsStruct.temporalModulation, mfilename()));
     end
@@ -497,11 +498,11 @@ function p = generateDefaultParams()
         'spatialModulationDomain', 'cartesian', ...     % spatial: domain of spatial modulation - choose between {'cartesian', 'polar'}
         'spatialEnvelope', 'soft', ...                  % spatial: envelope - choose between {'disk', 'rect', 'soft'}
         'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs    
-        'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
+        'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed', 'drifted', 'counterphasemodulated'}
         'temporalModulationParams', struct(...          % temporal: modulation params struct
             'stimOnFrameIndices', [2 3], ...            %   params relevant to the temporalModulationMode
             'stimDurationFramesNum', 4), ...            %   params relevant to the temporalModulationMode
-        'frameDurationSeconds', 20/1000 ...            % temporal: frame duration, in seconds
+        'frameDurationSeconds', 20/1000 ...             % temporal: frame duration, in seconds
     );
 
 end

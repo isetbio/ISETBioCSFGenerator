@@ -17,7 +17,7 @@ function thresholdRet = t_spatialCSF(options)
 % Optional key/value pairs
 %    See source code arguments block for a list of key/value pairs.
 
-% See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
+% See also: t_modulatedGratingsSceneGeneration,
 %           t_chromaticThresholdContour, computeThreshold, computePerformance
 
 % History:
@@ -52,6 +52,17 @@ function thresholdRet = t_spatialCSF(options)
         'oiPadMethod', 'mean', ...
         'validationThresholds', [0.0418    0.0783    0.1540    0.6759]);
 
+    % Validate with cone contrast, temporal filter, meta contrast
+    t_spatialCSF('useMetaContrast', true, ...
+        'useFixationalEMs', false, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson', ...
+        'useConeContrast', true, ...
+        'useTemporalFilter', true, ...
+        'oiPadMethod', 'zero', ...
+        'validationThresholds', []);
+
     % mRGCMosaic nre basic test
     t_spatialCSF('useMetaContrast', true, ...
         'useFixationalEMs', false, ...
@@ -84,11 +95,13 @@ function thresholdRet = t_spatialCSF(options)
         'validationThresholds', [0.3520    0.1895    0.1572    0.1554]);
 
     % Verify that FEMs work without crashing
-    % t_spatialCSF('useMetaContrast', true, ...
-    %     'useFixationalEMs', true, ...
-    %     'whichNoiseFreeNre', 'excitationsCmosaic', ...
-    %     'whichNoisyInstanceNre', 'Poisson', ...
-    %     'whichClassifierEngine', 'rcePoisson');
+    t_spatialCSF('useMetaContrast', true, ...
+        'useFixationalEMs', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson', ...
+        'oiPadMethod', 'zero', ...
+        'validationThresholds', []);
 
     % Verify that Gaussian noise works as well as template classifier
     t_spatialCSF('useMetaContrast', true, ...
@@ -158,6 +171,9 @@ arguments
     % Optical image pad method
     options.oiPadMethod (1,:) char = 'zero';
 
+    % Apply temporal filter
+    options.useTemporalFilter (1,1) logical = false;
+
     % Verbose?
     options.verbose (1,1) logical = true;
 end
@@ -183,6 +199,7 @@ validationThresholds = options.validationThresholds;
 mRGCOutputSignalType = options.mRGCOutputSignalType;
 fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
+useTemporalFilter = options.useTemporalFilter;
 verbose = options.verbose;
 
 %% Figure output base name
@@ -192,10 +209,14 @@ figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
     whichClassifierEngine,mRGCOutputSignalType));
 
 %% Set base values for parameters that control what we do
-if (~useFixationalEMs)
+if (~useFixationalEMs & ~useTemporalFilter)
     framesNum = 1;
+    padFramesBefore = 0;
+    padFramesAfter = 0;
 else
     framesNum = 4;
+    padFramesBefore = 0;
+    padFramesAfter = 0;
     validationThresholds = [];
 end
 sizeDegs = [0.5 0.5];
@@ -203,6 +224,20 @@ pixelsNum = 128;
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
 frameDurationSeconds = 0.1;
+
+%% Set up temporal filter if we have one. 
+%
+% Note that the nre returns the same number of frames it was passed.  So if
+% you want post-stimulus responses produced by the temporal filter, you
+% need to pad your input appropriately. That padding process is not
+% illustrated in this tutorial script.
+if (useTemporalFilter)
+    temporalFilterValues = [1 1 1];
+    temporalFilter.filterValues = temporalFilterValues/sum(temporalFilterValues);
+    temporalFilter.temporalSupport = frameDurationSeconds*[0:(length(temporalFilterValues)-1)];
+else
+    temporalFilter = [];
+end
 
 %% Null stimulus contrast
 %
@@ -488,17 +523,44 @@ questEnginePara = struct( ...
     'stopCriterion', 0.05);
 
 %% Set grating engine parameters
+%
+% NEED TO FIX UP TIME STUFF HERE.
 stimulusDuration = framesNum*frameDurationSeconds;
-gratingSceneParams = struct( ...
+if (~useFixationalEMs & ~useTemporalFilter)
+    gratingSceneParams = struct( ...
         'fovDegs', min(sizeDegs), ...
         'presentationMode', 'flashedmultiframe', ...
         'duration', stimulusDuration, ...
-        'temporalFrequencyHz', framesNum/stimulusDuration, ...
+        'frameDurationSeconds', stimulusDuration/framesNum, ...
         'orientation', gratingOrientationDegs, ...
         'spatialPhase', gratingSpatialPhase, ...
         'pixelsNum', pixelsNum, ...
         'filter', filter...
         );
+else
+    % Dynamic stimulus parameters
+    presentationMode = 'counterphasemodulated';
+    theTemporalFrequencyHz = 5.0;
+    gratingSceneParams = struct( ...
+        'fovDegs', min(sizeDegs), ...
+        'presentationMode', presentationMode, ...
+        'duration', stimulusDuration, ...
+        'frameDurationSeconds', stimulusDuration/framesNum, ...
+        'temporalFrequencyHz', theTemporalFrequencyHz, ...
+        'orientation', gratingOrientationDegs, ...
+        'spatialPhase', gratingSpatialPhase, ...
+        'pixelsNum', pixelsNum, ...
+        'filter', filter ...
+        );
+    % Here are some other parameters that might get set for a dynamic
+    % stimulus.  And we could consider 'drifted' as mode in addition, but
+    % may need to special case 0 cpd as 'counterphasemodulated' if we do.
+    %
+    % 'spatialEnvelope', 'rect', ...
+    % 'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
+    % 'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
+    % 'spatialPhaseAdvanceDegs', 360*(frameDurationSeconds*theTemporalFrequencyHz), ...
+end
 
 %% With access to theGratingSceneEngine, we can compute theNullStimulusScene
 if (useConeContrast) 
@@ -517,29 +579,6 @@ theNeuralEngine = neuralResponseEngine( ...
     noisyInstancesParams ...
     );
 
-%% Set up EM object to define fixational eye movement paths
-%
-% There are lots of things we can control. In any case, the path
-% defined here is used for training.
-%
-% Setting the seed to -1 means don't touch the seed or call rng().
-if (useFixationalEMs)
-    trainFixationalEMObj = fixationalEM;
-    trainFixationalEMObj.microSaccadeType = 'none';
-    trainFixationalEMObj.randomSeed = -1;
-    femDuration = stimulusDuration;
-    femTimeStep = frameDurationSeconds;
-    femNumberFEMs = 1;
-    femComputeVelocity = false;
-    trainFixationalEMObj.compute(femDuration, femTimeStep, femNumberFEMs, femComputeVelocity);
-
-    % And this one for testing.
-    testFixationalEMObj = trainFixationalEMObj;
-else
-    trainFixationalEMObj = [];
-    testFixationalEMObj = [];
-end
-
 %% If using meta contrast, set this up.
 if (useMetaContrast)
     metaSceneEngineParams = sceMetaContrast;
@@ -554,6 +593,31 @@ if (useMetaContrast)
     metaNeuralResponseEngineNoisyInstanceParams =  nreNoisyInstancesMetaContrast;
     metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
 end
+
+%% Set up EM object to define fixational eye movement paths
+%
+% There are lots of things we can control. In any case, the path
+% defined here is used for training.
+%
+% Setting the seed to -1 means don't touch the seed or call rng().
+if (useFixationalEMs) 
+    trainFixationalEMObj = fixationalEM;
+    trainFixationalEMObj.microSaccadeType = 'none';   % No microsaccades, just drift
+    trainFixationalEMObj.randomSeed = -1;
+    computeVelocitySignal = false;
+    centerPaths = false;
+    centerPathsAtSpecificTimeMsec = [];
+    trainFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, 1, computeVelocitySignal, ...
+        'centerPaths', centerPaths, 'centerPathsAtSpecificTimeMsec', centerPathsAtSpecificTimeMsec);
+
+    % And this one for testing.
+    testFixationalEMObj = trainFixationalEMObj;
+else
+    trainFixationalEMObj = [];
+    testFixationalEMObj = [];
+end
+
+
 
 %% Compute threshold for each spatial frequency
 % See toolbox/helpers for functions createGratingScene, computeThreshold,

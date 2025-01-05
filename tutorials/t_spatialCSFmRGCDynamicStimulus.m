@@ -157,7 +157,7 @@ switch (noiseFreeParams.mRGCMosaicParams.inputSignalType)
                 noiseFreeParams.mRGCMosaicParams.inputSignalType);
         end
 
-    case 'cone_excitations'
+    case 'coneExcitations'
         % Excitations are unlikely to be of order 1.
         if (noisyInstancesParams.sigma < 1)
             error('Gaussian noise sigma (%f) is too small when operating on ''%s''.', ...

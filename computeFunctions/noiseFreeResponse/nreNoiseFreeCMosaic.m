@@ -209,7 +209,7 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
             clear listOfNullOpticalImages;
 
             % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
-            coneMosaicNullResponse = theMRGCmosaic.inputConeMosaic.compute(...
+            coneMosaicNullResponse = theConeMosaic.compute(...
                 nullOIsequence, ...
                 'nTrials', 1);
 
@@ -269,7 +269,11 @@ else
     % We were passed a fixational EM.  Check that it is OK for our
     % purposes, and then comptute with it.
     %
-    % Check
+    % Check NEED TO ADD
+
+    % Also return the path in units of microns
+    fixationalEMObj.emPosMicrons = ...
+        theConeMosaic.distanceDegreesToDistanceMicronsForCmosaic(fixationalEMObj.emPosArcMin / 60);
 
     % Compute
     theConeMosaic.emSetFixationalEMObj(fixationalEMObj);
