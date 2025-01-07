@@ -114,7 +114,7 @@ function dataOut = nreNoisyInstancesGaussian(...
     varargin = ieParamFormat(varargin);
     p.parse(varargin{:});
 
-    % Return a dummy neural pipeline struct to keep parent object happy if
+    % Return a neural pipeline struct to keep parent object happy if
     % it hasn't yet stored one.
     if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noisyInstances'))
         % At present, sigma must be a scalar.  Maybe in the future it could be
@@ -136,12 +136,12 @@ function dataOut = nreNoisyInstancesGaussian(...
         oldSeed = rng(p.Results.rngSeed);
     end
 
-    % Compute noisy response instances
+    % Get dimensions of noiseFreeResponses
     [noiseFreeInstancesNum, responseDim, framesNum] = size(noiseFreeResponses);
     if (noiseFreeInstancesNum ~= 1)
         error('Need to generalize beyond one noise-free instance');
     end
-noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
+    noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     switch (noiseFlag)
         case {'random'}
             for ii = 1:instancesNum
