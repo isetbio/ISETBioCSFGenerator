@@ -42,9 +42,10 @@ function t_cMosaicSpatioTemporalStimulation
     % The stimulus presentation mode            
     presentationMode = 'drifted';
 
-    % Frame duration for each spatial phase (20 msec)
-    % The cone mosaic integration time has to be smaller or equal to this
-    displayFrameDurationSeconds = 25/1000;
+    % Frame duration
+    %
+    % The cone mosaic integration time has to be equal to this
+    displayFrameDurationSeconds = 100/1000;
 
     % Spatial frequency in c/deg
     spatialFrequency = 10;
@@ -63,6 +64,7 @@ function t_cMosaicSpatioTemporalStimulation
                     'meanLuminanceCdPerM2', meanLuminancdCdPerM2, ...
                     'meanChromaticityXY', meanChromaticityXY, ...
                     'duration', stimulusDurationSeconds, ...
+                    'frameDurationSeconds', displayFrameDurationSeconds, ...
                     'temporalFrequencyHz', temporalFrequencyHz, ...
                     'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs, ...
                     'fovDegs', stimFOVdegs, ...
@@ -111,16 +113,15 @@ function t_cMosaicSpatioTemporalStimulation
    
     % Compute the sequence of optical images corresponding to the drifting grating
     fprintf('Computing the optical image sequence');
-    
     framesNum = numel(theDriftingGratingSequence);
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
         theListOfOpticalImages{frame} = ...
             oiCompute(theOptics, theDriftingGratingSequence{frame}, 'pad value', 'mean');
     end
+
     % Generate an @oiSequence object from the list of computed optical images
     theOIsequence = oiArbitrarySequence(theListOfOpticalImages, theStimulusTemporalSupportSeconds);
-
 
     % Compute the spatiotemporal cone-mosaic activation (mean response + 4
     % noisy response instances)

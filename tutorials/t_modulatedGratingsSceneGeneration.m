@@ -83,13 +83,18 @@ function t_modulatedGratingsSceneGeneration
  
     % STIMULUS #2 
     % An L+M Gabor grating with a 60 deg orientation drifting at 4 Hz
+    temporalFrequencyHz = 4;
+    framesPerCycle = 10;
+    numberOfCycles = 5;
+    stimDurationFramesNum = framesPerCycle*numberOfCycles;
     customGratingParams = defaultGratingParams;
     customGratingParams.coneContrastModulation = [0.6 0.6 0.0];
     customGratingParams.orientationDegs = 60;
     customGratingParams.temporalModulation = 'drifted';
-    customGratingParams.temporalModulationParams =  struct(...                        
-            'temporalFrequencyHz', 4, ...           
-            'stimDurationTemporalCycles', 5);
+    customGratingParams.temporalModulationParams =  struct(... 
+            'temporalFrequencyHz', temporalFrequencyHz, ...
+            'stimOnFrameIndices', 1:stimDurationFramesNum, ...       
+            'stimDurationFramesNum',stimDurationFramesNum);
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
@@ -114,10 +119,11 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.minPixelsNumPerCycle = 100;
     customGratingParams.spatialPhaseDegs = 0;
     customGratingParams.spatialEnvelopeRadiusDegs = 0.25;
-    customGratingParams.temporalModulation = 'counter phase modulated';
+    customGratingParams.temporalModulation = 'counterphasemodulated';
     customGratingParams.temporalModulationParams =  struct(...                 
             'temporalFrequencyHz', 2, ...           
-            'stimDurationTemporalCycles', 4);
+            'stimOnFrameIndices', 1:stimDurationFramesNum, ...       
+            'stimDurationFramesNum',stimDurationFramesNum);
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
@@ -141,10 +147,11 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.minPixelsNumPerCycle = 30;
     customGratingParams.spatialPhaseDegs = 0;
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
-    customGratingParams.temporalModulation = 'counter phase modulated';
+    customGratingParams.temporalModulation = 'counterphasemodulated';
     customGratingParams.temporalModulationParams =  struct(...                        
-            'temporalFrequencyHz', 4, ...           
-            'stimDurationTemporalCycles', 5);
+            'temporalFrequencyHz', temporalFrequencyHz, ...
+            'stimOnFrameIndices', 1:stimDurationFramesNum, ...       
+            'stimDurationFramesNum',stimDurationFramesNum);
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
@@ -167,8 +174,9 @@ function t_modulatedGratingsSceneGeneration
     customGratingParams.spatialEnvelopeRadiusDegs = 0.2;
     customGratingParams.temporalModulation = 'drifted';
     customGratingParams.temporalModulationParams =  struct(...                        
-            'temporalFrequencyHz', 2, ...           
-            'stimDurationTemporalCycles', 4);
+            'temporalFrequencyHz', temporalFrequencyHz, ...
+            'stimOnFrameIndices', 1:stimDurationFramesNum, ...       
+            'stimDurationFramesNum',stimDurationFramesNum);
         
     % Re-instantiate the sceneEngine with the customGratingParams
     theSceneEngine = sceneEngine(sceneComputeFunction, customGratingParams);
