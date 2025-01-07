@@ -33,6 +33,11 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %                                  As noted above, execute sceGrating at
 %                                  the command line to see the structure's
 %                                  fields and default values.
+% 
+%                                  The fields and their meanings are
+%                                  provided in the function that generates
+%                                  the default parameters at the end of
+%                                  this source file.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -52,7 +57,7 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration, t_spatialCSF
+%     t_sceneGeneration, t_spatialCSF, createGratingScene.
 
 % History:
 %    10/05/2020  NPC  Wrote it.
