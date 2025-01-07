@@ -37,6 +37,9 @@ function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, var
 %   10/23/20  dhb  Added comments.
 %   11/07/20  npc  Added 'presentationMode' key/value pair   
 %   12/10/20  npc  Remove override of minPixelsNumPerCycle 
+%   01/05/24  dhb  Tried ot make duration independent of temporal
+%                  frequency, or at least clarify that the duration is
+%                  the duration. Probably broke things when I did this.
 
 % Set up parameters with defaults
 p = inputParser;
@@ -94,6 +97,9 @@ end
 
 % Determine number of frames
 framesNum = round(p.Results.duration / p.Results.frameDurationSeconds);
+if (abs(framesNum*p.Results.frameDurationSeconds - p.Results.duration) > 1e-6)
+    error('Inconsistency between duration, frame duration, and an integer number of frames');
+end
 
 % Configure temporal modulation:
 switch (p.Results.presentationMode)
