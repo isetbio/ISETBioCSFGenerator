@@ -79,7 +79,8 @@ function thresholdRet = t_spatialCSF(options)
         'useFixationalEMs', false, ...
         'temporalFilterValues', [1 0 0 0], ...
         'oiPadMethod', 'zero', ...
-        'validationThresholds', []);
+        'validationThresholds', [], ...
+        'visualizeEachCompute', true);
 
     % Validate with cone contrast, temporal filter, meta contrast.  This
     % is a delta function with a big gain reduction prior to noise being added,
@@ -246,6 +247,9 @@ arguments
 
     % Verbose?
     options.verbose (1,1) logical = true;
+
+    % Visualize the output of each compute (useful for debuging code)
+    options.visualizeEachCompute  (1,1) logical = false;
 end
 
 %% Close any stray figs
@@ -272,6 +276,7 @@ fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
 thresholdPara = options.thresholdPara;
 verbose = options.verbose;
+visualizeEachCompute = options.visualizeEachCompute;
 
 %% Freeze rng for replicatbility and validation
 rng(1);
@@ -575,6 +580,7 @@ if (~useFixationalEMs & isempty(temporalFilter))
         );
 else
     % Dynamic stimulus parameters
+    
     presentationMode = 'counterphasemodulated';
     gratingSceneParams = struct( ...
         'fovDegs', min(sizeDegs), ...
@@ -587,6 +593,7 @@ else
         'pixelsNum', pixelsNum, ...
         'filter', filter ...
         );
+    
     % Here are some other parameters that might get set for a dynamic
     % stimulus.  And we could consider 'drifted' as mode in addition, but
     % may need to special case 0 cpd as 'counterphasemodulated' if we do.
@@ -597,10 +604,11 @@ else
     % 'spatialPhaseAdvanceDegs', 360*(frameDurationSeconds*theTemporalFrequencyHz), ...
 end
 
-%% With access to theGratingSceneEngine, we can compute theNullStimulusScene
+%% If we use cone contrast, we will neeed a null scene for normalization.
+%  So, we create a nullGratingSceneEngine so we can generate the theNullStimulusScene
 if (useConeContrast) 
     dummySpatialFrequency = 4;
-    nullGratingSceneEngine = createGratingScene(chromaDir, dummySpatialFrequency, ...
+    nullGratingSceneEngine = createGratingSceneEngine(chromaDir, dummySpatialFrequency, ...
         gratingSceneParams);
     nullStimulusSceneSequence = nullGratingSceneEngine.compute(nullContrast);
     noiseFreeResponseParams.nullStimulusSceneSequence = nullStimulusSceneSequence;
@@ -653,9 +661,14 @@ else
 end
 
 %% Compute threshold for each spatial frequency
-% See toolbox/helpers for functions createGratingScene, computeThreshold,
+% See toolbox/helpers for functions createGratingSceneEngine, computeThreshold,
 % computePeformance
 dataFig = figure();
+for idx = 1:length(spatialFreqs)
+    axLeft{idx}  = subplot(length(spatialFreqs), 2, idx * 2 - 1);
+    axRight{idx} = subplot(length(spatialFreqs), 2, idx * 2);
+end
+
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
     % Create a static grating scene with a particular chromatic direction,
@@ -665,8 +678,10 @@ for idx = 1:length(spatialFreqs)
     %
     % Create scene produces square scenes.  We use the min of the mosaic
     % field size to pick a reasonable size
-    gratingSceneEngine = createGratingScene(chromaDir, spatialFreqs(idx),...
+    gratingSceneEngine = createGratingSceneEngine(chromaDir, spatialFreqs(idx),...
        gratingSceneParams);
+
+    gratingSceneEngine.visualizeEachCompute = visualizeEachCompute;
 
     % Create the sceMetaContrast scene engine
     if (useMetaContrast)
@@ -703,14 +718,21 @@ for idx = 1:length(spatialFreqs)
 
     % Plot stimulus
     figure(dataFig);
-    subplot(length(spatialFreqs), 2, idx * 2 - 1);
+    
 
+   
+    gratingSceneEngine.visualizeEachCompute = false;
     visualizationContrast = 1.0;
     [theSceneSequence] = gratingSceneEngine.compute(visualizationContrast);
-    gratingSceneEngine.visualizeStaticFrame(theSceneSequence);
+
+    gratingSceneEngine.visualizeStaticFrame(... 
+        theSceneSequence, ...
+        'frameToVisualize', 1, ...
+        'axesHandle', axLeft{idx});
 
     % Plot data and psychometric curve
     % with a marker size of 2.5
+    axis(axRight{idx});
     subplot(length(spatialFreqs), 2, idx * 2);
     questObj.plotMLE(2.5,'para',para(idx,:));
     drawnow;

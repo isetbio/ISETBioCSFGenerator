@@ -1,8 +1,8 @@
-function [gratingScene] = createGratingScene(chromaticDir, spatialFrequency, varargin)
-% Create a grating scene using sceGrating
+function [gratingSceneEngine] = createGratingSceneEngine(chromaticDir, spatialFrequency, varargin)
+% Create a grating scene engine using the sceGrating compute function
 %
 % Syntax:
-%   [gratingScene] = createGratingScene(chromaticDir, spatialFreqency)
+%   [gratingSceneEngine] = createGratingSceneEngine(chromaticDir, spatialFreqency)
 %
 % Description:
 %    Create a @sceneEngine object representing a chromatic grating scene.  Key/value pairs
@@ -91,7 +91,7 @@ gratingParams.warningInsteadOfErrorOnOutOfGamut = p.Results.warningInsteadOfErro
 
 % Set pixel size
 pixelsNum = p.Results.pixelsNum;
-if(pixelsNum >= 1)
+if (pixelsNum >= 1)
     gratingParams.pixelsNum = pixelsNum;
 end
 
@@ -136,6 +136,6 @@ end
 
 % Instantiate a sceneEngine with the above sceneComputeFunctionHandle
 % and the custom grating params.
-gratingScene = sceneEngine(sceneComputeFunction, gratingParams);
+gratingSceneEngine = sceneEngine(sceneComputeFunction, gratingParams);
 
 end

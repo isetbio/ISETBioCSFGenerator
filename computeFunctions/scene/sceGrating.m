@@ -96,7 +96,11 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
     
     % Generate ths scene sequence depicting frames of the modulated grating
     [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast);
-    
+
+    if (sceneEngineOBJ.visualizeEachCompute)
+        sceneEngineOBJ.visualizeSceneSequence(theSceneSequence, temporalSupportSeconds);
+    end
+
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence = theSceneSequence;
     dataOut.temporalSupport = temporalSupportSeconds;
@@ -108,6 +112,7 @@ end
 
 function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
 
+    
     switch (gratingParams.temporalModulation)
         case 'flashed'
             for frameIndex = 1:gratingParams.temporalModulationParams.stimDurationFramesNum
@@ -154,10 +159,10 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
             deltaTemporalPhaseDegs = 360/stimDurationOneCycleFrames;
             stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
-
+            
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
-                frameContrastSequence(frameIndex) = testContrast * sind((frameIndex-1)*deltaTemporalPhaseDegs);
+                frameContrastSequence(frameIndex) = testContrast * cosd((frameIndex-1)*deltaTemporalPhaseDegs);
                 
                 % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
@@ -189,6 +194,10 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
         [theSceneFrame, outOfGamutFlag(frameIndex)] = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
             frameContrastSequence(frameIndex), frameSpatialPhaseSequence(frameIndex));
         
+        % Name the scene frame
+        theSceneFrameLabel = sprintf('''%s'' - frame %d with contrast: %g', gratingParams.temporalModulation, frameIndex, frameContrastSequence(frameIndex));
+        theSceneFrame = sceneSet(theSceneFrame, 'name', theSceneFrameLabel);
+
         % Store the scene frame
         theSceneSequence{frameIndex} = theSceneFrame;
         % Store the timestamp of the scene frame
