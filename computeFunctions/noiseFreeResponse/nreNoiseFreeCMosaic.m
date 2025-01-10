@@ -317,19 +317,16 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
 end
 
 
-% Visualize responses
-if (neuralEngine.visualizeEachCompute)
-    visualizeNoiseFreeNeuralResponse(theConeMosaic, theNeuralResponses, temporalSupportSeconds);
-end
-
-
 % Convert cMosaic return convention to nre return convention.  We have
 % to deal with unfortunate special casing because of the way Matlab
 % and/or cMosaic handle singleton dimensions, so that the returned
 % responses always have the responses in the column(s).
 theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
 
-
+% Visualize responses
+if (neuralEngine.visualizeEachCompute)
+    visualizeCMosaicNeuralResponse(theConeMosaic, theNeuralResponses, temporalSupportSeconds, 'noise-free cMosaic responses');
+end
 
 % Assemble the dataOut struct
 dataOut = struct(...
@@ -381,100 +378,3 @@ p = struct(...
     'temporalFilter', temporalFilter ...
     );
 end
-
-
-% Visualization function for nreNoiseFreeCMosaic compute function
-function visualizeNoiseFreeNeuralResponse(theConeMosaic, theNeuralResponses, temporalSupportSeconds)
-
-    hFig = figure(1999);
-    clf;
-    set(hFig, 'Position', [10 10 1700 500], 'Color', [1 1 1]);
-    axCmosaicActivation = subplot(1,2,1);
-    axConeResponseTimeResponses = subplot(1,2,2);
-
-    [nTrials, nTimePoints, nCones] = size(theNeuralResponses);
-    activationRange = prctile(theNeuralResponses(:),[5 95]);
-
-    theLconeResponses = theNeuralResponses(:,:,theConeMosaic.lConeIndices);
-    theMconeResponses = theNeuralResponses(:,:,theConeMosaic.mConeIndices);
-    theSconeResponses = theNeuralResponses(:,:,theConeMosaic.sConeIndices);
-
-    iTrial = 1;
-    m = max(squeeze(theLconeResponses(iTrial,:,:)),[], 1);
-    [~,idx] = sort(m);
-    theLconeResponses = theLconeResponses(iTrial,:,idx);
-    m = max(squeeze(theMconeResponses(iTrial,:,:)),[], 1);
-    [~,idx] = sort(m);
-    theMconeResponses = theMconeResponses(iTrial,:,idx);
-    m = max(squeeze(theSconeResponses(iTrial,:,:)),[], 1);
-    [~,idx] = sort(m);
-    theSconeResponses = theSconeResponses(iTrial,:,idx);
-
-    if (~isempty(theConeMosaic.fixEMobj)) 
-        emPathsDegs = theConeMosaic.fixEMobj.emPosArcMin/60;
-    else
-        emPathsDegs = [];
-    end
-
-
-    for iPoint = 1:nTimePoints
-        if (isempty(emPathsDegs))
-            theConeMosaic.visualize(...
-                'figureHandle', hFig, ...
-                'axesHandle', axCmosaicActivation, ...
-                'activation', theNeuralResponses(iTrial, iPoint,:), ...
-                'activationRange', activationRange, ...
-                'plotTitle', sprintf('noise free cone excitations (t: %2.1f msec)', temporalSupportSeconds(iPoint)*1e3));
-            
-        else
-            theConeMosaic.visualize(...
-                'figureHandle', hFig, ...
-                'axesHandle', axCmosaicActivation, ...
-                'activation', theNeuralResponses(iTrial, iPoint,:), ...
-                'activationRange', activationRange, ...
-                'currentEMposition', squeeze(emPathsDegs(1,iPoint,:)), ...
-                'displayedEyeMovementData', struct('trial', 1, 'timePoints', 1:iPoint), ...
-                'plotTitle', sprintf('noise free cone excitations (t: %2.1f msec)', temporalSupportSeconds(iPoint)*1e3));
- 
-        end
-
-        drawnow;
-    end
-
-    mosaicSpatioTemporalActivation = [];
-    mosaicSpatioTemporalActivation(:, 1:numel(theConeMosaic.lConeIndices)) = squeeze(theLconeResponses(iTrial,:,:));
-    mosaicSpatioTemporalActivation(:, size(mosaicSpatioTemporalActivation,2)+(1:numel(theConeMosaic.mConeIndices))) = squeeze(theMconeResponses(iTrial,:,:));
-    mosaicSpatioTemporalActivation(:, size(mosaicSpatioTemporalActivation,2)+(1:numel(theConeMosaic.sConeIndices))) = squeeze(theSconeResponses(iTrial,:,:));
-    
-    dt = 0.5*(temporalSupportSeconds(2)-temporalSupportSeconds(1));
-    imagesc(axConeResponseTimeResponses, temporalSupportSeconds*1e3, 1:theConeMosaic.conesNum, mosaicSpatioTemporalActivation');
-    hold(axConeResponseTimeResponses, 'on');
-    LconeRect.x = [temporalSupportSeconds(1)-dt temporalSupportSeconds(end)+dt temporalSupportSeconds(end)+dt temporalSupportSeconds(1)-dt temporalSupportSeconds(1)-dt]*1e3;
-    LconeRect.y = [1  1 numel(theConeMosaic.lConeIndices) numel(theConeMosaic.lConeIndices) 1];
-    MconeRect.x = [temporalSupportSeconds(1)-dt temporalSupportSeconds(end)+dt temporalSupportSeconds(end)+dt temporalSupportSeconds(1)-dt temporalSupportSeconds(1)-dt]*1e3;
-    MconeRect.y = numel(theConeMosaic.lConeIndices) + [1  1 numel(theConeMosaic.mConeIndices) numel(theConeMosaic.mConeIndices) 1];
-    SconeRect.x = [temporalSupportSeconds(1)-dt temporalSupportSeconds(end)+dt temporalSupportSeconds(end)+dt temporalSupportSeconds(1)-dt temporalSupportSeconds(1)-dt]*1e3;
-    SconeRect.y = numel(theConeMosaic.lConeIndices) + numel(theConeMosaic.mConeIndices) + [1  1 numel(theConeMosaic.sConeIndices) numel(theConeMosaic.sConeIndices) 1];
-    
-    plot(axConeResponseTimeResponses, LconeRect.x, LconeRect.y, 'r-', 'LineWidth', 2);
-    plot(axConeResponseTimeResponses, MconeRect.x, MconeRect.y, 'g-', 'LineWidth', 2);
-    plot(axConeResponseTimeResponses, SconeRect.x, SconeRect.y, 'c-', 'LineWidth', 2);
-    for i = 1:numel(temporalSupportSeconds)
-        plot(axConeResponseTimeResponses, (temporalSupportSeconds(i)-dt)*[1 1]*1e3, [1 theConeMosaic.conesNum], 'k-', 'LineWidth', 1.0);
-    end
-
-    colormap(brewermap(1024, '*greys'));
-
-    hold(axConeResponseTimeResponses, 'off');
-    set(axConeResponseTimeResponses, ...
-        'XLim', [temporalSupportSeconds(1)-dt temporalSupportSeconds(end)+dt]*1e3, ...
-        'YLim', [1 theConeMosaic.conesNum], ...
-        'CLim', [activationRange(1) activationRange(2)]);
-    axis(axConeResponseTimeResponses, 'xy');
-    xlabel(axConeResponseTimeResponses, 'time (msec)');
-    ylabel(axConeResponseTimeResponses, 'cone index');
-    set(axConeResponseTimeResponses, 'FontSize', 16, 'Color', [1 1 1]);
-    drawnow;
-
-end
-

@@ -99,6 +99,7 @@ function dataOut = nreNoisyInstancesPoisson(...
 %    10/19/2020  dhb  Fix comment to reflect fact that we now return
 %                     instancesNum instances in noise free case.
 
+
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
@@ -130,6 +131,7 @@ function dataOut = nreNoisyInstancesPoisson(...
     if (noiseFreeInstancesNum ~= 1)
         error('Need to generalize beyond one noise-free instance');
     end
+
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     switch (noiseFlag)
         case {'random'}
@@ -169,6 +171,14 @@ function dataOut = nreNoisyInstancesPoisson(...
         rng(oldSeed);
     end
     
+    % Visualize responses
+    if (neuralEngineOBJ.visualizeEachCompute)
+        if (isequal(neuralEngineOBJ.noiseFreeComputeFunction, @nreNoiseFreeCMosaic))
+            size(temporalSupportSeconds)
+            visualizeCMosaicNeuralResponse(neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaic, noisyResponseInstances, temporalSupportSeconds, 'noisy cMosaic responses');
+        end
+    end
+
     % Assemble the dataOut struct
     dataOut = struct(...
         'neuralResponses', noisyResponseInstances, ...
