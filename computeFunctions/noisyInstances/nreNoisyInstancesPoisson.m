@@ -173,8 +173,9 @@ function dataOut = nreNoisyInstancesPoisson(...
     
     % Visualize responses
     if (neuralEngineOBJ.visualizeEachCompute)
+
+        % Select appropriate visualizing function depending on the computeFunction
         if (isequal(neuralEngineOBJ.noiseFreeComputeFunction, @nreNoiseFreeCMosaic))
-            size(temporalSupportSeconds)
             visualizeCMosaicNeuralResponse(neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaic, noisyResponseInstances, temporalSupportSeconds, 'noisy cMosaic responses');
         end
     end
