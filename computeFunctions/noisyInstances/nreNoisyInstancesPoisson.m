@@ -176,7 +176,7 @@ function dataOut = nreNoisyInstancesPoisson(...
 
         % Select appropriate visualizing function depending on the computeFunction
         if (isequal(neuralEngineOBJ.noiseFreeComputeFunction, @nreNoiseFreeCMosaic))
-            visualizeCMosaicNeuralResponse(neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaic, noisyResponseInstances, temporalSupportSeconds, 'noisy cMosaic responses');
+            nreVisualizeCMosaic(neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaic, noisyResponseInstances, temporalSupportSeconds, 'noisy cMosaic responses');
         end
     end
 

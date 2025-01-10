@@ -1,7 +1,8 @@
 % Visualization function for CMosaic based neural responses 
-function visualizeCMosaicNeuralResponse(theConeMosaic, theNeuralResponses, temporalSupportSeconds, responseLabel)
+function nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportSeconds, responseLabel)
 
-    % Back to cMosaic's native response format
+    % Back to cMosaic's native response format because we will be calling
+    % cMosaic visualizer functions which expect it
     if (size(theNeuralResponses,2) == theConeMosaic.conesNum)
         theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
     end

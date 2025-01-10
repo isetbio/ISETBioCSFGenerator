@@ -325,7 +325,7 @@ theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
 
 % Visualize responses
 if (neuralEngine.visualizeEachCompute)
-    visualizeCMosaicNeuralResponse(theConeMosaic, theNeuralResponses, temporalSupportSeconds, 'noise-free cMosaic responses');
+    nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportSeconds, 'noise-free cMosaic responses');
 end
 
 % Assemble the dataOut struct
