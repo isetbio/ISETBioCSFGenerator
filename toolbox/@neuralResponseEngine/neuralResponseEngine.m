@@ -42,7 +42,8 @@ classdef neuralResponseEngine < handle
 
     %% Public properties
     properties
-
+        % User-settable flag for visualizing the output of each compute() call
+        visualizeEachCompute = false;
     end
     
     %% Private properties

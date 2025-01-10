@@ -147,7 +147,8 @@ function thresholdRet = t_spatialCSF(options)
         'useFixationalEMs', true, ...
         'temporalFilterValues', [], ...
         'oiPadMethod', 'zero', ...
-        'validationThresholds', []);
+        'validationThresholds', [], ...
+        'visualizeEachCompute', true);
 
     % Verify that Gaussian noise works, as well as template classifier
     t_spatialCSF('useMetaContrast', true, ...
@@ -622,6 +623,9 @@ theNeuralEngine = neuralResponseEngine( ...
     noisyInstancesParams ...
     );
 
+% Set the neuralEngine's visualizeEachCompute property
+theNeuralEngine.visualizeEachCompute = visualizeEachCompute;
+
 %% If using meta contrast, set this up.
 if (useMetaContrast)
     metaSceneEngineParams = sceMetaContrast;
@@ -681,6 +685,7 @@ for idx = 1:length(spatialFreqs)
     gratingSceneEngine = createGratingSceneEngine(chromaDir, spatialFreqs(idx),...
        gratingSceneParams);
 
+    % Set the sceneEngine's visualizeEachCompute property
     gratingSceneEngine.visualizeEachCompute = visualizeEachCompute;
 
     % Create the sceMetaContrast scene engine
