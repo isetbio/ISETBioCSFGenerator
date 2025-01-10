@@ -20,6 +20,13 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %    All scene functions used with the sceneEngine class must conform to
 %    this API.
 %
+%    In addition to computing, this function should, after it comptues the
+%    scene sequence, check the visualizeEachCompute flag of the
+%    sceneEngineOBJ and call the sceneEngineOBJ.visualizeSceneSequence method
+%    if it is true. This then will cause figures to appear that visualize
+%    the scenes, which is helpful for debugging. Note that everything runs
+%    much more slowly in this case.
+%
 % Inputs:
 %    sceneEngineOBJ              - Calling @sceneEngine object.  This is
 %                                  currently unused, but passing it allows us
@@ -97,6 +104,8 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
     % Generate ths scene sequence depicting frames of the modulated grating
     [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast);
 
+    % Check scene engine visualize flag and call the scene enging visualize
+    % method if it is true.
     if (sceneEngineOBJ.visualizeEachCompute)
         sceneEngineOBJ.visualizeSceneSequence(theSceneSequence, temporalSupportSeconds);
     end

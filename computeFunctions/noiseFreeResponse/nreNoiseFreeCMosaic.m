@@ -339,9 +339,6 @@ if (returnTheNoiseFreePipeline)
 end
 end
 
-
-
-
 function p = generateDefaultParams(opticsType,oiPadMethod)
 
 % Generate optics parameters
