@@ -27,6 +27,13 @@ function dataOut = nreNoisyInstancesPoisson(...
 %       directly - it should be called by the compute method of its parent
 %       @neuralResponseEngine.
 %
+% In addition to computing, this function checks the `visualizeEachCompute` 
+%    flag of the neuralEngineOBJ and, if it set, calls the appropriate
+%    visualization function. This causes figures to appear that visualize
+%    the noisy spatiotemporal response instances, which is helpful for debugging.
+%    Note that everything runs much more slowly in this case.
+
+
 % Inputs:
 %    neuralEngineOBJ                - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
@@ -171,7 +178,9 @@ function dataOut = nreNoisyInstancesPoisson(...
         rng(oldSeed);
     end
     
-    % Visualize responses
+    % Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
+    % call the appropriate visualization function to visualize the generated 
+    % spatiotemporal noisy response instances.
     if (neuralEngineOBJ.visualizeEachCompute)
 
         % Select appropriate visualizing function depending on the computeFunction

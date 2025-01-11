@@ -31,6 +31,13 @@ function dataOut = nreNoiseFreeCMosaic(...
 %    directly - it should be called by the compute method of its parent
 %    @neuralResponseEngine.
 %
+%    In addition to computing, this function checks the `visualizeEachCompute` 
+%    flag of the neuralEngine object and, if it set, calls the nreVisualizeCMosaic()
+%    visualization function. This causes figures to appear that visualize
+%    the noise-free spatiotemporal activation of the cone mosaic, along with 
+%    any eye movements that may be in effect, which is helpful for debugging.
+%    Note that everything runs much more slowly in this case.
+%
 % Inputs:
 %    neuralEngine                   - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
@@ -323,7 +330,10 @@ end
 % responses always have the responses in the column(s).
 theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
 
-% Visualize responses
+% Check the visualizeEachCompute flag of the neuralEngine object, and if set to true,
+% call the nreVisualizeCMosaic() function to visualize the generated 
+% spatiotemporal noise-free mosaic activation along with any eye movements that 
+% may be in effect.
 if (neuralEngine.visualizeEachCompute)
     nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportSeconds, 'noise-free cMosaic responses');
 end
