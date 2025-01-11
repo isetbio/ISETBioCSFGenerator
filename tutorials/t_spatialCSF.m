@@ -598,7 +598,6 @@ if (~useFixationalEMs & isempty(temporalFilter))
         );
 else
     % Dynamic stimulus parameters
-    
     presentationMode = 'counterphasemodulated';
     gratingSceneParams = struct( ...
         'fovDegs', min(sizeDegs), ...
