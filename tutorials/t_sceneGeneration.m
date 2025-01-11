@@ -24,8 +24,7 @@ function t_sceneGeneration
 %
 % See Also:
 %   t_neuralResponseCompute, t_neuralResponseCompute,
-%   t_spatialCSF, computePerformance
-%
+%   t_spatialCSF, computeThreshold, computePerformance
 
 % History:
 %    09/21/2020  NPC  Wrote it.
@@ -68,8 +67,8 @@ function t_sceneGeneration
     [theSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(testContrast);
     
     % Visualize the generated scene sequence
-    debugSceneGeneration = true;
-    if (debugSceneGeneration)
+    visualizeSceneGeneration = true;
+    if (visualizeSceneGeneration)
         theSceneEngine.visualizeSceneSequence(theSceneSequence, theSceneTemporalSupportSeconds);
     end
     
@@ -84,8 +83,19 @@ function t_sceneGeneration
     % generates one scene, perhaps with a different contrast.
     theSceneEngine = sceneEngine(sceneComputeFunction, customSceneParams);
     [theSceneSequence1, theSceneTemporalSupportSeconds1] = theSceneEngine.compute(testContrast);
-    if (debugSceneGeneration)
+    if (visualizeSceneGeneration)
         theSceneEngine.visualizeSceneSequence(theSceneSequence1, theSceneTemporalSupportSeconds1);
+    end
+
+    % We can also have a look at one frame.  It is not very interesting for
+    % this example, but this does illustrate the call.  See t_spatialCSF
+    % for a more interesting application of this method.
+    if (visualizeSceneGeneration)
+        figure;
+        theSceneEngine.visualizeStaticFrame(...
+            theSceneSequence1, ...
+            'frameToVisualize', 1, ...
+            'axesHandle', gca);
     end
     
     % As noted above, if you didn't know what fields the parameters struct

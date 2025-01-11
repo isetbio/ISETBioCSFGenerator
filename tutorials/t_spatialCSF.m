@@ -80,7 +80,7 @@ function thresholdRet = t_spatialCSF(options)
         'temporalFilterValues', [1 0 0 0], ...
         'oiPadMethod', 'zero', ...
         'validationThresholds', [], ...
-        'visualizeEachCompute', true);
+        'visualizeEachScene', true, 'visualizeEachResponse', true););
 
     % Validate with cone contrast, temporal filter, meta contrast.  This
     % is a delta function with a big gain reduction prior to noise being added,
@@ -106,7 +106,7 @@ function thresholdRet = t_spatialCSF(options)
         'temporalFilterValues', [], ...
         'oiPadMethod', 'zero', ...
         'validationThresholds', [0.0507    0.0347    0.0407    0.0512], ...
-        'visualizeEachCompute', true);
+        'visualizeEachScene', true, 'visualizeEachResponse', true););
 
     % mRGCMosaic nre basic test with fixational eye movements
     t_spatialCSF('useMetaContrast', true, ...
@@ -119,7 +119,7 @@ function thresholdRet = t_spatialCSF(options)
         'temporalFilterValues', [], ...
         'oiPadMethod', 'zero', ...
         'validationThresholds', [], ...
-        'visualizeEachCompute', true);
+        'visualizeEachScene', true, 'visualizeEachResponse', true););
 
     % mRGCMosaic nre, but pick off cone excitations as output
     t_spatialCSF('useMetaContrast', true, ...
@@ -162,7 +162,7 @@ function thresholdRet = t_spatialCSF(options)
         'temporalFilterValues', [], ...
         'oiPadMethod', 'zero', ...
         'validationThresholds', [], ...
-        'visualizeEachCompute', true);
+        'visualizeEachScene', true, 'visualizeEachResponse', true););
 
     % Verify that Gaussian noise works, as well as template classifier
     t_spatialCSF('useMetaContrast', true, ...
@@ -264,7 +264,9 @@ arguments
     options.verbose (1,1) logical = true;
 
     % Visualize the output of each compute (useful for debuging code)
-    options.visualizeEachCompute  (1,1) logical = false;
+    % Scene and response visualization are controlled separately.
+    options.visualizeEachScene (1,1) logical = false;
+    options.visualizeEachResponse (1,1) logical = false;
 end
 
 %% Close any stray figs
@@ -291,7 +293,8 @@ fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
 thresholdPara = options.thresholdPara;
 verbose = options.verbose;
-visualizeEachCompute = options.visualizeEachCompute;
+visualizeEachScene = options.visualizeEachScene;
+visualizeEachResponse = options.visualizeEachResponse;
 
 %% Freeze rng for replicatbility and validation
 rng(1);
@@ -638,7 +641,7 @@ theNeuralEngine = neuralResponseEngine( ...
     );
 
 % Set the neuralEngine's visualizeEachCompute property
-theNeuralEngine.visualizeEachCompute = visualizeEachCompute;
+theNeuralEngine.visualizeEachCompute = visualizeEachResponse;
 
 %% If using meta contrast, set this up.
 if (useMetaContrast)
@@ -700,7 +703,7 @@ for idx = 1:length(spatialFreqs)
        gratingSceneParams);
 
     % Set the sceneEngine's visualizeEachCompute property
-    gratingSceneEngine.visualizeEachCompute = visualizeEachCompute;
+    gratingSceneEngine.visualizeEachCompute = visualizeEachScene;
 
     % Create the sceMetaContrast scene engine
     if (useMetaContrast)
@@ -738,16 +741,16 @@ for idx = 1:length(spatialFreqs)
     % Plot stimulus
     figure(dataFig);
     
-
-   
+    % This shows one frame of the scene.
+    visualizeEachComputeSave = gratingSceneEngine.visualizeEachCompute;
     gratingSceneEngine.visualizeEachCompute = false;
     visualizationContrast = 1.0;
     [theSceneSequence] = gratingSceneEngine.compute(visualizationContrast);
-
     gratingSceneEngine.visualizeStaticFrame(... 
         theSceneSequence, ...
         'frameToVisualize', 1, ...
         'axesHandle', axLeft{idx});
+    gratingSceneEngine.visualizeEachCompute = visualizeEachComputeSave;
 
     % Plot data and psychometric curve
     % with a marker size of 2.5

@@ -11,11 +11,15 @@ classdef sceneEngine < handle
 %    which is the parameter that we vary in order to obtain a detection
 %    threshold.
 %
-%    This object has a useful writable property, visualizeEachCompute.
-%    When set to true, it will produce a figure that shows the scene
-%    sequence produced by the computeFunction, which is very useful for
-%    checking and debugging.  It does slow things down though, so should be
-%    turned off once everything is working.
+%    This object has a useful writable property, visualizeEachCompute. When
+%    set to true, it will produce a figure that shows the scene sequence
+%    produced by the computeFunction, which is very useful for checking and
+%    debugging.  It does slow things down though, so should be turned off
+%    once everything is working.
+%
+%    The class also has methods visualizeSceneSequence and
+%    visualizeStaticFrame that will let you look at scene. See
+%    t_sceneGeneration for examples.
 %
 % Inputs:
 %    sceneComputeFunctionHandle     - Function handle to the
