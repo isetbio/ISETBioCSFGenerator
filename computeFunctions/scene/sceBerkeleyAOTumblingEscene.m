@@ -60,6 +60,12 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
         presentationDisplay, theCustomBitMap, paramsForTextRendering, ...
         'visualizeScene', paramsForTextRendering.visualizeScene);
 
+    % Check the visualizeEachCompute flag of the sceneEngineOBJ, and if set to true,
+    % call its visualizeSceneSequence() method to visualize the generate scene sequence.
+    if (sceneEngineOBJ.visualizeEachCompute)
+        sceneEngineOBJ.visualizeSceneSequence(theSceneSequence, temporalSupportSeconds);
+    end
+
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence = theTestSceneSequence;
     dataOut.temporalSupport = temporalSupportSeconds;

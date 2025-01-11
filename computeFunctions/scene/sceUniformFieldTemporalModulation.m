@@ -22,6 +22,12 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
 %    All scene functions used with the sceneEngine class must conform to
 %    this API.
 %
+%    In addition to computing, this function checks the `visualizeEachCompute` 
+%    flag of the sceneEngineOBJ and, if it is set, calls its visualizeSceneSequence() 
+%    method of the sceneEngineOBJ. This causes figures to appear that visualize the 
+%    generated scene sequence, which is helpful for debugging. 
+%    Note that everything runs much more slowly in this case.
+%
 % Inputs:
 %    sceneEngineOBJ             - Calling @sceneEngine object.  This is
 %                                  currently unused, but passing it allows us
@@ -117,6 +123,12 @@ function dataOut = sceUniformFieldTemporalModulation(sceneEngineOBJ,testContrast
         end
     end
     
+    % Check the visualizeEachCompute flag of the sceneEngineOBJ, and if set to true,
+    % call its visualizeSceneSequence() method to visualize the generate scene sequence.
+    if (sceneEngineOBJ.visualizeEachCompute)
+        sceneEngineOBJ.visualizeSceneSequence(theSceneSequence, temporalSupportSeconds);
+    end
+
     % Assemble dataOut struct
     dataOut.sceneSequence = theSceneSequence;
     dataOut.temporalSupport = temporalSupportSeconds;
