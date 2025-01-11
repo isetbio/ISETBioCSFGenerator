@@ -29,6 +29,13 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %    directly - it should be called by the compute method of its parent
 %    @neuralResponseEngine.
 %
+%    In addition to computing, this function checks the `visualizeEachCompute` 
+%    flag of the neuralEngine object and, if it set, calls the nreVisualizeMRGCmosaic()
+%    visualization function. This causes figures to appear that visualize
+%    the noise-free spatiotemporal activation of the mRGC mosaic, 
+%    which is helpful for debugging.
+%    Note that everything runs much more slowly in this case.
+
 % Inputs:
 %    neuralEngine                   - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
@@ -220,22 +227,50 @@ end
 theOIsequence = oiArbitrarySequence(listOfOpticalImages, sceneSequenceTemporalSupport);
 clear listOfOpticalImages;
 
+
 % Compute cone reponses to oiSequence
 if (verbose)
     fprintf('\tComputing noise-free cone mosaic responses\n');
 end
-[noiseFreeConeMosaicResponses, ~, ~, ~, temporalSupportSeconds] = ...
-    theMRGCmosaic.inputConeMosaic.compute(theOIsequence, ...
-    'nTrials', 1 ...
-    );
+
+if (isempty(fixationalEMObj))
+    [noiseFreeConeMosaicResponses, ~, ~, ~, temporalSupportSeconds] = ...
+        theMRGCmosaic.inputConeMosaic.compute(theOIsequence, ...
+        'nTrials', 1, ...
+        'withFixationalEyeMovements', false ...
+        );
+else
+    % We were passed a fixational EM.  Check that it is OK for our
+    % purposes, and then comptute with it.
+    %
+    % Check NEED TO ADD
+
+    % Also return the path in units of microns
+    fixationalEMObj.emPosMicrons = ...
+        theMRGCmosaic.inputConeMosaic.distanceDegreesToDistanceMicronsForCmosaic(fixationalEMObj.emPosArcMin / 60);
+
+    % Compute
+    theMRGCmosaic.inputConeMosaic.emSetFixationalEMObj(fixationalEMObj);
+    [noiseFreeConeMosaicResponses, ~, ~, ~, temporalSupportSeconds] = ...
+        theMRGCmosaic.inputConeMosaic.compute(theOIsequence, ...
+        'nTrials', 1, ...
+        'withFixationalEyeMovements', true ...
+        );
+
+    
+end
 
 % Transform the cone excitation responses to cone modulation responses if
 % needed.
 if (~isempty(coneMosaicNullResponse))
+    % Save the non-contrast cone mosaic response for visualization purposes
+    noiseFreeConeMosaicResponsesNonContrast = noiseFreeConeMosaicResponses;
+
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
     % This mimics the photocurrent response which is normalized with respect to the
     % mean cone activation
+    
     noiseFreeConeMosaicResponses = ...
         bsxfun(@times, bsxfun(@minus, noiseFreeConeMosaicResponses, ...
         coneMosaicNullResponse), ...
@@ -294,18 +329,25 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
     clear newNeuralResponses;
 end
 
+% Check the visualizeEachCompute flag of the neuralEngine object, and if set to true,
+% call the nreVisualizeMRGCmosaic() function to visualize the generated 
+% spatiotemporal noise-free mosaic activation
+if (neuralEngine.visualizeEachCompute)
+    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, noiseFreeConeMosaicResponsesNonContrast, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
+end
+
 % Assemble the dataOut struct
 dataOut = struct(...
     'neuralResponses', theNeuralResponses, ...
     'temporalSupport', temporalSupportSeconds);
 
 if (returnTheNoiseFreePipeline)
-    dataOut.noiseFreeResponsePipeline.optics = theOptics;
-    dataOut.noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
-    dataOut.noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
-    dataOut.noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
-    dataOut.noiseFreeResponsePipeline.coneMosaicNormalizingResponse ...
-        = coneMosaicNormalizingResponse;
+    noiseFreeResponsePipeline = struct();
+    noiseFreeResponsePipeline.optics = theOptics;
+    noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
+    noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
+    noiseFreeResponsePipeline.coneMosaicNormalizingResponse = coneMosaicNormalizingResponse;
+    dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
 end
 
 end

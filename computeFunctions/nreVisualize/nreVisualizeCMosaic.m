@@ -1,4 +1,11 @@
 % Visualization function for CMosaic based neural responses 
+%
+% Add comments
+%
+
+% History:
+%    01/11/2025  NPC  Wrote it
+
 function nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportSeconds, responseLabel)
 
     % Back to cMosaic's native response format because we will be calling
@@ -29,8 +36,6 @@ function nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportS
     end
 
     for iTrial = 1:nTrials
-
-  
         for iPoint = 1:nTimePoints
             if (isempty(emPathsDegs))
                 theConeMosaic.visualize(...
