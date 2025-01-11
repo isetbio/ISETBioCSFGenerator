@@ -33,11 +33,14 @@ function nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theConeMosaic
 
     for iTrial = 1:nTrials
         for iPoint = 1:nTimePoints
+
+            theConeMosaicReponseTrial = min([iTrial size(theConeMosaicResponses,1)]);
+
             if (isempty(emPathsDegs))
                 theMRGCmosaic.inputConeMosaic.visualize(...
                     'figureHandle', hFig, ...
                     'axesHandle', axInputConeMosaicActivation, ...
-                    'activation', theConeMosaicResponses(iTrial, iPoint,:), ...
+                    'activation', theConeMosaicResponses(theConeMosaicReponseTrial, iPoint,:), ...
                     'activationRange', activationRangeConeMosaic , ...
                     'plotTitle', sprintf('cMosaic %s (t: %2.1f msec)', responseLabel, temporalSupportSeconds(iPoint)*1e3));
             else
@@ -46,7 +49,7 @@ function nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theConeMosaic
                 theMRGCmosaic.inputConeMosaic.visualize(...
                     'figureHandle', hFig, ...
                     'axesHandle', axInputConeMosaicActivation, ...
-                    'activation', theConeMosaicResponses(iTrial, iPoint,:), ...
+                    'activation', theConeMosaicResponses(theConeMosaicReponseTrial, iPoint,:), ...
                     'activationRange', activationRangeConeMosaic , ...
                     'currentEMposition', squeeze(emPathsDegs(theEMtrial,iPoint,:)), ...
                     'displayedEyeMovementData', struct('trial', theEMtrial, 'timePoints', 1:iPoint), ...
@@ -61,8 +64,30 @@ function nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theConeMosaic
                 'activationRange', activationRangeMRGCMosaic, ...
                 'plotTitle', sprintf('mRGCMosaic %s (t: %2.1f msec)', responseLabel, temporalSupportSeconds(iPoint)*1e3));
             drawnow;
-
         end % iPoint
+
+        
+        mosaicSpatioTemporalActivation(:, 1:theMRGCmosaic.rgcsNum) = squeeze(theNeuralResponses(iTrial,:,:));
+        dt = 0.5*(temporalSupportSeconds(2)-temporalSupportSeconds(1));
+        imagesc(axResponseTimeResponses, temporalSupportSeconds*1e3, 1:theMRGCmosaic.rgcsNum, mosaicSpatioTemporalActivation');
+        hold(axResponseTimeResponses, 'on');
+        for i = 1:numel(temporalSupportSeconds)
+            plot(axResponseTimeResponses, (temporalSupportSeconds(i)-dt)*[1 1]*1e3, [1 theMRGCmosaic.rgcsNum], 'k-', 'LineWidth', 1.0);
+        end
+        hold(axResponseTimeResponses, 'off');
+
+        linearRamp = linspace(0,1,1024);
+        linearRamp = linearRamp(:);
+        cMap = [linearRamp*0 linearRamp linearRamp*0];
+
+        colormap(axResponseTimeResponses, cMap);
+
+        axis(axResponseTimeResponses, 'xy');
+        xlabel(axResponseTimeResponses, 'time (msec)');
+        ylabel(axResponseTimeResponses, 'mRGC index');
+        set(axResponseTimeResponses, 'FontSize', 16, 'Color', [1 1 1], 'CLim', activationRangeMRGCMosaic);
+        title(axResponseTimeResponses, sprintf('spatio-temporal %s (trial %d of %d)', responseLabel, iTrial, nTrials));
+        drawnow;
 
     end % iTrial
 

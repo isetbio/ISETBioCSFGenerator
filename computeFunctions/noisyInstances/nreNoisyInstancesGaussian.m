@@ -1,5 +1,5 @@
 function dataOut = nreNoisyInstancesGaussian(...
-    neuralEngine, noisyInstancesComputeParams, noiseFreeResponses, ...
+    neuralEngineOBJ, noisyInstancesComputeParams, noiseFreeResponses, ...
     temporalSupportSeconds, instancesNum, noiseFlag, varargin)
 % Compute function for adding Poisson noise to neural responses
 %
@@ -29,6 +29,12 @@ function dataOut = nreNoisyInstancesGaussian(...
 %       It is not a terribly good idea to try to call this function with arguments
 %       directly - it should be called by the compute method of its parent
 %       @neuralResponseEngine.
+%
+% In addition to computing, this function checks the `visualizeEachCompute` 
+%    flag of the neuralEngineOBJ and, if it set, calls the appropriate
+%    visualization function. This causes figures to appear that visualize
+%    the noisy spatiotemporal response instances, which is helpful for debugging.
+%    Note that everything runs much more slowly in this case.
 %
 % Inputs:
 %    neuralEngineOBJ                - the parent @neuralResponseEngine object that
@@ -116,7 +122,7 @@ function dataOut = nreNoisyInstancesGaussian(...
 
     % Return a neural pipeline struct to keep parent object happy if
     % it hasn't yet stored one.
-    if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noisyInstances'))
+    if (isempty(neuralEngineOBJ.neuralPipeline) | ~isfield(neuralEngineOBJ.neuralPipeline,'noisyInstances'))
         % At present, sigma must be a scalar.  Maybe in the future it could be
         % a covariance matrix.
         sigma = noisyInstancesComputeParams.sigma;
@@ -126,7 +132,7 @@ function dataOut = nreNoisyInstancesGaussian(...
 
         returnTheNoisyInstancesPipeline = true;
     else
-        sigma = neuralEngine.neuralPipeline.noisyInstances.sigma;
+        sigma = neuralEngineOBJ.neuralPipeline.noisyInstances.sigma;
 
         returnTheNoisyInstancesPipeline =  false;
     end
@@ -162,6 +168,18 @@ function dataOut = nreNoisyInstancesGaussian(...
         rng(oldSeed);
     end
     
+    % Check the visualizeEachCompute flag of the neuralEngineOBJ , and if set to true,
+    % call the appropriate visualization function to visualize the generated 
+    % spatiotemporal noisy response instances.
+    if (neuralEngineOBJ.visualizeEachCompute)
+
+        % Select appropriate visualizing function depending on the computeFunction
+        if (isequal(neuralEngineOBJ.noiseFreeComputeFunction, @nreNoiseFreeMidgetRGCMosaic))
+            nreVisualizeMRGCmosaic(neuralEngineOBJ.neuralPipeline.noiseFreeResponse.mRGCMosaic, ...
+                noisyResponseInstances, neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaicResponse, temporalSupportSeconds, 'noisy mRGCmosaic responses');
+        end
+    end
+
     % Assemble the dataOut struct
     dataOut = struct(...
         'neuralResponses', noisyResponseInstances, ...

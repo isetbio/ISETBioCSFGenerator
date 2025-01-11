@@ -57,9 +57,9 @@ function nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportS
                     'displayedEyeMovementData', struct('trial', theEMtrial, 'timePoints', 1:iPoint), ...
                     'plotTitle', sprintf('%s (t: %2.1f msec, trial %d of %d)', responseLabel, temporalSupportSeconds(iPoint)*1e3, iTrial, nTrials));
      
-            end
+            end 
             drawnow;
-        end
+        end % iPoint
 
         mosaicSpatioTemporalActivation = [];
         mosaicSpatioTemporalActivation(:, 1:numel(theConeMosaic.lConeIndices)) = squeeze(theLconeResponses(iTrial,:,:));
@@ -93,7 +93,7 @@ function nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportS
         axis(axConeResponseTimeResponses, 'xy');
         xlabel(axConeResponseTimeResponses, 'time (msec)');
         ylabel(axConeResponseTimeResponses, sprintf('cone index (%d L-cones, %d M-cones, %d S-cones', numel(theConeMosaic.lConeIndices), numel(theConeMosaic.mConeIndices), numel(theConeMosaic.sConeIndices)));
-        set(axConeResponseTimeResponses, 'FontSize', 16, 'Color', [1 1 1]);
+        set(axConeResponseTimeResponses, 'FontSize', 16, 'Color', [1 1 1], 'CLim', activationRange);
         title(axConeResponseTimeResponses, sprintf('spatio-temporal %s (trial %d of %d)', responseLabel, iTrial, nTrials));
         drawnow;
 

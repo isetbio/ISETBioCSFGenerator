@@ -345,6 +345,7 @@ if (returnTheNoiseFreePipeline)
     noiseFreeResponsePipeline = struct();
     noiseFreeResponsePipeline.optics = theOptics;
     noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
+    noiseFreeResponsePipeline.coneMosaicResponse = noiseFreeConeMosaicResponsesNonContrast;
     noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
     noiseFreeResponsePipeline.coneMosaicNormalizingResponse = coneMosaicNormalizingResponse;
     dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
