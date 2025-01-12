@@ -102,7 +102,8 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
     validateParams(gratingParams);
     
     % Generate the display on which the gratings are rendered
-    presentationDisplay = generatePresentationDisplay(gratingParams);
+    gratingParams.displayParams.spectralSupport = gratingParams.spectralSupport;
+    presentationDisplay = generateConventionalxyYDisplay(gratingParams.displayParams);
     
     % Generate ths scene sequence depicting frames of the modulated grating
     [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast);
@@ -188,7 +189,7 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
     outOfGamutFlag = zeros(1, numel(frameContrastSequence));
     
     % Generate each frame
-    for frameIndex = 1:numel(frameContrastSequence)f
+    for frameIndex = 1:numel(frameContrastSequence)
         % Generate the scene frame
         [theSceneFrame, outOfGamutFlag(frameIndex)] = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
             frameContrastSequence(frameIndex), frameSpatialPhaseSequence(frameIndex));
@@ -219,7 +220,7 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
     
     % Background chromaticity and mean luminance vector
-    xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.meanLuminanceCdPerM2];
+    xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.displayParams.meanLuminanceCdPerM2];
     
     % Background XYZ tri-stimulus values
     backgroundXYZ = (xyYToXYZ(xyY(:)))';
@@ -409,40 +410,6 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     contrastPattern = contrastPattern .* envelope;
 end
 
-function presentationDisplay = generatePresentationDisplay(gratingParams)
-    % Generic LCD display
-    presentationDisplay = displayCreate(gratingParams.screenDisplay, ...
-        'viewing distance', gratingParams.viewingDistanceMeters, ...
-        'wave', gratingParams.spectralSupport ...        % Custom spectral support
-        );
-
-    % Custom LUT and bit depth
-    if (gratingParams.gammaTableExponent == 1)
-        % Linear LUT
-        N = 2^gratingParams.bitDepth;
-        gTable = repmat(linspace(0, 1, N), 3, 1)';
-    else
-        x = linspace(0,1,2^gratingParams.bitDepth);
-        gTable = x(:).^gratingParams.gammaTableExponent;
-        gTable = repmat(gTable, [1,3]);
-    end
-    % Set the gamma table
-    presentationDisplay = displaySet(presentationDisplay, 'gTable', gTable);
-    
-    % Adjust display SPDs so we can generate desired mean luminance.
-    %
-    % Why the factor of 2.1 here?  What we (DHB/FH) think is that this
-    % means is that when the mean luminance is set, we can present a 100%
-    % contrast luminance grating in gamut, with a little headroom.  To put
-    % it another way, you need the factor of 2, and the factor of 2.1
-    % provides a little bit of safety margin.
-    desiredPeakLuminance = gratingParams.meanLuminanceCdPerM2 * 2.1;
-    peakLuminance = displayGet(presentationDisplay, 'peak luminance');
-    scalingFactor = desiredPeakLuminance / peakLuminance;
-    spds = displayGet(presentationDisplay, 'spd primaries');
-    presentationDisplay = displaySet(presentationDisplay, 'spd primaries', spds*scalingFactor);
-end
-
 function validateParams(gratingParamsStruct)
     defaultParamsStruct = generateDefaultParams();
     defaultFieldNames = fieldnames(defaultParamsStruct);
@@ -481,18 +448,25 @@ function validateParams(gratingParamsStruct)
 end
 
 function p = generateDefaultParams()
+    stimMeanLuminance = 40;
 
     p = struct(...
-        'screenDisplay', 'LCD-Apple',...                % display: the screen display type
+        'spectralSupport', 400:10:750, ...              % spectral support for the computations
+        'displayParams', struct( ...                    % display parameters
+          'displayType', 'conventional_xyY', ...          % display type
+          'screenDisplay', 'LCD-Apple',...              % display: the screen display type
+          'meanLuminanceCdPerM2', stimMeanLuminance, ... % display: desired mean luminance. Determines display scale
+          'luminanceHeadroom', 0.05, ...                 % display: how much headroom to leave re 2*meanLuminance in display
+          'viewingDistanceMeters', 0.57, ...              % display: viewing distance
+          'bitDepth', 20, ...                             % display: length of LUT
+          'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear
+          'spectralSupport', [] ...                       % display: spectral support. Will get filled in from the parent params
+        ), ...
         'filter',struct(...                             % spatial: apply a filter in front of the display 
             'spectralSupport',[],...                    %   A vector containing the wavelengths (nm) at which the filter's transmission properties are defined 
-            'transmission',[]),...                      %   A corresponding vector of transmission values (ranging from 0 - 1) for each wavelength specified in 'spectralSupport' 
-        'viewingDistanceMeters', 0.57, ...              % display: viewing distance
-        'bitDepth', 20, ...                             % display: length of LUT
-        'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear
-        'spectralSupport', 400:10:750, ...              % display: spectral support of the primary SPDs, in nanometers
-        'meanLuminanceCdPerM2', 40, ...                 % background: mean luminance, in candellas per meter squared
-        'meanChromaticityXY', [0.3 0.32], ...           % background: neutral mean chromaticity
+            'transmission',[]),...                      %   A corresponding vector of transmission values (ranging from 0 - 1) for each wavelength specified in 'spectralSupport'  
+        'meanLuminanceCdPerM2', stimMeanLuminance, ...  % background: background mean luminance, in candellas per meter squared
+        'meanChromaticityXY', [0.3 0.32], ...           % background: background mean chromaticity'
         'coneContrastModulation', [0.09 -0.09 0.0], ... % chromatic direction: LMS cone contrasts
         'warningInsteadOfErrorOnOutOfGamut', false, ... % chromatic: whether to throw an error or a warning if out-of-gamut pixels are generated
         'fovDegs', 1.0, ...                             % spatial: field of view, in degrees
