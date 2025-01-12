@@ -264,7 +264,7 @@ end
 % needed.
 if (~isempty(coneMosaicNullResponse))
     % Save the non-contrast cone mosaic response for visualization purposes
-    noiseFreeConeMosaicResponsesNonContrast = noiseFreeConeMosaicResponses;
+    % noiseFreeConeMosaicResponsesNonContrast = noiseFreeConeMosaicResponses;
 
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
@@ -333,7 +333,8 @@ end
 % call the nreVisualizeMRGCmosaic() function to visualize the generated 
 % spatiotemporal noise-free mosaic activation
 if (neuralEngine.visualizeEachCompute)
-    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, noiseFreeConeMosaicResponsesNonContrast, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
+    % nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, noiseFreeConeMosaicResponsesNonContrast, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
+    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theNeuralResonses, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
 end
 
 % Assemble the dataOut struct
@@ -345,7 +346,7 @@ if (returnTheNoiseFreePipeline)
     noiseFreeResponsePipeline = struct();
     noiseFreeResponsePipeline.optics = theOptics;
     noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
-    noiseFreeResponsePipeline.coneMosaicResponse = noiseFreeConeMosaicResponsesNonContrast;
+    % noiseFreeResponsePipeline.coneMosaicResponse = noiseFreeConeMosaicResponsesNonContrast;
     noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
     noiseFreeResponsePipeline.coneMosaicNormalizingResponse = coneMosaicNormalizingResponse;
     dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
