@@ -8,7 +8,7 @@ function dataOut = sceAOTwoSpot(sceneEngineOBJ, testContrast, twoSpotParams)
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine
 %    object. There are 2 ways to use this function.
 %
-%       [1] If called wihtout arguments, itt does not compute anything and\
+%       [1] If called wihtout arguments, itt does not compute anything and
 %           simply returns a struct with the defaultParams that define the
 %           scene.
 %
@@ -20,11 +20,14 @@ function dataOut = sceAOTwoSpot(sceneEngineOBJ, testContrast, twoSpotParams)
 %    All scene functions used with the sceneEngine class must conform to
 %    this API.
 %
-%    In addition to computing, this function checks the `visualizeEachCompute` 
-%    flag of the sceneEngineOBJ and, if it is set, calls its visualizeSceneSequence() 
-%    method of the sceneEngineOBJ. This causes figures to appear that visualize the 
-%    generated scene sequence, which is helpful for debugging. 
-%    Note that everything runs much more slowly in this case.
+%    In addition to computing, this function checks the
+%    `visualizeEachCompute` flag of the sceneEngineOBJ and, if it is set,
+%    calls its visualizeSceneSequence() method of the sceneEngineOBJ. This
+%    causes figures to appear that visualize the generated scene sequence,
+%    which is helpful for debugging. Note that everything runs much more
+%    slowly in this case.  You can also call the visualizeSceneSequence
+%    method directly if you want to see the scene sequence at some
+%    particular point in your code.  See computeThreshold, for example.
 %
 % Inputs:
 %    sceneEngineOBJ              - Calling @sceneEngine object.  This is

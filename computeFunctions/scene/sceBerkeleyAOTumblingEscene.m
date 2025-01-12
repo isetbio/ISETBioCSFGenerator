@@ -1,4 +1,77 @@
 function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sceneParams)
+% Compute function for generating a sequence of scenes depicting a
+% scene sequence of tumbling E's.
+%
+% Syntax:
+%   dataOut = ceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sceneParams)
+%
+% Description:
+%    Compute function to be used as a computeFunctionHandle for a @sceneEngine
+%    object. There are 2 ways to use this function.
+%
+%       [1] If called wihtout arguments, itt does not compute anything and
+%           it does not compute anything and simply returns a struct with the 
+%           defaultParams that define the scene.
+%
+%       [2] If called with arguments, as it is from a parent @sceneEngine object,
+%           it computes a cell array of scenes defining the frames of a
+%           stimulus and the temporal support of the frames. These are
+%           returned as named fields of the returned dataOut struct.
+%
+%    All scene functions used with the sceneEngine class must conform to
+%    this API.
+%
+%    In addition to computing, this function checks the
+%    `visualizeEachCompute` flag of the sceneEngineOBJ and, if it is set,
+%    calls its visualizeSceneSequence() method of the sceneEngineOBJ. This
+%    causes figures to appear that visualize the generated scene sequence,
+%    which is helpful for debugging. Note that everything runs much more
+%    slowly in this case.  You can also call the visualizeSceneSequence
+%    method directly if you want to see the scene sequence at some
+%    particular point in your code.  See computeThreshold, for example.
+%
+% Inputs:
+%    sceneEngineOBJ              - Calling @sceneEngine object.  This is
+%                                  currently unused, but passing it allows us
+%                                  flexibility in the future and matches
+%                                  conventions for the other classes in
+%                                  this toolbox.
+%    testContrast                - Scalar providing the contrast for the
+%                                  scene to be generated.                           
+%    sceneParamsStruct           - Struct containing properties of the
+%                                  scene understood by this function.
+%                                  As noted above, execute sceGrating at
+%                                  the command line to see the structure's
+%                                  fields and default values.
+% 
+%                                  The fields and their meanings are
+%                                  provided in the function that generates
+%                                  the default parameters at the end of
+%                                  this source file.
+%
+% Outputs:
+%    dataOut  - A struct that depends on the input arguments. 
+%
+%               If called directly with no input arguments, the returned struct contains
+%               the defaultParams that define the grating scene
+%
+%             - If called from a parent @sceneEngine, the returned
+%               struct is organized as follows:
+%                 .sceneSequence : a cell array of scenes defining the frames of the generated grating scene sequence                            
+%                 .temporalSupport : the temporal support of the frames of the generated grating scene sequence, in seconds            
+%
+% Optional key/value input arguments:
+%     None.
+%
+% Examples:
+%    The source code contains examples.
+%
+% See Also:
+%     t_sceneGeneration, t_spatialCSF, createGratingSceneEngine.
+
+% History:
+%  01/12/24  dhb  Added comments and started work on generalizing
+
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
