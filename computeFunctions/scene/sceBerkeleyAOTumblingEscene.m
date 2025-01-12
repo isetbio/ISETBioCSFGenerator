@@ -3,7 +3,7 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
 % scene sequence of tumbling E's.
 %
 % Syntax:
-%   dataOut = ceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sceneParams)
+%   dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sceneParams)
 %
 % Description:
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine

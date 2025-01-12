@@ -123,8 +123,7 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 end
 
 function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
-
-    
+  
     switch (gratingParams.temporalModulation)
         case 'flashed'
             for frameIndex = 1:gratingParams.temporalModulationParams.stimDurationFramesNum
@@ -164,7 +163,6 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
                 frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs;
             end
     
-    
         case 'counterphasemodulated'
             % See the comments for case 'drifted' for the four lines below
             stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
@@ -183,25 +181,14 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
         otherwise
             error('Unknown temporal modulation: ''%s''.\n', gratingParams.temporalModulation);
     end
-
-    displayProgressBar = false; % getpref('ISET','waitbar');
-    if (displayProgressBar)
-        % Open progress bar
-        hProgressBar = waitbar(0,'Generating scene sequence...');
-    end
     
+    % Setup
     theSceneSequence = cell(1, numel(frameContrastSequence));
     temporalSupportSeconds = zeros(1, numel(frameContrastSequence));
     outOfGamutFlag = zeros(1, numel(frameContrastSequence));
     
     % Generate each frame
-    for frameIndex = 1:numel(frameContrastSequence)
-        % Update progress bar
-        if (displayProgressBar)
-            waitbar(frameIndex/numel(frameContrastSequence),hProgressBar,...
-                sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence)));
-        end
-        
+    for frameIndex = 1:numel(frameContrastSequence)f
         % Generate the scene frame
         [theSceneFrame, outOfGamutFlag(frameIndex)] = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
             frameContrastSequence(frameIndex), frameSpatialPhaseSequence(frameIndex));
@@ -221,11 +208,6 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
         statusReport.OutOfGamut = true;
     else
         statusReport = struct();
-    end
-
-    if (displayProgressBar)
-        % Close progress bar
-        close(hProgressBar);
     end
 end
 
