@@ -63,9 +63,6 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
 % Optional key/value input arguments:
 %     None.
 %
-% Examples:
-%    The source code contains examples.
-%
 % See Also:
 %     t_sceneGeneration, t_spatialCSF, createGratingSceneEngine.
 
@@ -89,7 +86,8 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     paramsForTextRendering = sceneParams;
 
     % Generate the display on which the tumbing E scenes are presented
-    presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams);
+    displayParams.spectralSupport = sceneParams.spectralSupport;
+    presentationDisplay = generateBerkeleyAODisplay(sceneParams.displayParams);
 
     % Decide bitmap to use.  Here we define a custom E bitmap in a function
     % at the bottom of this script, that returns a 15 by 15 pixel square E.
@@ -241,10 +239,10 @@ end
 %% Return a structure with the fields and default parameters for this scene engine
 function p = generateDefaultParams()
 
+    displayParams = generateBerkeleyAODisplayDefaultParams;
+
     p = struct(...
-        'displayPixelSize', 512, ...            % Linear display pixel size
-        'displayFOVDeg', 1.413, ...             % Linear field size in degrees
-        'viewingDistanceMeters', 3, ...         % Far enough away to be in good focus
+        'displayParams', displayParams, ...     % Display parameters
         'letterRotationDegs', 0, ...            % Letter rotation (0,90,180,270 only)
         'letterHeightPixels', 20, ...           % Letter height in pixels - must be 20
         'letterWidthPixels', 18, ...            % Letter width in pixels - must be 18
@@ -261,7 +259,7 @@ function p = generateDefaultParams()
                 'xShiftPerFrame', 0, ...            % shift E in the x dimension in each frame in degree
                 'yShiftPerFrame', 0, ...
                 'backgroundRGBPerFrame', [1 0 0]), ...           % shift E in the y dimension in each frame in degree
-        'wave', (400:10:860)', ...              % Wavelength sampling for primaries
+        'spectralSupport', (400:10:860)', ...   % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
         'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
         'AOAOCornealPowersUW', [141.4 0 0], ... % Display spd power full on
@@ -270,28 +268,6 @@ function p = generateDefaultParams()
         'visualizeScene', false, ...            % Whether to visualize the generated scene
         'plotDisplayCharacteristics', false ... % Whether to visualize the display characteristics
        );
-end
-
-%% Generate a display that mimics the Berkeley AO system
-function presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams)
-
-   % We know the dispaly FOV and number of pixels.  We choose a distance
-   % far enough way and compute DPI to make it work out.
-   inchesPerMeter = 39.3701;
-   displaySizeMeters = 2*sceneParams.viewingDistanceMeters*tand(sceneParams.displayFOVDeg/2);
-   displayDotsPerMeter = sceneParams.displayPixelSize/displaySizeMeters;
-   displayDPI = displayDotsPerMeter/inchesPerMeter;
-
-   % Now build the display given all the wonderful things we know about it.
-   presentationDisplay = generateCustomDisplay(...
-       'viewingDistanceMeters', sceneParams.viewingDistanceMeters, ...
-       'dotsPerInch', displayDPI, ...
-       'wavelengthSupportNanoMeters', sceneParams.wave, ...
-       'spectralPowerDistributionWattsPerSteradianM2NanoMeter', sceneParams.spd, ...
-       'ambientSPDWattsPerSteradianM2NanoMeter', sceneParams.ambientSpd, ...
-       'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
-       'plotCharacteristics', sceneParams.plotDisplayCharacteristics);
-    
 end
 
 function TxtIm = textToCustomBitmap(text)

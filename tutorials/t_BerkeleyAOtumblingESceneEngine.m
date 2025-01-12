@@ -93,7 +93,7 @@ if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
     mkdir(fullfile(rootPath,'local',mfilename,'figures'));
 end
 
-% Load in a monitor that mimics the primaries in the Berkely AO system.
+% Load in a monitor that mimics the primaries in the Berkeley AO system.
 theDisplay = load(fullfile(rootPath,'sampledata','monoDisplay.mat'));
 presentationDisplay = theDisplay.monoDisplay;
 

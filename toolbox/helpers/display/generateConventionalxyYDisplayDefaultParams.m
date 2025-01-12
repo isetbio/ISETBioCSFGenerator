@@ -15,6 +15,7 @@ function displayParams = generateConventionalxyYDisplayDefaultParams
 % Outputs:
 %    displayParams               - A display parameter structure.  See code
 %                                  for list of fields and what they are.
+%
 % Optional key/value pairs:
 %     None.
 %
