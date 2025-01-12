@@ -227,7 +227,6 @@ end
 theOIsequence = oiArbitrarySequence(listOfOpticalImages, sceneSequenceTemporalSupport);
 clear listOfOpticalImages;
 
-
 % Compute cone reponses to oiSequence
 if (verbose)
     fprintf('\tComputing noise-free cone mosaic responses\n');
@@ -263,6 +262,11 @@ end
 % Transform the cone excitation responses to cone modulation responses if
 % needed.
 if (~isempty(coneMosaicNullResponse))
+    % DHB - I commented out this and other references to the
+    % noiseFreeConeMosaicResponsesNonContrast.  We want to visualize the
+    % actual responses we return, not the cone excitations.  Not sure why
+    % it was coded this way. But leaving this as I need to ask Nicolas.
+    %
     % Save the non-contrast cone mosaic response for visualization purposes
     % noiseFreeConeMosaicResponsesNonContrast = noiseFreeConeMosaicResponses;
 
@@ -277,6 +281,7 @@ if (~isempty(coneMosaicNullResponse))
         coneMosaicNormalizingResponse);
 end
 
+% Handle what kind of output we are asked for
 switch (noiseFreeComputeParams.mRGCMosaicParams.outputSignalType)
     case 'cones'
         if (verbose)
@@ -334,7 +339,7 @@ end
 % spatiotemporal noise-free mosaic activation
 if (neuralEngine.visualizeEachCompute)
     % nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, noiseFreeConeMosaicResponsesNonContrast, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
-    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theNeuralResonses, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
+    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theNeuralResponses, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
 end
 
 % Assemble the dataOut struct
