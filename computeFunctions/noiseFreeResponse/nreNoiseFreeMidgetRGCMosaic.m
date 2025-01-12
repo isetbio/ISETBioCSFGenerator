@@ -227,7 +227,6 @@ end
 theOIsequence = oiArbitrarySequence(listOfOpticalImages, sceneSequenceTemporalSupport);
 clear listOfOpticalImages;
 
-
 % Compute cone reponses to oiSequence
 if (verbose)
     fprintf('\tComputing noise-free cone mosaic responses\n');
@@ -263,8 +262,13 @@ end
 % Transform the cone excitation responses to cone modulation responses if
 % needed.
 if (~isempty(coneMosaicNullResponse))
+    % DHB - I commented out this and other references to the
+    % noiseFreeConeMosaicResponsesNonContrast.  We want to visualize the
+    % actual responses we return, not the cone excitations.  Not sure why
+    % it was coded this way. But leaving this as I need to ask Nicolas.
+    %
     % Save the non-contrast cone mosaic response for visualization purposes
-    noiseFreeConeMosaicResponsesNonContrast = noiseFreeConeMosaicResponses;
+    % noiseFreeConeMosaicResponsesNonContrast = noiseFreeConeMosaicResponses;
 
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
@@ -277,6 +281,7 @@ if (~isempty(coneMosaicNullResponse))
         coneMosaicNormalizingResponse);
 end
 
+% Handle what kind of output we are asked for
 switch (noiseFreeComputeParams.mRGCMosaicParams.outputSignalType)
     case 'cones'
         if (verbose)
@@ -333,7 +338,8 @@ end
 % call the nreVisualizeMRGCmosaic() function to visualize the generated 
 % spatiotemporal noise-free mosaic activation
 if (neuralEngine.visualizeEachCompute)
-    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, noiseFreeConeMosaicResponsesNonContrast, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
+    % nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, noiseFreeConeMosaicResponsesNonContrast, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
+    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theNeuralResponses, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
 end
 
 % Assemble the dataOut struct
@@ -345,7 +351,7 @@ if (returnTheNoiseFreePipeline)
     noiseFreeResponsePipeline = struct();
     noiseFreeResponsePipeline.optics = theOptics;
     noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
-    noiseFreeResponsePipeline.coneMosaicResponse = noiseFreeConeMosaicResponsesNonContrast;
+    % noiseFreeResponsePipeline.coneMosaicResponse = noiseFreeConeMosaicResponsesNonContrast;
     noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
     noiseFreeResponsePipeline.coneMosaicNormalizingResponse = coneMosaicNormalizingResponse;
     dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
