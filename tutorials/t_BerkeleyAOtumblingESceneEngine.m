@@ -63,7 +63,7 @@ arguments
     options.visualizeScene (1,1) logical = true;
     options.displayNPixels (1,1) double = 512;
     options.displayFOVDeg (1,1) double = 1.413;
-    options.wave (:,1) double = (500:5:870)';
+    options.spectralSupport (:,1) double = (500:5:870)';
     options.AOPrimaryWls (1,3) double = [840 683 543]; % [700 683 54];
     options.AOPrimaryFWHM (1,3) double = [22 27 23];
     options.AOCornealPowersUW (1,3) double = [141.4 10 10];
@@ -79,8 +79,6 @@ arguments
     options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
-    options.responseFlag (1,:) char = 'excitation';
-    options.exportCondition (1,:) char = 'no change'; 
 end
 
 % Initialize
@@ -93,31 +91,30 @@ if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
     mkdir(fullfile(rootPath,'local',mfilename,'figures'));
 end
 
-% Load in a monitor that mimics the primaries in the Berkeley AO system.
-theDisplay = load(fullfile(rootPath,'sampledata','monoDisplay.mat'));
-presentationDisplay = theDisplay.monoDisplay;
-
 % Display spatial parameters
 sceneParams.displayPixelSize = options.displayNPixels;
 sceneParams.displayFOVDeg = options.displayFOVDeg; 
 
 % Set the basic parameters for the AO mimicing display
 sceneParams = sceBerkeleyAOTumblingEscene;
-sceneParams.wave = options.wave; % (500:5:870)'
+sceneParams.spectralSupport = options.spectralSupport; % (500:5:870)'
 
-% The display routine doesn't know what to do with 840 nm,
-% putting in 700 for right now so visualization is approximately
-% correct.
-sceneParams.AOPrimaryWls = options.AOPrimaryWls; 
-sceneParams.AOPrimaryFWHM = options.AOPrimaryFWHM;
-sceneParams.AOCornealPowersUW = options.AOCornealPowersUW;
-sceneParams.ambientSpd = options.ambientSpd;
+% Update parameters according to key/value pairs
+sceneParams.displayParams.AOPrimaryWls = options.AOPrimaryWls; 
+sceneParams.displayParams.AOPrimaryFWHM = options.AOPrimaryFWHM;
+sceneParams.displayParams.AOCornealPowersUW= options.AOCornealPowersUW;
+sceneParams.displayParams.ambientSpd = options.ambientSpd;
+sceneParams.displayParams.plotDisplayCharacteristics = options.plotDisplayCharacteristics;
 sceneParams.pupilSizeMM = options.pupilSizeMM;
-sceneParams.plotDisplayCharacteristics = options.plotDisplayCharacteristics;
-for pp = 1:length(sceneParams.AOPrimaryWls)
-    sceneParams.spd(:,pp) = generateAOPrimarySpd(sceneParams.wave, ...
-        sceneParams.AOPrimaryWls(pp),sceneParams.AOPrimaryFWHM(pp),sceneParams.AOCornealPowersUW(pp), ...
-        sceneParams.displayFOVDeg,sceneParams.pupilSizeMM);
+
+% Create spectral power distribution for display from updated parameters
+for pp = 1:length(sceneParams.displayParams.AOPrimaryWls)
+    sceneParams.displayParams.spd(:,pp) = generateAOPrimarySpd(sceneParams.spectralSupport, ...
+        sceneParams.displayParams.AOPrimaryWls(pp), ...
+        sceneParams.displayParams.AOPrimaryFWHM(pp), ...
+        sceneParams.displayParams.AOCornealPowersUW(pp), ...
+        sceneParams.displayParams.displayFOVDeg, ...
+        sceneParams.pupilSizeMM);
 end
 
 % Define the foreground (E) and background RGB wrt the monochromatic
@@ -174,12 +171,11 @@ theSmallEsceneSequence270degs = tumblingEsceneEngine270degs.compute(testESizeDeg
 theSmallBackgroundSceneSequence = backgroundSceneEngine.compute(testESizeDeg);
 
 % Visualize each frame ofthe scene sequence
-displaySizePixels = sceneParams.displayPixelSize;
-displaySizeDegrees = sceneParams.displayFOVDeg;
+displaySizePixels = sceneParams.displayParams.displayPixelSize;
+displaySizeDegrees = sceneParams.displayParams.displayFOVDeg;
 pixelsPerDegree = displaySizePixels / displaySizeDegrees;
 
 domainVisualizationLimits = [-displaySizeDegrees/2, displaySizeDegrees/2, -displaySizeDegrees/2, displaySizeDegrees/2];
-
 
 for ff = 1:length(theSmallEsceneSequence0degs)
     theSmallEscene0degs = theSmallEsceneSequence0degs{ff};

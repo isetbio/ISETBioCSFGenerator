@@ -76,17 +76,13 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     end
 
     % Validate params
-    assert(rem(sceneParams.displayPixelSize,2) == 0, 'display assumed to have even number of pixels');
+    assert(rem(sceneParams.displayParams.displayPixelSize,2) == 0, 'display assumed to have even number of pixels');
     assert(rem(sceneParams.letterHeightPixels,2) == 0, 'letterHeight must be an even number of pixels');
     assert(rem(sceneParams.letterWidthPixels,2) == 0, 'letterWidth must be an even number of pixels');
     assert(ismember(sceneParams.letterRotationDegs, [0 90 180 270]), 'letterRotationDegs must be in 0, 90, 180, or 270');
 
-    % Assign passed sceneParams to struct paramsForTextRendering, to avoid
-    % confusion.  We will then add fields to the latter and pass it on.
-    paramsForTextRendering = sceneParams;
-
     % Generate the display on which the tumbing E scenes are presented
-    displayParams.spectralSupport = sceneParams.spectralSupport;
+    sceneParams.displayParams.spectralSupport = sceneParams.spectralSupport;
     presentationDisplay = generateBerkeleyAODisplay(sceneParams.displayParams);
 
     % Decide bitmap to use.  Here we define a custom E bitmap in a function
@@ -108,28 +104,28 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     % Allowing this was an idea we had, but because the bitmapped letter
     % gets scaled below, quite what values we want may depend on the letter
     % size.
-    paramsForTextRendering.yOffset = 0; % shift up (negative) or down (positive)
-    paramsForTextRendering.xOffset = 0; % shift left (negative) or right (positive)
+    sceneParams.yOffset = 0; % shift up (negative) or down (positive)
+    sceneParams.xOffset = 0; % shift left (negative) or right (positive)
 
     % Figure out how many rows and columns we want the E bitmap to be
     testESizeMin = testESizeDeg*60;
-    letterHeightUnquantizedPixels = sizeScalingFactor*((testESizeMin/60)/(paramsForTextRendering.displayFOVDeg))*paramsForTextRendering.displayPixelSize;
-    paramsForTextRendering.letterHeightPixels = 2*round(letterHeightUnquantizedPixels/2);
-    paramsForTextRendering.letterWidthPixels = 2*round(letterHeightUnquantizedPixels*(letterPixelAspectRatio)/2);
-    paramsForTextRendering.yPixelsNumMargin = (paramsForTextRendering.displayPixelSize-paramsForTextRendering.letterHeightPixels)/2;
-    paramsForTextRendering.xPixelsNumMargin =  (paramsForTextRendering.displayPixelSize-paramsForTextRendering.letterWidthPixels)/2;
-    paramsForTextRendering.upSampleFactor = uint8(1);
+    letterHeightUnquantizedPixels = sizeScalingFactor*((testESizeMin/60)/(sceneParams.displayParams.displayFOVDeg))*sceneParams.displayParams.displayPixelSize;
+    sceneParams.letterHeightPixels = 2*round(letterHeightUnquantizedPixels/2);
+    sceneParams.letterWidthPixels = 2*round(letterHeightUnquantizedPixels*(letterPixelAspectRatio)/2);
+    sceneParams.yPixelsNumMargin = (sceneParams.displayParams.displayPixelSize-sceneParams.letterHeightPixels)/2;
+    sceneParams.xPixelsNumMargin =  (sceneParams.displayParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
+    sceneParams.upSampleFactor = uint8(1);
 
     % Check pixel consistency
-    rowsNum = paramsForTextRendering.letterHeightPixels + paramsForTextRendering.yPixelsNumMargin*2;
-    colsNum = paramsForTextRendering.letterWidthPixels + paramsForTextRendering.xPixelsNumMargin*2;
-    if (rowsNum ~= paramsForTextRendering.displayPixelSize || colsNum ~= paramsForTextRendering.displayPixelSize)
+    rowsNum = sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2;
+    colsNum = sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2;
+    if (rowsNum ~= sceneParams.displayParams.displayPixelSize || colsNum ~= sceneParams.displayParams.displayPixelSize)
         error('Have not computed rowsNum and colsNum or some other parameter consistently.');
     end
 
     [theTestSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequence(...
-        presentationDisplay, theCustomBitMap, paramsForTextRendering, ...
-        'visualizeScene', paramsForTextRendering.visualizeScene);
+        presentationDisplay, theCustomBitMap, sceneParams, ...
+        'visualizeScene', sceneParams.visualizeScene);
 
     % Check the visualizeEachCompute flag of the sceneEngineOBJ, and if set to true,
     % call its visualizeSceneSequence() method to visualize the generate scene sequence.
@@ -172,8 +168,8 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     frameDurationSec = 1 / frameRateHz;
 
     % Calculate degrees per pixel
-    displayFOVDeg = paramsForTextRendering.displayFOVDeg;
-    displayPixelSize = paramsForTextRendering.displayPixelSize;
+    displayFOVDeg = paramsForTextRendering.displayParams.displayFOVDeg;
+    displayPixelSize = paramsForTextRendering.displayParams.displayPixelSize;
     degreesPerPixel = displayFOVDeg / displayPixelSize;
 
     % Convert shifts from degrees to pixels
@@ -221,8 +217,8 @@ function theScene = generateTumblingEscene(...
     textSceneParams = struct(...
         'textString', theChar, ...                                                         % Text to display, can be letter or bitmap. 
         'textRotation', paramsForTextRendering.letterRotationDegs, ...                     % Rotation (0,90,180,270 only)
-        'rowsNum', paramsForTextRendering.displayPixelSize, ...                            % Pixels along the vertical (y) dimension
-        'colsNum', paramsForTextRendering.displayPixelSize, ...                            % Pixels along the horizontal (x) dimension
+        'rowsNum', paramsForTextRendering.displayParams.displayPixelSize, ...                            % Pixels along the vertical (y) dimension
+        'colsNum', paramsForTextRendering.displayParams.displayPixelSize, ...                            % Pixels along the horizontal (x) dimension
         'textBitMapRescaledRowsCols', [paramsForTextRendering.letterHeightPixels paramsForTextRendering.letterWidthPixels], ...
         'targetRow', paramsForTextRendering.yPixelsNumMargin, ...                          % Y-pixel offset 
         'targetCol', paramsForTextRendering.xPixelsNumMargin, ...                          % X-pixel offset 

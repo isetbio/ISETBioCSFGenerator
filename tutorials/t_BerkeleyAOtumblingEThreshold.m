@@ -133,9 +133,9 @@ thresholdP = params.thresholdP;
 noiseFreeResponseParams = nreNoiseFreeCMosaic([],[],[],[],'opticsType','BerkeleyAO');
 
 % Set optics params
-wls = sceneParams.wave;
-fieldSizeDegs = sceneParams.displayFOVDeg;
-accommodatedWl = sceneParams.AOPrimaryWls(1);
+wls = sceneParams.spectralSupport;
+fieldSizeDegs = sceneParams.displayParams.displayFOVDeg;
+accommodatedWl = sceneParams.displayParams.AOPrimaryWls(1);
 pupilDiameterMm = options.pupilDiameterMm;
 defocusDiopters = options.defocusDiopters;
 
