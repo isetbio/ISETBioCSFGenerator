@@ -63,7 +63,7 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration, t_spatialCSF, createGratingScene.
+%     t_sceneGeneration, t_spatialCSF, createGratingSceneEngine.
 
 % History:
 %    10/05/2020  NPC  Wrote it.

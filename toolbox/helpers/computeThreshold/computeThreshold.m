@@ -53,7 +53,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %   'verbose'           - Logical. Provide some printout? Default true.
 %   'extraVerbose'        - Logical.  More detailed printout? Default false.
 %   'visualizeStimulus'   - Logical. Provide stimulus visualization.
-%                           Default false.
+%                           Default false.https://canvas.upenn.edu/courses/1841993v
 %   'visualizeAllComponents' - Logical. All component visualization.
 %                           Default false. If set to true, it visualizes
 %                           the mosaic responses to all the stimuli (multiple contrasts)
@@ -75,7 +75,7 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %                           handle them, or else the caller would need to
 %                           explicitly formulate the TAFC version as an
 %                           2-alternative with one stimulus per trial problem.
-%     useMetaContrast       - Passed arguments are for meta contrast setup
+%     useMetaContrast      - Passed arguments are for meta contrast setup
 
 %
 % See also:

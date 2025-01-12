@@ -145,7 +145,7 @@ end
 
 %% Compute threshold for each number of alternatives specified
 % 
-% See toolbox/helpers for functions createGratingScene computeThreshold
+% See toolbox/helpers for functions createGratingSceneEngine computeThreshold
 logThreshold = zeros(1, nAList);
 para         = NaN(nAList, 4); %4 paramters (lapse rate and guess rate are fixed)
 
@@ -158,7 +158,7 @@ for idx = 1:nAList
         180/nAlternativesList(idx),nAlternativesList(idx));
     gratingSceneEngines = cell(1,nAlternativesList(idx));
     for t = 1:nAlternativesList(idx)
-        gratingSceneEngines{t} = createGratingScene(chromaDir, spatialFreq,...
+        gratingSceneEngines{t} = createGratingSceneEngine(chromaDir, spatialFreq,...
             'orientation',orientations(t), ...
             'fovDegs', min(noiseFreeResponseParams.coneMosaicParams.sizeDegs), ...
             'duration', noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds, ...

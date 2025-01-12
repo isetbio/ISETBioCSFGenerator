@@ -7,7 +7,7 @@
 %
 % See also: t_spatialCSF, t_modulatedGratingsSceneGeneration,
 %           computeThreshold, computePerformance,
-%           createGratingScene.
+%           createGratingSceneEngine.
 %
 
 % History:
@@ -18,7 +18,7 @@ clear; close all;
 
 % Spatial frequencies to be tested, and other parameters.
 % Beyond spatial frequency, these override default parameters
-% in createGratingScene via key/value pair.
+% in createGratingSceneEngine via key/value pair.
 %
 % Using 90 degree (sine phase) makes the stimulus symmetric in terms of
 % balanced incremental and decremental components, so that the isothreshold
@@ -73,13 +73,13 @@ questEnginePara = struct('minTrial', 1280*2, 'maxTrial', 1280*2, ...
 
 %% Compute threshold for each chromatic direction
 % 
-% See toolbox/helpers for functions createGratingScene, computeThreshold
+% See toolbox/helpers for functions createGratingSceneEngine, computeThreshold
 dataFig = figure();
 logThreshold = zeros(1, nDirs);
 for ii = 1:nDirs
     % Create a grating scene engine with a particular chromatic direction,
     % spatial frequency, and temporal duration
-    theSceneEngine = createGratingScene(theDirs(:,ii), spatialFreq, 'spatialPhase', gratingPhaseDeg, 'fovDegs', gratingFovDegs);
+    theSceneEngine = createGratingSceneEngine(theDirs(:,ii), spatialFreq, 'spatialPhase', gratingPhaseDeg, 'fovDegs', gratingFovDegs);
 
     %% Create neural response engine on first pass.
     % 
