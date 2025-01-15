@@ -17,7 +17,7 @@ function dataOut = nreNoiseFreeCMosaic(...
 %       [1] If called directly and with no arguments,
 %           dataOut = nreScenePhotonNoise()
 %           dataOut = nreScenePhotonNoise([],[],[],[],varargin)
-
+%
 %       it does not compute anything and simply returns a struct with the
 %       defaultParams (optics and coneMosaic params) that define the neural
 %       compute pipeline for this computation.  In the second usage form,
