@@ -14,7 +14,7 @@ function validateAndSetParamsStruct(obj, noiseFreeComputeParams,noisyInstancesCo
     % Set the neural params
     obj.noiseFreeComputeParams = noiseFreeComputeParams;
 
-        % Accept an empty params struct
+    % Accept an empty params struct
     if (isempty(noisyInstancesComputeParams))
         % Set the noisyInstancesNeuralParams to the default params struct, which is returned
         % by the neuralComputeFunction when it is called with no input arguments

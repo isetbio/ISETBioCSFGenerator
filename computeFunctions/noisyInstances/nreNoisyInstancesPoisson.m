@@ -179,14 +179,15 @@ function dataOut = nreNoisyInstancesPoisson(...
     end
     
     % Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
-    % call the appropriate visualization function to visualize the generated 
-    % spatiotemporal noisy response instances.
+    % visualize the generated noisy response instances.
     if (neuralEngineOBJ.visualizeEachCompute)
-
-        % Select appropriate visualizing function depending on the computeFunction
-        if (isequal(neuralEngineOBJ.noiseFreeComputeFunction, @nreNoiseFreeCMosaic))
-            nreVisualizeCMosaic(neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaic, noisyResponseInstances, temporalSupportSeconds, 'noisy cMosaic responses');
-        end
+        % Visualize computed data
+        hFig = figure(1001);
+        set(hFig, 'Position', [350 50 1300 550]);
+        neuralEngineOBJ.visualize(noisyResponseInstances, temporalSupportSeconds, ...
+            'responseLabel', 'Poisson response instances', ...
+            'figureHandle', hFig, ...
+            'maxVisualizedNoisyResponseInstances', neuralEngineOBJ.maxVisualizedNoisyResponseInstances);
     end
 
     % Assemble the dataOut struct

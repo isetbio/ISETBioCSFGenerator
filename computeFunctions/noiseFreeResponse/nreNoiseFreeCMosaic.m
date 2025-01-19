@@ -1,11 +1,11 @@
 function dataOut = nreNoiseFreeCMosaic(...
-    neuralEngine, noiseFreeComputeParams, sceneSequence, ...
+    neuralEngineOBJ, noiseFreeComputeParams, sceneSequence, ...
     sceneSequenceTemporalSupport, varargin)
 % Compute function for computation of cone excitations
 %
 % Syntax:
 %   dataOut = nreNoiseFreeCMosaic(...
-%    neuralEngine, noiseFreeComputeParams, sceneSequence, ...
+%    neuralEngineOBJ, noiseFreeComputeParams, sceneSequence, ...
 %    sceneSequenceTemporalSupport, varargin);
 %
 % Description:
@@ -32,14 +32,14 @@ function dataOut = nreNoiseFreeCMosaic(...
 %    @neuralResponseEngine.
 %
 %    In addition to computing, this function checks the `visualizeEachCompute` 
-%    flag of the neuralEngine object and, if it set, calls the nreVisualizeCMosaic()
+%    flag of the neuralEngineOBJ and, if it set, calls the nreVisualizeCMosaic()
 %    visualization function. This causes figures to appear that visualize
 %    the noise-free spatiotemporal activation of the cone mosaic, along with 
 %    any eye movements that may be in effect, which is helpful for debugging.
 %    Note that everything runs much more slowly in this case.
 %
 % Inputs:
-%    neuralEngine                   - the parent @neuralResponseEngine object that
+%    neuralEngineOBJ                - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
 %    noiseFreeComputeParams         - a struct containing properties of the employed neural chain.
 %    sceneSequence                  - a cell array of scenes defining the frames of a stimulus
@@ -126,19 +126,19 @@ function dataOut = nreNoiseFreeCMosaic(...
     % using a parent @neuralResponseEngine object and the default neural response params
     %
     % Instantiate the parent @neuralResponseEngine object, with Poisson noise
-    theNeuralEngine = neuralResponseEngine(@nreNoiseFreeCMosaic, ...
+    theneuralEngineOBJ = neuralResponseEngine(@nreNoiseFreeCMosaic, ...
         @nreNoisyInstancesPoisson, ...
         nreParams, []);
     
     % Compute noise free response
-    [noiseFreeResponse, temporalSupportSeconds] = theNeuralEngine.computeNoiseFree(...
+    [noiseFreeResponse, temporalSupportSeconds] = theneuralEngineOBJ.computeNoiseFree(...
             sceneSequence, ...
             sceneTemporalSupportSeconds ...
             );
 
     % Add Poisson noise
     instancesNum = 16;
-    [noisyInstances, temporalSupportSeconds] = theNeuralEngine.computeNoisyInstances(...
+    [noisyInstances, temporalSupportSeconds] = theneuralEngineOBJ.computeNoisyInstances(...
             noiseFreeResponse, ...
             temporalSupportSeconds, ...
             instancesNum, ...
@@ -147,7 +147,7 @@ function dataOut = nreNoiseFreeCMosaic(...
 
     % Get multiple noise free instances, by not adding noise
     instancesNum = 16;
-    [noNoiseInstances, temporalSupportSeconds] = theNeuralEngine.computeNoisyInstances(...
+    [noNoiseInstances, temporalSupportSeconds] = theneuralEngineOBJ.computeNoisyInstances(...
             noiseFreeResponse, ...
             temporalSupportSeconds, ...
             instancesNum, ...
@@ -179,7 +179,7 @@ verbose = p.Results.verbose;
 
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
-if (nargin == 0 | isempty(neuralEngine))
+if (nargin == 0 | isempty(neuralEngineOBJ))
     dataOut = generateDefaultParams(opticsType,oiPadMethod);
     return;
 end
@@ -188,7 +188,7 @@ end
 framesNum = numel(sceneSequence);
 
 % Create/get key objects
-if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noiseFreeResponse'))
+if (isempty(neuralEngineOBJ.neuralPipeline) | ~isfield(neuralEngineOBJ.neuralPipeline,'noiseFreeResponse'))
 
     % Generate optics and mosaic
     [theOptics,theConeMosaic] = generateOpticsAndMosaicFromParams(...
@@ -244,10 +244,10 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
 else
     % Get the optics from the previously computed neural pipeline
     % stored in the object
-    theOptics = neuralEngine.neuralPipeline.noiseFreeResponse.optics;
+    theOptics = neuralEngineOBJ.neuralPipeline.noiseFreeResponse.optics;
 
     % Get the cone mosaic from the previously computed neural pipeline
-    theConeMosaic = neuralEngine.neuralPipeline.noiseFreeResponse.coneMosaic;
+    theConeMosaic = neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaic;
     returnTheNoiseFreePipeline = false;
 end
 
@@ -330,12 +330,15 @@ end
 % responses always have the responses in the column(s).
 theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
 
-% Check the visualizeEachCompute flag of the neuralEngine object, and if set to true,
-% call the nreVisualizeCMosaic() function to visualize the generated 
-% spatiotemporal noise-free mosaic activation along with any eye movements that 
-% may be in effect.
-if (neuralEngine.visualizeEachCompute)
-    nreVisualizeCMosaic(theConeMosaic, theNeuralResponses, temporalSupportSeconds, 'noise-free cMosaic responses');
+% Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
+% visualize the generated noise-free responses.
+if (neuralEngineOBJ.visualizeEachCompute)
+    
+    hFig = figure(1000);
+    set(hFig, 'Position', [350 700 1300 550]);
+    neuralEngineOBJ.visualize(theNeuralResponses, temporalSupportSeconds, ...
+        'responseLabel', 'noise-free cMosaic responses', ...
+        'figureHandle', hFig);
 end
 
 % Assemble the dataOut struct

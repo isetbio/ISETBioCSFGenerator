@@ -10,7 +10,16 @@ classdef neuralResponseEngine < handle
 %    passed compute functions. It is the compute functions that determine
 %    the semantics of the computation. As described below, one compute
 %    function computes a noise free response instance, while the other
-%    produces noisy instances from the noise free response.
+%    produces noisy instances from the noise free response. 
+%    The neuralResponseEngine contains a default visualization function
+%    which will plot the computed neural responses as a function of time.
+%    This visualization does not include the spatial position of the
+%    underlying neural mosaic, it just displays each neuron's response at a
+%    different y-coordinate. Users can supply function handles to specialized
+%    visualization functions. When this is done, the user's visualization function
+%    will be used instead of the default visualization function, each time
+%    neuralResponseEngine.visualize() is called
+%    
 %
 % Inputs:
 %    noiseFreeComputeFunctionHandle     - Function handle to the noiseFreeComputeFunction that defines the
@@ -44,6 +53,13 @@ classdef neuralResponseEngine < handle
     properties
         % User-settable flag for visualizing the output of each compute() call
         visualizeEachCompute = false;
+
+        % User-settable visualization function (overrides default
+        % visualization function)
+        customVisualizationFunctionHandle = [];
+
+        % User-settable max no of visualized response instances
+        maxVisualizedNoisyResponseInstances = 1;
     end
     
     %% Private properties
@@ -105,12 +121,38 @@ classdef neuralResponseEngine < handle
         [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstances(obj, ...
                 noiseFreeResponses, temporalSupportSeconds, instancesNum, varargin);
         
+        % Response visualization method.
+        % If the obj.customVisualizationFunctionHandle is set by the user,
+        % the default visualization function is bypassed and we use the
+        % user's visualization function. Otherwise we use the default
+        % built-in visualization function.
+        visualize(obj, neuralResponses, temporalSupportSeconds, varargin);
+
         function updateParamsStruct(obj, noiseFreeComputeParams, noisyInstancesComputeParams)
             % Set the compute params
             obj.validateAndSetParamsStruct(noiseFreeComputeParams, noisyInstancesComputeParams);
         end
-    end
+   
     
+        % Setter for custom visualization function handle
+        function set.customVisualizationFunctionHandle(obj, val)
+           if (isempty(val))
+               obj.customVisualizationFunctionHandle = [];
+           else
+               % Make sure that the visualization function handle is valid
+               fh = functions(val);
+               if (~isempty(fh.file))
+                   obj.customVisualizationFunctionHandle = val;
+               else
+                   warning('neuralResponseEngine:setCustomVisualizationFunctionHandle', 'visualization function ''%s'' was not found. Will use the default nre.visualize() method', fh.function);
+                   obj.customVisualizationFunctionHandle = [];
+               end
+            end
+        end
+
+    end  % Public methods
+
+
     % Private methods
     methods (Access = private)
         % Method to validate and set the scene compute function handle
@@ -120,4 +162,10 @@ classdef neuralResponseEngine < handle
         validateAndSetParamsStruct(obj,computeNoiseFreeParamsStruct,computeNoisyInstancesParamsStruct);
     end
     
+    % Public static methods.  These are useful functions that can be called
+	% without having to instantiate a @nre object first
+	methods (Static)
+        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances] = parseVisualizationOptionsStruct(options);
+    end % static methods
+
 end

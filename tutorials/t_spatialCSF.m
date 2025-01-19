@@ -162,7 +162,10 @@ function thresholdRet = t_spatialCSF(options)
         'temporalFilterValues', [], ...
         'oiPadMethod', 'zero', ...
         'validationThresholds', [], ...
-        'visualizeEachScene', false, 'visualizeEachResponse', false);
+        'visualizeEachScene', false, ...
+        'visualizeEachResponse', true, ...
+        'responseVisualizationFunction', @nreVisualizeCMosaic, ...
+        'maxVisualizedNoisyResponseInstances', 3);
 
     % Verify that Gaussian noise works, as well as template classifier
     t_spatialCSF('useMetaContrast', true, ...
@@ -186,6 +189,7 @@ function thresholdRet = t_spatialCSF(options)
         'oiPadMethod', 'mean', ...
         'validationThresholds', [0.0377    0.0796    0.1427    0.6956]);
 %}
+
 
 arguments
     % Use meta contrast method to speed things up?
@@ -267,6 +271,8 @@ arguments
     % Scene and response visualization are controlled separately.
     options.visualizeEachScene (1,1) logical = false;
     options.visualizeEachResponse (1,1) logical = false;
+    options.responseVisualizationFunction = [];
+    options.maxVisualizedNoisyResponseInstances = 1;
 end
 
 %% Close any stray figs
@@ -295,6 +301,8 @@ thresholdPara = options.thresholdPara;
 verbose = options.verbose;
 visualizeEachScene = options.visualizeEachScene;
 visualizeEachResponse = options.visualizeEachResponse;
+responseVisualizationFunction = options.responseVisualizationFunction;
+maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
 
 %% Freeze rng for replicatbility and validation
 rng(1);
@@ -639,8 +647,10 @@ theNeuralEngine = neuralResponseEngine( ...
     noisyInstancesParams ...
     );
 
-% Set the neuralEngine's visualizeEachCompute property
+% Set the neuralEngine's various visualization properties
 theNeuralEngine.visualizeEachCompute = visualizeEachResponse;
+theNeuralEngine.customVisualizationFunctionHandle = responseVisualizationFunction;
+theNeuralEngine.maxVisualizedNoisyResponseInstances = maxVisualizedNoisyResponseInstances;
 
 %% If using meta contrast, set this up.
 if (useMetaContrast)
