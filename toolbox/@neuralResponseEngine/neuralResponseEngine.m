@@ -166,7 +166,7 @@ classdef neuralResponseEngine < handle
     % Public static methods.  These are useful functions that can be called
 	% without having to instantiate a @nre object first
 	methods (Static)
-        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances] = parseVisualizationOptionsStruct(options);
+        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances] = parseVisualizationOptions(options);
     end % static methods
 
 end

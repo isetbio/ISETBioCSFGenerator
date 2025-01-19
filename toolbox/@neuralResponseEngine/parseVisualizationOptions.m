@@ -1,19 +1,19 @@
 function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedNoisyResponseInstances] = ...
-    parseVisualizationOptionsStruct(optionsStruct)
+    parseVisualizationOptions(options)
     
     arguments
-        optionsStruct.figureHandle = [];
-        optionsStruct.axesHandle = [];
-        optionsStruct.responseLabel (1,:) char  = ''
-        optionsStruct.clearAxesBeforeDrawing (1,1) logical = true;
-        optionsStruct.maxVisualizedNoisyResponseInstances (1,1) double = inf;
+        options.figureHandle = [];
+        options.axesHandle = [];
+        options.responseLabel (1,:) char  = ''
+        options.clearAxesBeforeDrawing (1,1) logical = true;
+        options.maxVisualizedNoisyResponseInstances (1,1) double = inf;
     end
 
-    figureHandle = optionsStruct.figureHandle;
-    axesHandle = optionsStruct.axesHandle;
-    responseLabel = optionsStruct.responseLabel;
-    clearAxesBeforeDrawing = optionsStruct.clearAxesBeforeDrawing;
-    maxVisualizedNoisyResponseInstances = optionsStruct.maxVisualizedNoisyResponseInstances;
+    figureHandle = options.figureHandle;
+    axesHandle = options.axesHandle;
+    responseLabel = options.responseLabel;
+    clearAxesBeforeDrawing = options.clearAxesBeforeDrawing;
+    maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
 
     assert(isEmptyOrHandle('figure', figureHandle), 'Figure handle is not valid');
     
@@ -43,7 +43,7 @@ end
 
 
 
- % if (isstruct(optionsStruct))
+ % if (isstruct(options))
  %        % Default values
  %        figureHandle = [];
  %        axesHandle = [];
@@ -52,38 +52,38 @@ end
  %        clearAxesBeforeDrawing = true;
  % 
  %        % Parse options struct
- %        fNames = fieldnames(optionsStruct);
+ %        fNames = fieldnames(options);
  % 
  %        for iField = 1:numel(fNames)
  %            switch(fNames{iField})
  %                case 'figureHandle'
- %                    assert(isEmptyOrHandle('figure', optionsStruct.figureHandle), 'Figure handle is not valid');
- %                    figureHandle = optionsStruct.figureHandle;
+ %                    assert(isEmptyOrHandle('figure', options.figureHandle), 'Figure handle is not valid');
+ %                    figureHandle = options.figureHandle;
  % 
  %                case 'axesHandle'
- %                    if (numel(optionsStruct.axesHandle) == 1)
- %                        assert(isEmptyOrHandle('axes', optionsStruct.axesHandle), 'Axes handle is not valid');
- %                    elseif iscell(optionsStruct.axesHandle)
- %                        for iAxisHandle = 1:numel(optionsStruct.axesHandle)
- %                            theAxisHandle = optionsStruct.axesHandle{iAxisHandle};
+ %                    if (numel(options.axesHandle) == 1)
+ %                        assert(isEmptyOrHandle('axes', options.axesHandle), 'Axes handle is not valid');
+ %                    elseif iscell(options.axesHandle)
+ %                        for iAxisHandle = 1:numel(options.axesHandle)
+ %                            theAxisHandle = options.axesHandle{iAxisHandle};
  %                            assert(mustBeEmptyOrHandle('axes', theAxisHandle), sprintf('Axes handle %d is not valid', iAxisHandle));
  %                        end
  %                    else
  %                        error('invalid passes axesHandle: nor an axis handle, neither a cell array of axis handles.')
  %                    end
- %                    axesHandle = optionsStruct.axesHandle;
+ %                    axesHandle = options.axesHandle;
  % 
  %                case 'responseLabel'
- %                    assert(ischar(optionsStruct.responseLabel), 'Response label is not a char');
- %                    responseLabel = optionsStruct.responseLabel;
+ %                    assert(ischar(options.responseLabel), 'Response label is not a char');
+ %                    responseLabel = options.responseLabel;
  % 
  %                case 'maxVisualizedNoisyResponseInstances'
- %                    assert(isnumeric(optionsStruct.maxVisualizedNoisyResponseInstances), 'maxVisualizedNoisyResponseInstances is not  numeric');
- %                    maxVisualizedInstances = optionsStruct.maxVisualizedNoisyResponseInstances;
+ %                    assert(isnumeric(options.maxVisualizedNoisyResponseInstances), 'maxVisualizedNoisyResponseInstances is not  numeric');
+ %                    maxVisualizedInstances = options.maxVisualizedNoisyResponseInstances;
  % 
  %                case 'clearAxesBeforeDrawing'
- %                    assert(islogical(optionsStruct.clearAxesBeforeDrawing), 'clearAxesBeforeDrawing is not boolean');
- %                    clearAxesBeforeDrawing = optionsStruct.clearAxesBeforeDrawing;
+ %                    assert(islogical(options.clearAxesBeforeDrawing), 'clearAxesBeforeDrawing is not boolean');
+ %                    clearAxesBeforeDrawing = options.clearAxesBeforeDrawing;
  % 
  %                otherwise
  %                    warning('Uknown visualization option: ''%s'' is ignored,', fNames{iField});
@@ -92,4 +92,4 @@ end
  %        end % for iField
  %    else
  %        warning('Passed visualization options argument is not a struct. Ignoring it.')
- %    end % if (isstruct(optionsStruct))
+ %    end % if (isstruct(options))

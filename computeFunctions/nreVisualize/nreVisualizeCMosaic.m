@@ -9,7 +9,7 @@
 function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, varargin)
 
     [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances] = ...
-        neuralResponseEngine.parseVisualizationOptionsStruct(varargin{:});
+        neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
     if (isempty(figureHandle))
         figureHandle = figure(); clf;

@@ -15,7 +15,7 @@ end
 function defaultVisualization(neuralResponses, temporalSupportSeconds, varargin)
    
     [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances] = ...
-        neuralResponseEngine.parseDefaultVisualizationOptionsStruct(varargin{:});
+        neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
     %% Set figure size
     if (isempty(figureHandle))
