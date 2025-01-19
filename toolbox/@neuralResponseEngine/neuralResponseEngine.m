@@ -54,11 +54,12 @@ classdef neuralResponseEngine < handle
         % User-settable flag for visualizing the output of each compute() call
         visualizeEachCompute = false;
 
-        % User-settable visualization function (overrides default
-        % visualization function)
+        % User-settable visualization function handle
+        % If set, the default visualization function is by passed and the
+        % function pointed to by this handle is executed instead
         customVisualizationFunctionHandle = [];
 
-        % User-settable max no of visualized response instances
+        % User-settable max no of visualized noisy response instances
         maxVisualizedNoisyResponseInstances = 1;
     end
     
@@ -121,11 +122,11 @@ classdef neuralResponseEngine < handle
         [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstances(obj, ...
                 noiseFreeResponses, temporalSupportSeconds, instancesNum, varargin);
         
-        % Response visualization method.
-        % If the obj.customVisualizationFunctionHandle is set by the user,
-        % the default visualization function is bypassed and we use the
-        % user's visualization function. Otherwise we use the default
-        % built-in visualization function.
+        % Response visualization method. This is a gateway function.
+        % If the obj.customVisualizationFunctionHandle is not set by the user,
+        % the default visualization function is used.
+        % If it is set, the default visualization is bypassed and the
+        % user's visualization function is used instead. 
         visualize(obj, neuralResponses, temporalSupportSeconds, varargin);
 
         function updateParamsStruct(obj, noiseFreeComputeParams, noisyInstancesComputeParams)
