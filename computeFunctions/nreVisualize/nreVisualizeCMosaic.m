@@ -8,7 +8,7 @@
 
 function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, varargin)
 
-    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances] = ...
+    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances, visualizationMetaData] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
     if (isempty(figureHandle))
@@ -50,6 +50,16 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         emPathsDegs = [];
     end
 
+    if (numel(temporalSupportSeconds)>1)
+        dt = temporalSupportSeconds(2)-temporalSupportSeconds(1);
+        XLim = [temporalSupportSeconds(1)-dt/2 temporalSupportSeconds(end)+dt/2];
+        XTick = temporalSupportSeconds(1):dt:temporalSupportSeconds(end);
+    else
+        dt = 0;
+        XLim = [temporalSupportSeconds(1)-0.01 temporalSupportSeconds(1)+0.01];
+        XTick = temporalSupportSeconds(1);
+    end
+
     for iTrial = 1:min([nInstances maxVisualizedInstances])
 
         % The instantaneous spatial activation
@@ -70,7 +80,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             plot(axConeTimeResponses, SconeRect.x, SconeRect.y, 'c-', 'LineWidth', 2);
 
             % The stimulus frames
-            dt = temporalSupportSeconds(2)-temporalSupportSeconds(1);
             for i = 1:numel(temporalSupportSeconds)
                 plot(axConeTimeResponses, (temporalSupportSeconds(i)-dt/2)*[1 1], [1 theConeMosaic.conesNum], 'k-', 'LineWidth', 1.0);
             end
@@ -81,7 +90,8 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             colormap(axConeTimeResponses, brewermap(1024, '*greys'));
 
             set(axConeTimeResponses, ...
-                'XLim', [temporalSupportSeconds(1)-dt/2 temporalSupportSeconds(end)+dt/2], ...
+                'XLim', XLim, ...
+                'XTick', XTick, ...
                 'YLim', [1 theConeMosaic.conesNum], ...
                 'CLim', activationRange, ...
                 'Color', [0 0 0], ...

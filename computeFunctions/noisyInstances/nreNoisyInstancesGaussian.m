@@ -172,12 +172,14 @@ function dataOut = nreNoisyInstancesGaussian(...
     % call the appropriate visualization function to visualize the generated 
     % spatiotemporal noisy response instances.
     if (neuralEngineOBJ.visualizeEachCompute)
-
-        % Select appropriate visualizing function depending on the computeFunction
-        if (isequal(neuralEngineOBJ.noiseFreeComputeFunction, @nreNoiseFreeMidgetRGCMosaic))
-            nreVisualizeMRGCmosaic(neuralEngineOBJ.neuralPipeline.noiseFreeResponse.mRGCMosaic, ...
-                noisyResponseInstances, neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaicResponse, temporalSupportSeconds, 'noisy mRGCmosaic responses');
-        end
+        % Visualize computed data
+        hFig = figure(1001);
+        set(hFig, 'Position', [350 50 1300 550]);
+        neuralEngineOBJ.visualize(noisyResponseInstances, temporalSupportSeconds, ...
+            'figureHandle', hFig, ...
+            'responseLabel', 'noisy mRGCmosaic responses', ...
+            'maxVisualizedNoisyResponseInstances', neuralEngineOBJ.maxVisualizedNoisyResponseInstances);
+       
     end
 
     % Assemble the dataOut struct

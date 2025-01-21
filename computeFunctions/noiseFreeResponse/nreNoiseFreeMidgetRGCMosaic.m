@@ -1,11 +1,11 @@
 function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
-    neuralEngine, noiseFreeComputeParams, sceneSequence, ...
+    neuralEngineOBJ, noiseFreeComputeParams, sceneSequence, ...
     sceneSequenceTemporalSupport, varargin)
 % Compute function for computation of mRGCMosaic activations
 %
 % Syntax:
 %   dataOut = nreNoiseFreeMidgetRGCMosaic(...
-%    neuralEngine, noiseFreeComputeParams, sceneSequence, ...
+%    neuralEngineOBJ, noiseFreeComputeParams, sceneSequence, ...
 %    sceneSequenceTemporalSupport, instancesNum, varargin);
 %
 % Description:
@@ -30,14 +30,14 @@ function dataOut = nreNoiseFreeMidgetRGCMosaic( ...
 %    @neuralResponseEngine.
 %
 %    In addition to computing, this function checks the `visualizeEachCompute` 
-%    flag of the neuralEngine object and, if it set, calls the nreVisualizeMRGCmosaic()
+%    flag of the neuralEngineOBJ and, if it set, calls the nreVisualizeMRGCmosaic()
 %    visualization function. This causes figures to appear that visualize
 %    the noise-free spatiotemporal activation of the mRGC mosaic, 
 %    which is helpful for debugging.
 %    Note that everything runs much more slowly in this case.
 
 % Inputs:
-%    neuralEngine                   - the parent @neuralResponseEngine object that
+%    neuralEngineOBJ                   - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
 %    noiseFreeComputeParams         - a struct containing properties of the
 %                                     employed neural chain.
@@ -122,7 +122,7 @@ oiPadMethod = p.Results.oiPadMethod;
 verbose = p.Results.verbose;
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
-if (nargin == 0 | isempty(neuralEngine))
+if (nargin == 0 | isempty(neuralEngineOBJ))
     dataOut = generateDefaultParams(opticsType,oiPadMethod);
     return;
 end
@@ -131,7 +131,7 @@ end
 framesNum = numel(sceneSequence);
 
 % Create/get key objects on first call
-if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noiseFreeResponse'))
+if (isempty(neuralEngineOBJ.neuralPipeline) | ~isfield(neuralEngineOBJ.neuralPipeline,'noiseFreeResponse'))
     % Step1. Load a compute-ready mRGC mosaic given the passed params.
     %
     % This also produces the cone mosaic on which the RGC mosaic is built.
@@ -203,15 +203,15 @@ if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,
     returnTheNoiseFreePipeline = true;
 else
     % Get the optics from the previously computed neural pipeline
-    theOptics = neuralEngine.neuralPipeline.noiseFreeResponse.optics;
+    theOptics = neuralEngineOBJ.neuralPipeline.noiseFreeResponse.optics;
 
     % Get the mRGC mosaic from the previously computed neural pipeline
-    theMRGCmosaic = neuralEngine.neuralPipeline.noiseFreeResponse.mRGCMosaic;
+    theMRGCmosaic = neuralEngineOBJ.neuralPipeline.noiseFreeResponse.mRGCMosaic;
 
     % Get null response info
-    coneMosaicNullResponse = neuralEngine.neuralPipeline.noiseFreeResponse.coneMosaicNullResponse;
+    coneMosaicNullResponse = neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaicNullResponse;
     coneMosaicNormalizingResponse = ...
-        neuralEngine.neuralPipeline.noiseFreeResponse.coneMosaicNormalizingResponse;
+        neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaicNormalizingResponse;
 
     % No need to store anything
     returnTheNoiseFreePipeline = false;
@@ -262,14 +262,6 @@ end
 % Transform the cone excitation responses to cone modulation responses if
 % needed.
 if (~isempty(coneMosaicNullResponse))
-    % DHB - I commented out this and other references to the
-    % noiseFreeConeMosaicResponsesNonContrast.  We want to visualize the
-    % actual responses we return, not the cone excitations.  Not sure why
-    % it was coded this way. But leaving this as I need to ask Nicolas.
-    %
-    % Save the non-contrast cone mosaic response for visualization purposes
-    % noiseFreeConeMosaicResponsesNonContrast = noiseFreeConeMosaicResponses;
-
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
     % This mimics the photocurrent response which is normalized with respect to the
@@ -334,12 +326,20 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
     clear newNeuralResponses;
 end
 
-% Check the visualizeEachCompute flag of the neuralEngine object, and if set to true,
+% Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
 % call the nreVisualizeMRGCmosaic() function to visualize the generated 
 % spatiotemporal noise-free mosaic activation
-if (neuralEngine.visualizeEachCompute)
-    % nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, noiseFreeConeMosaicResponsesNonContrast, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
-    nreVisualizeMRGCmosaic(theMRGCmosaic, theNeuralResponses, theNeuralResponses, temporalSupportSeconds, 'noise-free mRGC mosaic responses');
+if (neuralEngineOBJ.visualizeEachCompute)
+    % Save the cone mosaic responses in the visualizationMetaData struct
+    visualizationMetaData.noiseFreeConeMosaicResponses = noiseFreeConeMosaicResponses;
+
+    hFig = figure(1000);
+    set(hFig, 'Position', [350 700 1300 550]);
+
+    neuralEngineOBJ.visualize(theNeuralResponses, temporalSupportSeconds, ...
+        'responseLabel', 'noise-free mRGC responses', ...
+        'visualizationMetaData', visualizationMetaData, ...
+        'figureHandle', hFig);
 end
 
 % Assemble the dataOut struct
@@ -347,11 +347,11 @@ dataOut = struct(...
     'neuralResponses', theNeuralResponses, ...
     'temporalSupport', temporalSupportSeconds);
 
+
 if (returnTheNoiseFreePipeline)
     noiseFreeResponsePipeline = struct();
     noiseFreeResponsePipeline.optics = theOptics;
     noiseFreeResponsePipeline.mRGCMosaic = theMRGCmosaic;
-    % noiseFreeResponsePipeline.coneMosaicResponse = noiseFreeConeMosaicResponsesNonContrast;
     noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
     noiseFreeResponsePipeline.coneMosaicNormalizingResponse = coneMosaicNormalizingResponse;
     dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
