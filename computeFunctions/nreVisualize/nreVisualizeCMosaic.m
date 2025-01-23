@@ -156,7 +156,11 @@ function [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = spa
     mosaicSpatioTemporalActivation((lConesNum+mConesNum)+(1:sConesNum), 1:iPoint) = (squeeze(theSconeResponses))';
 
     % The L-, M-, and S-cone rects
-    dt = 0.5*(temporalSupportSeconds(2)-temporalSupportSeconds(1));
+    if (numel(temporalSupportSeconds) == 1)
+        dt = 1/1000;
+    else
+        dt = 0.5*(temporalSupportSeconds(2)-temporalSupportSeconds(1));
+    end
     LconeRect.x = [temporalSupportSeconds(1)-dt temporalSupportSeconds(end)+dt temporalSupportSeconds(end)+dt temporalSupportSeconds(1)-dt temporalSupportSeconds(1)-dt]*1e3;
     LconeRect.y = [1  1 numel(theConeMosaic.lConeIndices) numel(theConeMosaic.lConeIndices) 1];
     MconeRect.x = LconeRect.x;
