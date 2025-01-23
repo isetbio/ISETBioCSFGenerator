@@ -8,6 +8,7 @@
 
 function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, varargin)
 
+
     [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances, visualizationMetaData] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
@@ -45,10 +46,11 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
 
  
     % Back to mRGCMosaic's native response format because we will be calling
-    % cMosaic visualizer functions which expect it
+    % cMosaic visualizer functions which expect it  
     if (size(neuralResponses,2) == theMRGCmosaic.rgcsNum)
         neuralResponses = permute(neuralResponses,[1 3 2]);
     end
+
 
 
     if (ndims(neuralResponses) == 2)
@@ -59,7 +61,8 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
         end
     end
 
-   
+
+
     [nTrials, nTimePoints, nRGCs] = size(neuralResponses);
     activationRangeMRGCMosaic = prctile(neuralResponses(:),[0 100]);
     activationRangeConeMosaic = prctile(theConeMosaicResponses(:),[0 100]);
@@ -116,8 +119,7 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
             xtActivation = spatioTemporalResponseComponents(theMRGCmosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint);
 
             % Plot the spatiotemporal response up to this time point
-            imagesc(axResponseTimeResponses, temporalSupportSeconds, 1:theMRGCmosaic.rgcsNum, ...
-                xtActivation);
+            imagesc(axResponseTimeResponses, temporalSupportSeconds, 1:theMRGCmosaic.rgcsNum, xtActivation);
             hold(axResponseTimeResponses, 'on');
 
             % The stimulus frames
@@ -165,9 +167,13 @@ end
 function xtActivation = spatioTemporalResponseComponents(theMRGCmosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint)
           
     mosaicSpatioTemporalActivation = squeeze(neuralResponses(iTrial,:,:));
-    mosaicSpatioTemporalActivation = reshape(mosaicSpatioTemporalActivation, [theMRGCmosaic.rgcsNum numel(temporalSupportSeconds)]);
-
-    xtActivation = zeros(theMRGCmosaic.rgcsNum, numel(temporalSupportSeconds));
-    xtActivation(:, 1:iPoint) = mosaicSpatioTemporalActivation(:, 1:iPoint);
-  
+    if (size(mosaicSpatioTemporalActivation,1) == numel(temporalSupportSeconds)) && ...
+       (size(mosaicSpatioTemporalActivation,2) == theMRGCmosaic.rgcsNum)
+            xtActivation = 0 * mosaicSpatioTemporalActivation;
+            xtActivation(1:iPoint,:) = mosaicSpatioTemporalActivation(1:iPoint,:);
+            xtActivation = xtActivation';
+    else
+        error('size inconsistency')
+    end 
+ 
 end

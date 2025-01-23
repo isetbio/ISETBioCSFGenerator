@@ -23,21 +23,22 @@ function defaultVisualization(neuralResponses, temporalSupportSeconds, varargin)
         set(figureHandle, 'Position', [10 10 700 700], 'Color', [1 1 1]);
     end
     if (isempty(axesHandle))
-        axesHandle = subplot('Position', [0.09 0.07 0.85 0.90]);
+        axesHandle = subplot('Position', [0.09 0.07 0.85 0.88]);
     end
-
+    
     % If we were passed more than one axes handles, just use the first one
     if (iscell(axesHandle))&&(numel(axesHandle) > 1)
-            axesHandle = axesHandle{1};
+        axesHandle = axesHandle{1};
     end
 
     if (clearAxesBeforeDrawing)
         cla(axesHandle);
     end
+    
 
 
     [nInstances, mNeurons, tBins] = size(neuralResponses);
-    activationRange = [min(neuralResponses(:)) max(neuralResponses(:))];
+    activationRange = prctile(neuralResponses(:), [0 100]);
     if (activationRange(1) == activationRange(2))
         activationRange = activationRange(1) + [-10*eps 10*eps];
     end
@@ -75,25 +76,18 @@ function defaultVisualization(neuralResponses, temporalSupportSeconds, varargin)
             end
 
             imagesc(axesHandle, temporalSupportSeconds, 1:mNeurons, theNeuralResponseMap);
+            axis(axesHandle, 'xy');
             set(axesHandle, ...
                 'CLim', activationRange, ...
                 'XLim', XLim, ...
                 'XTick', XTick, ...
                 'YLim', [1 mNeurons]);
             set(axesHandle, 'fontSize', 16);
+            colorbar(axesHandle, 'NorthOutside')
             title(axesHandle, sprintf('%s (trial: %d)',responseLabel, iTrial));
-            colormap(gray);
+            
+            colormap(axesHandle, gray);
             drawnow;
         end
-    end
-    
-end
-
-
-% Validation function
-function mustBeEmptyOrHandle(argumentName, x)
-    if (isempty(x) || ishandle(x))
-    else
-        error(neuralResponseEngine:visualize,'must be EITHER empty OR a %s handle', argumentName);
     end
 end
