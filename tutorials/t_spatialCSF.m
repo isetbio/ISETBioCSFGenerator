@@ -80,7 +80,7 @@ function thresholdRet = t_spatialCSF(options)
         'temporalFilterValues', [1 0 0 0], ...
         'oiPadMethod', 'zero', ...
         'validationThresholds', [], ...
-        'visualizeEachScene', false, 'visualizeEachResponse', false);
+        'visualizeEachScene', false, 'visualizeEachResponse', true);
 
     % Validate with cone contrast, temporal filter, meta contrast.  This
     % is a delta function with a big gain reduction prior to noise being added,
@@ -125,7 +125,7 @@ function thresholdRet = t_spatialCSF(options)
         'visualizeEachScene', false, ...
         'visualizeEachResponse', true, ...
         'responseVisualizationFunction', @nreVisualizeMRGCmosaic, ...
-        'maxVisualizedNoisyResponseInstances', 9); 
+        'maxVisualizedNoisyResponseInstances', 15); 
 
 
     % mRGCMosaic nre, but pick off cone excitations as output
@@ -332,8 +332,8 @@ else
     padFramesBefore = 0;
     padFramesAfter = 0;
 end
-sizeDegs = 4*[0.5 0.5];
-pixelsNum = 128*2;
+sizeDegs = [0.5 0.5];
+pixelsNum = 128;
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
 frameDurationSeconds = 0.1;
