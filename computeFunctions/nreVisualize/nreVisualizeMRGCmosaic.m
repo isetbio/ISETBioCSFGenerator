@@ -166,7 +166,13 @@ end
 
 function xtActivation = spatioTemporalResponseComponents(theMRGCmosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint)
           
+    [nTrials, nTimePoints, mRGCs] = size(neuralResponses);
+    
     mosaicSpatioTemporalActivation = squeeze(neuralResponses(iTrial,:,:));
+    if (size(mosaicSpatioTemporalActivation,1) == mRGCs)
+        mosaicSpatioTemporalActivation = mosaicSpatioTemporalActivation';
+    end
+
     if (size(mosaicSpatioTemporalActivation,1) == numel(temporalSupportSeconds)) && ...
        (size(mosaicSpatioTemporalActivation,2) == theMRGCmosaic.rgcsNum)
             xtActivation = 0 * mosaicSpatioTemporalActivation;
