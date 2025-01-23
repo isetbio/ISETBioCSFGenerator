@@ -38,6 +38,10 @@ function defaultVisualization(neuralResponses, temporalSupportSeconds, varargin)
 
     [nInstances, mNeurons, tBins] = size(neuralResponses);
     activationRange = [min(neuralResponses(:)) max(neuralResponses(:))];
+    if (activationRange(1) == activationRange(2))
+        activationRange = activationRange(1) + [-10*eps 10*eps];
+    end
+    
     assert(tBins == size(temporalSupportSeconds,2), 'Inconsistency in time dimension');
 
     visualizedInstancesNum = min([nInstances maxVisualizedInstances]);

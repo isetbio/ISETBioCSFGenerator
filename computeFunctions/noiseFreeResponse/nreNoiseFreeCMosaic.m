@@ -335,7 +335,7 @@ theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
 if (neuralEngineOBJ.visualizeEachCompute)
     
     hFig = figure(1000);
-    set(hFig, 'Position', [350 700 1300 550]);
+    set(hFig, 'Position', [350 700 1650 550]);
     neuralEngineOBJ.visualize(theNeuralResponses, temporalSupportSeconds, ...
         'responseLabel', 'noise-free cMosaic responses', ...
         'figureHandle', hFig);

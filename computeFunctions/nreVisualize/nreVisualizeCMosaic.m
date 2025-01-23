@@ -13,7 +13,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 
     if (isempty(figureHandle))
         figureHandle = figure(); clf;
-        set(figureHandle, 'Position', [10 10 1700 500], 'Color', [1 1 1]);
+        set(figureHandle, 'Position', [10 10 1700 500]);
     end
     if (isempty(axesHandle))
         axCmosaicActivation = subplot(1,2,1);
@@ -28,6 +28,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             axConeTimeResponses = subplot(1,2,2);
         end
     end
+
 
     % Retrieve the visualization data we need from the pipeline
     theConeMosaic = neuralPipeline.noiseFreeResponse.coneMosaic;
@@ -65,7 +66,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         % The instantaneous spatial activation
         for iPoint = 1:nTimePoints
 
-            % Retrieve plotting data up to this time point
+            % Retrieve spatiotemporal response up to this time point
             [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
                 spatioTemporalResponseComponents(theConeMosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint);
             
@@ -128,6 +129,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
                     'plotTitle', sprintf('%s (t: %2.1f msec, trial %d of %d)', responseLabel, temporalSupportSeconds(iPoint)*1e3, iTrial, nInstances));
      
             end 
+
             drawnow;
 
         end % iPoint
