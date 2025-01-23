@@ -6,9 +6,10 @@
 % History:
 %    01/11/2025  NPC  Wrote it
 
-function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, varargin)
+function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
+    maxVisualizedInstances, visualizationMetaData, varargin)
 
-    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances, visualizationMetaData] = ...
+    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
     if (isempty(figureHandle))
@@ -138,7 +139,8 @@ end
 
 
 
-function [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = spatioTemporalResponseComponents(theConeMosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint)
+function [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
+    spatioTemporalResponseComponents(theConeMosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint)
 
     % Retrieve the spatiotemporal L-, M- and S-cone responses
     % so we can plot them separately along the y-axis

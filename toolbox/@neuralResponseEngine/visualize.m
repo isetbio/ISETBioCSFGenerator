@@ -4,17 +4,19 @@ function visualize(obj, neuralResponses, temporalSupportSeconds, varargin)
     if (~isempty(obj.customVisualizationFunctionHandle))
         if (~isempty(obj.neuralPipeline))
             % User specified custom visualization function and we have a non-empty neural pipeline
-            obj.customVisualizationFunctionHandle(obj.neuralPipeline, neuralResponses, temporalSupportSeconds, varargin{:});
+            obj.customVisualizationFunctionHandle(obj.neuralPipeline, neuralResponses, temporalSupportSeconds, ...
+                obj.maxVisualizedNoisyResponseInstances, obj.visualizationMetaData, varargin{:});
         end
     else
         % Just the default visualization
-        defaultVisualization(neuralResponses, temporalSupportSeconds, varargin{:});
+        defaultVisualization(neuralResponses, temporalSupportSeconds, ...
+            obj.maxVisualizedNoisyResponseInstances, varargin{:});
     end
 end
 
-function defaultVisualization(neuralResponses, temporalSupportSeconds, varargin)
+function defaultVisualization(neuralResponses, temporalSupportSeconds, maxVisualizedInstances, varargin)
    
-    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances] = ...
+    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
     %% Set figure size

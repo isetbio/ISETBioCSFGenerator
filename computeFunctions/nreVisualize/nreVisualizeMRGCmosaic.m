@@ -6,10 +6,11 @@
 % History:
 %    01/11/2025  NPC  Wrote it
 
-function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, varargin)
+function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
+    maxVisualizedInstances, visualizationMetaData, varargin)
 
 
-    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedInstances, visualizationMetaData] = ...
+    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
     if (isempty(figureHandle))
@@ -34,7 +35,8 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
     end
 
     
-   
+    
+
     % Retrieve the neural pipeline
     theMRGCmosaic = neuralPipeline.noiseFreeResponse.mRGCMosaic;
 

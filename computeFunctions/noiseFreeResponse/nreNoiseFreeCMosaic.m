@@ -331,7 +331,20 @@ end
 theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
 
 % Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
-% visualize the generated noise-free responses.
+% call the neuralEngineOBJ.visualize() function to visualize the responses
+
+% Empty the visualization meta data
+visualizationMetaData = [];
+
+if (neuralEngineOBJ.computeVisualizationMetaData || neuralEngineOBJ.visualizeEachCompute)
+    % Place holder here for some future data
+    % visualizationMetaData.someField = someData;
+end
+
+% Update the stored visualization metadata
+neuralEngineOBJ.updataVisualizationMetadata(visualizationMetaData);
+
+
 if (neuralEngineOBJ.visualizeEachCompute)
     
     hFig = figure(1000);

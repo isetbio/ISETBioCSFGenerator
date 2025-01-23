@@ -1,4 +1,4 @@
-function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVisualizedNoisyResponseInstances, visualizationMetaData] = ...
+function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = ...
     parseVisualizationOptions(options)
     
     arguments
@@ -6,16 +6,12 @@ function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, maxVi
         options.axesHandle = [];
         options.responseLabel (1,:) char  = ''
         options.clearAxesBeforeDrawing (1,1) logical = true;
-        options.maxVisualizedNoisyResponseInstances (1,1) double = inf;
-        options.visualizationMetaData = [];
     end
 
     figureHandle = options.figureHandle;
     axesHandle = options.axesHandle;
     responseLabel = options.responseLabel;
     clearAxesBeforeDrawing = options.clearAxesBeforeDrawing;
-    maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
-    visualizationMetaData = options.visualizationMetaData;
 
     assert(isEmptyOrHandle('figure', figureHandle), 'Figure handle is not valid');
     

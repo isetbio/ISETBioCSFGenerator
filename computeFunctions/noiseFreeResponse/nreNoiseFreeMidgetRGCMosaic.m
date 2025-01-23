@@ -328,18 +328,28 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
 end
 
 % Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
-% call the nreVisualizeMRGCmosaic() function to visualize the generated 
-% spatiotemporal noise-free mosaic activation
-if (neuralEngineOBJ.visualizeEachCompute)
+% call the neuralEngineOBJ.visualize() function to visualize the responses
+
+% Empty the visualization meta data
+visualizationMetaData = [];
+
+if (neuralEngineOBJ.computeVisualizationMetaData || neuralEngineOBJ.visualizeEachCompute)
     % Save the cone mosaic responses in the visualizationMetaData struct
     visualizationMetaData.noiseFreeConeMosaicResponses = noiseFreeConeMosaicResponses;
+end
+
+% Update the stored visualization metadata
+neuralEngineOBJ.updataVisualizationMetadata(visualizationMetaData);
+
+
+% Visualize
+if (neuralEngineOBJ.visualizeEachCompute)
 
     hFig = figure(1000);
     set(hFig, 'Position', [350 700 1650 550]);
 
     neuralEngineOBJ.visualize(theNeuralResponses, temporalSupportSeconds, ...
         'responseLabel', 'noise-free mRGC responses', ...
-        'visualizationMetaData', visualizationMetaData, ...
         'figureHandle', hFig);
 end
 
