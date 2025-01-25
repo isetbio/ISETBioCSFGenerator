@@ -128,13 +128,6 @@ function [scene, parms] = sceneCreateExtended(sceneName, varargin)
 %    *Section needs to be expanded*
 %
 % Copyright ImagEval Consultants, LLC, 2003.
-%
-% Examples:
-%    ieExamplesPrint('sceneCreate');
-%
-% See Also:
-%    sceneFromFile
-%
 
 if notDefined('sceneName'), sceneName = 'default'; end
 parms = []; % Returned in some cases, not many.
@@ -356,14 +349,7 @@ switch sceneName
         scene = sceneBar(scene, sz, width);
     case {'vernier'}
         % sceneCreate('vernier', type, params)
-        % Examples:
         %  N.B. The displayed bar width is one more than specified here.
-        %
-        %   p.sceneSz = 64; p.barWidth = -1; p.offset = 1; p.meanLum = 10;
-        %   p.lineSpace = 1; p.barColor = [1 0.5 0.5]; p.bgColor = .5;
-        %   s = sceneCreate('vernier', 'display', p);
-        %   vcAddObject(s); sceneWindow;
-        %
         if ~isempty(varargin)
             type = varargin{1};
         else
@@ -638,12 +624,6 @@ function scene = sceneDefault(scene, illuminantType, args)
 % Optional key/value pairs:
 %    None.
 %
-
-% Examples:
-%{
-    scene = sceneCreate;
-    sceneDefault(scene, 'd65', 16, [400:10:700]);
-%}
 
 if notDefined('illuminantType'), illuminantType = 'd65'; end
 if notDefined('args'), args = []; end
@@ -1106,11 +1086,6 @@ function scene = sceneRadialLines(scene, imSize, spectralType, nLines)
 %   Proc. SPIE, Vol. 6502, 65020N (2007); doi:10.1117/12.703817
 %
 
-% Examples:
-%{
-	scene = sceneCreate('radialLines');
-%}
-
 if notDefined('scene'), error('Scene must be defined'); end
 if notDefined('spectralType'), spectralType = 'ep'; end
 if notDefined('imSize'), imSize = 256; end
@@ -1406,12 +1381,6 @@ function scene = sceneLstarSteps(scene, barWidth, nBars, deltaE)
 % Optional key/value pairs:
 %    None.
 %
-
-% Examples:
-%{
-	scene = sceneCreate('lstar', 50, 11, 10);
-    ieAddObject(scene); sceneWindow;
-%}
 
 scene = initDefaultSpectrum(scene, 'hyperspectral');
 wave = sceneGet(scene, 'wave');
