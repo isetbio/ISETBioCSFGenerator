@@ -1,4 +1,4 @@
-function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
+function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychometricParams, ...
     trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
     computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
@@ -25,6 +25,17 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %    those two tutorials should allow you to make effective use of this
 %    function.
 %
+%    The thresholdPara structure may contain a field maxParamValue. This is
+%    used to scale the linear parameter values returned by the
+%    questThresholdEngine, outside of that engine.  Thus the values in
+%    questObj are not scaled by this parameter, but those simulated by
+%    theSceneEngine are so scaled. See outputs below for a detailed
+%    descripiont of where the scalar has been applied and where not. This
+%    is probably not the best design, and in general we rather strongly
+%    recommend that you not use the maxParamValue field, so that all the
+%    stimulus values are consistent across the code. We provide this field
+%    for backwards compatibilty with some older code.
+%
 % Inputs:
 %   theSceneEngine        - sceneEngine object for stimulus generation
 %   theNeuralEngine       - neuralResponseEngine object
@@ -34,17 +45,30 @@ function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams
 %   questEnginePara       - Parameter struct for running the questThresholdEngine
 %
 % Outputs:
-%   logThreshold              - Estimated threshold value (log)
+%   logThreshold              - Estimated threshold value (log). The linear
+%                               value that this is the log10 of has been
+%                               scaled by thresholdParam.maxParamValue.
 %   questObj                  - questThresholdEngine object, which
-%                               contains information about all the trials run.
+%                               contains information about all the trials
+%                               run. The values in here are not scaled by
+%                               thresholdParam.maxParamValue.
 %   psychometricFunction      - Dictionary (aka Container, indexed by contrast level) with the 
-%                               psychometric function.
-%   fittedPsychometricParams  - Parameters of psychometric function fit,
-%                               matched to PF used in the questThresholdEngine object
+%                               psychometric function. The dictionary
+%                               entries are indexed by a string containing
+%                               linear parameter values multiplied by 100
+%                               (to make it percent if it is linear
+%                               contrast).  This linear value has been
+%                               multiplied by thresholdParam.maxParamValue.
+%   estimatorFittedPsychometricParams  - Parameters of psychometric function fit,
+%                               matched to PF used in the
+%                               questThresholdEngine object. These have not
+%                               been scaled by thresholdParm.maxParamValue.
 %   trialByTrialStimulusAlternatives - Dictionary with same keys as
-%                               psychometric fuction that has a column vector for each contrast level
-%                               that gives the trial-by-trial stimulus alternative (integer 1-N) for
-%                               each trial at that contrast level.
+%                               psychometric fuction that has a column
+%                               vector for each contrast level that gives
+%                               the trial-by-trial stimulus alternative
+%                               (integer 1-N) for each trial at that
+%                               contrast level.
 %   trialByTrialPerformance   - One more dictionary matched to
 %                               trialByTrialStimulusAlternatives that gives correct (1) or incorrect
 %                               (0) for each trial.
@@ -434,7 +458,7 @@ else
 end
 
 % Param threshold (log value)
-[estimatorLogThreshold, fittedPsychometricParams, estimatorThresholdDataOut] = ...
+[estimatorLogThreshold, estimatorFittedPsychometricParams, estimatorThresholdDataOut] = ...
     estimator.thresholdMLE('showPlot', false, ...
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
 thresholdDataOut = estimatorThresholdDataOut;
@@ -447,8 +471,8 @@ logThreshold = log10(threshold);
 
 if (verbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
-            fittedPsychometricParams(1), fittedPsychometricParams(2),...
-            fittedPsychometricParams(3), fittedPsychometricParams(4));
+            estimatorFittedPsychometricParams(1), estimatorFittedPsychometricParams(2),...
+            estimatorFittedPsychometricParams(3), estimatorFittedPsychometricParams(4));
     fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units)\n', ...
         thresholdCriterion,logThreshold);
 end
