@@ -15,7 +15,10 @@ function [scene, parms] = sceneCreateExtended(sceneName, varargin)
 %
 %    This version of sceneCreate was in ISETBio before we did the
 %    ISETCam/ISETBio integration.  That adopted a different sceneCreate.
-%    We are using this here because, well, it does what we want.
+%    We are using this here because, well, it does what we want for
+%    Vernier scenes. In a better world, we would integrate this
+%    functionality into the new version of ISETBio more directly. Or at
+%    least add code that only allows you to use this for Vernier scenes.
 %    
 %    You can use sceneAdjustIlluminant() to change the scene SPD. This
 %    function runs on MCC and any other scene with an illuminant.
@@ -30,9 +33,6 @@ function [scene, parms] = sceneCreateExtended(sceneName, varargin)
 %    angle, row and col size of the harmonic. The frequency unit in this
 %    case is cycles/image. To obtain cycles per degree, divide by the field
 %    of view.
-%
-%    There are a large number of examples contained in the code. Enter
-%    'edit sceneCreate.m' into the Command Window to examine them.
 %
 % Inputs:
 %    sceneName - (Optional) The name of the scene to create. Default is a
@@ -135,107 +135,6 @@ function [scene, parms] = sceneCreateExtended(sceneName, varargin)
 % See Also:
 %    sceneFromFile
 %
-
-% History:
-%   04/07/18  dhb  Fixed one broken example, deleted another.
-
-% Examples:
-%{
-    % Macbeth Examples
-    scene = sceneCreate('macbeth', 32);
-
-    patchSize = 8;
-    spectrum.wave = (380:4:1068)';
-    scene = sceneCreate('macbethEE_IR', patchSize, spectrum);
-    
-    % The size of the individual patches and the wavelength sampling are
-    % both parameters. They can be set using the calling procedure.
-    patchSizePixels = 16;
-    spectrum.wave = [380:5:720];
-    scene = sceneCreate('macbethTungsten', patchSizePixels, spectrum);
-%}
-%{
-    % Reflectance Chart Example
-    pSize = 24;   % Patch size in pixels
-    sSamples = [64 64]; % Surface samples from the files
-    sFiles{1} = fullfile(isetbioDataPath, 'surfaces', 'reflectances', ...
-        'MunsellSamples_Vhrel.mat');
-    sFiles{2} = fullfile(isetbioDataPath, 'surfaces', 'reflectances', ...
-        'Food_Vhrel.mat');
-    sceneCreate('reflectance chart', pSize, sSamples, sFiles);
-%}
-%{
-    % Narrowband Color Patches Example
-    wave = [600, 610];
-    sz = 64;
-    scene = sceneCreate('uniform monochromatic', wave, sz);
-%}
-%{
-    % Harmonic Example
-    %
-    % See the script s_sceneHarmonics for more examples. In this example,
-    % the illuminant is set so that the mean of the harmonic has a 20%
-    % reflectance, like a typical gray card.
-    parms.freq = 1;
-    parms.contrast = 1;
-    parms.ph = 0;
-    parms.ang = 0;
-    parms.row = 128;
-    parms.col = 128;
-    parms.GaborFlag = 0;
-    [scene, parms] = sceneCreate('harmonic', parms);
-%}
-%{
-    % Arbitrary image size Examples
-    imSize = 128;
-    lineOffset = 25; % Plus is to the right
-    scene = sceneCreate('lined65', imSize);
-    scene = sceneCreate('line ee', imSize, lineOffset);
-    sceneCreate('bar', imSize);
-%}
-%{
-    % Text Example
-    % family, size, dpi
-    font = fontCreate('A', 'Georgia', 24, 96);
-    display = 'LCD-Apple';
-    scene = sceneCreate('letter', font, display);
-    % sceneWindow(scene);
-%}
-%{
-    % Other Examples
-    imageSize = 128;
-    edgeSlope = 4/3;
-    pixelsPerCheck = 16;
-    numberOfChecks = 8;
-    pixelsBetweenLines = 10;
-    pixelsBetweenPoints = 10;
-    sceneCreate('slanted edge', imageSize, edgeSlope);
-    sceneCreate('checkerboard', pixelsPerCheck, numberOfChecks)
-    sceneCreate('grid lines', imageSize, pixelsBetweenLines);
-    sceneCreate('point array', imageSize, pixelsBetweenPoints);
-    % Moire orient option freaks out 
-    % sceneCreate('moire orient', imageSize, edgeSlope);
-    sceneCreate('radial lines', imageSize);
-
-    clear p;
-    p.display = 'LCD-Apple';
-    p.sceneSz = [64, 65];
-    p.barWidth = 2;
-    p.offset = 1;
-    p.meanLum = 10;
-    p.lineSpace = 2;
-    p.barColor = [1 0.5 0.5];
-    p.bgColor = .5;
-    s = sceneCreate('vernier', 'display', p);
-    
-    % The uniform patterns are small by default (32, 32). If you would like
-    % them at a higher density (not much point), you can use the following:
-
-    imageSize = 256;
-    angleInDeg =  6500;
-    sceneCreate('uniform D65', imageSize)
-    sceneCreate('uniform bb', 128, angleInDeg)
-%}
 
 if notDefined('sceneName'), sceneName = 'default'; end
 parms = []; % Returned in some cases, not many.

@@ -12,8 +12,11 @@ function params = vernierP(varargin)
 %      or
 %         oisCreate('vernier', ....)
 %
-%    There are examples in the code. To access, type 'edit vernierP.m' into
-%    the Command Window.
+%    This version of vernierP was in ISETBio before we did the
+%    ISETCam/ISETBio integration.  That adopted a different sceneCreate.
+%    This version works with sceneCreateExtened, which we are keeping
+%    around because it has a more elaborated Vernier stimulus set of
+%    options.
 %
 % Inputs:
 %    varargin - (Optional) A structure containing the additional parameters
@@ -57,33 +60,6 @@ function params = vernierP(varargin)
 %    xx/xx/16  BW   ISETBIO Team, 2016
 %    02/01/18  jnm  Formatting
 
-% Examples:
-%{
-    p = vernierP; 
-    p.name = 'example';
-    s = sceneCreate('vernier', 'display', p);
-    ieAddObject(s);
-    sceneWindow;
-
-    p.bgColor = [1 0 0];
-    p.barColor = [0 1 0]; 
-    s = sceneCreate('vernier', 'display', p);
-    ieAddObject(s);
-    sceneWindow;
-
-    p.barLength = 8;  
-    s = sceneCreate('vernier', 'display', p);
-    ieAddObject(s);
-    sceneWindow;
-
-    x = (-32:32) / 64;
-    f = 2;
-    pattern = 0.5 * cos(2 * pi * f * x) + 0.5;
-    p = vernierP('pattern', pattern, 'offset', 6, 'barLength', 12);
-    s = sceneCreate('vernier', 'display', p);
-    ieAddObject(s);
-    sceneWindow;
-%}
 %% Parse arguments
 p = inputParser;
 
