@@ -439,7 +439,7 @@ end
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
 
 % Take the scalar into account for the return values
-threshold = thresholdPara.maxParamValue*10.^thresholdPara.estimatorLogThreshold;
+threshold = thresholdPara.maxParamValue*10.^estimatorLogThreshold;
 logThreshold = log10(threshold);
 
 if (verbose)
