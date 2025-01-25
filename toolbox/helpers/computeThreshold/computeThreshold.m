@@ -1,4 +1,4 @@
-function [logThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
+function [estimatorLogThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
     trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
     computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
@@ -168,7 +168,7 @@ end
 
 % Threshold estimation with QUEST+
 % Get the initial stimulus contrast from QUEST+
-[logContrast, nextFlag] = estimator.nextStimulus();
+[estimatorLogContrast, nextFlag] = estimator.nextStimulus();
 
 % Loop over trials.
 testedContrasts = [];
@@ -201,7 +201,7 @@ trialByTrialPerformance = containers.Map();
 testCounter = 0;
 while (nextFlag)
     % Convert log contrast -> contrast
-    testContrast = thresholdPara.maxParamValue*(10 ^ logContrast);
+    testContrast = thresholdPara.maxParamValue*(10 ^ estimatorLogContrast);
     logContrast = log10(testContrast);
     
     % Contrast label for pCorrect dictionary
@@ -398,12 +398,12 @@ while (nextFlag)
     eStart = tic;
     if (estimator.validation)
         % Method of constant stimuli
-        [logContrast, nextFlag] = ...
-            estimator.multiTrial(logContrast * ones(classifierPara.nTest,1), predictions);
+        [estimatorLogContrast, nextFlag] = ...
+            estimator.multiTrial(estimatorLogContrast * ones(classifierPara.nTest,1), predictions);
     else
         % Quest
-        [logContrast, nextFlag] = ...
-          estimator.multiTrialQuestBlocked(logContrast * ones(classifierPara.nTest,1), predictions);
+        [estimatorLogContrast, nextFlag] = ...
+          estimator.multiTrialQuestBlocked(estimatorLogContrast * ones(classifierPara.nTest,1), predictions);
     end
 
     e = toc(eStart);
@@ -434,9 +434,13 @@ else
 end
 
 % Param threshold (log value)
-[logThreshold, fittedPsychometricParams, thresholdDataOut] = ...
+[estimatorLogThreshold, fittedPsychometricParams, estimatorThresholdDataOut] = ...
     estimator.thresholdMLE('showPlot', false, ...
     'thresholdCriterion', thresholdCriterion, 'returnData', true);
+
+% Take the scalar into account for the return values
+threshold = thresholdPara.maxParamValue*10.^thresholdPara.estimatorLogThreshold;
+logThreshold = log10(threshold);
 
 if (verbose)
     fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
