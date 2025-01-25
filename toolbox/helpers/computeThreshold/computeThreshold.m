@@ -121,6 +121,9 @@ testFixationalEMObj = p.Results.testFixationalEM;
 % compatable with those expected by the psychometric function.  qpPFWeibull
 % is coded in dB, which is confusing to many.  Probably better to work in
 % log10 units, which can be done by passing qpPFWeibullLog as the PF.
+if (~isfield(thresholdPara,'maxParamValue'))
+    thresholdPara.maxParamValue = 1;
+end
 estDomain  = -thresholdPara.logThreshLimitLow : thresholdPara.logThreshLimitDelta : -thresholdPara.logThreshLimitHigh;
 slopeRange = thresholdPara.slopeRangeLow: thresholdPara.slopeDelta : thresholdPara.slopeRangeHigh;
 
@@ -198,7 +201,8 @@ trialByTrialPerformance = containers.Map();
 testCounter = 0;
 while (nextFlag)
     % Convert log contrast -> contrast
-    testContrast = 10 ^ logContrast;
+    testContrast = thresholdPara.maxParamValue*(10 ^ logContrast);
+    logContrast = log10(testContrast);
     
     % Contrast label for pCorrect dictionary
     contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
