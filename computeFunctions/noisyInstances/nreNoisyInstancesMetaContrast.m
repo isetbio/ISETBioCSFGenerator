@@ -112,6 +112,12 @@ p.addParameter('rngSeed',[],@(x) (isempty(x) | isnumeric(x) | ischar(x)));
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 
+% Set underlying neural engine visualize flag to match the meta neural
+% engine's flag
+saveNeuralEngineVisualize = metaNoisyInstancesParams.neuralEngine.visualizeEachCompute;
+metaNoisyInstancesParams.neuralEngine.visualizeEachCompute = neuralEngine.visualizeEachCompute;
+
+
 % Return a dummy neural pipeline struct to keep parent object happy if
 % it hasn't yet stored one.
 if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noisyInstances'))
@@ -156,6 +162,10 @@ end
 if (~isempty(p.Results.rngSeed))
     rng(oldSeed);
 end
+
+% Restore visualize flag
+metaNoisyInstancesParams.neuralEngine.visualizeEachCompute = saveNeuralEngineVisualize;
+
 
 % Assemble the dataOut struct
 dataOut = struct(...

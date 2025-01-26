@@ -731,10 +731,13 @@ for idx = 1:length(spatialFreqs)
         % Instantiate meta contrast neural engine for this spatial
         % frequency and use it to compute threshold
         metaNeuralResponseEngineNoiseFreeParams.sceneEngine = gratingSceneEngine;
+
         theMetaNeuralEngine = neuralResponseEngine(@nreNoiseFreeMetaContrast, ...
             @nreNoisyInstancesMetaContrast, ...
             metaNeuralResponseEngineNoiseFreeParams, ...
             metaNeuralResponseEngineNoisyInstanceParams);
+        
+        % Update visualizeEachCompute
         theMetaNeuralEngine.visualizeEachCompute = theNeuralEngine.visualizeEachCompute;
 
         % Compute the threshold for our grating scene with meta scene and
