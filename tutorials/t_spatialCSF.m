@@ -110,7 +110,8 @@ function thresholdRet = t_spatialCSF(options)
         'visualizeEachScene', false, ...
         'visualizeEachResponse', false, ...
         'responseVisualizationFunction', @nreVisualizeMRGCmosaic, ...
-        'maxVisualizedNoisyResponseInstances', 2);
+        'maxVisualizedNoisyResponseInstances', 2, ...
+        'maxVisualizedNoisyResponseInstanceStimuli', 2);
 
     % mRGCMosaic nre basic test with fixational eye movements
     t_spatialCSF('useMetaContrast', true, ...
@@ -282,6 +283,7 @@ arguments
     options.visualizeEachResponse (1,1) logical = false;
     options.responseVisualizationFunction = [];
     options.maxVisualizedNoisyResponseInstances = 1;
+    options.maxVisualizedNoisyResponseInstanceStimuli = 1;
 end
 
 %% Close any stray figs
@@ -312,6 +314,7 @@ visualizeEachScene = options.visualizeEachScene;
 visualizeEachResponse = options.visualizeEachResponse;
 responseVisualizationFunction = options.responseVisualizationFunction;
 maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
+maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseInstanceStimuli;
 
 %% Freeze rng for replicatbility and validation
 rng(1);
@@ -732,6 +735,7 @@ for idx = 1:length(spatialFreqs)
             @nreNoisyInstancesMetaContrast, ...
             metaNeuralResponseEngineNoiseFreeParams, ...
             metaNeuralResponseEngineNoisyInstanceParams);
+        theMetaNeuralEngine.visualizeEachCompute = theNeuralEngine.visualizeEachCompute;
 
         % Compute the threshold for our grating scene with meta scene and
         % and neural response engines. This function does a lot of work,
@@ -742,7 +746,8 @@ for idx = 1:length(spatialFreqs)
             'TAFC', true, 'useMetaContrast', useMetaContrast, ...
             'trainFixationalEM', trainFixationalEMObj, ...
             'testFixationalEM', testFixationalEMObj, ...
-            'verbose', verbose);
+            'verbose', verbose, ...
+            'maxVisualizedNoisyResponseInstances', maxVisualizedNoisyResponseInstances);
     else
         % Compute the threshold for our grating scene with the previously
         % defined neural and classifier engine.  This function does a lot
@@ -753,7 +758,9 @@ for idx = 1:length(spatialFreqs)
             classifierPara, thresholdPara, questEnginePara, ...
             'TAFC', true, 'useMetaContrast', useMetaContrast, ...
             'trainFixationalEM', trainFixationalEMObj, ...
-            'testFixationalEM', testFixationalEMObj);
+            'testFixationalEM', testFixationalEMObj, ...
+            'verbose', verbose, ...
+            'maxVisualizedNoisyResponseInstances', maxVisualizedNoisyResponseInstances);
     end
 
     % Plot stimulus

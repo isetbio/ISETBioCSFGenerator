@@ -84,6 +84,11 @@ p.KeepUnmatched = true;
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 
+% Set underlying neural engine visualize flag to match the meta neural
+% engine's flag
+saveNeuralEngineVisualize = metaNeuralParams.neuralEngine.visualizeEachCompute;
+metaNeuralParams.neuralEngine.visualizeEachCompute = neuralEngine.visualizeEachCompute;
+
 % We will use the neural pipeline to store the precomputed response
 % vectors we need to then compute for any contrast
 if (isempty(neuralEngine.neuralPipeline) | ~isfield(neuralEngine.neuralPipeline,'noiseFreeResponse'))
@@ -141,6 +146,9 @@ else
         theContrast*neuralEngine.neuralPipeline.noiseFreeResponse.response1;
     theNoiseFreeTemporalSupport = neuralEngine.neuralPipeline.noiseFreeResponse.temporalSupportSecs;
 end
+
+% Restore visualize flag
+metaNeuralParams.neuralEngine.visualizeEachCompute = saveNeuralEngineVisualize;
 
 % Assemble the dataOut struct
 if (returnTheNeuralPipeline)

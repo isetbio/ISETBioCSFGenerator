@@ -100,6 +100,9 @@ function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychomet
 %                           explicitly formulate the TAFC version as an
 %                           2-alternative with one stimulus per trial problem.
 %     useMetaContrast      - Passed arguments are for meta contrast setup
+%     maxVisualizedNoisyResponseInstanceStimuli - Maximum number of stimuli
+%                            for which the visualizeNoisyResponseInstances
+%                            flag stays true.
 
 %
 % See also:
@@ -128,6 +131,7 @@ p.addParameter('TAFC', false, @islogical);
 p.addParameter('useMetaContrast', false, @islogical);
 p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
+p.addParameter('maxVisualizedNoisyResponseInstanceStimuli',1,@isnumeric);
 
 parse(p, varargin{:});
 verbose = p.Results.verbose;
@@ -137,6 +141,7 @@ datasavePara = p.Results.datasavePara;
 isTAFC = p.Results.TAFC;
 trainFixationalEMObj = p.Results.trainFixationalEM;
 testFixationalEMObj = p.Results.testFixationalEM;
+maxVisualizedNoisyResponseInstanceStimuli = p.Results.maxVisualizedNoisyResponseInstanceStimuli;
 
 % Construct a QUEST threshold estimator estimate threshold
 %
@@ -205,6 +210,7 @@ if isTAFC
     nullContrast = 0.0;
     [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
 end
+
 % Set up for saving diagnostic information if desired.
 if ((isstruct(datasavePara)) && isfield(datasavePara, 'saveMRGCResponses') && (datasavePara.saveMRGCResponses) && ...
         (isfield(datasavePara, 'destDir')) && (ischar(datasavePara.destDir)) && ...
@@ -223,6 +229,7 @@ trialByTrialStimulusAlternatives = containers.Map();
 trialByTrialPerformance = containers.Map();
 
 testCounter = 0;
+stimCounter = 0;
 while (nextFlag)
     % Convert log contrast -> contrast
     testContrast = thresholdPara.maxParamValue*(10 ^ estimatorLogContrast);
@@ -291,7 +298,7 @@ while (nextFlag)
                 Wl_vec(index),theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
         end
         
-        % Visualize the drifting sequence.  This seems to crash for the
+        % Visualize the drifting sequence.  This might crash for the
         % 4AFC version.
         if (visualizeStimulus)
             theStim = 2;
@@ -322,11 +329,19 @@ while (nextFlag)
             'fixationalEM', trainFixationalEMObj, ...
             'useMetaContrast', p.Results.useMetaContrast ...
         );
-        
+        % theNeuralEngine.visualizeEachCompute
+       
         testCounter = testCounter + 1;
+        stimCounter = stimCounter + 1;
         e = toc(eStart);
         if (verbose)
                 fprintf('computeThreshold: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
+        end
+
+        % Turn off nre detailed visualization if test counter exceeds the
+        % specified number that we want it turned on for.
+        if (stimCounter > maxVisualizedNoisyResponseInstanceStimuli)
+            theNeuralEngine.visualizeEachCompute = false;
         end
         
         % Copy the trained classifier
@@ -380,7 +395,11 @@ while (nextFlag)
              error('Should not be repeating any constrast for validation blocked method');
         end
 
+        % Compute with trained classifier. We have already visualized for
+        % this stimulus if we are visualizing, so we don't do it again here.
         eStart = tic;
+        savevisualizeEachCompute = theNeuralEngine.visualizeEachCompute;
+        theNeuralEngine.visualizeEachCompute = false;
         [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
             theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
             theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
@@ -390,7 +409,9 @@ while (nextFlag)
             'fixationalEM', testFixationalEMObj, ...
             'useMetaContrast', p.Results.useMetaContrast ...
         );
-        
+        theNeuralEngine.visualizeEachCompute = savevisualizeEachCompute;
+        % theNeuralEngine.visualizeEachCompute
+
         testCounter = testCounter + 1;
         e = toc(eStart);
         if (verbose)
