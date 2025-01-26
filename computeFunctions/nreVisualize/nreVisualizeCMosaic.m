@@ -45,7 +45,11 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     [nInstances, nTimePoints, ~] = size(neuralResponses);
     activationRange = [0 max(neuralResponses(:))];
 
-
+    % Treat special case of zero activation range
+    if (activationRange(1) == activationRange(2))
+       activationRange = [0 10*eps]; 
+    end
+    
     if (~isempty(theConeMosaic.fixEMobj)) 
         emPathsDegs = theConeMosaic.fixEMobj.emPosArcMin/60;
     else

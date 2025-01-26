@@ -64,10 +64,19 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
     end
 
 
-
     [nTrials, nTimePoints, nRGCs] = size(neuralResponses);
     activationRangeMRGCMosaic = prctile(neuralResponses(:),[0 100]);
     activationRangeConeMosaic = prctile(theConeMosaicResponses(:),[0 100]);
+
+    % Treat special case of zero activation range
+    if (activationRangeMRGCMosaic(1) == activationRangeMRGCMosaic(2))
+       activationRangeMRGCMosaic = activationRangeMRGCMosaic(1) + [-10*eps +10*eps]; 
+    end
+
+    % Treat special case of zero activation range
+    if (activationRangeConeMosaic(1) == activationRangeConeMosaic(2))
+       activationRangeConeMosaic = activationRangeConeMosaic(1) + [-10*eps +10*eps]; 
+    end
 
     if (~isempty(theMRGCmosaic.inputConeMosaic.fixEMobj)) 
         emPathsDegs = theMRGCmosaic.inputConeMosaic.fixEMobj.emPosArcMin/60;
