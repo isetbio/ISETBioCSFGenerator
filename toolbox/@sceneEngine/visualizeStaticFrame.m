@@ -5,6 +5,7 @@ p = inputParser;
 p.addParameter('skipOutOfGamutCheck', false, @islogical);
 p.addParameter('frameToVisualize', 1, @isscalar);
 p.addParameter('opticalImageInsteadOfScene', []);
+p.addParameter('sRGBforSceneVisualization', false, @islogical);
 p.addParameter('axesHandle', [], @(x)(isempty(x)||(ishandle(x))));
 
 p.parse(varargin{:});
@@ -12,6 +13,7 @@ skipOutOfGamutCheck = p.Results.skipOutOfGamutCheck;
 frameIndex = p.Results.frameToVisualize;
 theOI = p.Results.opticalImageInsteadOfScene;
 axesHandle = p.Results.axesHandle;
+sRGBforSceneVisualization = p.Results.sRGBforSceneVisualization;
 
 % Get the scene at the frame index
 theScene = sceneSequence{frameIndex};
@@ -87,7 +89,12 @@ if (isempty(axesHandle))
     axesHandle = gca;
 end
 
-image(axesHandle,x,y,displaySettingsImage);
+if (sRGBforSceneVisualization)
+    image(axesHandle,x,y,lrgb2srgb(displaySettingsImage));
+else
+    image(axesHandle,x,y,displaySettingsImage);
+end
+
 % Cross hairs
 hold(axesHandle,'on');
 set(axesHandle, 'XTick', [], 'YTick', []);
