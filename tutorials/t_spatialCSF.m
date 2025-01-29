@@ -173,9 +173,10 @@ function thresholdRet = t_spatialCSF(options)
         'oiPadMethod', 'zero', ...
         'validationThresholds', [], ...
         'visualizeEachScene', false, ...
-        'visualizeEachResponse', false, ...
+        'visualizeEachResponse', true, ...
         'responseVisualizationFunction', @nreVisualizeCMosaic, ...
-        'maxVisualizedNoisyResponseInstances', 3);
+        'maxVisualizedNoisyResponseInstances', 2, ...
+        'maxVisualizedNoisyResponseInstanceStimuli',2);
 
     % Verify that Gaussian noise works, as well as template classifier
     t_spatialCSF('useMetaContrast', true, ...
@@ -686,16 +687,22 @@ end
 %
 % Setting the seed to -1 means don't touch the seed or call rng().
 if (useFixationalEMs) 
+    % Set number of eye movement paths.  At the moment this must be 1, but
+    % we plan to generalize.
+    nEMPaths = 1;
+
+    % Set up the EM object
     trainFixationalEMObj = fixationalEM;
     trainFixationalEMObj.microSaccadeType = 'none';   % No microsaccades, just drift
     trainFixationalEMObj.randomSeed = -1;
     computeVelocitySignal = false;
     centerPaths = false;
     centerPathsAtSpecificTimeMsec = [];
-    trainFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, 1, computeVelocitySignal, ...
+    trainFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nEMPaths, computeVelocitySignal, ...
         'centerPaths', centerPaths, 'centerPathsAtSpecificTimeMsec', centerPathsAtSpecificTimeMsec);
 
-    % And this one for testing.
+    % And this one for testing. Here we are doing EM know exactly, so the
+    % test object is the same as the training object.
     testFixationalEMObj = trainFixationalEMObj;
 else
     trainFixationalEMObj = [];
