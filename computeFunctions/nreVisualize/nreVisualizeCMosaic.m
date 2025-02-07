@@ -30,7 +30,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         end
     end
 
-
     % Retrieve the visualization data we need from the pipeline
     theConeMosaic = neuralPipeline.noiseFreeResponse.coneMosaic;
 
@@ -39,7 +38,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     if (size(neuralResponses,2) == theConeMosaic.conesNum)
         neuralResponses = permute(neuralResponses,[1 3 2]);
     end
-    
 
     % Get the response dimensins and range
     [nInstances, nTimePoints, ~] = size(neuralResponses);
@@ -109,8 +107,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             ylabel(axConeTimeResponses, sprintf('cone index (%d L-cones, %d M-cones, %d S-cones', numel(theConeMosaic.lConeIndices), numel(theConeMosaic.mConeIndices), numel(theConeMosaic.sConeIndices)));
             title(axConeTimeResponses, sprintf('spatio-temporal %s (trial %d of %d)', responseLabel, iTrial, nInstances));
             
-
-
             if (isempty(emPathsDegs))
                 theConeMosaic.visualize(...
                     'figureHandle', figureHandle, ...
@@ -140,8 +136,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         end % iPoint
     end % iTrial
 end
-
-
 
 function [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
     spatioTemporalResponseComponents(theConeMosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint)
