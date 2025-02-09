@@ -341,7 +341,13 @@ while (nextFlag)
         % Turn off nre detailed visualization if test counter exceeds the
         % specified number that we want it turned on for.
         if (stimCounter > maxVisualizedNoisyResponseInstanceStimuli)
-            theNeuralEngine.visualizeEachCompute = false;
+            if (iscell(theNeuralEngine))
+                for nn = 1:length(theNeuralEngine)
+                    theNeuralEngine{nn}.visualizeEachCompute = false;
+                end
+            else
+                theNeuralEngine.visualizeEachCompute = false;
+            end
         end
         
         % Copy the trained classifier
