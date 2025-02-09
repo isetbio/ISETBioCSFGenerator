@@ -333,34 +333,38 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
         end
     end
 
-    % Get new values into output variable
-    CHECK = true;
+    % Reaality check, only applies if you have set the filter equal to a
+    % temporal delta function, so generally is kept at false.
+    CHECK = false;
     if (CHECK)
         if (max(abs(theNeuralResponses(:)-newNeuralResponses(:))) > 1e-10)
             error('Filter did something it should not have');
         end
     end
+
+    % Update responses with filtered version
     theNeuralResponses = newNeuralResponses;
     clear newNeuralResponses;
 end
 
+%% Detailed visualization option
+%
 % Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
 % call the neuralEngineOBJ.visualize() function to visualize the responses
-
+%
 % Empty the visualization meta data
 visualizationMetaData = [];
 
 if (neuralEngineOBJ.computeVisualizationMetaData || neuralEngineOBJ.visualizeEachCompute)
-    % Place holder here for some future data
+    % Placeholder here for some future data
     % visualizationMetaData.someField = someData;
 end
 
 % Update the stored visualization metadata
 neuralEngineOBJ.updataVisualizationMetadata(visualizationMetaData);
 
-
+% Do the detailed visualization, if requested.
 if (neuralEngineOBJ.visualizeEachCompute)
-    
     hFig = figure(1000);
     set(hFig, 'Position', [350 700 1650 550]);
     neuralEngineOBJ.visualize(theNeuralResponses, temporalSupportSeconds, ...
@@ -368,7 +372,7 @@ if (neuralEngineOBJ.visualizeEachCompute)
         'figureHandle', hFig);
 end
 
-% Assemble the dataOut struct
+%% Assemble the dataOut struct
 dataOut = struct(...
     'neuralResponses', theNeuralResponses, ...
     'temporalSupport', temporalSupportSeconds);

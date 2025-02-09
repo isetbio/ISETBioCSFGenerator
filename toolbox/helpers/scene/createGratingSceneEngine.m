@@ -113,6 +113,7 @@ switch (p.Results.presentationMode)
     case 'flashedmultiframe'
         % Multiple frame presentation
         gratingParams.temporalModulation = 'flashed';
+        gratingParams.frameDurationSeconds = p.Results.frameDurationSeconds;
         gratingParams.temporalModulationParams =  struct(...
             'stimOnFrameIndices', 1:framesNum, 'stimDurationFramesNum', framesNum);
 
