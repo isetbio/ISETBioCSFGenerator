@@ -783,9 +783,7 @@ for idx = 1:length(spatialFreqs)
 
     % Plot data and psychometric curve
     % with a marker size of 2.5
-    axis(axRight{idx});
-    subplot(length(spatialFreqs), 2, idx * 2);
-    questObj.plotMLE(2.5,'para',para(idx,:));
+    questObj.plotMLE(2.5,'para',para(idx,:), 'axesHandle', axRight{idx});
     drawnow;
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);

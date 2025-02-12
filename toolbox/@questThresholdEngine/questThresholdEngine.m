@@ -289,10 +289,11 @@ classdef questThresholdEngine < contrastThresholdEngine
         function plotMLE(this, baseMarkerSize, varargin)
             p = inputParser;
             p.addParameter('newFigure', false);
+            p.addParameter('axesHandle', []);
             p.addParameter('para', []);
             parse(p, varargin{:});
             this.thresholdMLE('showPlot', true, 'newFigure', p.Results.newFigure, ...
-                'para', p.Results.para, 'pointSize', baseMarkerSize);
+                'para', p.Results.para, 'axesHandle', p.Results.axesHandle, 'pointSize', baseMarkerSize);
         end
     end   
 end

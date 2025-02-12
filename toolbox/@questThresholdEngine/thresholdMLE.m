@@ -47,10 +47,11 @@ function [threshold, para, dataOut] = thresholdMLE(this, varargin)
 %                default behavior fixed.  Added skeleton header comment.
 %           dhb  Move input parsing to the top, where I was looking for it.
 
-% Parse inputs.
+% Parse input
 p = inputParser;
 p.addParameter('showPlot',  false);
 p.addParameter('newFigure', false);
+p.addParameter('axesHandle', []);
 p.addParameter('pointSize', 25);
 p.addParameter('returnData',  false);
 p.addParameter('para', []);
@@ -96,10 +97,18 @@ if (p.Results.thresholdCriterion == 0.81606 && ...
     end
 end
 
+ax = p.Results.axesHandle;
 if ((p.Results.showPlot) || (p.Results.returnData))
-    if p.Results.newFigure
-        figure();
+    if (p.Results.showPlot)
+        if (p.Results.newFigure)
+            figure();
+            ax = subplot(1,1,1);
+        end
+        if (isempty(ax))
+            ax = subplot(1,1,1);
+        end
     end
+
     stimVal = unique(stimVec);
     [nTrials, pCorrect] = deal(zeros(1,length(stimVal)));
     
@@ -109,9 +118,9 @@ if ((p.Results.showPlot) || (p.Results.returnData))
         pCorrect(idx) = sum(prop) / nTrials(idx);
         
         if (p.Results.showPlot)
-            scatter(stimVal(idx), pCorrect(idx), p.Results.pointSize * 100 / length(stimVec) * nTrials(idx), ...
+            scatter(ax,stimVal(idx), pCorrect(idx), p.Results.pointSize * 100 / length(stimVec) * nTrials(idx), ...
             'MarkerEdgeColor', zeros(1, 3), 'MarkerFaceColor', ones(1, 3) * 0.5, 'MarkerFaceAlpha', 0.5);
-            hold on;
+            hold(ax, 'on');
         end
     end
     
@@ -119,13 +128,13 @@ if ((p.Results.showPlot) || (p.Results.returnData))
     fitCurve = this.qpPF(stimSpace', para);
     
     if (p.Results.showPlot)
-        plot(stimSpace, fitCurve(:, 2), '-', 'Color', [1.0 0.2 0.0], 'LineWidth', 3);
+        plot(ax,stimSpace, fitCurve(:, 2), '-', 'Color', [1.0 0.2 0.0], 'LineWidth', 3);
     
-        xlim([min(this.estDomain), max(this.estDomain)]);
-        xlabel('Contrast');
+        xlim(ax,[min(this.estDomain), max(this.estDomain)]);
+        xlabel(ax,'Contrast');
 
-        ylim([0, 1]);
-        ylabel('P Correct');
+        ylim(ax,[0, 1]);
+        ylabel(ax,'P Correct');
     end
     
     if (p.Results.returnData)
