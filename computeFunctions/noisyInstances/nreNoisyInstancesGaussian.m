@@ -147,6 +147,7 @@ function dataOut = nreNoisyInstancesGaussian(...
     if (noiseFreeInstancesNum ~= 1)
         error('Need to generalize beyond one noise-free instance');
     end
+
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
     switch (noiseFlag)
         case {'random'}
@@ -161,6 +162,13 @@ function dataOut = nreNoisyInstancesGaussian(...
             end
         otherwise
             error('noiseFlag must be ''random'' or ''none''');
+    end
+
+
+    % Apply activation function if one has been specified
+    if (isfield(noisyInstancesComputeParams, 'activationFunctionParams'))
+       noisyResponseInstances = neuralResponseEngine.applyActivationFunction(...
+            noiseFreeResponses, noisyResponseInstances, noisyInstancesComputeParams.activationFunctionParams);
     end
 
     % Restore

@@ -114,12 +114,14 @@ p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 p.addParameter('opticsType','loadComputeReadyRGCMosaic',@(x)(ischar(x) | isstruct(x)));
 p.addParameter('oiPadMethod','zero',@ischar);
 p.addParameter('verbose',true,@islogical);
+p.addParameter('visualizeActivationFunction', true, @islogical);
 varargin = ieParamFormat(varargin);
 p.parse(varargin{:});
 fixationalEMObj = p.Results.fixationalEM;
 opticsType = p.Results.opticsType;
 oiPadMethod = p.Results.oiPadMethod;
 verbose = p.Results.verbose;
+visualizeActivationFunction = p.Results.visualizeActivationFunction;
 
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0 | isempty(neuralEngineOBJ))
@@ -271,7 +273,6 @@ if (~isempty(coneMosaicNullResponse))
             bsxfun(@times, bsxfun(@minus, noiseFreeConeMosaicResponses, ...
             coneMosaicNullResponse), ...
             coneMosaicNormalizingResponse);
-
 end
 
 % Handle what kind of output we are asked for
@@ -325,6 +326,31 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
     % Get new values into output variable
     theNeuralResponses = newNeuralResponses;
     clear newNeuralResponses;
+end
+
+% Add response bias, but only if we a saturating non-linearity has been
+% specificed
+if (isfield(noiseFreeComputeParams.mRGCMosaicParams, 'responseBias')) && ...
+   (isfield(noiseFreeComputeParams.mRGCMosaicParams, 'activationFunctionParams')) && ...
+   (strcmp(noiseFreeComputeParams.mRGCMosaicParams.activationFunctionParams.type, 'halfwaveSigmoidalRectifier'))
+    sprintf('nre noise free with response bias: %g\n', noiseFreeComputeParams.mRGCMosaicParams.responseBias)
+    theNeuralResponses = theNeuralResponses + noiseFreeComputeParams.mRGCMosaicParams.responseBias;
+end
+
+% Simulate ON_OFF mosaic if so specified. This simply flips the response
+% sign of the odd-numbered mRGCs
+if (strcmp(noiseFreeComputeParams.mRGCMosaicParams.outputSignalType, 'mRGCs'))
+    if (isfield(noiseFreeComputeParams.mRGCMosaicParams,'simulateONOFFmosaic'))
+        if (noiseFreeComputeParams.mRGCMosaicParams.simulateONOFFmosaic)
+            mResponses = size(theNeuralResponses,2);
+            parfor jj = 1:mResponses
+                if (mod(jj,2) == 1)
+                    % Flip the sign of the odd mRGC responses
+                    theNeuralResponses(:,jj,:) = -theNeuralResponses(:,jj,:);
+                end
+            end % jj
+        end
+    end
 end
 
 % Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
@@ -392,6 +418,10 @@ cropParams = struct(...
     'sizeDegs', [], ...
     'eccentricityDegs', []);
 
+activationFunctionParams = struct(...
+    'type', 'linear' ...
+    );
+
 mosaicParams = struct(...
     'type', 'mRGCMosaic', ...
     'eccDegs', [7 0], ...
@@ -401,6 +431,7 @@ mosaicParams = struct(...
     'retinalRFmodelParams', retinalRFmodelParams, ...
     'inputSignalType', 'coneExcitations', ...
     'outputSignalType', 'mRGCs', ...
+    'activationFunctionParams', activationFunctionParams, ...
     'coneIntegrationTimeSeconds', 10/1000);
 
 % If the user sets the nullStimulusSceneSequence, then mRGC responses are
