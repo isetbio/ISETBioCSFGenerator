@@ -354,11 +354,6 @@ axLeft = cell(1, length(examinedDirectionsOnLMplane));
 axRight = cell(1, length(examinedDirectionsOnLMplane));
 axLeftRight = cell(1, length(examinedDirectionsOnLMplane));
 for iChromaDirection = 1:length(examinedDirectionsOnLMplane)
-    %margin = 0.01;
-    %height = (1-margin*(2+length(examinedDirectionsOnLMplane)))/(length(examinedDirectionsOnLMplane));
-    %bottom = 2*margin + (iChromaDirection-1) * (height + margin);
-    %axLeft{iChromaDirection}  = subplot('Position', [0.05 bottom 0.4 height]);
-    %axRight{iChromaDirection} = subplot('Position', [0.5 bottom 0.4 height]);
 
     margin = 0.01;
     cols = 5;
@@ -429,10 +424,6 @@ if (recomputeThresholds)
                 'verbose', verbose, ...
                 'maxVisualizedNoisyResponseInstances', maxVisualizedNoisyResponseInstances);
     
-            
-            %psychCurveSlopeForThisChromaticDirection = psychometricCurveParams(iChromaDirection,2);
-    
-    
         end % useMetaContrast
     
         % Plot stimulus & psychometric curve
@@ -449,7 +440,6 @@ if (recomputeThresholds)
             % Visualize thresholds up to this point
             theChromaticDirections = examinedDirectionsOnLMplane(1:iChromaDirection);
             theThresholds = 10 .^ (logThreshold(1:iChromaDirection));
-    
         
             % Initialization
             exportFig = (iChromaDirection == length(examinedDirectionsOnLMplane));
@@ -469,14 +459,15 @@ if (recomputeThresholds)
 
 else
     % Load hard-wired, previously computed thresholds
-    theThresholds, theVisualizedConeContrastOffset] = previouslyComputedThresholds()
+    [theThresholds, theVisualizedConeContrastOffset] = previouslyComputedThresholds();
     exportFig = true;
     initializeFig = true;
     
     visualizeStimuliAndThresholdsOnLMPlane(...
             rmsLMconeContrast, ...
             examinedSpatialFrequencyCPD, gratingSceneParams, ...
-            examinedDirectionsOnLMplane, skippedDirections, theThresholds, maxVisualizedThreshold, theVisualizedConeContrastOffset, ...
+            examinedDirectionsOnLMplane, skippedDirections, ...
+            theThresholds, maxVisualizedThreshold, theVisualizedConeContrastOffset, ...
             figureFileBaseDir, hFigStimuliAndThresholds, ...
             exportFig, initializeFig, []);
 
