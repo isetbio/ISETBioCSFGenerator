@@ -264,6 +264,9 @@ else
 end
 
 % Compute responses depending on whether there is a fixationalEM or not.
+%
+% NEED TO CHECK THAT ONLY ONE EM PATH WAS PASSED.  THAT IS THE ONLY CASE WE
+% ALLOW AT THIS LEVEL.  ALSO IN OTHER NRE'S.
 if (isempty(fixationalEMObj))
     % No fixationalEM passed. So don't move the eyes.
     [theNeuralResponses, ~, ~, ~, temporalSupportSeconds] = ...
@@ -274,8 +277,6 @@ if (isempty(fixationalEMObj))
 else
     % We were passed a fixational EM.  Check that it is OK for our
     % purposes, and then comptute with it.
-    %
-    % Check NEED TO ADD
 
     % Also return the path in units of microns
     fixationalEMObj.emPosMicrons = ...
