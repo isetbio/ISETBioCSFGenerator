@@ -161,7 +161,7 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
                 frameContrastSequence(frameIndex) = testContrast;
                 
                 % Spatial phase is advanced
-                frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs;
+                frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs * gratingParams.temporalModulationParams.phaseDirection;
             end
     
         case 'counterphasemodulated'
@@ -173,7 +173,7 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
-                frameContrastSequence(frameIndex) = testContrast * cosd((frameIndex-1)*deltaTemporalPhaseDegs);
+                frameContrastSequence(frameIndex) = testContrast * cosd((frameIndex-1)*deltaTemporalPhaseDegs) * gratingParams.temporalModulationParams.phaseDirection;
                 
                 % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
@@ -475,11 +475,11 @@ function p = generateDefaultParams()
         'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs    
         'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed', 'drifted', 'counterphasemodulated'}
         'temporalModulationParams', struct(...          % temporal: modulation params struct
+            'phaseDirection', 1, ...                    %   increase or decrease phase
             'stimOnFrameIndices', [2 3], ...            %   params relevant to the temporalModulationMode
             'stimDurationFramesNum', 4), ...            %   params relevant to the temporalModulationMode
         'frameDurationSeconds', 20/1000 ...             % temporal: frame duration, in seconds
     );
-
 end
 
 function RGBimage = tonemap(RGBimage)
