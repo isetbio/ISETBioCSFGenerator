@@ -1,7 +1,65 @@
 function thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseResponses(...
-    theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, framesNum, ...
+    theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, temporalSamplesNum, ...
     visualizePhotocurrentImpulseResponses)
-    
+% Function for computing cone outer segment photocurrent impulse responses
+%
+% Syntax:
+%   thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseResponses(...
+%       theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, temporalSamplesNum, ...
+%       visualizePhotocurrentImpulseResponses)
+%
+% Description:
+%   Compute cone outersegment photocurrent impulse response (pCurrent IR)
+%   functions at a temporal resolution equal to theConeMosaic.integrationTime 
+%   and a duration equal to temporalSamplesNum x theConeMosaic.integrationTime
+%
+% Inputs:
+%   - theConeMosaic                         - the @cMosaic for which to generate outer segment pCurrent IR functions
+%
+%   - coneMosaicNullResponse                - a 3D matrix, [kTrials x tFrames x nCones], of cone responses to the background stimulus (zero contrast)
+%                                            (kTrials and tFrames can both be equal to 1)
+%
+%   - theConeFlashImpulseContrast           - a 3-element vector with values in (0..1) specifying the 
+%                                             L-, M-, and S-cone contrast of the stimulus impulse for which to compute the 
+%                                             L-cone, M-cone and S-cone pCurrent IR functions
+%
+%   - temporalSamplesNum                    - the number of temporal samples in the returned pCurrent IRs, 
+%                                             in which each sample is equal to theConeMosaic.integrationTime
+%
+%   - visualizePhotocurrentImpulseResponses - boolean, whether to visualize the computed pCurrent IRs
+% 
+% Outputs:
+%   - thePhotocurrentImpulseResponseStruct - struct with the following fields
+%       - LMSconeIncrementImpulseResponses                - [temporalSamplesNum, 3] matrix of L-, M- and S-cone impulse increment responses
+%       - LMSconeDecrementImpulseResponses                - [temporalSamplesNum, 3] matrix of L-, M- and S-cone impulse decrement responses
+%       - LMSconeImpulseResponses                         - [temporalSamplesNum, 3] matrix of L-, M- and S-cone impulse responses = 0.5*(LMSconeIncrementImpulseResponses-LMSconeDecrementImpulseResponses);
+%       - steadyStateCurrents                             - [1 3] vector of steady-stage (background) L-, M-, and S-cone photocurrents
+%       - coneDensityWeightedPhotocurrentImpulseResponse  - [temporalSamplesNum, 1] L-, M-, S-cone density weighted pCurrent IR function
+%       - temporalSupportSeconds                          - [temporalSamplesNum, 1] vector containing the temporal support of the computed pCurrent IRs
+%
+%
+% Example usage:
+% 
+%  coneMosaicNullResponse = ...
+%    theConeMosaic.compute(nullOIsequence, ...
+%                          'nTrials', 1);
+%    
+%   theConeFlashImpulseContrast = 0.01*[1 1 1];
+%   visualizePhotocurrentImpulseResponses = true;
+%   temporalSamplesNum = [];  % full duration
+%
+%    thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseResponses(...
+%            theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, temporalSamplesNum, ...
+%            visualizePhotocurrentImpulseResponses);
+%
+%
+% For more usage examples, see t_onTheFlyPhotocurrentComputationWithEyeMovements
+%
+
+% History:
+%    02/21/2025  NPC  Wrote it
+
+
     % Get the dimensions of the null response
     [instancesNum, timeBinsNum, mConesNum] = size(coneMosaicNullResponse);
     assert(mConesNum == theConeMosaic.conesNum, 'cMosaicResponse dimensionality error');
@@ -52,9 +110,9 @@ function thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseRes
         theConeMosaic.achievedConeDensities(cMosaic.SCONE_ID) * decimatedLMSincrementImpulseResponses(:, cMosaic.SCONE_ID);
 
     % Only return the requested frames num
-    if (~isempty(framesNum))
-        coneDensityWeightedPhotocurrentImpulseResponse = coneDensityWeightedPhotocurrentImpulseResponse(1:framesNum);
-        decimatedTemporalSupport = decimatedTemporalSupport(1:framesNum);
+    if (~isempty(temporalSamplesNum))
+        coneDensityWeightedPhotocurrentImpulseResponse = coneDensityWeightedPhotocurrentImpulseResponse(1:temporalSamplesNum);
+        decimatedTemporalSupport = decimatedTemporalSupport(1:temporalSamplesNum);
     end
 
 
@@ -233,7 +291,6 @@ function [LMSincrementImpulseResponses, LMSdecrementImpulseResponses, temporalSu
     coneTypesNum = length(backgroundLMSexcitationRates);
     LMSincrementImpulseResponses = zeros(nSamples, coneTypesNum);
     LMSdecrementImpulseResponses = LMSincrementImpulseResponses;
-    steadyStateCurrentTimeSeries = LMSincrementImpulseResponses;
     steadyStateCurrents = zeros(1,coneTypesNum);
 
     for iConeClass = 1:length(backgroundLMSexcitationRates)
@@ -286,7 +343,6 @@ function [LMSincrementImpulseResponses, LMSdecrementImpulseResponses, temporalSu
         % Trim in time to get the impulse response
         LMSdecrementImpulseResponses(:, iConeClass) = deltaCurrent;
 
-        steadyStateCurrentTimeSeries(:, iConeClass) = squeeze(backgroundCurrentTimeSeries(1,1,:));
         steadyStateCurrents(iConeClass) = backgroundCurrentTimeSeries(1,1,end);
     end % iConeClass
 
