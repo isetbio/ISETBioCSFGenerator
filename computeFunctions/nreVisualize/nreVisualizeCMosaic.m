@@ -1,14 +1,22 @@
 function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
     maxVisualizedInstances, visualizationMetaData, varargin)
-% Visualization function for CMosaic based neural responses 
+% Custom visualization function for CMosaic based neural responses 
 %
-% This function is called from the visualize() method of a
-% @neuralResponseEngine object whose properties are set as follows:
-% - noiseFreeComputeFunctionHandle is set to @nreNoiseFreeCMosaic, 
-% - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesPoisson, and 
-% - customVisualizationFunctionHandle is set to @nreVisualizeCMmosaic
-% - visualizeEachCompute is set to true
-% The visualize() method is called both from the noiseFree and the noisyInstances compute methods
+% Syntax:
+%   nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
+%         maxVisualizedInstances, visualizationMetaData, varargin);
+%
+% Description:
+%   Custom visualization function for CMosaic neural response engines.
+%
+%   This function is called from the visualize() method of a
+%   @neuralResponseEngine object whose properties are set as follows:
+%     - noiseFreeComputeFunctionHandle is set to @nreNoiseFreeCMosaic, 
+%     - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesPoisson, and 
+%     - customVisualizationFunctionHandle is set to @nreVisualizeCMmosaic
+%     - visualizeEachCompute is set to true
+%
+%   The visualize() method is called both from the noiseFree and the noisyInstances compute methods
 %
 % Inputs:
 %    neuralPipeline                 - the parent @neuralResponseEngine object that
@@ -24,6 +32,8 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 %    'responseLabel'                - string, just a comment about the responses visualized
 %    'clearAxesBeforeDrawing'       - boolean, whether to clear the axes before drawing
 %
+% Outputs:
+%   None
 %
 % Example usage:
 %

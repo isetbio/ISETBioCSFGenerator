@@ -2,11 +2,18 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
     maxVisualizedInstances, visualizationMetaData, varargin)
 % Custom visualization function for mRGCMosaic based neural responses 
 %
-% This function is called from the visualize() method of a
-% @neuralResponseEngine object whose:
-% - noiseFreeComputeFunctionHandle is set to @nreNoiseFreeMidgetRGCMosaic, 
-% - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesGaussian, and 
-% - customVisualizationFunctionHandle is set to @nreVisualizeMRGCmosaic
+% Syntax:
+%    nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
+%        maxVisualizedInstances, visualizationMetaData, varargin);
+%
+% Description:
+%   Custom visualization function for MRGCMosaic neural response engines.
+%
+%   This function is called from the visualize() method of a
+%   @neuralResponseEngine object whose:
+%      - noiseFreeComputeFunctionHandle is set to @nreNoiseFreeMidgetRGCMosaic, 
+%      - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesGaussian, and 
+%      - customVisualizationFunctionHandle is set to @nreVisualizeMRGCmosaic
 %
 % The visualize() method is called both from the noiseFree and the noisyInstances compute methods
 %
@@ -23,6 +30,9 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
 %    'axesHandle'                   - either [] or an axes handle
 %    'responseLabel'                - string, just a comment about the responses visualized
 %    'clearAxesBeforeDrawing'       - boolean, whether to clear the axes before drawing
+%
+% Outputs:
+%   None
 %
 % Example usage:
 %
