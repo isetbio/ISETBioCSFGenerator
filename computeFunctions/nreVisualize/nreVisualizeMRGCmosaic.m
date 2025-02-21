@@ -1,14 +1,49 @@
-% Visualization function for CMosaic based neural responses 
+function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
+    maxVisualizedInstances, visualizationMetaData, varargin)
+% Custom visualization function for mRGCMosaic based neural responses 
 %
-% Add comments
+% This function is called from the visualize() method of a
+% @neuralResponseEngine object whose:
+% - noiseFreeComputeFunctionHandle is set to @nreNoiseFreeMidgetRGCMosaic, 
+% - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesGaussian, and 
+% - customVisualizationFunctionHandle is set to @nreVisualizeMRGCmosaic
+%
+% The visualize() method is called both from the noiseFree and the noisyInstances compute methods
+%
+% Inputs:
+%    neuralPipeline                 - the parent @neuralResponseEngine object that
+%                                     is calling this function as its computeFunctionHandle
+%    neuralResponses                - a 3D matrix, [kTrials x mNeurons x tFrames], of neural responses
+%    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
+%    maxVisualizedInstances         - the max number of mRGCMosaic response instances to visualize
+%    visualizationMetaData          - either [] or a struct containing the noise-free responses of the input cone mosaic 
+%    
+% Optional key/value input arguments:
+%    'figureHandle'                 - either [] or a figure handle
+%    'axesHandle'                   - either [] or an axes handle
+%    'responseLabel'                - string, just a comment about the responses visualized
+%    'clearAxesBeforeDrawing'       - boolean, whether to clear the axes before drawing
+%
+% Example usage:
+%
+% noiseFreeResponseParams = nreNoiseFreeMRGCMosaic([],[],[],[]);
+% noisyInstancesParams = nreNoisyInstancesGaussian;
+%
+% theMRGCMosaicNeuralEngine = neuralResponseEngine( ...
+%    @nreNoiseFreeMidgetRGCMosaic, ...
+%    @nreNoisyInstancesGaussian, ...
+%    noiseFreeResponseParams, ...
+%    noisyInstancesParams);
+%
+% theMRGCMosaicNeuralEngine.visualizeEachCompute = true;
+% theMRGCMosaicNeuralEngine.customVisualizationFunctionHandle = @nreVisualizeMRGCmosaic;
+% theMRGCMosaicNeuralEngine.maxVisualizedNoisyResponseInstances = 2;
+%
+% For more usage examples, see t_spatialCSF
 %
 
 % History:
 %    01/11/2025  NPC  Wrote it
-
-function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
-    maxVisualizedInstances, visualizationMetaData, varargin)
-
 
     [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
@@ -34,9 +69,6 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
         end
     end
 
-    
-    
-
     % Retrieve the neural pipeline
     theMRGCmosaic = neuralPipeline.noiseFreeResponse.mRGCMosaic;
 
@@ -46,14 +78,11 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
         theConeMosaicResponses = visualizationMetaData.noiseFreeConeMosaicResponses;
     end
 
- 
     % Back to mRGCMosaic's native response format because we will be calling
     % cMosaic visualizer functions which expect it  
     if (size(neuralResponses,2) == theMRGCmosaic.rgcsNum)
         neuralResponses = permute(neuralResponses,[1 3 2]);
     end
-
-
 
     if (ndims(neuralResponses) == 2)
         if (size(neuralResponses,1) == numel(temporalSupportSeconds))
@@ -62,7 +91,6 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
             neuralResponses = reshape(neuralResponses, [size(neuralResponses,1) 1 size(neuralResponses,2)]);
         end
     end
-
 
     [nTrials, nTimePoints, nRGCs] = size(neuralResponses);
     activationRangeMRGCMosaic = prctile(neuralResponses(:),[0 100]);
@@ -109,6 +137,7 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
                         'activation', theConeMosaicResponses(theConeMosaicReponseTrial, iPoint,:), ...
                         'activationRange', activationRangeConeMosaic , ...
                         'horizontalActivationColorbarInside', true, ...
+                        'clearAxesBeforeDrawing', clearAxesBeforeDrawing, ...
                         'plotTitle', sprintf('cMosaic %s (t: %2.1f msec)', responseLabel, temporalSupportSeconds(iPoint)*1e3));
                 else
                     theEMtrial = min([iTrial size(emPathsDegs,1)]);
@@ -121,6 +150,7 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
                         'horizontalActivationColorbarInside', true, ...
                         'currentEMposition', squeeze(emPathsDegs(theEMtrial,iPoint,:)), ...
                         'displayedEyeMovementData', struct('trial', theEMtrial, 'timePoints', 1:iPoint), ...
+                        'clearAxesBeforeDrawing', clearAxesBeforeDrawing, ...
                         'plotTitle', sprintf('cMosaic %s (t: %2.1f msec, trial %d of %d)', responseLabel, temporalSupportSeconds(iPoint)*1e3, iTrial, nTrials));
          
                 end
@@ -157,10 +187,8 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
                     'Color', [0 0 0], ...
                     'FontSize', 16);
             colorbar(axResponseTimeResponses, 'NorthOutside');
-
             title(axResponseTimeResponses, sprintf('spatio-temporal %s (trial %d of %d)', responseLabel, iTrial, nTrials));
-            
-
+           
             theMRGCmosaic.visualize(...
                 'figureHandle', figureHandle, ...
                 'axesHandle', axMRGCMosaicActivation, ...

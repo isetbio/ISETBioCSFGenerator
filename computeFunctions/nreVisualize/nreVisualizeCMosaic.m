@@ -1,13 +1,50 @@
+function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
+    maxVisualizedInstances, visualizationMetaData, varargin)
 % Visualization function for CMosaic based neural responses 
 %
-% Add comments
+% This function is called from the visualize() method of a
+% @neuralResponseEngine object whose properties are set as follows:
+% - noiseFreeComputeFunctionHandle is set to @nreNoiseFreeCMosaic, 
+% - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesPoisson, and 
+% - customVisualizationFunctionHandle is set to @nreVisualizeCMmosaic
+% - visualizeEachCompute is set to true
+% The visualize() method is called both from the noiseFree and the noisyInstances compute methods
+%
+% Inputs:
+%    neuralPipeline                 - the parent @neuralResponseEngine object that
+%                                     is calling this function as its computeFunctionHandle
+%    neuralResponses                - a 3D matrix, [kTrials x mNeurons x tFrames], of neural responses
+%    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
+%    maxVisualizedInstances         - the max number of cMosaic response instances to visualize
+%    visualizationMetaData          - just a placeholder for now
+%    
+% Optional key/value input arguments:
+%    'figureHandle'                 - either [] or a figure handle
+%    'axesHandle'                   - either [] or an axes handle
+%    'responseLabel'                - string, just a comment about the responses visualized
+%    'clearAxesBeforeDrawing'       - boolean, whether to clear the axes before drawing
+%
+%
+% Example usage:
+%
+% noiseFreeResponseParams = nreNoiseFreeCMosaic([],[],[],[]);
+% noisyInstancesParams = nreNoisyInstancesPoisson;
+%
+% theCMosaicNeuralEngine = neuralResponseEngine( ...
+%    @nreNoiseFreeCMosaic, ...
+%    @nreNoisyInstancesPoisson, ...
+%    noiseFreeResponseParams, ...
+%    noisyInstancesParams);
+%
+% theCMosaicNeuralEngine.visualizeEachCompute = true;
+% theCMosaicNeuralEngine.customVisualizationFunctionHandle = @nreVisualizeCMosaic;
+% theCMosaicNeuralEngine.maxVisualizedNoisyResponseInstances = 2;
+%
+% For more usage examples, see t_spatialCSF
 %
 
 % History:
 %    01/11/2025  NPC  Wrote it
-
-function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSeconds, ...
-    maxVisualizedInstances, visualizationMetaData, varargin)
 
     [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
