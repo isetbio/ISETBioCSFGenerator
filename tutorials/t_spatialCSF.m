@@ -82,6 +82,18 @@ function thresholdRet = t_spatialCSF(options)
         'oiPadMethod', 'mean', ...
         'validationThresholds',  [0.0208    0.0370    0.0770    0.3300]);
 
+    % Validate with cone contrast, temporal filter based on photocurrent, meta contrast.
+    t_spatialCSF('useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson', ...
+        'useConeContrast', false, ...
+        'useFixationalEMs', false, ...
+        'numberOfFrames', 4, ...
+        'temporalFilterValues', 'photocurrentImpulseResponseBased', ...
+        'oiPadMethod', 'mean');
+
+
     % mRGCMosaic nre basic test
     t_spatialCSF('useMetaContrast', true, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
@@ -232,8 +244,10 @@ arguments
     % describe gain changes as well as temporal processing per se, we do
     % not require that these sum to 1.  If you want to preserve signal
     % magnitude, you can normalize the filter values yourself, so that they
-    % sum to 1.
-    options.temporalFilterValues (1,:) double = [];
+    % sum to 1. This can also be set to some string, e.g.,
+    % 'photocurrentImpulseResponseBased', in which case the filter values
+    % are computed on the fly
+    options.temporalFilterValues (1,:);  % double = [];
 
     % Run the validation check?  This gets overridden to empty if other
     % options change the conditions so that the validation data don't
@@ -350,7 +364,11 @@ end
 % illustrated in this tutorial script.
 if (~isempty(temporalFilterValues))
     temporalFilter.filterValues = temporalFilterValues;
-    temporalFilter.temporalSupport = frameDurationSeconds*(0:(length(temporalFilterValues)-1));
+    if (ischar(temporalFilterValues))
+        temporalFilter.temporalSupport = '';
+    else
+        temporalFilter.temporalSupport = frameDurationSeconds*(0:(length(temporalFilterValues)-1));
+    end
 else
     temporalFilter = [];
 end
@@ -637,8 +655,10 @@ else
 end
 
 %% If we use cone contrast, we will neeed a null scene for normalization.
+%% If we use a filter that is computed on the fly, e.g. 'photocurrentImpulseResponseBased'
+%% we also need a null scene to compute the photocurrent given the background
 %  So, we create a nullGratingSceneEngine so we can generate the theNullStimulusScene
-if (useConeContrast) 
+if (useConeContrast) || (ischar(temporalFilterValues))
     dummySpatialFrequency = 4;
     nullGratingSceneEngine = createGratingSceneEngine(chromaDir, dummySpatialFrequency, ...
         gratingSceneParams);

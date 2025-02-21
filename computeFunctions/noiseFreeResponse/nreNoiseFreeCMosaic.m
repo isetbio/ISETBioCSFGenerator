@@ -303,8 +303,64 @@ theNeuralResponses = permute(theNeuralResponses,[1 3 2]);
 
 %% Apply temporal filter if needed
 if (~isempty(noiseFreeComputeParams.temporalFilter))
-    filterTemporalSupport = noiseFreeComputeParams.temporalFilter.temporalSupport;
     filterValues = noiseFreeComputeParams.temporalFilter.filterValues;
+
+    % If the filterValues is a string, we need to compute the filter values
+    if (ischar(filterValues))
+        switch (filterValues)
+            case 'photocurrentImpulseResponseBased'
+                if (~exist('coneMosaicNullResponse', 'var'))||(isempty(coneMosaicNullResponse))
+                    if (isempty(noiseFreeComputeParams.nullStimulusSceneSequence))
+                        error('Specified ''%s'' temporal filter, but did not provide a nullStimulus (background) which is necessary to compute the photocurrent impulse repsonse .', filterValues);
+                    else
+                        % Retrieve the null stimulus scene sequence
+                        nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
+            
+                        % Compute the optical image of the null scene
+                        listOfNullOpticalImages = cell(1, framesNum);
+                        for frame = 1:framesNum
+                            listOfNullOpticalImages{frame} = oiCompute(theOptics, nullStimulusSceneSequence{frame},'padvalue',noiseFreeComputeParams.opticsParams.oiPadMethod);
+                        end
+                        nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
+                        clear listOfNullOpticalImages;
+            
+                        % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
+                        coneMosaicNullResponse = theConeMosaic.compute(...
+                            nullOIsequence, ...
+                            'nTrials', 1);
+                    end
+                end % if (~exist('coneMosaicNullResponse', 'var'))|| (isempty(coneMosaicNullResponse))
+
+            otherwise
+                error('Unsupported temporal filter method: ''%s''.', filterValues);
+        end % switch
+
+        % Call the standalone photocurrent impulse response compute function
+        % The contrast of the impulse stimulus
+        theConeFlashImpulseContrast = 0.01*[1 1 1];
+
+        % Visualize the computed impulse responses only if the
+        % neuralEngineOBJ.visualizeEachCompute flag has been set to true
+        visualizePhotocurrentImpulseResponses = neuralEngineOBJ.visualizeEachCompute;
+
+        % Compute the impulse responses
+        thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseResponses(...
+            theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, framesNum, ...
+            visualizePhotocurrentImpulseResponses);
+
+        % Retrieve the computed filterValues and its temporal support from the returned photocurrentImpulseResponseStruct
+        filterTemporalSupport = thePhotocurrentImpulseResponseStruct.temporalSupportSeconds;
+
+        % Ensure temporal support are consistent
+        assert(all(size(filterTemporalSupport) == size(temporalSupportSeconds)), 'mismatch in temporal support lengths');
+        assert(all(temporalSupportSeconds == filterTemporalSupport), 'mismatch in temporal support values');
+        
+        filterValues = thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse;
+
+    else % ~ischar(filterValues)
+        filterTemporalSupport = noiseFreeComputeParams.temporalFilter.temporalSupport;
+    end
+
 
     % Loop over instances and responses
     nInstances = size(theNeuralResponses,1);
@@ -382,6 +438,8 @@ if (returnTheNoiseFreePipeline)
     dataOut.noiseFreeResponsePipeline.coneMosaic = theConeMosaic;
 end
 end
+
+
 
 function p = generateDefaultParams(opticsType,oiPadMethod)
 

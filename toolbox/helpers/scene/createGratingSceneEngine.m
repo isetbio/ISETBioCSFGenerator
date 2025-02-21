@@ -54,6 +54,7 @@ p.addParameter('frameDurationSeconds',0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialPhaseAdvanceDegs', 45,  @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('filter', struct('spectralSupport',[],'transmission',[]), @isstruct);
 p.addParameter('temporalFrequencyHz', 1,  @(x)(isnumeric(x) && numel(x) == 1));
+p.addParameter('phaseDirection', 1,  @(x)(isnumeric(x) && (abs(x)==1)));
 p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ...
     ismember(x,{'flashed', 'flashedmultiframe', 'drifted', 'counterphasemodulated'})));
 p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
@@ -122,6 +123,7 @@ switch (p.Results.presentationMode)
         gratingParams.frameDurationSeconds = p.Results.frameDurationSeconds;
         gratingParams.temporalModulationParams =  struct(...
             'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
+            'phaseDirection', p.Results.phaseDirection, ...
             'stimDurationFramesNum', framesNum);
         
     case 'counterphasemodulated'
@@ -129,6 +131,7 @@ switch (p.Results.presentationMode)
         gratingParams.frameDurationSeconds = p.Results.frameDurationSeconds;
         gratingParams.temporalModulationParams =  struct(...
             'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
+            'phaseDirection', p.Results.phaseDirection, ...
             'stimDurationFramesNum', framesNum);
         
     otherwise
