@@ -93,8 +93,46 @@ function thresholdRet = t_spatialCSF(options)
         'temporalFilterValues', 'photocurrentImpulseResponseBased', ...
         'oiPadMethod', 'mean');
 
+    % Verify that cMosaic FEMs work without crashing. This uses default parameters
+    % for the EMs.
+    t_spatialCSF('useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson', ...
+        'useConeContrast', false, ...
+        'useFixationalEMs', true, ...
+        'temporalFilterValues', [], ...
+        'oiPadMethod', 'zero', ...
+        'validationThresholds', [], ...
+        'visualizeEachScene', false, ...
+        'visualizeEachResponse', true, ...
+        'responseVisualizationFunction', @nreVisualizeCMosaic, ...
+        'maxVisualizedNoisyResponseInstances', 2, ...
+        'maxVisualizedNoisyResponseInstanceStimuli',2);
 
-    % mRGCMosaic nre basic test
+    % Verify that Gaussian noise works, as well as template classifier
+    t_spatialCSF('useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', false, ...
+        'useFixationalEMs', false, ...
+        'temporalFilterValues', [], ...
+        'oiPadMethod', 'mean', ...
+        'validationThresholds', [0.0993    0.1673    0.3377    1.0000]);
+
+    % Verify that rcePcaSVM works
+    t_spatialCSF('useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePcaSVM', ...
+        'useConeContrast', false, ...
+        'useFixationalEMs', false, ...
+        'temporalFilterValues', [], ...
+        'oiPadMethod', 'mean', ...
+        'validationThresholds', [0.0377    0.0796    0.1427    0.6956]);
+
+ % mRGCMosaic nre basic test
     t_spatialCSF('useMetaContrast', true, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
         'mRGCOutputSignalType', 'mRGCs', ...
@@ -159,50 +197,11 @@ function thresholdRet = t_spatialCSF(options)
             'slopeDelta', 1/20, ...
             'thresholdCriterion', 0.81606), ...
         'validationThresholds', [0.3520    0.1895    0.1572    0.1554]);
-
-    % Verify that FEMs work without crashing
-    t_spatialCSF('useMetaContrast', true, ...
-        'whichNoiseFreeNre', 'excitationsCmosaic', ...
-        'whichNoisyInstanceNre', 'Poisson', ...
-        'whichClassifierEngine', 'rcePoisson', ...
-        'useConeContrast', false, ...
-        'useFixationalEMs', true, ...
-        'temporalFilterValues', [], ...
-        'oiPadMethod', 'zero', ...
-        'validationThresholds', [], ...
-        'visualizeEachScene', false, ...
-        'visualizeEachResponse', true, ...
-        'responseVisualizationFunction', @nreVisualizeCMosaic, ...
-        'maxVisualizedNoisyResponseInstances', 2, ...
-        'maxVisualizedNoisyResponseInstanceStimuli',2);
-
-    % Verify that Gaussian noise works, as well as template classifier
-    t_spatialCSF('useMetaContrast', true, ...
-        'whichNoiseFreeNre', 'excitationsCmosaic', ...
-        'whichNoisyInstanceNre', 'Gaussian', ...
-        'whichClassifierEngine', 'rceTemplateDistance', ...
-        'useConeContrast', false, ...
-        'useFixationalEMs', false, ...
-        'temporalFilterValues', [], ...
-        'oiPadMethod', 'mean', ...
-        'validationThresholds', [0.0993    0.1673    0.3377    1.0000]);
-
-    % Verify that rcePcaSVM works
-    t_spatialCSF('useMetaContrast', true, ...
-        'whichNoiseFreeNre', 'excitationsCmosaic', ...
-        'whichNoisyInstanceNre', 'Poisson', ...
-        'whichClassifierEngine', 'rcePcaSVM', ...
-        'useConeContrast', false, ...
-        'useFixationalEMs', false, ...
-        'temporalFilterValues', [], ...
-        'oiPadMethod', 'mean', ...
-        'validationThresholds', [0.0377    0.0796    0.1427    0.6956]);
 %}
-
 
 arguments
     % Use meta contrast method to speed things up?
-    options.useMetaContrast (1,1) logical = true;
+    options.useMetaContrast (1,1) logical = true
 
     % Choose noise free neural model
     %   Choices: 'excitationsCmosaic'
@@ -214,7 +213,7 @@ arguments
     % off neural responses.
     %    Choices: 'mRGCs' (default). Use mRGC signals.
     %             'cones'.  Use the cone excitations (or contrast) 
-    options.mRGCOutputSignalType (1,:) char = 'mRGCs;'
+    options.mRGCOutputSignalType (1,:) char = 'mRGCs'
 
     % Choose noise model
     %   Choices: 'Poisson'
@@ -229,13 +228,40 @@ arguments
     options.whichClassifierEngine (1,:) char = 'rcePoisson'
 
     % Use cone contrast rather than cone excitations
-    options.useConeContrast (1,1) logical = false;
+    options.useConeContrast (1,1) logical = false
 
     % Use fixational eye movements?
-    options.useFixationalEMs (1,1) logical = false;
+    %
+    % The first variable here controls whether we simulate fixational EMs.
+    % The second determines whether the training and test EM paths match
+    % each other. It can only be true if the number of training and test
+    % EMs match each other.
+    options.useFixationalEMs (1,1) logical = false
+    options.testEMsMatchTrain (1,1) logical = true
+
+    % nTrainingEMs, nTestEMs
+    %
+    % If EMs are turned on, nTrainEMs determines the number of
+    % fixational EMs used in training, while nTestEMs determines the number
+    % used at test.
+    options.nTrainEMs (1,1) double = 1
+    options.nTestEMs (1,1) double = 1
+
+    % nTrain and nTest
+    %
+    % nTrain determines the number of training instances. When there are
+    % training fixational EMs, this is the number that get used to train the
+    % classiefier for each EM.  
+    %
+    % nTest determines the number of test instances. When there are
+    % fixationsal EMs, this number is spread across them equally.  Thus
+    % this number must be a multiple of the number of fixationsal EMs
+    % specified.
+    options.nTrain (1,1) double = 1
+    options.nTest (1,1) double = 128
 
     % Number of temporal frames.  If not empty, overrides default values
-    options.numberOfFrames double = [];
+    options.numberOfFrames double = []
 
     % Apply temporal filter?
     %
@@ -247,12 +273,12 @@ arguments
     % sum to 1. This can also be set to some string, e.g.,
     % 'photocurrentImpulseResponseBased', in which case the filter values
     % are computed on the fly
-    options.temporalFilterValues (1,:);  % double = [];
+    options.temporalFilterValues (1,:) = []
 
     % Run the validation check?  This gets overridden to empty if other
     % options change the conditions so that the validation data don't
     % apply.
-    options.validationThresholds (1,:) double = [];
+    options.validationThresholds (1,:) double = []
 
     % Fast parameters?
     options.fastParameters (1,1) logical = true;
@@ -262,11 +288,11 @@ arguments
     % convolution with optical point spread function.
     %
     % Can be 'zero' or 'mean'.  
-    options.oiPadMethod (1,:) char = 'zero';
+    options.oiPadMethod (1,:) char = 'zero'
 
     % Apply a filter to the spectra before computing responses?  See
     % t_spatialCSFFilter
-    options.filter (1,1) = struct('spectralSupport',[],'transmission',[]);
+    options.filter (1,1) = struct('spectralSupport',[],'transmission',[])
 
     % Threshold limits
     options.thresholdPara (1,1) = struct( ...
@@ -276,18 +302,18 @@ arguments
         'slopeRangeLow', 1/20, ...
         'slopeRangeHigh', 50/20, ...
         'slopeDelta', 2.5/20, ...
-        'thresholdCriterion', 0.81606);
+        'thresholdCriterion', 0.81606)
 
     % Verbose?
-    options.verbose (1,1) logical = true;
+    options.verbose (1,1) logical = true
 
     % Visualize the output of each compute (useful for debuging code)
     % Scene and response visualization are controlled separately.
-    options.visualizeEachScene (1,1) logical = false;
-    options.visualizeEachResponse (1,1) logical = false;
-    options.responseVisualizationFunction = [];
-    options.maxVisualizedNoisyResponseInstances = 1;
-    options.maxVisualizedNoisyResponseInstanceStimuli = 1;
+    options.visualizeEachScene (1,1) logical = false
+    options.visualizeEachResponse (1,1) logical = false
+    options.responseVisualizationFunction = []
+    options.maxVisualizedNoisyResponseInstances = 1
+    options.maxVisualizedNoisyResponseInstanceStimuli = 1
 end
 
 %% Close any stray figs
@@ -304,6 +330,11 @@ filter = options.filter;
 useMetaContrast = options.useMetaContrast;
 useConeContrast = options.useConeContrast;
 useFixationalEMs = options.useFixationalEMs;
+testEMsMatchTrain = options.testEMsMatchTrain;
+nTrainEMs = options.nTrainEMs;
+nTestEMs = options.nTestEMs;
+nTrain = options.nTrain;
+nTest = options.nTest;
 whichNoiseFreeNre = options.whichNoiseFreeNre;
 whichNoisyInstanceNre = options.whichNoisyInstanceNre;
 whichClassifierEngine = options.whichClassifierEngine;
@@ -563,15 +594,19 @@ switch (whichClassifierEngine)
         whichClassifierEngine = responseClassifierEngine(@rcePoisson);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
-            'nTrain', 1, 'nTest', 128);
+            'nTrain', nTrain, 'nTest', nTest);
 
     case {'rceTemplateDistance'}
         whichClassifierEngine = responseClassifierEngine(@rcePoisson);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
-            'nTrain', 1, 'nTest', 128);
+            'nTrain', nTrain, 'nTest', nTest);
 
     case 'rcePcaSVM'
+        if (nTrain == 1)
+            error('Does not really make sense to use rcePcaSVM with only 1 training instance');
+        end
+
         pcaSVMParams = struct(...
             'PCAComponentsNum', 2, ...          % number of PCs used for feature set dimensionality reduction
             'crossValidationFoldsNum', 10, ...  % employ a 10-fold cross-validated linear
@@ -581,7 +616,7 @@ switch (whichClassifierEngine)
         whichClassifierEngine = responseClassifierEngine(@rcePcaSVM,pcaSVMParams);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
-            'nTrain', 128, 'nTest', 128);
+            'nTrain', nTrain, 'nTest', nTest);
 
     otherwise
         error('Unsupported rce specified')
@@ -616,7 +651,8 @@ questEnginePara = struct( ...
 
 %% Set grating engine parameters
 %
-% NEED TO FIX UP TIME STUFF HERE.
+% DHB: I DON'T QUITE UNDERSTAND THE TWO CASES HERE.  WHY DON'T WE JUST
+% SPECIFY STATIC OR DYNAMIC AS AN OPTION?
 stimulusDuration = framesNum*frameDurationSeconds;
 if (~useFixationalEMs & isempty(temporalFilter) & framesNum == 1)
     gratingSceneParams = struct( ...
@@ -655,8 +691,9 @@ else
 end
 
 %% If we use cone contrast, we will neeed a null scene for normalization.
-%% If we use a filter that is computed on the fly, e.g. 'photocurrentImpulseResponseBased'
-%% we also need a null scene to compute the photocurrent given the background
+%
+% If we use a filter that is computed on the fly, e.g. 'photocurrentImpulseResponseBased'
+% we also need a null scene to compute the photocurrent given the background
 %  So, we create a nullGratingSceneEngine so we can generate the theNullStimulusScene
 if (useConeContrast) || (ischar(temporalFilterValues))
     dummySpatialFrequency = 4;
@@ -696,28 +733,36 @@ end
 
 %% Set up EM object to define fixational eye movement paths
 %
-% There are lots of things we can control. In any case, the path
-% defined here is used for training.
+% There are lots of EM things we can control. 
 %
 % Setting the seed to -1 means don't touch the seed or call rng().
-if (useFixationalEMs) 
-    % Set number of eye movement paths.  At the moment this must be 1, but
-    % we plan to generalize.
-    nEMPaths = 1;
+if (useFixationalEMs)
+    emMicrosaccadeType = 'none';
+    emRandomSeed = -1;
+    emComputeVelocitySignal = false;
+    emCenterPaths = false;
+    emCenterPathsAtSpecificTimeMsec = [];
 
-    % Set up the EM object
+    % Set up the train EM object
     trainFixationalEMObj = fixationalEM;
-    trainFixationalEMObj.microSaccadeType = 'none';   % No microsaccades, just drift
-    trainFixationalEMObj.randomSeed = -1;
-    computeVelocitySignal = false;
-    centerPaths = false;
-    centerPathsAtSpecificTimeMsec = [];
-    trainFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nEMPaths, computeVelocitySignal, ...
-        'centerPaths', centerPaths, 'centerPathsAtSpecificTimeMsec', centerPathsAtSpecificTimeMsec);
+    trainFixationalEMObj.microSaccadeType = emMicrosaccadeType;
+    trainFixationalEMObj.randomSeed = emRandomSeed ;
+    trainFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nTrainEMs, emComputeVelocitySignal, ...
+        'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
 
     % And this one for testing. Here we are doing EM know exactly, so the
     % test object is the same as the training object.
-    testFixationalEMObj = trainFixationalEMObj;
+    testFixationalEMObj = fixationalEM;
+    testFixationalEMObj.microSaccadeType = emMicrosaccadeType;
+    testFixationalEMObj.randomSeed = emRandomSeed;
+    testFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nTestEMs, emComputeVelocitySignal, ...
+        'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
+    if (testEMsMatchTrain)
+        if (nTestEMs ~= nTrainEMs)
+            error('Number of test and training EMs must match when testEMsMatchTrain is true');
+        end
+        testFixationalEMObj.emPosArcMin = trainFixationalEMObj.emPosArcMin;
+    end
 else
     trainFixationalEMObj = [];
     testFixationalEMObj = [];
@@ -816,7 +861,11 @@ threshold = 10 .^ logThreshold;
 theCsfFig = figure();
 loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
 xticks(spatialFreqs); xlim([spatialFreqs(1), spatialFreqs(end)]);
-yticks([2,5,10,20,50]); ylim([1, 50]);
+if (framesNum == 1)
+    yticks([1,2,5,10,20,50]); ylim([1, 50]);
+elseif (framesNum == 4)
+    yticks([1,2,5,10,20,50,100,200]); ylim([1, 200]);
+end
 xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
@@ -841,6 +890,7 @@ if (~isempty(validationThresholds))
         fprintf('Validation regression check passes\n');
     end
 else
+    threshold
     fprintf('Validation regression check not run, presumably because of parameter change\n');
 end
 

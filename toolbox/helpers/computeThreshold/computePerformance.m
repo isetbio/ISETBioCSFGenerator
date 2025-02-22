@@ -1,9 +1,9 @@
 function [predictions, theClassifierEngine, responses, whichAlternatives] = computePerformance(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     varargin)
-% Compute performance of a classifier given different scenes, a neural 
-% engine, and a classifier engine. This function is suitable for both TAFC 
-% and N-alternative forced-choice tasks. 
+% Compute performance of a classifier given different scenes, a neural
+% engine, and a classifier engine. This function is suitable for both TAFC
+% and N-alternative forced-choice tasks.
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses, whichAlternatives] = ...
@@ -32,12 +32,15 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %     nTrain                - Number of null and test response instances
 %                             used in classifer training.  The two types of
 %                             instances are paired and a nTrain TAFC task is
-%                             simulated.
+%                             simulated. Training is skipped if the
+%                             trainNoiseFlag (see below) is empty, or if
+%                             this is 0.
 %     nTest                 - Number of null and test response instances
 %                             used in classifer training.  The two types of
 %                             instances are paired and nTest TAFC
 %                             trials are simulated for evaluating
-%                             performance.
+%                             performance.  If this is passed as 0, then no
+%                             testing happens.
 %     theNeuralEngine       - @neuralResponseEngine object to compute
 %                             neural responses.
 %     theClassifierEngine   - @responseClassifierEngine object that
@@ -51,7 +54,9 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %                             response instances. Typically either 'none' or
 %                             'random' depending on whether the desired
 %                             classifier is signal known exactly ('none')
-%                             or signal known statistically ('random').
+%                             or signal known statistically ('random').  If
+%                             this is empty, the classifier is assumed
+%                             trained.
 %     testNoiseFlag          - String. Type of noise to be used in
 %                             evaluating performance. This flag are passed to
 %                             theNeuralEngine to generate the test
@@ -61,20 +66,21 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %     predictions            - Vector of 1's (correct) and 0's (incorrect)
 %                              that gives trial by trial performance of the
 %                              tested classifier in the TAFC task.
-%                              Contains nTest entries.
+%                              Contains nTest entries.  Returned as empty
+%                              if nTest == 0.
 %     theClassifierEngine    - Trained version of passed classifier object.
-%
-%     responses              - Neural responses computed
+%     responses              - Neural responses computed for testing,
+%                              Returned as empty if nTest == 0;
 %     whichAlternatives      - Vector with integers that tells us which
-%                              stimulus alternative was presented on each 
-%                              of the stimulated trials.  This should have
+%                              stimulus alternative was presented on each
+%                              of the stimulated test trials.  This should have
 %                              the same length as the predictions vector
 %                              returned. This is currently only meaningful
-%                              for classification engines whose names start
-%                              with 'rcePoisson'.  
+%                              for the rcePoisson calssification engine.
+%                              If nTest == 0, this is returned as empty.
 %
 % Optional key/value pairs:
-%     TAFC                  - logical. Whether this is a two-interval 
+%     TAFC                  - logical. Whether this is a two-interval
 %                             forced-choice task or N-way one-stimulus-per-trial
 %                             task. Default false.
 %     useMetaContrast       - Passed arguments are for meta contrast setup
@@ -94,8 +100,8 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 % History:
 %   10/23/20  dhb  Comments.
 %   04/10/24  fh   Merged computePerformanceTAFC.m and
-%                   computePerformanceNWay_OneStimulusPerTrial.m by adding 
-%                   a key/pair pair specifying whether the task is TAFC or 
+%                   computePerformanceNWay_OneStimulusPerTrial.m by adding
+%                   a key/pair pair specifying whether the task is TAFC or
 %                   NWay_OneStimulusPerTrial.
 
 % Parse input
@@ -128,7 +134,7 @@ end
 % generation routine to indicate what type of noise ('none' or
 % 'random') should be used in the training. Using 'random' inherits
 % whatever noise model is in the nre.
-if (~isempty(trainNoiseFlag))
+if (~isempty(trainNoiseFlag) & nTrain ~= 0)
     % Generate responses for training
     %
     % The responses are a 3 dimensional
@@ -204,7 +210,7 @@ if (~isempty(trainNoiseFlag))
     % Visualization the cone excitation for selected stimulus
     if visualizeAllComponents
         % TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
-        theStim = 1; 
+        theStim = 1;
         visualizeConeResps(theNeuralEngine, inSampleStimResponsesCell, theStim);
     end
 
@@ -234,96 +240,104 @@ end
 %
 % The way nTest gets passed to the neural engine is a little different for
 % TAFC than true N-way.  We handle that here.
-outSampleStimResponsesCell = cell(1,nScenes);
-if isTAFC
-    nTest_eachScene = nTest;
-else
-    nTest_eachScene = nTest/nScenes;
-    assert(mod(nTest, nScenes) == 0, ['The number of test trials must be an',...
-        ' integer multiple of the number of alternative choices']);
-end
-eStart = tic;
-for n = 1:nScenes
-    if (p.Results.useMetaContrast && ~isTAFC)
-        % Noise free response for nth alternative scene sequence
-        [outSampleNoiseFreeStimResponsesCell{n}, neuralResponseTemporalSupport] = theNeuralEngine{n}.computeNoiseFree(...
-            theScenes, ...
-            temporalSupport, ...
-            'fixationalEM',fixationalEMObj);
-
-        % Add noise (or not) to nth alternative responses
-        [outSampleStimResponsesCell{n}, ~] = theNeuralEngine{n}.computeNoisyInstances( ...
-            outSampleNoiseFreeStimResponsesCell{n}, ...
-            neuralResponseTemporalSupport, ...
-            nTest_eachScene, ...
-            testNoiseFlag);
+if (nTest ~= 0)
+    outSampleStimResponsesCell = cell(1,nScenes);
+    if isTAFC
+        nTest_eachScene = nTest;
     else
-        % Noise free response for nth alternative scene sequence
-        [outSampleNoiseFreeStimResponsesCell{n}, neuralResponseTemporalSupport] = theNeuralEngine.computeNoiseFree(...
-            theScenes{n}, ...
-            temporalSupport, ...
-            'fixationalEM',fixationalEMObj);
-
-        % Add noise (or not) to nth alternative responses
-        [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
-            outSampleNoiseFreeStimResponsesCell{n}, ...
-            neuralResponseTemporalSupport, ...
-            nTest_eachScene, ...
-            testNoiseFlag);
+        nTest_eachScene = nTest/nScenes;
+        assert(mod(nTest, nScenes) == 0, ['The number of test trials must be an',...
+            ' integer multiple of the number of alternative choices']);
     end
-end
-e = toc(eStart);
-if (p.Results.verbose)
-    fprintf('computePerformance: Took %0.1f secs to generate test responses for all alternatives\n',e);
-end
+    eStart = tic;
+    for n = 1:nScenes
+        if (p.Results.useMetaContrast && ~isTAFC)
+            % Noise free response for nth alternative scene sequence
+            [outSampleNoiseFreeStimResponsesCell{n}, neuralResponseTemporalSupport] = theNeuralEngine{n}.computeNoiseFree(...
+                theScenes, ...
+                temporalSupport, ...
+                'fixationalEM',fixationalEMObj);
 
-% If it's TAFC , massage the responses to be
-% the concatenation of the responses to the two
-% stimuli that were actually passed. This is because rcePoisson is set up to
-% handle N alternatives, one stimulus per trial and doing this turns
-% the TAFC case work into that format.
-%
-% If not TAFC, then we just continue on with the cell
-% array we already have because we are explictly doing an N-alternative
-% one stimulus per trial task.
-%
-% We don't overwrite the original outSampleStimResonsesCell
-% array, because for visualization below it is convenient to
-% have the responses to the individual stimuli still available.
-if (isTAFC)
-    % Concatenate them along the 2nd dimension (responses) in
-    % null/test order.  We don't need to intermix test/cell as well
-    % because the observer is not biased and doesn't care about the
-    % order.
-    outSampleStimResponsesMassaged = [];
-    for nn = 1:nScenes
-        outSampleStimResponsesMassaged = ...
-            cat(2, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
+            % Add noise (or not) to nth alternative responses
+            [outSampleStimResponsesCell{n}, ~] = theNeuralEngine{n}.computeNoisyInstances( ...
+                outSampleNoiseFreeStimResponsesCell{n}, ...
+                neuralResponseTemporalSupport, ...
+                nTest_eachScene, ...
+                testNoiseFlag);
+        else
+            % Noise free response for nth alternative scene sequence
+            [outSampleNoiseFreeStimResponsesCell{n}, neuralResponseTemporalSupport] = theNeuralEngine.computeNoiseFree(...
+                theScenes{n}, ...
+                temporalSupport, ...
+                'fixationalEM',fixationalEMObj);
+
+            % Add noise (or not) to nth alternative responses
+            [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
+                outSampleNoiseFreeStimResponsesCell{n}, ...
+                neuralResponseTemporalSupport, ...
+                nTest_eachScene, ...
+                testNoiseFlag);
+        end
     end
-    whichAlternatives = ones(nTest_eachScene, 1);
+    e = toc(eStart);
+    if (p.Results.verbose)
+        fprintf('computePerformance: Took %0.1f secs to generate test responses for all alternatives\n',e);
+    end
+
+    % If it's TAFC , massage the responses to be
+    % the concatenation of the responses to the two
+    % stimuli that were actually passed. This is because rcePoisson is set up to
+    % handle N alternatives, one stimulus per trial and doing this turns
+    % the TAFC case work into that format.
+    %
+    % If not TAFC, then we just continue on with the cell
+    % array we already have because we are explictly doing an N-alternative
+    % one stimulus per trial task.
+    %
+    % We don't overwrite the original outSampleStimResonsesCell
+    % array, because for visualization below it is convenient to
+    % have the responses to the individual stimuli still available.
+    if (isTAFC)
+        % Concatenate them along the 2nd dimension (responses) in
+        % null/test order.  We don't need to intermix test/cell as well
+        % because the observer is not biased and doesn't care about the
+        % order.
+        outSampleStimResponsesMassaged = [];
+        for nn = 1:nScenes
+            outSampleStimResponsesMassaged = ...
+                cat(2, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
+        end
+        whichAlternatives = ones(nTest_eachScene, 1);
+    else
+        % Stack up the responses for each alternative
+        outSampleStimResponsesMassaged = [];
+        for nn = 1:nScenes
+            outSampleStimResponsesMassaged = ...
+                cat(1, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
+        end
+        whichAlternatives = repmat(1:nScenes,[nTest_eachScene, 1]);
+        whichAlternatives = whichAlternatives(:);
+    end
+
+    % Predict
+    dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassaged, whichAlternatives);
+    clear outSampleStimResponsesMassaged
+
+    % Save computed response instances
+    if (saveResponses)
+        responses.outSampleStimResponses = outSampleStimResponsesCell;
+    end
+
+    % Set return variable.  For each trial 0 means wrong and 1 means right.
+    % Taking mean(response) gives fraction correct.
+    predictions = dataOut.trialPredictions;
+
 else
-    % Stack up the responses for each alternative
-    outSampleStimResponsesMassaged = [];
-    for nn = 1:nScenes
-        outSampleStimResponsesMassaged = ...
-            cat(1, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
-    end
-    whichAlternatives = repmat(1:nScenes,[nTest_eachScene, 1]);
-    whichAlternatives = whichAlternatives(:); 
+    % Not testing, only training
+    predictions = [];
+    responses = [];
+    whichAlternatives = [];
 end
-
-% Predict
-dataOut = theClassifierEngine.compute('predict', outSampleStimResponsesMassaged, whichAlternatives);
-clear outSampleStimResponsesMassaged
-
-% Save computed response instances
-if (saveResponses)
-    responses.outSampleStimResponses = outSampleStimResponsesCell;
-end
-    
-% Set return variable.  For each trial 0 means wrong and 1 means right.
-% Taking mean(response) gives fraction correct.
-predictions = dataOut.trialPredictions;
 
 end
 
@@ -343,8 +357,8 @@ if (isfield(theNeuralEngine.neuralPipeline, 'coneMosaic'))
     figNo = 999;
     theNeuralEngine.neuralPipeline.coneMosaic.visualizeFullAbsorptionsDensity(figNo);
 
-% If we don't have a cone mosaic but have an mRGC mosaic, visualize
-% responses asumming they go with the mRGC mosaic
+    % If we don't have a cone mosaic but have an mRGC mosaic, visualize
+    % responses asumming they go with the mRGC mosaic
 elseif (isfield(theNeuralEngine.neuralPipeline, 'mRGCmosaic'))
     theNeuralEngine.neuralPipeline.mRGCmosaic.visualizeResponses(...
         responseTemporalSupportSeconds, neuralResponses{selectedScene}, ...

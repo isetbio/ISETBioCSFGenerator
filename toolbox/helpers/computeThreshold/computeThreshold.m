@@ -82,7 +82,7 @@ function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychomet
 %                           Default false. If set to true, it visualizes
 %                           the mosaic responses to all the stimuli (multiple contrasts)
 %                           which are computed by the neural engine.
-%   'datasaveParameters'  - Parameters related to data saving. Default
+%   'datasavePara'        - Parameters related to data saving. Default
 %                           empty. When not empty, this has to be a struct
 %                           with fields indicating which responses to save.
 %                           Right now, the only accepted field is
@@ -99,7 +99,12 @@ function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychomet
 %                           handle them, or else the caller would need to
 %                           explicitly formulate the TAFC version as an
 %                           2-alternative with one stimulus per trial problem.
-%     useMetaContrast      - Passed arguments are for meta contrast setup
+%     useMetaContrast     - Passed arguments are for meta contrast setup
+%     trainFixationalEM   - EM object with EM paths for training.  This can
+%                           be empty, which means no EM on training.ƒthr
+%     testFixaitonalEM    - EM object with EM paths for testing. This can
+%                           be the same as trainFixationalEM.  Default
+%                           empty, which means no EM on testing.
 %     maxVisualizedNoisyResponseInstanceStimuli - Maximum number of stimuli
 %                            for which the visualizeNoisyResponseInstances
 %                            flag stays true.
@@ -298,7 +303,7 @@ while (nextFlag)
                 Wl_vec(index),theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
         end
         
-        % Visualize the drifting sequence.  This might crash for the
+        % Visualize the stimulus sequence.  This might crash for the
         % 4AFC version.
         if (visualizeStimulus)
             theStim = 2;
@@ -320,22 +325,82 @@ while (nextFlag)
         % cached pointer will simply continue to point to the same
         % object, and be updated by future training.
         eStart = tic;
-        [predictions, tempClassifierEngine, responses, whichAlternatives] = computePerformance(...
-            theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
-            classifierPara.nTrain, classifierPara.nTest, theNeuralEngine,...
-            classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
-            'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
-            'visualizeAllComponents', visualizeAllComponents, ...
-            'fixationalEM', trainFixationalEMObj, ...
-            'useMetaContrast', p.Results.useMetaContrast ...
-        );
-        % theNeuralEngine.visualizeEachCompute
-       
+
+        % Find number of training and test fixational EM paths.  There are
+        % four cases we allow.
+        %   a) Both have 1 path, where staying still (empty object passed)
+        %   is considered one path, as is one actual passed path.  In this
+        %   case, we train on the training path and test on the test path.
+        %   b) There is one training path and multiple test paths.  In this
+        %   case, we train on the training path and test on each of the
+        %   test paths, returning the average performance across all of
+        %   them.
+        %   c) There are multiple training paths and one test path.  We
+        %   train on each of the training paths and test on the single test
+        %   path, and return the average performance.
+        %   d) There are N training paths and N test paths.  We train on
+        %   each of the training paths and test on the corresponding test
+        %   path, and return the average performance.
+        %
+        % Other cases are an error.
+        if (~isempty(trainFixationalEMObj))
+            nTrainFixationalEMPaths = size(trainFixationalEMObj.emPosArcMin,1);
+            allTrainEMPaths = trainFixationalEMObj.emPosArcMin;
+            trainFixationalEMObj.emPosMicrons = [];
+            trainFixationalEMObj.emPos = [];
+        else
+            nTrainFixationalEMPaths = 1;
+        end
+        if (~isempty(testFixationalEMObj))
+            nTestFixationalEMPaths = size(testFixationalEMObj.emPosArcMin,1);
+            allTestEMPaths = testFixationalEMObj.emPosArcMin;
+            testFixationalEMObj.emPosMicrons = [];
+            testFixationalEMObj.emPos = [];
+        else
+            nTestFixationalEMPaths = 1;
+        end
+
+        % Check that passed EM conditions are supported.
+        if (nTrainFixationalEMPaths ~= 1 & nTestFixationalEMPaths ~= 1)
+            if (nTrainFixationalEMPaths ~= nTestFixationalEMPaths)
+                error('Unsupported combination of traning and test EM paths');
+            end
+        end
+
+        % Train the classifier for each EM path
+        for eeTrain = 1:nTrainFixationalEMPaths
+            % Create an EM object with just the eeTrain'th em path
+            if (~isempty(trainFixationalEMObj))
+                trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTrain,:,:);
+                trainFixationalEMObj.emPosMicrons = [];
+                trainFixationalEMObj.emPos = [];
+            end
+
+            % Train the classifier for the eeTrain'th path.
+            [~, tempClassifierEngine{eeTrain}, ~, ~] = computePerformance(...
+                theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
+                classifierPara.nTrain, 0, theNeuralEngine,...
+                classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
+                'TAFC', isTAFC, 'saveResponses', datasavePara.saveMRGCResponses,...
+                'visualizeAllComponents', visualizeAllComponents, ...
+                'fixationalEM', trainFixationalEMObj, ...
+                'useMetaContrast', p.Results.useMetaContrast ...
+                );
+        end
+
+        % Restore training EM object
+        if (~isempty(trainFixationalEMObj))
+            trainFixationEMObj.emPosArcMin = allTrainEMPaths;
+            trainFixationalEMObj.emPosMicrons = [];
+            trainFixationalEMObj.emPos = [];
+        end
+
+        % Bump some counters
         testCounter = testCounter + 1;
         stimCounter = stimCounter + 1;
         e = toc(eStart);
         if (verbose)
-                fprintf('computeThreshold: Training and predicting test block %d took %0.1f secs\n',testCounter,e);
+            fprintf('computeThreshold: Training test block %d took %0.1f secs\n',testCounter,e);
         end
 
         % Turn off nre detailed visualization if test counter exceeds the
@@ -350,26 +415,185 @@ while (nextFlag)
             end
         end
         
-        % Copy the trained classifier
+        % Copy the trained classifiers so we hae them later
         eStart = tic;
-        theTrainedClassifierEngines{testedIndex} = tempClassifierEngine.copy;
+        for eeTrain = 1:nTrainFixationalEMPaths
+            theTrainedClassifierEngines{testedIndex}{eeTrain} = tempClassifierEngine{eeTrain}.copy;
+        end
         e = toc(eStart);
         if (verbose)
                 fprintf('computeThreshold: Copying classifer took %0.1f secs\n',e);
+        end
+
+        % Now predict. Handle each of the four fixations EM cases
+        % separately.
+        
+        % Now predict. Handle each of the four fixations EM cases
+        % separately.
+        if (nTrainFixationalEMPaths == 1 && nTestFixationalEMPaths == 1)
+            [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
+                theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
+                theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
+                'TAFC', isTAFC, ...
+                'saveResponses', false, ...
+                'visualizeAllComponents', false, ...
+                'fixationalEM', testFixationalEMObj, ...
+                'useMetaContrast', p.Results.useMetaContrast ...
+                );
+
+        elseif (nTrainFixationalEMPaths == 1 && nTestFixationalEMPaths > 1)
+            % Set up accumulation variable
+            predictions = [];
+            whichAlternatives = [];
+
+             % Make sure numbers work out
+            if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
+                error('nTest must be an integer miultiple of number of EM paths')
+            end
+            nTestPerEMPath = classifierPara.nTest/nTestFixationalEMPaths;
+
+            % Loop over test EM paths getting predictions for each
+            for eeTest = 1:nTestFixationalEMPaths
+                % Set the test EM path for this time through the loop
+                if (~isempty(testFixationalEMObj))
+                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosMicrons = [];
+                    testFixationalEMObj.emPos = [];
+                end
+
+                % Predict
+                [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                    theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
+                    'TAFC', isTAFC, ...
+                    'saveResponses', false, ...
+                    'visualizeAllComponents', false, ...
+                    'fixationalEM', testFixationalEMObj, ...
+                    'useMetaContrast', p.Results.useMetaContrast ...
+                );
+
+                % Accumulate predictions over EM paths
+                predictions = [predictions ; predictionsTemp];
+                whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
+            end
+
+            % Restore test EM object paths
+            if (~isempty(testFixationalEMObj))
+                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosMicrons = [];
+                testFixationalEMObj.emPos = [];
+            end
+
+        elseif (nTrainFixationalEMPaths > 1 && nTestFixationalEMPaths == 1)
+            % Set up accumulation variable
+            predictions = [];
+            whichAlternatives = [];
+
+             % Make sure numbers work out
+            if (rem(classifierPara.nTest,nTrainFixationalEMPaths) ~= 0)
+                error('nTest must be an integer miultiple of number of EM paths')
+            end
+            nTestPerEMPath = classifierPara.nTest/nTrainFixationalEMPaths;
+
+            % Loop over training EM paths getting predictions for each
+            for eeTtrain = 1:nTestFixationalEMPaths
+                % Set the test EM path for this time through the loop
+                if (~isempty(trainFixationalEMObj))
+                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
+                    trainFixationalEMObj.emPosMicrons = [];
+                    trainFixationalEMObj.emPos = [];
+                end
+
+                % Predict
+                [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                    theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
+                    'TAFC', isTAFC, ...
+                    'saveResponses', false, ...
+                    'visualizeAllComponents', false, ...
+                    'fixationalEM', testFixationalEMObj, ...
+                    'useMetaContrast', p.Results.useMetaContrast ...
+                    );
+
+                % Accumulate predictions over EM paths
+                predictions = [predictions ; predictionsTemp];
+                whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
+            end
+
+            % Restore test EM object paths
+            if (~isempty(testFixationalEMObj))
+                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosMicrons = [];
+                testFixationalEMObj.emPos = [];
+            end
+        else
+            % Set up accumulation variable
+            predictions = [];
+            whichAlternatives = [];
+
+            % Make sure numbers work out
+            if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
+                error('nTest must be an integer miultiple of number of EM paths')
+            end
+            nTestPerEMPath = classifierPara.nTest/nTestFixationalEMPaths;
+
+            % Loop over paired train and test EM paths getting predictions for each
+            for eeTest = 1:nTestFixationalEMPaths
+                % Set the test EM path for this time through the loop
+                if (~isempty(trainFixationalEMObj))
+                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
+                    trainFixationalEMObj.emPosMicrons = [];
+                    trainFixationalEMObj.emPos = [];
+                end
+                if (~isempty(testFixationalEMObj))
+                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosMicrons = [];
+                    testFixationalEMObj.emPos = [];
+                end
+
+                % Predict
+                [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                    theSceneTemporalSupportSeconds, 0, nTest, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTest}, [], classifierPara.testFlag, ...
+                    'TAFC', isTAFC, ...
+                    'saveResponses', false, ...
+                    'visualizeAllComponents', false, ...
+                    'fixationalEM', testFixationalEMObj, ...
+                    'useMetaContrast', p.Results.useMetaContrast ...
+                );
+
+                % Accumulate predictions over EM paths
+                predictions = [predictions ; predictionsTemp];
+                whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
+            end
+
+            % Restore train and test EM object paths
+            if (~isempty(trainFixationalEMObj))
+                trainFixationEMObj.emPosArcMin = allTrainEMPaths;
+                trainFixationalEMObj.emPosMicrons = [];
+                trainFixationalEMObj.emPos = [];
+            end
+            if (~isempty(testFixationalEMObj))
+                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosMicrons = [];
+                testFixationalEMObj.emPos = [];
+            end
         end
 
         % Update the psychometric function with data point for this
         % contrast level.  Also the trial-by-trial containers.
         psychometricFunction(contrastLabel) = mean(predictions);
         trialByTrialStimulusAlternatives(contrastLabel) = whichAlternatives;
-        trialByTrialPerformance(contrastLabel) = predictions';
-        
+        trialByTrialPerformance(contrastLabel) = predictions';    
         if (verbose)
             fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
                 length(psychometricFunction),testCounter);
         end
 
         % Save computed responses only the first time we test this contrast
+        %
+        % DHB: DOES THIS NEED TO BE UPDATEED FOR EACH EM PATH, OR IS IT GOOD AS
+        % IS.  I AM NOT QUITE SURE WHAT THIS IS DOING.
         if (datasavePara.saveMRGCResponses)
             theMRGCmosaic = theNeuralEngine.neuralPipeline.mRGCmosaic;
             
@@ -406,17 +630,161 @@ while (nextFlag)
         eStart = tic;
         savevisualizeEachCompute = theNeuralEngine.visualizeEachCompute;
         theNeuralEngine.visualizeEachCompute = false;
-        [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
-            theSceneTemporalSupportSeconds, classifierPara.nTrain, classifierPara.nTest, ...
-            theNeuralEngine, theTrainedClassifierEngines{testedIndex}, [], classifierPara.testFlag, ...
-            'TAFC', isTAFC, ...
-            'saveResponses', false, ...
-            'visualizeAllComponents', false, ...
-            'fixationalEM', testFixationalEMObj, ...
-            'useMetaContrast', p.Results.useMetaContrast ...
-        );
+
+        % Now predict. Handle each of the four fixations EM cases
+        % separately.
+        if (nTrainFixationalEMPaths == 1 && nTestFixationalEMPaths == 1)
+            [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
+                theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
+                theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
+                'TAFC', isTAFC, ...
+                'saveResponses', false, ...
+                'visualizeAllComponents', false, ...
+                'fixationalEM', testFixationalEMObj, ...
+                'useMetaContrast', p.Results.useMetaContrast ...
+                );
+
+        elseif (nTrainFixationalEMPaths == 1 && nTestFixationalEMPaths > 1)
+            % Set up accumulation variable
+            predictions = [];
+            whichAlternatives = [];
+
+             % Make sure numbers work out
+            if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
+                error('nTest must be an integer miultiple of number of EM paths')
+            end
+            nTestPerEMPath = classifierPara.nTest/nTestFixationalEMPaths;
+
+            % Loop over test EM paths getting predictions for each
+            for eeTest = 1:nTestFixationalEMPaths
+                % Set the test EM path for this time through the loop
+                if (~isempty(testFixationalEMObj))
+                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosMicrons = [];
+                    testFixationalEMObj.emPos = [];
+                end
+
+                % Predict
+                [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                    theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
+                    'TAFC', isTAFC, ...
+                    'saveResponses', false, ...
+                    'visualizeAllComponents', false, ...
+                    'fixationalEM', testFixationalEMObj, ...
+                    'useMetaContrast', p.Results.useMetaContrast ...
+                );
+
+                % Accumulate predictions over EM paths
+                predictions = [predictions ; predictionsTemp];
+                whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
+            end
+
+            % Restore test EM object paths
+            if (~isempty(testFixationalEMObj))
+                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosMicrons = [];
+                testFixationalEMObj.emPos = [];
+            end
+
+        elseif (nTrainFixationalEMPaths > 1 && nTestFixationalEMPaths == 1)
+            % Set up accumulation variable
+            predictions = [];
+            whichAlternatives = [];
+
+             % Make sure numbers work out
+            if (rem(classifierPara.nTest,nTrainFixationalEMPaths) ~= 0)
+                error('nTest must be an integer miultiple of number of EM paths')
+            end
+            nTestPerEMPath = classifierPara.nTest/nTrainFixationalEMPaths;
+
+            % Loop over training EM paths getting predictions for each
+            for eeTtrain = 1:nTestFixationalEMPaths
+                % Set the test EM path for this time through the loop
+                if (~isempty(trainFixationalEMObj))
+                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
+                    trainFixationalEMObj.emPosMicrons = [];
+                    trainFixationalEMObj.emPos = [];
+                end
+
+                % Predict
+                [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                    theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
+                    'TAFC', isTAFC, ...
+                    'saveResponses', false, ...
+                    'visualizeAllComponents', false, ...
+                    'fixationalEM', testFixationalEMObj, ...
+                    'useMetaContrast', p.Results.useMetaContrast ...
+                    );
+
+                % Accumulate predictions over EM paths
+                predictions = [predictions ; predictionsTemp];
+                whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
+            end
+
+            % Restore test EM object paths
+            if (~isempty(testFixationalEMObj))
+                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosMicrons = [];
+                testFixationalEMObj.emPos = [];
+            end
+        else
+            % Set up accumulation variable
+            predictions = [];
+            whichAlternatives = [];
+
+            % Make sure numbers work out
+            if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
+                error('nTest must be an integer miultiple of number of EM paths')
+            end
+            nTestPerEMPath = classifierPara.nTest/nTestFixationalEMPaths;
+
+            % Loop over paired train and test EM paths getting predictions for each
+            for eeTest = 1:nTestFixationalEMPaths
+                % Set the test EM path for this time through the loop
+                if (~isempty(trainFixationalEMObj))
+                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
+                    trainFixationalEMObj.emPosMicrons = [];
+                    trainFixationalEMObj.emPos = [];
+                end
+                if (~isempty(testFixationalEMObj))
+                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosMicrons = [];
+                    testFixationalEMObj.emPos = [];
+                end
+
+                % Predict
+                [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                    theSceneTemporalSupportSeconds, 0, nTest, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTest}, [], classifierPara.testFlag, ...
+                    'TAFC', isTAFC, ...
+                    'saveResponses', false, ...
+                    'visualizeAllComponents', false, ...
+                    'fixationalEM', testFixationalEMObj, ...
+                    'useMetaContrast', p.Results.useMetaContrast ...
+                );
+
+                % Accumulate predictions over EM paths
+                predictions = [predictions ; predictionsTemp];
+                whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
+            end
+
+            % Restore train and test EM object paths
+            if (~isempty(trainFixationalEMObj))
+                trainFixationEMObj.emPosArcMin = allTrainEMPaths;
+                trainFixationalEMObj.emPosMicrons = [];
+                trainFixationalEMObj.emPos = [];
+            end
+            if (~isempty(testFixationalEMObj))
+                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosMicrons = [];
+                testFixationalEMObj.emPos = [];
+            end
+        end
+       
+        % Restore the visualizeEachCompute flag.
         theNeuralEngine.visualizeEachCompute = savevisualizeEachCompute;
-        % theNeuralEngine.visualizeEachCompute
 
         testCounter = testCounter + 1;
         e = toc(eStart);
