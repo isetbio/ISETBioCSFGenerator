@@ -165,7 +165,7 @@ function dataOut = nreNoisyInstancesGaussian(...
     end
 
 
-    % Apply activation function if one has been specified
+    % If an activation function has been specified, apply it to the noisy repsonse instances here
     if (isfield(noisyInstancesComputeParams, 'activationFunctionParams'))
        noisyResponseInstances = neuralResponseEngine.applyActivationFunction(...
             noiseFreeResponses, noisyResponseInstances, noisyInstancesComputeParams.activationFunctionParams);

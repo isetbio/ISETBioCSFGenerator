@@ -3,6 +3,10 @@
 %
 % Syntax:
 %   t_isoresponseLMplaneEllipses
+%
+% Description:
+%   This tutorial was used to generate examples of threshold ellipses in the LM plane
+%   under different nonlinear activation functions (used in the 2025 R-01 grant)
 
 % History:
 %   01/27/2025  NPC   Wrote it.
@@ -69,7 +73,7 @@ oiPadMethod = 'zero';
 
 % Visualization options
 visualizeEachScene = false;
-visualizeEachCompute = ~true;
+visualizeEachCompute = true;
 maxVisualizedNoisyResponseInstances = 2;
 
 figureFileBaseDir = setupFigureDirectory(mfilename, ...
@@ -257,13 +261,17 @@ switch (whichNoisyInstanceNre)
         % Set the sigma parameter
         nreNoiseInstancesParams.sigma = gaussianSigma;
 
-        % Saturating activation function
+        % Saturating activation function. If the type is specified as
+        % 'halfWaveSigmoidalRectifier', the response bias specified above
+        % like so: nreNoiseFreeParams.mRGCMosaicParams.responseBias
+        % specifies how the noise-free response is pushed into different
+        % regimes of the sigmoidal function
         nreNoiseInstancesParams.activationFunctionParams = struct(...
-            'type', 'linear', ... %  choose between {'linear', 'halfwaveRectifier', 'halfwaveSigmoidalRectifier'}
-            'exponent', 2.0, ...   % only relevant for 'halfwaveSigmoidalRectifier'
+            'type', 'halfwaveSigmoidalRectifier', ...                 % choose between {'linear', 'halfwaveRectifier', 'halfwaveSigmoidalRectifier'}
+            'exponent', 2.0, ...                                      % only relevant for 'halfwaveSigmoidalRectifier'
             'semiSaturationReponseAmplitude', 0.15*gaussianSigma, ... % only relevant for 'halfwaveSigmoidalRectifier'
-            'gain', 3*gaussianSigma, ... % only relevant for 'halfwaveSigmoidalRectifier'
-            'visualize', ~true ...
+            'gain', 3*gaussianSigma, ...                              % only relevant for 'halfwaveSigmoidalRectifier'
+            'visualize', true ...
             );
 
 
