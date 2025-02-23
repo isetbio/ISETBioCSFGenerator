@@ -407,17 +407,19 @@ else
     padFramesBefore = 0;
     padFramesAfter = 0;
 end
-sizeDegs = [0.5 0.5];
 pixelsNum = 128;
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
 frameDurationSeconds = 0.1;
 theTemporalFrequencyHz = 5.0;
-if (fastParameters)
-    cropSize = [0.5 0.5];
-else
-    cropSize = [1.5 1.5];
-end
+
+% Set up some sizes.  Note that these are small so that the examples run
+% fast. 
+mosaicEccDegs = [0 0];
+mosaicSizeDegs = [0.5 0.5];
+mRGCRawSizeDegs = [2 2];
+mRGCCropSize = [0.5 0.5];
+stimulusSizeDegs = 0.5;
 
 %% Set up temporal filter if we have one. 
 %
@@ -487,7 +489,7 @@ switch (whichNoiseFreeNre)
         % 1. Select one of the pre-computed mRGC mosaics by specifying its
         % eccentricityDegs & sizeDegs asnd its center type
         noiseFreeResponseParams.mRGCMosaicParams.eccDegs = mosaicEccDegs;
-        noiseFreeResponseParams.mRGCMosaicParams.sizeDegs = mosaicSizeDegs;
+        noiseFreeResponseParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
         noiseFreeResponseParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
         noiseFreeResponseParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
 
@@ -495,7 +497,7 @@ switch (whichNoiseFreeNre)
         %    Passing [] for sizeDegs will not crop.
         %    Passing [] for eccentricityDegs will crop the mosaic at its center.
         noiseFreeResponseParams.mRGCMosaicParams.cropParams = struct(...
-            'sizeDegs', cropSize, ...
+            'sizeDegs', mRGCropSize, ...
             'eccentricityDegs', [] ...
             );
 
@@ -688,7 +690,7 @@ questEnginePara = struct( ...
 stimulusDuration = framesNum*frameDurationSeconds;
 if (~useFixationalEMs & isempty(temporalFilter) & framesNum == 1)
     gratingSceneParams = struct( ...
-        'fovDegs', min(sizeDegs), ...
+        'fovDegs', stimSizeDegs, ...
         'presentationMode', 'flashedmultiframe', ...
         'duration', stimulusDuration, ...
         'frameDurationSeconds', stimulusDuration/framesNum, ...
@@ -701,7 +703,7 @@ else
     % Dynamic stimulus parameters
     presentationMode = 'counterphasemodulated';
     gratingSceneParams = struct( ...
-        'fovDegs', min(sizeDegs), ...
+        'fovDegs', stimSizeDegs, ...
         'presentationMode', presentationMode, ... 
         'duration', stimulusDuration, ...
         'frameDurationSeconds', stimulusDuration/framesNum, ...
