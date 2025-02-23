@@ -371,7 +371,7 @@ while (nextFlag)
         for eeTrain = 1:nTrainFixationalEMPaths
             % Create an EM object with just the eeTrain'th em path
             if (~isempty(trainFixationalEMObj))
-                trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTrain,:,:);
+                trainFixationalEMObj.emPosArcMin = allTrainEMPaths(eeTrain,:,:);
                 trainFixationalEMObj.emPosMicrons = [];
                 trainFixationalEMObj.emPos = [];
             end
@@ -390,7 +390,7 @@ while (nextFlag)
 
         % Restore training EM object
         if (~isempty(trainFixationalEMObj))
-            trainFixationEMObj.emPosArcMin = allTrainEMPaths;
+            trainFixationalEMObj.emPosArcMin = allTrainEMPaths;
             trainFixationalEMObj.emPosMicrons = [];
             trainFixationalEMObj.emPos = [];
         end
@@ -424,9 +424,6 @@ while (nextFlag)
         if (verbose)
                 fprintf('computeThreshold: Copying classifer took %0.1f secs\n',e);
         end
-
-        % Now predict. Handle each of the four fixations EM cases
-        % separately.
         
         % Now predict. Handle each of the four fixations EM cases
         % separately.
@@ -456,7 +453,7 @@ while (nextFlag)
             for eeTest = 1:nTestFixationalEMPaths
                 % Set the test EM path for this time through the loop
                 if (~isempty(testFixationalEMObj))
-                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
                     testFixationalEMObj.emPosMicrons = [];
                     testFixationalEMObj.emPos = [];
                 end
@@ -479,7 +476,7 @@ while (nextFlag)
 
             % Restore test EM object paths
             if (~isempty(testFixationalEMObj))
-                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosArcMin = allTestEMPaths;
                 testFixationalEMObj.emPosMicrons = [];
                 testFixationalEMObj.emPos = [];
             end
@@ -496,14 +493,7 @@ while (nextFlag)
             nTestPerEMPath = classifierPara.nTest/nTrainFixationalEMPaths;
 
             % Loop over training EM paths getting predictions for each
-            for eeTtrain = 1:nTestFixationalEMPaths
-                % Set the test EM path for this time through the loop
-                if (~isempty(trainFixationalEMObj))
-                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
-                    trainFixationalEMObj.emPosMicrons = [];
-                    trainFixationalEMObj.emPos = [];
-                end
-
+            for eeTrain = 1:nTrainFixationalEMPaths
                 % Predict
                 [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
@@ -520,12 +510,6 @@ while (nextFlag)
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
             end
 
-            % Restore test EM object paths
-            if (~isempty(testFixationalEMObj))
-                testFixationEMObj.emPosArcMin = allTestEMPaths;
-                testFixationalEMObj.emPosMicrons = [];
-                testFixationalEMObj.emPos = [];
-            end
         else
             % Set up accumulation variable
             predictions = [];
@@ -539,22 +523,20 @@ while (nextFlag)
 
             % Loop over paired train and test EM paths getting predictions for each
             for eeTest = 1:nTestFixationalEMPaths
+                % Define for clarity of code
+                eeTrain = eeTest;
+
                 % Set the test EM path for this time through the loop
-                if (~isempty(trainFixationalEMObj))
-                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
-                    trainFixationalEMObj.emPosMicrons = [];
-                    trainFixationalEMObj.emPos = [];
-                end
                 if (~isempty(testFixationalEMObj))
-                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
                     testFixationalEMObj.emPosMicrons = [];
                     testFixationalEMObj.emPos = [];
                 end
 
                 % Predict
                 [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
-                    theSceneTemporalSupportSeconds, 0, nTest, ...
-                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTest}, [], classifierPara.testFlag, ...
+                    theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
                     'saveResponses', false, ...
                     'visualizeAllComponents', false, ...
@@ -568,13 +550,8 @@ while (nextFlag)
             end
 
             % Restore train and test EM object paths
-            if (~isempty(trainFixationalEMObj))
-                trainFixationEMObj.emPosArcMin = allTrainEMPaths;
-                trainFixationalEMObj.emPosMicrons = [];
-                trainFixationalEMObj.emPos = [];
-            end
             if (~isempty(testFixationalEMObj))
-                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosArcMin = allTestEMPaths;
                 testFixationalEMObj.emPosMicrons = [];
                 testFixationalEMObj.emPos = [];
             end
@@ -659,7 +636,7 @@ while (nextFlag)
             for eeTest = 1:nTestFixationalEMPaths
                 % Set the test EM path for this time through the loop
                 if (~isempty(testFixationalEMObj))
-                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
                     testFixationalEMObj.emPosMicrons = [];
                     testFixationalEMObj.emPos = [];
                 end
@@ -682,7 +659,7 @@ while (nextFlag)
 
             % Restore test EM object paths
             if (~isempty(testFixationalEMObj))
-                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosArcMin = allTestEMPaths;
                 testFixationalEMObj.emPosMicrons = [];
                 testFixationalEMObj.emPos = [];
             end
@@ -699,14 +676,7 @@ while (nextFlag)
             nTestPerEMPath = classifierPara.nTest/nTrainFixationalEMPaths;
 
             % Loop over training EM paths getting predictions for each
-            for eeTtrain = 1:nTestFixationalEMPaths
-                % Set the test EM path for this time through the loop
-                if (~isempty(trainFixationalEMObj))
-                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
-                    trainFixationalEMObj.emPosMicrons = [];
-                    trainFixationalEMObj.emPos = [];
-                end
-
+            for eeTrain = 1:nTrainFixationalEMPaths
                 % Predict
                 [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
@@ -723,12 +693,6 @@ while (nextFlag)
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
             end
 
-            % Restore test EM object paths
-            if (~isempty(testFixationalEMObj))
-                testFixationEMObj.emPosArcMin = allTestEMPaths;
-                testFixationalEMObj.emPosMicrons = [];
-                testFixationalEMObj.emPos = [];
-            end
         else
             % Set up accumulation variable
             predictions = [];
@@ -742,22 +706,19 @@ while (nextFlag)
 
             % Loop over paired train and test EM paths getting predictions for each
             for eeTest = 1:nTestFixationalEMPaths
-                % Set the test EM path for this time through the loop
-                if (~isempty(trainFixationalEMObj))
-                    trainFixationEMObj.emPosArcMin = allTrainEMPaths(eeTest,:,:);
-                    trainFixationalEMObj.emPosMicrons = [];
-                    trainFixationalEMObj.emPos = [];
-                end
+                % Define for clarity
+                eeTrain = eeTest;
+
                 if (~isempty(testFixationalEMObj))
-                    testFixationEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
+                    testFixationalEMObj.emPosArcMin = allTestEMPaths(eeTest,:,:);
                     testFixationalEMObj.emPosMicrons = [];
                     testFixationalEMObj.emPos = [];
                 end
 
                 % Predict
                 [predictionsTemp, ~, ~, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
-                    theSceneTemporalSupportSeconds, 0, nTest, ...
-                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTest}, [], classifierPara.testFlag, ...
+                    theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
+                    theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
                     'saveResponses', false, ...
                     'visualizeAllComponents', false, ...
@@ -770,14 +731,9 @@ while (nextFlag)
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
             end
 
-            % Restore train and test EM object paths
-            if (~isempty(trainFixationalEMObj))
-                trainFixationEMObj.emPosArcMin = allTrainEMPaths;
-                trainFixationalEMObj.emPosMicrons = [];
-                trainFixationalEMObj.emPos = [];
-            end
+            % Restore train EM object paths
             if (~isempty(testFixationalEMObj))
-                testFixationEMObj.emPosArcMin = allTestEMPaths;
+                testFixationalEMObj.emPosArcMin = allTestEMPaths;
                 testFixationalEMObj.emPosMicrons = [];
                 testFixationalEMObj.emPos = [];
             end
