@@ -495,7 +495,7 @@ switch (whichNoiseFreeNre)
         % upper bound on performance for a photon limited system
         %
         % Override size and frame duration to put performance in reasonable range
-        mosaicSizeDegs = [0.05 0.05];
+        stimSizeDegs = [0.05 0.05];
         frameDurationSeconds = 1e-16;
 
         % Set up nre
