@@ -73,7 +73,7 @@ oiPadMethod = 'zero';
 
 % Visualization options
 visualizeEachScene = false;
-visualizeEachCompute = true;
+visualizeEachCompute = false;
 maxVisualizedNoisyResponseInstances = 2;
 
 figureFileBaseDir = setupFigureDirectory(mfilename, ...
