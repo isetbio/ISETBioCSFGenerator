@@ -328,27 +328,27 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
     clear newNeuralResponses;
 end
 
-% Add response bias, but only if we a saturating non-linearity has been
-% specificed
-if (isfield(noiseFreeComputeParams.mRGCMosaicParams, 'responseBias')) && ...
-   (isfield(noiseFreeComputeParams.mRGCMosaicParams, 'activationFunctionParams')) && ...
-   (strcmp(noiseFreeComputeParams.mRGCMosaicParams.activationFunctionParams.type, 'halfwaveSigmoidalRectifier'))
-    sprintf('nre noise free with response bias: %g\n', noiseFreeComputeParams.mRGCMosaicParams.responseBias)
+% If we have a halfwave rectifier nonlinear activation function and a response bias has been specified, 
+% apply the response bias to the noise-free responses.
+% In the current implementation, the actual activation function is applied to the noisy response instances
+% See comments in @neuralResponseEngine.applyActivationFunction
+if (isfield(noiseFreeComputeParams.mRGCMosaicParams, 'activationFunctionParams')) && ...
+   (isfield(noiseFreeComputeParams.mRGCMosaicParams, 'responseBias')) && ...
+      ( ...
+        (strcmp(noiseFreeComputeParams.mRGCMosaicParams.activationFunctionParams.type, 'halfwaveSigmoidalRectifier')) || ...
+        (strcmp(noiseFreeComputeParams.mRGCMosaicParams.activationFunctionParams.type, 'halfwaveRectifier')) ...
+      )
     theNeuralResponses = theNeuralResponses + noiseFreeComputeParams.mRGCMosaicParams.responseBias;
 end
 
-% Simulate ON_OFF mosaic if so specified. This simply flips the response
-% sign of the odd-numbered mRGCs
+% If 'simulateONOFFmosaic' has been set, flip the response sign of the odd-numbered mRGCs
 if (strcmp(noiseFreeComputeParams.mRGCMosaicParams.outputSignalType, 'mRGCs'))
     if (isfield(noiseFreeComputeParams.mRGCMosaicParams,'simulateONOFFmosaic'))
         if (noiseFreeComputeParams.mRGCMosaicParams.simulateONOFFmosaic)
             mResponses = size(theNeuralResponses,2);
-            parfor jj = 1:mResponses
-                if (mod(jj,2) == 1)
-                    % Flip the sign of the odd mRGC responses
-                    theNeuralResponses(:,jj,:) = -theNeuralResponses(:,jj,:);
-                end
-            end % jj
+            fprintf('Flipping signs of odd-numbered RGCs\n')
+            oddNumberedRGCs = 1:2:mResponses;
+            theNeuralResponses(:,oddNumberedRGCs,:) = -theNeuralResponses(:,oddNumberedRGCs,:);
         end
     end
 end

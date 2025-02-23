@@ -1,4 +1,36 @@
 function theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, theNoisyResponseInstances, activationFunctionParams)
+% Function for applying an activation function to the noisy response instances
+%
+% Syntax:
+%   theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, ...
+%                           theNoisyResponseInstances, activationFunctionParams);
+%
+% Description:
+%   Function for applying an activation function to the noisy response
+%   instances. The implicit assumption here is that the activation function
+%   is applied after noise is added to the noise-free response. For
+%   example when the noisy-response instances represent the noisy membrane
+%   potential of ganglion cells, and the activation function represents the
+%   action potential generation mechanism. The function is called from 
+%   noisy response instancen compute functions, currently reNoisyInstancesGaussian
+%   if an activationFunctionParams struct has been specified
+%
+% Inputs:
+%   - theNoiseFreeResponses           - [1 x mNeurons] matrix of noise-free responses (only used for visualizing the activation function)
+%   - theNoisyResponseInstances       - [nTrials x mNeurons] matrix of noisy-response instances
+%   - activationFunctionParams        - struct with the activation function params
+%
+% Outputs:
+%   - theNeuralResponses              - [nTrials x mNeurons] matrix of noisy-response instances after the activation function is applied
+%
+% Usage:
+%   This function is triggered if an activationFunctionParams struct has
+%   been specified. For an example see t_isoresponseLMplaneEllipses
+%
+
+% History:
+%    01/27/2025  NPC   Wrote it.
+
     if (isempty(activationFunctionParams))
         theNeuralResponses = theNoisyResponseInstances;
         return;
