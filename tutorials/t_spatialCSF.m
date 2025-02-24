@@ -725,6 +725,10 @@ end
 
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
+    % DHB: THIS IS WHERE WE WOULD PUT THE EM PATH GENERATION IF WE WANT TO
+    % DO IT SEPARATELY FOR EACH SF.
+    % RIGHT HERE.
+    
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration.  Put grating in sine phase
     % becuase that keeps the spatial mean constant across spatial

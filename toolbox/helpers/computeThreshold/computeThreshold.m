@@ -360,7 +360,9 @@ while (nextFlag)
             nTestFixationalEMPaths = 1;
         end
 
-        % Check that passed EM conditions are supported.
+        % Check that passed EM conditions are supported.  Don't remove this
+        % check unless you carefully fix the places below that count on it
+        % passing.
         if (nTrainFixationalEMPaths ~= 1 & nTestFixationalEMPaths ~= 1)
             if (nTrainFixationalEMPaths ~= nTestFixationalEMPaths)
                 error('Unsupported combination of traning and test EM paths');
@@ -376,8 +378,9 @@ while (nextFlag)
                 trainFixationalEMObj.emPos = [];
             end
 
-            % Train the classifier for the eeTrain'th path.
-            [~, tempClassifierEngine{eeTrain}, ~, ~] = computePerformance(...
+            % Train the classifier for the eeTrain'th path.  Be sure to
+            % copy the trained classifier, because it is a handle class.
+            [~, tempTempClassifierEngine, ~, ~] = computePerformance(...
                 theSceneSequences{testedIndex}, theSceneTemporalSupportSeconds,...
                 classifierPara.nTrain, 0, theNeuralEngine,...
                 classifierEngine, classifierPara.trainFlag, classifierPara.testFlag, ...
@@ -386,6 +389,7 @@ while (nextFlag)
                 'fixationalEM', trainFixationalEMObj, ...
                 'useMetaContrast', p.Results.useMetaContrast ...
                 );
+            tempClassifierEngine{eeTrain} = tempTempClassifierEngine.copy;
         end
 
         % Restore training EM object
@@ -418,7 +422,7 @@ while (nextFlag)
         % Copy the trained classifiers so we hae them later
         eStart = tic;
         for eeTrain = 1:nTrainFixationalEMPaths
-            theTrainedClassifierEngines{testedIndex}{eeTrain} = tempClassifierEngine{eeTrain}.copy;
+            theTrainedClassifierEngines{testedIndex}{eeTrain} = tempClassifierEngine{eeTrain};
         end
         e = toc(eStart);
         if (verbose)
@@ -427,6 +431,12 @@ while (nextFlag)
         
         % Now predict. Handle each of the four fixations EM cases
         % separately.
+        %
+        % DHB: IT IS POSSIBLE WE COULD GET RID OF THIS SECTION AND AT THIS
+        % POINT JUST DROP INTO THE PREDICT-ONLY CASE CODE BELOW, NOW THAT
+        % WE HAVE SEPARATED TRAINING FROM PREDICTION IN THIS
+        % TRAIN-AND-PREDICT BRANCH OF THE CODE.  BUT SAVING THAT FOR A
+        % MOMENT WHEN EVERYTHING IS A BIT MORE STABLE.
         if (nTrainFixationalEMPaths == 1 && nTestFixationalEMPaths == 1)
             [predictions, ~, ~, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
                 theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
@@ -445,7 +455,7 @@ while (nextFlag)
 
              % Make sure numbers work out
             if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
-                error('nTest must be an integer miultiple of number of EM paths')
+                error('nTest must be an integer multiple of number of EM paths')
             end
             nTestPerEMPath = classifierPara.nTest/nTestFixationalEMPaths;
 
