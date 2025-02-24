@@ -256,6 +256,10 @@ arguments
     options.responseVisualizationFunction = []
     options.maxVisualizedNoisyResponseInstances = 1
     options.maxVisualizedNoisyResponseInstanceStimuli = 1
+
+    % Some sizes
+    options.stimSizeDegs (1,1) double = 0.5;
+
 end
 
 %% Close any stray figs
@@ -293,6 +297,7 @@ visualizeEachResponse = options.visualizeEachResponse;
 responseVisualizationFunction = options.responseVisualizationFunction;
 maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
 maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseInstanceStimuli;
+stimSizeDegs = options.stimSizeDegs;
 
 %% Freeze rng for replicatbility and validation
 rng(1);
@@ -328,8 +333,7 @@ theTemporalFrequencyHz = 5.0;
 mosaicEccDegs = [0 0];
 mosaicSizeDegs = [0.5 0.5];
 mRGCRawSizeDegs = [2 2];
-mRGCCropSize = [0.5 0.5];
-stimSizeDegs = 0.5;
+mRGCCropSize = mosaicSizeDegs;
 
 %% Set up temporal filter if we have one. 
 %
@@ -728,7 +732,7 @@ for idx = 1:length(spatialFreqs)
     % DHB: THIS IS WHERE WE WOULD PUT THE EM PATH GENERATION IF WE WANT TO
     % DO IT SEPARATELY FOR EACH SF.
     % RIGHT HERE.
-    
+
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration.  Put grating in sine phase
     % becuase that keeps the spatial mean constant across spatial
