@@ -39,7 +39,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements
 
     % Whether to re-run the simulation or simply load results from a
     % previous simulation so we can generate figures and videos
-    loadResponsesFromPreviousSimulation = true;
+    loadResponsesFromPreviousSimulation = false;
 
     % Whether to include fixational eye movements or not
     fixationalEyeMovements = true;
