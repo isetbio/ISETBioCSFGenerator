@@ -1,5 +1,53 @@
 function visualize(obj, neuralResponses, temporalSupportSeconds, varargin)
-% Gateway for visualization of @neuralResponseEngine computed data.
+% Gateway for visualization of @neuralResponseEngine responses. 
+%
+% Syntax:
+%    visualize(obj, neuralResponses, temporalSupportSeconds, varargin);
+%
+% Description:
+%   Gateway for visualization of @neuralResponseEngine responses.
+%
+%   If the 'customVisualizationFunctionHandle' public property is set to
+%   some custom visualization function, the custom visualization function
+%   is called. If it is not, we defaut to the generic visualization of
+%   responses as implemented here in the defaultVisualization() function
+%
+% The visualize() method is called both from the noiseFree and the noisyInstances compute methods
+%
+% Inputs:
+%    neuralResponses                - a 3D matrix, [kTrials x mNeurons x tFrames], of neural responses
+%    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
+%    
+% Optional key/value input arguments:
+%    'figureHandle'                 - either [] or a figure handle
+%    'axesHandle'                   - either [] or an axes handle
+%    'responseLabel'                - string, just a comment about the responses visualized
+%    'clearAxesBeforeDrawing'       - boolean, whether to clear the axes before drawing
+%
+% Outputs:
+%   None
+%
+% Example usage:
+%
+% noiseFreeResponseParams = nreNoiseFreeMRGCMosaic([],[],[],[]);
+% noisyInstancesParams = nreNoisyInstancesGaussian;
+%
+% theMRGCMosaicNeuralEngine = neuralResponseEngine( ...
+%    @nreNoiseFreeMidgetRGCMosaic, ...
+%    @nreNoisyInstancesGaussian, ...
+%    noiseFreeResponseParams, ...
+%    noisyInstancesParams);
+%
+% theMRGCMosaicNeuralEngine.visualizeEachCompute = true;
+% theMRGCMosaicNeuralEngine.maxVisualizedNoisyResponseInstances = 2;
+% theMRGCMosaicNeuralEngine.visualize(someNeuralResponses,theTemporalSupportInSecondsOfTheNeuralResponses);
+%
+% For more usage examples, see t_spatialCSF
+%
+
+% History:
+%    01/11/2025  NPC  Wrote it
+
 
     if (~isempty(obj.customVisualizationFunctionHandle))
         if (~isempty(obj.neuralPipeline))

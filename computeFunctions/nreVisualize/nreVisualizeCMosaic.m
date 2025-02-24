@@ -49,7 +49,8 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 % theCMosaicNeuralEngine.visualizeEachCompute = true;
 % theCMosaicNeuralEngine.customVisualizationFunctionHandle = @nreVisualizeCMosaic;
 % theCMosaicNeuralEngine.maxVisualizedNoisyResponseInstances = 2;
-%
+% theCMosaicNeuralEngine.visualize(someNeuralResponses,theTemporalSupportInSecondsOfTheNeuralResponses);
+% 
 % For more usage examples, see t_spatialCSF
 %
 
