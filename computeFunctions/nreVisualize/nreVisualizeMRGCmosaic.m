@@ -48,7 +48,7 @@ function nreVisualizeMRGCmosaic(neuralPipeline, neuralResponses, temporalSupport
 % theMRGCMosaicNeuralEngine.visualizeEachCompute = true;
 % theMRGCMosaicNeuralEngine.customVisualizationFunctionHandle = @nreVisualizeMRGCmosaic;
 % theMRGCMosaicNeuralEngine.maxVisualizedNoisyResponseInstances = 2;
-%
+% theMRGCMosaicNeuralEngine.visualize(someNeuralResponses,theTemporalSupportInSecondsOfTheNeuralResponses);
 % For more usage examples, see t_spatialCSF
 %
 
