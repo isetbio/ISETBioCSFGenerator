@@ -259,7 +259,7 @@ arguments
 
     % Some sizes
     options.stimSizeDegs (1,1) double = 0.5;
-
+    options.pixelsNum (1,1) double = 128;
 end
 
 %% Close any stray figs
@@ -298,6 +298,7 @@ responseVisualizationFunction = options.responseVisualizationFunction;
 maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
 maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseInstanceStimuli;
 stimSizeDegs = options.stimSizeDegs;
+pixelsNum = options.pixelsNum;
 
 %% Freeze rng for replicatbility and validation
 rng(1);
@@ -322,7 +323,6 @@ else
     padFramesBefore = 0;
     padFramesAfter = 0;
 end
-pixelsNum = 128;
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
 frameDurationSeconds = 0.1;

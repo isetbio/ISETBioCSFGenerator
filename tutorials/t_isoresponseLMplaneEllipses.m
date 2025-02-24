@@ -1,4 +1,4 @@
-function t_isoresponseLMplaneEllipses
+function t_isoresponseLMplaneEllipses(options)
 % Compute iso-response contours on the LM-plane
 %
 % Syntax:
@@ -19,6 +19,120 @@ function t_isoresponseLMplaneEllipses
 % History:
 %   01/27/2025  NPC   Wrote it.
 
+% Examples:
+%{
+
+% Run with CMosaic
+     t_isoresponseLMplaneEllipses(...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'excitationsCmosaic', ...
+        'whichNoisyInstanceNre', 'Poisson', ...
+        'whichClassifierEngine', 'rcePoisson', ...
+        'useConeContrast', false);
+
+% Run with mRGCMosaic (linear response, only ON-center mosaic)
+     t_isoresponseLMplaneEllipses(...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'mRGCOutputSignalType', 'mRGCs', ...      % Select between {'cones', 'mRGCs'}
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', true);
+
+% Run with mRGCMosaic (linear response)
+     t_isoresponseLMplaneEllipses(...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'mRGCOutputSignalType', 'mRGCs', ... 
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', true);
+
+% Run with mRGCMosaic (ON mRGC mosaic, non-linear activation function, simulating case in a high saturation regime)
+     t_isoresponseLMplaneEllipses(...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'simulateHighSaturationRegime', true, ...
+        'simulateONOFFmosaic', false, ...
+        'mRGCOutputSignalType', 'mRGCs', ...  
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', true);
+
+% Run with mRGCMosaic (ON mRGC mosaic, half-wave recrifier activation function, simulating case in subthreshold regime)
+t_isoresponseLMplaneEllipses(...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'simulateHalfWaveRectification', true, ...
+        'simulateONOFFmosaic', false, ...
+        'mRGCOutputSignalType', 'mRGCs', ...  
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', true);
+
+
+%}
+
+
+arguments
+    % Use meta contrast method to speed things up?
+    options.useMetaContrast (1,1) logical = true
+
+    % Use cone contrast rather than cone excitations
+    options.useConeContrast (1,1) logical = false
+
+    % Fast parameters?
+    options.fastParameters (1,1) logical = true;
+
+    % Choose noise model
+    %   Choices: 'Poisson'
+    %            'Gaussian'
+    options.whichNoisyInstanceNre (1,:) char = 'Poisson'
+
+     % Choose noise free neural model
+    %   Choices: 'excitationsCmosaic'
+    %            'sceneAsResponses'
+    %            'mRGCMosaic'
+    options.whichNoiseFreeNre (1,:) char  = 'excitationsCmosaic'
+
+    % If the neural model is mRGCMosaic, can specify where to pick 
+    % off neural responses.
+    %    Choices: 'mRGCs' (default). Use mRGC signals.
+    %             'cones'.  Use the cone excitations (or contrast) 
+    options.mRGCOutputSignalType (1,:) char = 'mRGCs'
+
+    % Choose classifier engine
+    %    rcePoisson - signal known exactly Poission max likelihood
+    %    rceTemplateDistance - signal known exactly nearest L2 template
+    %                 distance.
+    %    rcePcaSVM  - support vector machine linear classifier after PCA.
+    options.whichClassifierEngine (1,:) char = 'rcePoisson'
+
+    % Simulate a high saturation regime
+    options.simulateHighSaturationRegime (1,1) logical = false
+
+    % Simulate a high saturation regime
+    options.simulateHalfWaveRectification (1,1) logical = false
+
+    % Simulate an ON/OFF mRGC mosaic?
+    options.simulateONOFFmosaic (1,1) logical = false
+
+end % arguments
+
+% Parse options
+useMetaContrast = options.useMetaContrast;
+useConeContrast = options.useConeContrast;
+fastParameters = options.fastParameters;
+whichNoiseFreeNre = options.whichNoiseFreeNre;
+whichNoisyInstanceNre = options.whichNoisyInstanceNre;
+whichClassifierEngine = options.whichClassifierEngine;
+mRGCOutputSignalType = options.mRGCOutputSignalType;
+simulateONOFFmosaic = options.simulateONOFFmosaic;
+simulateHighSaturationRegime = options.simulateHighSaturationRegime;
+simulateHalfWaveRectification = options.simulateHalfWaveRectification;
+% No fEMs here
+useFixationalEMs = false;
+
 %% Close any stray figs
 hAllFigs = findall(groot,'Type','figure');
 
@@ -26,34 +140,14 @@ hAllFigs = findall(groot,'Type','figure');
 for i = 1:numel(hAllFigs)
     set(hAllFigs(i), 'HandleVisibility', 'on')
 end
-
 close all;
 
 
 %% Freeze rng for replicatbility and validation
 rng(1);
 
-
 debugStimulusConfig = ~true;
-
 verbose = true;
-useMetaContrast = true; 
-useConeContrast = true;
-useFixationalEMs = false;
-
-% Cone mosaic performance params
-whichNoiseFreeNre = 'excitationsCmosaic';
-whichNoisyInstanceNre = 'Poisson';
-whichClassifierEngine = 'rcePoisson';
-logThreshLimitLow =  4.0;
-logThreshLimitHigh = 1.0;
-
-% mRGC mosaic performance params
-mRGCOutputSignalType = 'mRGCs';         % Select between {'cones', 'mRGCs'}
-
-whichNoiseFreeNre = 'mRGCMosaic';
-whichNoisyInstanceNre = 'Gaussian';
-whichClassifierEngine = 'rceTemplateDistance'; 
 logThreshLimitLow =  4.0;
 logThreshLimitHigh = 0.0;
 
@@ -77,7 +171,8 @@ oiPadMethod = 'zero';
 
 % Visualization options
 visualizeEachScene = false;
-visualizeEachCompute = false;
+visualizeEachCompute = ~true;
+visualizeNonLinearActivationFunction = true;
 maxVisualizedNoisyResponseInstances = 2;
 
 figureFileBaseDir = setupFigureDirectory(mfilename, ...
@@ -114,13 +209,13 @@ if (debugStimulusConfig)
 end
 
 % Compute the test LMS cone contrast directions
-
-% HiRes RUN
-examinedDirectionsOnLMplane = [];
-
-% FAST RUN
-examinedDirectionsOnLMplane = 0:45:345;
-
+if (fastParameters)
+    % FAST RUN
+    examinedDirectionsOnLMplane = 0:45:345;
+else
+    % HiRes RUN
+    examinedDirectionsOnLMplane = [];
+end
 [theLMSconeContrastDirections, examinedDirectionsOnLMplane] = ...
     computeLMSconeContrastDirections(rmsLMconeContrast, examinedDirectionsOnLMplane);
 
@@ -131,8 +226,6 @@ if (length(examinedDirectionsOnLMplane) > 50)
     skippedDirections = 2;
 end
 
-
-
 %% Configure our stimulus scene engines 
 [theNullSceneEngine, theTestSceneEngines] = configureStimulusSceneEngines(...
     theLMSconeContrastDirections, examinedSpatialFrequencyCPD, gratingSceneParams);
@@ -140,7 +233,6 @@ end
 
 %% Neural response engines
 %
-
 % Setup the noise-free neural response engine
 switch (whichNoiseFreeNre)
     case 'excitationsCmosaic'
@@ -166,6 +258,10 @@ switch (whichNoiseFreeNre)
 
         % No temporal filter
         nreNoiseFreeParams.temporalFilter = temporalFilter;
+
+        % This simply translates the visualized ellipse on the LM plane 
+        % (simulating a non-adapted simulation)
+        theVisualizedConeContrastOffset = [0.0 0.0];
 
         % Custom nre visualization function, or set to []
         customVisualizationFunctionHandle = @nreVisualizeCMosaic;
@@ -207,19 +303,28 @@ switch (whichNoiseFreeNre)
 
         % Simulate incomplete background adaptation - puts mosaic in
         % saturation regime of the activation function
-        % This has an effect only if we add an 'activationFunctionParams'
-        % struct field in 'nreNoiseInstancesParams', whose 'type' field is set to 'halfwaveSigmoidalRectifier'
-        nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.005;
+
+        nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.0;
         theVisualizedConeContrastOffset = [0.0 0.0];
 
-        % Puts mosaic in heavy saturation regime
-        %nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.05;
-        %theVisualizedConeContrastOffset = [0.1 0.1];
+        if (simulateHighSaturationRegime)
+            % Push responses into high saturation regime
+            nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.03;
+        
+            % This simply translates the visualized ellipse on the LM plane 
+            % (simulating a non-adapted simulation)
+            theVisualizedConeContrastOffset = [0.1 0.1];
+        end
+
+        if (simulateHalfWaveRectification)
+            % Push responses to the subthreshold regime
+            nreNoiseFreeParams.mRGCMosaicParams.responseBias = -0.05;
+        end
 
         % Simulate ON-OFF mosaic
         % All odd-indexes mRGCs will be treated as OFF-center, by inverting their 
         % noise-free responses polarity in nreNoiseFreeMidgetRGCMosaic()
-        nreNoiseFreeParams.mRGCMosaicParams.simulateONOFFmosaic = true;
+        nreNoiseFreeParams.mRGCMosaicParams.simulateONOFFmosaic = simulateONOFFmosaic;
 
         % Custom nre visualization function, or set to []
         customVisualizationFunctionHandle = @nreVisualizeMRGCmosaic;
@@ -265,18 +370,30 @@ switch (whichNoisyInstanceNre)
         % Set the sigma parameter
         nreNoiseInstancesParams.sigma = gaussianSigma;
 
-        % Saturating activation function. If the type is specified as
-        % 'halfWaveSigmoidalRectifier', the response bias specified above
-        % like so: nreNoiseFreeParams.mRGCMosaicParams.responseBias
-        % specifies how the noise-free response is pushed into different
-        % regimes of the sigmoidal function
-        nreNoiseInstancesParams.activationFunctionParams = struct(...
-            'type', 'halfwaveSigmoidalRectifier', ...                 % choose between {'linear', 'halfwaveRectifier', 'halfwaveSigmoidalRectifier'}
-            'exponent', 2.0, ...                                      % only relevant for 'halfwaveSigmoidalRectifier'
-            'semiSaturationReponseAmplitude', 0.15*gaussianSigma, ... % only relevant for 'halfwaveSigmoidalRectifier'
-            'gain', 3*gaussianSigma, ...                              % only relevant for 'halfwaveSigmoidalRectifier'
-            'visualize', visualizeEachCompute ...
-            );
+        if (simulateHighSaturationRegime) && (simulateHalfWaveRectification)
+            error('Either select ''simulateHighSaturationRegime'' or ''simulateHalfWaveRectification'', NOT both.')
+        end
+
+
+        if (simulateHighSaturationRegime)
+            % Saturating activation function. If the type is specified as
+            % 'halfWaveSigmoidalRectifier', the response bias specified above
+            % like so: nreNoiseFreeParams.mRGCMosaicParams.responseBias
+            % specifies how the noise-free response is pushed into different
+            % regimes of the sigmoidal function
+            nreNoiseInstancesParams.activationFunctionParams = struct(...
+                'type', 'halfwaveSigmoidalRectifier', ...                 % choose between {'linear', 'halfwaveRectifier', 'halfwaveSigmoidalRectifier'}
+                'exponent', 2.0, ...                                      % only relevant for 'halfwaveSigmoidalRectifier'
+                'semiSaturationReponseAmplitude', 0.15*gaussianSigma, ... % only relevant for 'halfwaveSigmoidalRectifier'
+                'gain', 3*gaussianSigma, ...                              % only relevant for 'halfwaveSigmoidalRectifier'
+                'visualize', visualizeNonLinearActivationFunction ...
+                );
+        elseif (simulateHalfWaveRectification)
+            nreNoiseInstancesParams.activationFunctionParams = struct(...
+                'type', 'halfwaveRectifier', ...                 % choose between {'linear', 'halfwaveRectifier', 'halfwaveSigmoidalRectifier'}
+                'visualize', visualizeNonLinearActivationFunction ...
+                );
+        end
 
 
     otherwise
