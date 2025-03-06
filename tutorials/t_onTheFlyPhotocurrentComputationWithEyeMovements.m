@@ -1,4 +1,4 @@
-function t_onTheFlyPhotocurrentComputationWithEyeMovements
+function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
 % Demonstrates how to compute photocurrent responses on the fly
 %
 % Syntax:
@@ -33,13 +33,44 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements
 
 % History:
 %    02/19/2025  NPC  Wrote it.
+%    03/06/2025  NPC  Fast parameters
 
-    % Close figs
-    close all;
+% Examples:
+%{
+
+    % Run with defaults, computing new responses 
+    t_onTheFlyPhotocurrentComputationWithEyeMovements();
+
+    % Do not re-run the simulation, simply load results from a
+    % previous simulation so we can generate figures and videos
+    t_onTheFlyPhotocurrentComputationWithEyeMovements(...
+        'loadResponsesFromPreviousSimulation', true);
+
+    % Compute new responses using high-res parameters which take 
+    % longer to compute
+    t_onTheFlyPhotocurrentComputationWithEyeMovements(...
+        'fastParameters', false);
+
+%}
+
+    arguments
+        % Fast parameters?
+        options.fastParameters (1,1) logical = true;
+    
+        % Whether to load responses already computed 
+        % If not, we compute new responses
+        options.loadResponsesFromPreviousSimulation (1,1) logical = false;
+    end
+
+    % Parse input
+    fastParameters = options.fastParameters;
 
     % Whether to re-run the simulation or simply load results from a
     % previous simulation so we can generate figures and videos
-    loadResponsesFromPreviousSimulation = false;
+    loadResponsesFromPreviousSimulation = options.loadResponsesFromPreviousSimulation;
+
+    % Close figs
+    close all;
 
     % Whether to include fixational eye movements or not
     fixationalEyeMovements = true;
@@ -66,7 +97,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements
 
     
     % Whether to reformat the exported AVI videos to MP4 format
-    reformatExportedAVIvideoToMP4format = true;
+    reformatExportedAVIvideoToMP4format = ~true;
 
     if (loadResponsesFromPreviousSimulation)
         % Load previous results
@@ -96,9 +127,8 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements
     end
 
 
-
     % Run the simulation from scratch
-        
+
     % Mosaic parameters
     mosaicSizeDegs = 0.6*[1 1];
     mosaicEccDegs = [0 0];
@@ -115,6 +145,14 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements
         nTrials = 10;
     else
         nTrials = 2;
+    end
+
+    if (fastParameters)
+        mosaicSizeDegs = 0.4*[1 1];
+        mosaicIntegrationTimeSeconds = 15/1000;
+        nTrials = 1;
+        stimulationDurationTemporalCycles = 4;
+        simulationDurationSeconds = stimulationDurationTemporalCycles/temporalFrequencyHz;  
     end
 
     % Generate scene sequence representing a polar grating
