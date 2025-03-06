@@ -151,10 +151,10 @@ arguments
     %            'mRGCMosaic'
     options.whichNoiseFreeNre (1,:) char  = 'excitationsCmosaic'
 
-    % If the neural model is mRGCMosaic, can specify where to pick 
+    % If the neural model is mRGCMosaic, can specify where to pick
     % off neural responses.
     %    Choices: 'mRGCs' (default). Use mRGC signals.
-    %             'cones'.  Use the cone excitations (or contrast) 
+    %             'cones'.  Use the cone excitations (or contrast)
     options.mRGCOutputSignalType (1,:) char = 'mRGCs'
 
     % Choose noise model
@@ -172,14 +172,32 @@ arguments
     % Use cone contrast rather than cone excitations
     options.useConeContrast (1,1) logical = false
 
-    % Use fixational eye movements?
+    % Use fixational eye movements, and some aspects of that.
     %
-    % The first variable here controls whether we simulate fixational EMs.
-    % The second determines whether the training and test EM paths match
-    % each other. It can only be true if the number of training and test
-    % EMs match each other.
+    %  useFixationalEMs: Controls whether we simulate fixational EMs.
+    %  testEMsMatchTrain: Cetermines whether the training and test EM paths match
+    %    each other. It can only be true if the number of training and test
+    %    EMs match each other below. This is basically whether EM are known
+    %    exactly or not known.
+    %  sameEMsEachSF: Cetermines whether the same EM paths are used for each
+    %    spatial frequency. This is a science decision.  Probably makes sense
+    %    for them to be different but if one is studying particular paths one
+    %    might want to set this to true and also possibly take more control
+    %    of the particular paths than we do in this tutorial.
+    % sameEMsEachContrast: The EM paths used for each test contrast.
+    %    Conceptually one might want this false, but at present the code only
+    %    allows true and an error is thrown if it is false. It is added to
+    %    remind us at the top level of what the underlying code is doing.
+    %    By assuming it is true, we could in principle use the meta contrast
+    %    machinery for the EM case. If it is false that would not be
+    %    possible in principle. To make it false, we would have to push the
+    %    EM control code down further into computeThreshold.
+    % seedForEMs: Seed for EM path generation
     options.useFixationalEMs (1,1) logical = false
     options.testEMsMatchTrain (1,1) logical = true
+    options.sameEMsEachSF (1,1) logical = false
+    options.sameEMSEachContrast (1,1) = true
+    options.seedForEms (1,1) double = 1021;
 
     % nTrainingEMs, nTestEMs
     %
@@ -193,7 +211,7 @@ arguments
     %
     % nTrain determines the number of training instances. When there are
     % training fixational EMs, this is the number that get used to train the
-    % classiefier for each EM.  
+    % classiefier for each EM.
     %
     % nTest determines the number of test instances. When there are
     % fixationsal EMs, this number is spread across them equally.  Thus
@@ -229,7 +247,7 @@ arguments
     % Determines how image is padded for
     % convolution with optical point spread function.
     %
-    % Can be 'zero' or 'mean'.  
+    % Can be 'zero' or 'mean'.
     options.oiPadMethod (1,:) char = 'zero'
 
     % Apply a filter to the spectra before computing responses?  See
@@ -277,6 +295,9 @@ useMetaContrast = options.useMetaContrast;
 useConeContrast = options.useConeContrast;
 useFixationalEMs = options.useFixationalEMs;
 testEMsMatchTrain = options.testEMsMatchTrain;
+sameEMsEachSF = options.sameEMsEachSF;
+sameEMsEachContrast = options.sameEMsEachContrast;
+seedForEMs = options.seedForEms;
 nTrainEMs = options.nTrainEMs;
 nTestEMs = options.nTestEMs;
 nTrain = options.nTrain;
@@ -300,7 +321,7 @@ maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseIn
 stimSizeDegs = options.stimSizeDegs;
 pixelsNum = options.pixelsNum;
 
-%% Freeze rng for replicatbility and validation
+%% Freeze rng for replicability and validation
 rng(1);
 
 %% Figure output base name
@@ -329,13 +350,13 @@ frameDurationSeconds = 0.1;
 theTemporalFrequencyHz = 5.0;
 
 % Set up some sizes.  Note that these are small so that the examples run
-% fast. 
+% fast.
 mosaicEccDegs = [0 0];
 mosaicSizeDegs = [0.5 0.5];
 mRGCRawSizeDegs = [2 2];
 mRGCCropSize = mosaicSizeDegs;
 
-%% Set up temporal filter if we have one. 
+%% Set up temporal filter if we have one.
 %
 % Note that the nre returns the same number of frames it was passed.  So if
 % you want post-stimulus responses produced by the temporal filter, you
@@ -618,7 +639,7 @@ else
     presentationMode = 'counterphasemodulated';
     gratingSceneParams = struct( ...
         'fovDegs', stimSizeDegs, ...
-        'presentationMode', presentationMode, ... 
+        'presentationMode', presentationMode, ...
         'duration', stimulusDuration, ...
         'frameDurationSeconds', stimulusDuration/framesNum, ...
         'temporalFrequencyHz', theTemporalFrequencyHz, ...
@@ -627,7 +648,7 @@ else
         'pixelsNum', pixelsNum, ...
         'filter', filter ...
         );
-    
+
     % Here are some other parameters that might get set for a dynamic
     % stimulus.  And we could consider 'drifted' as mode in addition, but
     % may need to special case 0 cpd as 'counterphasemodulated' if we do.
@@ -679,45 +700,6 @@ if (useMetaContrast)
     metaNeuralResponseEngineNoisyInstanceParams.neuralEngine = theNeuralEngine;
 end
 
-%% Set up EM object to define fixational eye movement paths
-%
-% There are lots of EM things we can control. 
-%
-% Setting the seed to -1 means don't touch the seed or call rng().
-%
-% DHB: CONSIDER WHETEHR EM PATHS SHOULD BE DIFFERENT FOR EACH SF.
-if (useFixationalEMs)
-    emMicrosaccadeType = 'none';
-    emRandomSeed = -1;
-    emComputeVelocitySignal = false;
-    emCenterPaths = false;
-    emCenterPathsAtSpecificTimeMsec = [];
-
-    % Set up the train EM object
-    trainFixationalEMObj = fixationalEM;
-    trainFixationalEMObj.microSaccadeType = emMicrosaccadeType;
-    trainFixationalEMObj.randomSeed = emRandomSeed ;
-    trainFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nTrainEMs, emComputeVelocitySignal, ...
-        'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
-
-    % And this one for testing. Here we are doing EM know exactly, so the
-    % test object is the same as the training object.
-    testFixationalEMObj = fixationalEM;
-    testFixationalEMObj.microSaccadeType = emMicrosaccadeType;
-    testFixationalEMObj.randomSeed = emRandomSeed;
-    testFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nTestEMs, emComputeVelocitySignal, ...
-        'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
-    if (testEMsMatchTrain)
-        if (nTestEMs ~= nTrainEMs)
-            error('Number of test and training EMs must match when testEMsMatchTrain is true');
-        end
-        testFixationalEMObj.emPosArcMin = trainFixationalEMObj.emPosArcMin;
-    end
-else
-    trainFixationalEMObj = [];
-    testFixationalEMObj = [];
-end
-
 %% Compute threshold for each spatial frequency
 % See toolbox/helpers for functions createGratingSceneEngine, computeThreshold,
 % computePeformance
@@ -728,10 +710,78 @@ for idx = 1:length(spatialFreqs)
 end
 
 logThreshold = zeros(1, length(spatialFreqs));
+seedBeforeEmGeneration = [];
 for idx = 1:length(spatialFreqs)
-    % DHB: THIS IS WHERE WE WOULD PUT THE EM PATH GENERATION IF WE WANT TO
-    % DO IT SEPARATELY FOR EACH SF.
-    % RIGHT HERE.
+    %% Set up EM object to define fixational eye movement paths
+    %
+    % We can do this separately for each spatial frequency, so that each SF gets a
+    % a new draw.  But if we fix the rng seed, we get the same paths for
+    % each SF.
+    %
+    % As written, we use the same EM paths for each contrast we study for a
+    % given SF.  This in principle would allow us to use the metaContrast
+    % method, as long as we add code that tracks the EM paths and sets up a
+    % new metaContrast calculation for each one.
+    if (useFixationalEMs)
+        % Check that flags are OK.  
+        if (useMetaContrast)
+            if (~testEMsMatchTrain | nTrainEMs > 1 | nTestEMs > 1)
+                error('There must be either no EMs or only one EM path total to use metaContrast method at present');
+            end
+        end
+
+        % Check that we aren't trying to vary EMs across contrasts, which
+        % is not currently possible.
+        if (~sameEMsEachContrast )
+            error('Varying EMs across contrasts in threshold determination not currently supported by computeThreshold');
+        end
+
+        % Set some train EM parameters
+        emMicrosaccadeType = 'none';
+        emComputeVelocitySignal = false;
+        emCenterPaths = false;
+        emCenterPathsAtSpecificTimeMsec = [];
+
+        % Setting the seed to -1 means don't touch the seed or call rng()
+        % when we call the fixationEM object to generate paths.  We do this
+        % so we can control the rng seed here
+        emRandomSeed = -1;
+        if (isempty(seedBeforeEmGeneration))
+            seedBeforeEmGeneration = rng(seedForEMs);
+        end
+        if (sameEMsEachSF)
+            rng(seedBeforeEmGeneration);
+        end
+
+        % Set up the train EM object
+        trainFixationalEMObj = fixationalEM;
+        trainFixationalEMObj.microSaccadeType = emMicrosaccadeType;
+        trainFixationalEMObj.randomSeed = emRandomSeed ;
+        trainFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nTrainEMs, emComputeVelocitySignal, ...
+            'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
+
+        % And this one for testing. 
+        testFixationalEMObj = fixationalEM;
+        testFixationalEMObj.microSaccadeType = emMicrosaccadeType;
+        testFixationalEMObj.randomSeed = emRandomSeed;
+        testFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nTestEMs, emComputeVelocitySignal, ...
+            'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
+
+        % For case where test matches training, copy in training EM paths
+        % to test EM object.
+        if (testEMsMatchTrain)
+            if (nTestEMs ~= nTrainEMs)
+                error('Number of test and training EMs must match when testEMsMatchTrain is true');
+            end
+            testFixationalEMObj.emPosArcMin = trainFixationalEMObj.emPosArcMin;
+        end
+
+        % Put rng back where it was before we generated ems
+         rng(seedBeforeEmGeneration);
+    else
+        trainFixationalEMObj = [];
+        testFixationalEMObj = [];
+    end
 
     % Create a static grating scene with a particular chromatic direction,
     % spatial frequency, and temporal duration.  Put grating in sine phase
@@ -741,7 +791,7 @@ for idx = 1:length(spatialFreqs)
     % Create scene produces square scenes.  We use the min of the mosaic
     % field size to pick a reasonable size
     gratingSceneEngine = createGratingSceneEngine(chromaDir, spatialFreqs(idx),...
-       gratingSceneParams);
+        gratingSceneParams);
 
     % Set the sceneEngine's visualizeEachCompute property
     gratingSceneEngine.visualizeEachCompute = visualizeEachScene;
@@ -756,7 +806,7 @@ for idx = 1:length(spatialFreqs)
             @nreNoisyInstancesMetaContrast, ...
             metaNeuralResponseEngineNoiseFreeParams, ...
             metaNeuralResponseEngineNoisyInstanceParams);
-        
+
         % Update visualizeEachCompute
         theMetaNeuralEngine.visualizeEachCompute = theNeuralEngine.visualizeEachCompute;
 
@@ -788,13 +838,13 @@ for idx = 1:length(spatialFreqs)
 
     % Plot stimulus
     figure(dataFig);
-    
+
     % This shows one frame of the scene.
     visualizeEachComputeSave = gratingSceneEngine.visualizeEachCompute;
     gratingSceneEngine.visualizeEachCompute = false;
     visualizationContrast = 1.0;
     [theSceneSequence] = gratingSceneEngine.compute(visualizationContrast);
-    gratingSceneEngine.visualizeStaticFrame(... 
+    gratingSceneEngine.visualizeStaticFrame(...
         theSceneSequence, ...
         'frameToVisualize', 1, ...
         'axesHandle', axLeft{idx});
@@ -838,7 +888,7 @@ validationTolerance = 0.01;
 if (~isempty(validationThresholds))
     if (any(abs(threshold-validationThresholds)./validationThresholds > validationTolerance))
         threshold
-        validationThresholds    
+        validationThresholds
         error(sprintf('Do not replicate validation thresholds to %d%%. Check that parameters match, or for a bug.',round(100*validationTolerance)));
     else
         fprintf('Validation regression check passes\n');
