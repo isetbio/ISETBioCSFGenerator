@@ -100,7 +100,7 @@ function thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseRes
         hFig = visualizeResponses(100, theFlashDurationSeconds, ...
             temporalSupport, LMSincrementImpulseResponses, LMSdecrementImpulseResponses, ...
             decimatedTemporalSupport, decimatedLMSincrementImpulseResponses, decimatedLMSdecrementImpulseResponses);
-         NicePlot.exportFigToPDF('100.pdf', hFig, 300);
+         %NicePlot.exportFigToPDF('100.pdf', hFig, 300);
     end
 
     % Compute cone density weighted impulse response
