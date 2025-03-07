@@ -748,7 +748,7 @@ for idx = 1:length(spatialFreqs)
         % take on its current value.
         emRandomSeed = -1;
         if (sameEMsEachSF)
-            seedBeforeEMGeneration = rng(seedForEMS);
+            seedBeforeEMGeneration = rng(seedForEMs);
         else
             seedBeforeEMGeneration = rng;
         end
