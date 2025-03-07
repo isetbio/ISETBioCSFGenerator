@@ -196,7 +196,7 @@ arguments
     options.useFixationalEMs (1,1) logical = false
     options.testEMsMatchTrain (1,1) logical = true
     options.sameEMsEachSF (1,1) logical = false
-    options.sameEMSEachContrast (1,1) = true
+    options.sameEMsEachContrast (1,1) = true
     options.seedForEms (1,1) double = 1021;
 
     % nTrainingEMs, nTestEMs
@@ -710,7 +710,6 @@ for idx = 1:length(spatialFreqs)
 end
 
 logThreshold = zeros(1, length(spatialFreqs));
-seedBeforeEmGeneration = [];
 for idx = 1:length(spatialFreqs)
     %% Set up EM object to define fixational eye movement paths
     %
@@ -744,13 +743,14 @@ for idx = 1:length(spatialFreqs)
 
         % Setting the seed to -1 means don't touch the seed or call rng()
         % when we call the fixationEM object to generate paths.  We do this
-        % so we can control the rng seed here
+        % so we can control the rng seed here.  Either we always set it the
+        % same for the calls to the EM compute method, or we just let it
+        % take on its current value.
         emRandomSeed = -1;
-        if (isempty(seedBeforeEmGeneration))
-            seedBeforeEmGeneration = rng(seedForEMs);
-        end
         if (sameEMsEachSF)
-            rng(seedBeforeEmGeneration);
+            seedBeforeEMGeneration = rng(seedForEMs);
+        else
+            seedBeforeEMGeneration = rng;
         end
 
         % Set up the train EM object
@@ -767,6 +767,9 @@ for idx = 1:length(spatialFreqs)
         testFixationalEMObj.compute(stimulusDuration, frameDurationSeconds, nTestEMs, emComputeVelocitySignal, ...
             'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
 
+        % Make the EM seed what it was before the em path generation.
+        rng(seedBeforeEMGeneration);
+     
         % For case where test matches training, copy in training EM paths
         % to test EM object.
         if (testEMsMatchTrain)
@@ -775,9 +778,6 @@ for idx = 1:length(spatialFreqs)
             end
             testFixationalEMObj.emPosArcMin = trainFixationalEMObj.emPosArcMin;
         end
-
-        % Put rng back where it was before we generated ems
-         rng(seedBeforeEmGeneration);
     else
         trainFixationalEMObj = [];
         testFixationalEMObj = [];
