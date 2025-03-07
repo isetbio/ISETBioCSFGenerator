@@ -196,7 +196,7 @@ arguments
     options.useFixationalEMs (1,1) logical = false
     options.testEMsMatchTrain (1,1) logical = true
     options.sameEMsEachSF (1,1) logical = false
-    options.sameEMSEachContrast (1,1) = true
+    options.sameEMsEachContrast (1,1) = true
     options.seedForEms (1,1) double = 1021;
 
     % nTrainingEMs, nTestEMs
@@ -748,9 +748,9 @@ for idx = 1:length(spatialFreqs)
         % take on its current value.
         emRandomSeed = -1;
         if (sameEMsEachSF)
-            rngBeforeEMGeneration = rng(seedForEMS);
+            seedBeforeEMGeneration = rng(seedForEMS);
         else
-            rngBeforeEMGeneration = rng;
+            seedBeforeEMGeneration = rng;
         end
 
         % Set up the train EM object
