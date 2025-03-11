@@ -82,7 +82,6 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     end
     figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures');
 
-
     % Simulation results filename
     if (~exist(fullfile(projectBaseDir,'local',mfilename,'results'),'dir'))
         mkdir(fullfile(projectBaseDir,'local',mfilename,'results'));
@@ -94,7 +93,6 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
         simFileName = sprintf('simulationWithoutFixationalEM.mat');
     end
     simFileName = fullfile(projectBaseDir,'local',mfilename,'results',simFileName);
-
     
     % Whether to reformat the exported AVI videos to MP4 format
     reformatExportedAVIvideoToMP4format = ~true;
@@ -126,7 +124,6 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
         return;
     end
 
-
     % Run the simulation from scratch
 
     % Mosaic parameters
@@ -140,13 +137,13 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     temporalFrequencyHz = 8;
     stimulationDurationTemporalCycles = 6;
     simulationDurationSeconds = stimulationDurationTemporalCycles/temporalFrequencyHz;  
-
     if (fixationalEyeMovements)
         nTrials = 10;
     else
         nTrials = 2;
     end
 
+   % Override parameters if we want to go through the paces fast
     if (fastParameters)
         mosaicSizeDegs = 0.4*[1 1];
         mosaicIntegrationTimeSeconds = 15/1000;
@@ -234,7 +231,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
             'subtractCentralRefraction', subtractCentralRefraction);
 
     % Extract the optics
-    theOptics = oiEnsemble{1};
+    theOI = oiEnsemble{1};
 
     % Extract the PSF
     thePSF = psfEnsemble{1};
@@ -242,17 +239,15 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     % Visualize the cone mosaic and the PSF of the employed optics
     visualizeConeMosaicAndOptics(theConeMosaic, thePSF, figureFileBase);
 
-
     % Compute the sequence of optical images corresponding to the polar grating
     fprintf('Computing the optical image sequences (null stimulus + test stimulus)');
     framesNum = numel(theSceneSequence);
     theListOfOpticalImages = cell(1, framesNum);
     listOfNullOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
-        theListOfOpticalImages{frame} = oiCompute(theOptics, theSceneSequence{frame}, 'pad value', 'mean');
-        listOfNullOpticalImages{frame} = oiCompute(theOptics, theNullSceneSequence{frame}, 'pad value', 'mean');
+        theListOfOpticalImages{frame} = oiCompute(theOI, theSceneSequence{frame}, 'pad value', 'mean');
+        listOfNullOpticalImages{frame} = oiCompute(theOI, theNullSceneSequence{frame}, 'pad value', 'mean');
     end
-
 
     % Generate an @oiSequence object from the list of computed optical images
     theOIsequence = oiArbitrarySequence(theListOfOpticalImages, theSceneTemporalSupportSeconds);
@@ -267,7 +262,6 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     % The contrast of the impulse stimulus
     theConeFlashImpulseContrast = 0.01*[1 1 1];
 
-
     % Whether to visualize the computed impulse responses
     visualizePhotocurrentImpulseResponses = true;
 
@@ -276,7 +270,6 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
             theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, [], ...
             visualizePhotocurrentImpulseResponses);
     thePhotocurrentImpulseResponseStruct.LMSconeImpulseResponses = thePhotocurrentImpulseResponseStruct.LMSconeImpulseResponses';
-
 
     % Generate fixational eye movement path lasting the entire stimulus duration
     if (fixationalEyeMovements)
@@ -291,7 +284,6 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
             'randomSeed', 10);
     end
 
-
     % Compute the spatiotemporal cone-mosaic activation
     fprintf('Computing cone mosaic response\n');
     [coneMosaicSpatiotemporalActivation, coneMosaicNoisySpatiotemporalActivation, ~, ~, responseTimeAxis] = ...
@@ -303,7 +295,6 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
         disp('replicating cone mosaic responses')
         coneMosaicSpatiotemporalActivation = repmat(coneMosaicSpatiotemporalActivation, [nTrials 1 1]);
     end
-
 
     % Compute the noise-free photocurrent responses by convolving the 
     % differential excitation response (response - background response) with the photocurrent impulse response
@@ -398,13 +389,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
             reformatExportedAVIvideoToMP4format);
 end
 
-
-%
-%
-%  VISUALIZATION ROUTINES
-%
-%
-
+%%  VISUALIZATION ROUTINES
 function generateResponseVideos(responseTimeAxis, ...
             coneMosaicSpatiotemporalActivation, ...
             coneMosaicPhotocurrentSpatiotemporalActivation, ...
@@ -415,10 +400,8 @@ function generateResponseVideos(responseTimeAxis, ...
             fixationalEyeMovements, figureFileBase, ...
             reformatExportedAVIvideoToMP4format)
 
-    %
+
     % Plots of response time-series for an exemplar L-, M- and S-cone
-    %
-    %
     theLconeIndex = theExemplarConeIndices(1);
     theMconeIndex = theExemplarConeIndices(2);
     theSconeIndex = theExemplarConeIndices(3);
@@ -426,7 +409,7 @@ function generateResponseVideos(responseTimeAxis, ...
     theResponses = coneMosaicNoisySpatiotemporalActivation(:,:,[theLconeIndex theMconeIndex theSconeIndex])/theConeMosaic.integrationTime;
     coneExcitationResponseRange = [0 max(theResponses(:))];
    
-    %theResponses = coneMosaicNoisyPhotocurrentSpatiotemporalActivation(:,:,[theLconeIndex theMconeIndex theSconeIndex]);
+    % theResponses = coneMosaicNoisyPhotocurrentSpatiotemporalActivation(:,:,[theLconeIndex theMconeIndex theSconeIndex]);
     pCurrentResponseRange = [-90 -40];  % pAmps
     
     fontSize = 20;
@@ -466,7 +449,6 @@ function generateResponseVideos(responseTimeAxis, ...
         ax = axes('Position', [0.11 0.05 0.86 0.40]);
         dT = responseTimeAxis(2)-responseTimeAxis(1);
         coneMosaicPhotocurrentResponseTimeAxis = (0:(size(coneMosaicPhotocurrentSpatiotemporalActivation,2)-1))*dT;
-
         
         % The noisy photocurrents
         plot(ax,coneMosaicPhotocurrentResponseTimeAxis*1e3, squeeze(coneMosaicNoisyPhotocurrentSpatiotemporalActivation(iTrial,:,theLconeIndex)), '-', 'Color', 'r', 'LineWidth', 1);
@@ -511,10 +493,7 @@ function generateResponseVideos(responseTimeAxis, ...
         NicePlot.exportFigToPDF(sprintf('%s/responseTimeSeriesTrial%d.pdf',figureFileBase, iTrial), hFig, 300);
     end
 
-    %
-    % Videos of cone mosaic spatiotemporal activation
-    %
-
+    % Videos of cone mosaic spatiotemporal activatio
     colorbarTickLabelColor = [0.1 0.1 0.1];
     backgroundColor = [0.1 0.1 0.1];
     pCurrentResponseRange = [-61 -49];            % outer segment current, pAmps
@@ -524,7 +503,6 @@ function generateResponseVideos(responseTimeAxis, ...
     domainvisualizationlimits(2) = theConeMosaic.eccentricityDegs(1) + 0.51*theConeMosaic.sizeDegs(1);
     domainvisualizationlimits(3) = theConeMosaic.eccentricityDegs(2) - 0.51*theConeMosaic.sizeDegs(2);
     domainvisualizationlimits(4) = theConeMosaic.eccentricityDegs(2) + 0.51*theConeMosaic.sizeDegs(2);
-
 
     for iTrial = 1:size(coneMosaicNoisySpatiotemporalActivation,1)
 
@@ -670,10 +648,8 @@ function generateResponseVideos(responseTimeAxis, ...
                     'plotTitle', sprintf('noisy excitations (R*/sec)\nt = %2.0f msec', 1000*responseTimeAxis(t)));
             end
 
-
             drawnow;
 		    videoOBJ3.writeVideo(getframe(hFig3));
-
 
             if (fixationalEyeMovements)
                 % Visualize cone mosaic response with fEM
@@ -725,7 +701,6 @@ function generateResponseVideos(responseTimeAxis, ...
     end % iTrial
 end
 
-
 function generateStimulusMovie(theVideoFileName, theSceneSequence, theSceneTemporalSupportSeconds, reformatExportedAVIvideoToMP4format)
     % Generate stimulus video
     videoOBJ0 = VideoWriter(theVideoFileName, 'Uncompressed AVI');
@@ -762,7 +737,6 @@ function reformatVideo(videoFileName)
     end
 end
 
-
 function theExemplarConeIndices = determineConeIndicesNearPosition(theConeMosaic, exemplarConePosDegs)
     
     exemplarConeDistances = sqrt(sum((bsxfun(@minus, theConeMosaic.coneRFpositionsDegs, exemplarConePosDegs)).^2,2));
@@ -797,8 +771,6 @@ function theExemplarConeIndices = determineConeIndicesNearPosition(theConeMosaic
     
     theExemplarConeIndices = [theLconeIndex theMconeIndex theSconeIndex];
 end
-
-
 
 function visualizeConeMosaicAndOptics(theConeMosaic, thePSF, figureFileBase)
 
