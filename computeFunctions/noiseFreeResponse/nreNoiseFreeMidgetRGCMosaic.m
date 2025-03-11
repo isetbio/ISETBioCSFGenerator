@@ -243,8 +243,6 @@ if (isempty(fixationalEMObj))
 else
     % We were passed a fixational EM.  Check that it is OK for our
     % purposes, and then comptute with it.
-    %
-    % Check NEED TO ADD
 
     % Also return the path in units of microns
     fixationalEMObj.emPosMicrons = ...
@@ -257,8 +255,6 @@ else
         'nTrials', 1, ...
         'withFixationalEyeMovements', true ...
         );
-
-    
 end
 
 % Transform the cone excitation responses to cone modulation responses if
@@ -328,7 +324,6 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
     clear newNeuralResponses;
 end
 
-
 % If 'simulateONOFFmosaic' has been set, flip the response sign of the odd-numbered mRGCs
 if (strcmp(noiseFreeComputeParams.mRGCMosaicParams.outputSignalType, 'mRGCs'))
     if (isfield(noiseFreeComputeParams.mRGCMosaicParams,'simulateONOFFmosaic'))
@@ -363,7 +358,6 @@ end
 
 % Update the stored visualization metadata
 neuralEngineOBJ.updataVisualizationMetadata(visualizationMetaData);
-
 
 % Visualize
 if (neuralEngineOBJ.visualizeEachCompute)
@@ -414,7 +408,6 @@ retinalRFmodelParams = struct(...
 cropParams = struct(...
     'sizeDegs', [], ...
     'eccentricityDegs', []);
-
 
 mosaicParams = struct(...
     'type', 'mRGCMosaic', ...

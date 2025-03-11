@@ -363,12 +363,22 @@ mRGCCropSize = mosaicSizeDegs;
 % need to pad your input appropriately. That padding process is not
 % illustrated in this tutorial script.
 if (~isempty(temporalFilterValues))
-    temporalFilter.filterValues = temporalFilterValues;
-    if (ischar(temporalFilterValues))
+    % Photocurrent filter computed and applied in nre
+    if (ischar(temporalFilterValues) & strcmp(temporalFilterValues,'photocurrentImpulseResponseBased'))
         temporalFilter.temporalSupport = '';
+     
+     % Watson filter, computed here
+    elseif (ischar(temporalFilterValues) & strcmp(temporalFilterValues,'watsonFilter')))
+        temporalFilter.temporalSupport = frameDurationSeconds*(0:(length(temporalFilterValues)-1));
+        temporalFilter.filterValues = WatsonFilter(wastonParams,temporalFilter.temporalSupport);
+
+    % Filter explicitly passed
     else
+        temporalFilter.filterValues = temporalFilterValues;
         temporalFilter.temporalSupport = frameDurationSeconds*(0:(length(temporalFilterValues)-1));
     end
+
+
 else
     temporalFilter = [];
 end

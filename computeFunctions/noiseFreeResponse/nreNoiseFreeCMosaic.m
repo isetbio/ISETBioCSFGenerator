@@ -362,7 +362,6 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
         filterTemporalSupport = noiseFreeComputeParams.temporalFilter.temporalSupport;
     end
 
-
     % Loop over instances and responses
     nInstances = size(theNeuralResponses,1);
     mResponses = size(theNeuralResponses,2);
@@ -439,8 +438,6 @@ if (returnTheNoiseFreePipeline)
     dataOut.noiseFreeResponsePipeline.coneMosaic = theConeMosaic;
 end
 end
-
-
 
 function p = generateDefaultParams(opticsType,oiPadMethod)
 

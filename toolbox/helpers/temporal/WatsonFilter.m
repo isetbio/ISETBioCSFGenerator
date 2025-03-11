@@ -10,15 +10,17 @@ function timp = WatsonFilter(filterParams,tSecs)
 %
 % Inputs:
 %    filterParams           - Structure containing filter parameters.  Here
-%                                     is an example that indicates the fields:
-%                                         filterParams.integrationTime = 10;   % integration time
-%                                         filterParams.tau = 6.25;                    % time constant
+%                                     is an example that indicates the
+%                                     fields, as well as the default values
+%                                     if filterParams is passed as [].
+%                                         filterParams.integrationTime = 10;   % integration time in msec
+%                                         filterParams.tau = 6.25;                    % time constant in msec
  %                                        filterParams.k = 1.33;                       % scaling factor for the time constant of the second filter (which equals k*tau)
 %                                         filterParams.n1 = 9;                          % number of stages for the first filter
 %                                         filterParams.n2 = 10;                        % number of stages for the second filter
 %                                         filterParams.zeta = 1;                       % transience factor (0 = no adaptation/sustained; 1 = full adaptation/transient)
 %                                         filterParams.xi = 22;                         % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
-%   tmSecs                   - Timebase in msec for the impulse response
+%   tSecs                   - Timebase in seconds for the impulse response
 %
 % Outputs:
 %   timp                        - The temporal impulse response
@@ -43,6 +45,16 @@ function timp = WatsonFilter(filterParams,tSecs)
     timp = WatsonFilter(filterParams,tSecs);
     figure; plot(tSecs,timp);
 %}
+
+if (isempty(filterParams))
+    filterParams.integrationTime = 10;   % integration time
+    filterParams.tau = 6.25;                    % time constant
+    filterParams.k = 1.33;                       % scaling factor for the time constant of the second filter (which equals k*tau)
+    filterParams.n1 = 9;                          % number of stages for the first filter
+    filterParams.n2 = 10;                        % number of stages for the second filter
+    filterParams.zeta = 1;                       % transience factor (0 = no adaptation/sustained; 1 = full adaptation/transient)
+    filterParams.xi = 22;                          % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
+end
  
 tmSecs = 1000*tSecs;
 u = @(t)(0*(t<0)+1*(t>=0));
