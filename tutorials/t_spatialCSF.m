@@ -197,7 +197,7 @@ arguments
     options.testEMsMatchTrain (1,1) logical = true
     options.sameEMsEachSF (1,1) logical = false
     options.sameEMsEachContrast (1,1) = true
-    options.seedForEms (1,1) double = 1021;
+    options.seedForEMs (1,1) double = 1021;
 
     % nTrainingEMs, nTestEMs
     %
@@ -297,7 +297,7 @@ useFixationalEMs = options.useFixationalEMs;
 testEMsMatchTrain = options.testEMsMatchTrain;
 sameEMsEachSF = options.sameEMsEachSF;
 sameEMsEachContrast = options.sameEMsEachContrast;
-seedForEMs = options.seedForEms;
+seedForEMs = options.seedForEMs;
 nTrainEMs = options.nTrainEMs;
 nTestEMs = options.nTestEMs;
 nTrain = options.nTrain;
@@ -747,11 +747,11 @@ for idx = 1:length(spatialFreqs)
         % same for the calls to the EM compute method, or we just let it
         % take on its current value.
         emRandomSeed = -1;
-        % if (sameEMsEachSF)
-        %     seedBeforeEMGeneration = rng(seedForEMs);
-        % else
-        %     seedBeforeEMGeneration = rng;
-        % end
+        if (sameEMsEachSF)
+            seedBeforeEMGeneration = rng(seedForEMs);
+        else
+            seedBeforeEMGeneration = rng;
+        end
 
         % Set up the train EM object
         trainFixationalEMObj = fixationalEM;
@@ -768,7 +768,7 @@ for idx = 1:length(spatialFreqs)
             'centerPaths', emCenterPaths, 'centerPathsAtSpecificTimeMsec', emCenterPathsAtSpecificTimeMsec);
 
         % Make the EM seed what it was before the em path generation.
-        % rng(seedBeforeEMGeneration);
+        rng(seedBeforeEMGeneration);
      
         % For case where test matches training, copy in training EM paths
         % to test EM object.
