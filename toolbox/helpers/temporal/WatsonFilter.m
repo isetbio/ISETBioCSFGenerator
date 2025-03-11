@@ -1,4 +1,4 @@
-function timp = WatsonFilter(filterParams,tmSecs)
+function timp = WatsonFilter(filterParams,tSecs)
 % Return the temporal impulse function suggested by Watson.
 %
 % Synopsis:
@@ -40,11 +40,11 @@ function timp = WatsonFilter(filterParams,tmSecs)
     filterParams.xi = 22;                          % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
 
     tSecs = linspace(0,0.3,1000);
-    tmSecs = 1000*tSecs;
-    timp = WatsonFilter(filterParams,tmSecs);
-    figure; plot(tmSecs,timp);
+    timp = WatsonFilter(filterParams,tSecs);
+    figure; plot(tSecs,timp);
 %}
  
+tmSecs = 1000*tSecs;
 u = @(t)(0*(t<0)+1*(t>=0));
 h1 = @(t)u(t)./real(filterParams.tau.*factorial(filterParams.n1-1)).*((t./filterParams.tau).^(filterParams.n1-1)).*exp(-t./filterParams.tau);
 h2 = @(t)u(t)./real(filterParams.k.*filterParams.tau.*factorial(filterParams.n2-1)).*((t./(filterParams.k.*filterParams.tau)).^(filterParams.n2-1)).*exp(-t./(filterParams.k.*filterParams.tau));
