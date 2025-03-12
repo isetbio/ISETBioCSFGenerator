@@ -1,4 +1,4 @@
-function timp = WatsonFilter(filterParams,tSecs)
+function [timp,filterParams] = WatsonFilter(filterParams,tSecs)
 % Return the temporal impulse function suggested by Watson.
 %
 % Synopsis:
@@ -24,6 +24,7 @@ function timp = WatsonFilter(filterParams,tSecs)
 %
 % Outputs:
 %   timp                        - The temporal impulse response
+%   filterParams           - The filter parameter structure.  Useful for getting the default parameters
 %
 % See example in source code
 
@@ -33,6 +34,7 @@ function timp = WatsonFilter(filterParams,tSecs)
 %{ 
 % Examples:
     clear;
+    filterParams.type = 'watson';            % filter type
     filterParams.integrationTime = 10;   % integration time
     filterParams.tau = 6.25;                    % time constant
     filterParams.k = 1.33;                       % scaling factor for the time constant of the second filter (which equals k*tau)
@@ -44,16 +46,19 @@ function timp = WatsonFilter(filterParams,tSecs)
     tSecs = linspace(0,0.3,1000);
     timp = WatsonFilter(filterParams,tSecs);
     figure; plot(tSecs,timp);
+
+    [~,defaultParams] = WatsonFilter([],[]);
 %}
 
 if (isempty(filterParams))
+    filterParams.type = 'watson';            % filter type
     filterParams.integrationTime = 10;   % integration time
     filterParams.tau = 6.25;                    % time constant
     filterParams.k = 1.33;                       % scaling factor for the time constant of the second filter (which equals k*tau)
     filterParams.n1 = 9;                          % number of stages for the first filter
     filterParams.n2 = 10;                        % number of stages for the second filter
     filterParams.zeta = 1;                       % transience factor (0 = no adaptation/sustained; 1 = full adaptation/transient)
-    filterParams.xi = 22;                          % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
+    filterParams.xi = 5;                          % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
 end
  
 tmSecs = 1000*tSecs;
