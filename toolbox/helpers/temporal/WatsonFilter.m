@@ -58,7 +58,7 @@ if (isempty(filterParams))
     filterParams.n1 = 9;                          % number of stages for the first filter
     filterParams.n2 = 10;                        % number of stages for the second filter
     filterParams.zeta = 1;                       % transience factor (0 = no adaptation/sustained; 1 = full adaptation/transient)
-    filterParams.xi = 5;                          % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
+    filterParams.xi = 5;                           % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
 end
  
 tmSecs = 1000*tSecs;
