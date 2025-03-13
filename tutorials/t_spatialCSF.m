@@ -221,10 +221,11 @@ arguments
     options.nTrain (1,1) double = 1
     options.nTest (1,1) double = 128
 
-    % Number of temporal frames.  If not empty, override default values
+    % Some stimulus parameters
+    options.spatialFreqs (1,:) double = [4, 8, 16, 32]
     options.numberOfFrames double = []
-    options.frameDurationSeconds = 0.1;
-
+    options.frameDurationSeconds (1,1) double = 0.1;
+    options.temporalFrequencyHz (1,1) double = 5;
 
     % Apply temporal filter?
     %
@@ -351,7 +352,7 @@ else
 end
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
-theTemporalFrequencyHz = 5.0;
+temporalFrequencyHz = options.temporalFrequencyHz;
 
 % Set up some sizes.  Note that these are small so that the examples run
 % fast.
@@ -400,10 +401,7 @@ end
 nullContrast = 0.0;
 
 %% List of spatial frequencies to be tested.
-spatialFreqs = [4, 8, 16, 32];
-if (length(spatialFreqs) ~= 4 | ~all(spatialFreqs == [4, 8, 16, 32]))
-    validationThresholds = [];
-end
+spatialFreqs = options.spatialFreqs; [4, 8, 16, 32];
 
 %% Chromatic direction and contrast
 %
@@ -674,7 +672,7 @@ else
         'presentationMode', presentationMode, ...
         'duration', stimulusDuration, ...
         'frameDurationSeconds', stimulusDuration/framesNum, ...
-        'temporalFrequencyHz', theTemporalFrequencyHz, ...
+        'temporalFrequencyHz', temporalFrequencyHz, ...
         'orientation', gratingOrientationDegs, ...
         'spatialPhase', gratingSpatialPhase, ...
         'pixelsNum', pixelsNum, ...
