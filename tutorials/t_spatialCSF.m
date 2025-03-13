@@ -221,8 +221,10 @@ arguments
     options.nTrain (1,1) double = 1
     options.nTest (1,1) double = 128
 
-    % Number of temporal frames.  If not empty, overrides default values
+    % Number of temporal frames.  If not empty, override default values
     options.numberOfFrames double = []
+    options.frameDurationSeconds = 0.1;
+
 
     % Apply temporal filter?
     %
@@ -311,6 +313,7 @@ validationThresholds = options.validationThresholds;
 mRGCOutputSignalType = options.mRGCOutputSignalType;
 temporalFilterValues = options.temporalFilterValues;
 numberOfFrames = options.numberOfFrames;
+frameDurationSeconds = options.frameDurationSeconds;
 fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
 thresholdPara = options.thresholdPara;
@@ -348,7 +351,6 @@ else
 end
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
-frameDurationSeconds = 0.1;
 theTemporalFrequencyHz = 5.0;
 
 % Set up some sizes.  Note that these are small so that the examples run
@@ -368,15 +370,16 @@ if (~isempty(temporalFilterValues))
     % Photocurrent filter computed and applied in nre
     if (ischar(temporalFilterValues) & strcmp(temporalFilterValues,'photocurrentImpulseResponseBased'))
         temporalFilter.temporalSupport = '';
-
-        % Watson filter, computed here
+        temporalFilter.filterValues = temporalFilterValues;
+        
     elseif (ischar(temporalFilterValues) & strcmp(temporalFilterValues,'watsonFilter'))
+        % Watson filter, computed here
         [~,watsonParams] = WatsonFilter([],[]);
         temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
 
-        % Filter explicitly passed
     else
+        % Filter explicitly passed
         temporalFilter.filterValues = temporalFilterValues;
         temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
     end
