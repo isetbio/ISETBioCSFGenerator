@@ -15,7 +15,7 @@ function [timp,filterParams] = WatsonFilter(filterParams,tSecs)
 %                                     if filterParams is passed as [].
 %                                         filterParams.integrationTime = 10;   % integration time in msec
 %                                         filterParams.tau = 6.25;                    % time constant in msec
- %                                        filterParams.k = 1.33;                       % scaling factor for the time constant of the second filter (which equals k*tau)
+%                                         filterParams.k = 1.33;                       % scaling factor for the time constant of the second filter (which equals k*tau)
 %                                         filterParams.n1 = 9;                          % number of stages for the first filter
 %                                         filterParams.n2 = 10;                        % number of stages for the second filter
 %                                         filterParams.zeta = 1;                       % transience factor (0 = no adaptation/sustained; 1 = full adaptation/transient)

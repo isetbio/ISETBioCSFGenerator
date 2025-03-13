@@ -161,7 +161,7 @@ arguments
     %   Choices: 'Poisson'
     %            'Gaussian'
     options.whichNoisyInstanceNre (1,:) char = 'Poisson'
-    options.gaussianSigma (1,1) double = [];
+    options.gaussianSigma double = [];
 
     % Choose classifier engine
     %    rcePoisson - signal known exactly Poission max likelihood
@@ -378,6 +378,13 @@ if (~isempty(temporalFilterValues))
         temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
 
+        % Temporary.  Sanity check
+        negAttenFactor = 0;
+        preAttenSum = sum(temporalFilter.filterValues);
+        temporalFilter.filterValues(temporalFilter.filterValues < 0) = negAttenFactor*temporalFilter.filterValues(temporalFilter.filterValues < 0);
+        postAttenSum = sum(temporalFilter.filterValues);
+        fprintf('Watson filter negative attenuation factor: %0.g, pre attenuation sum: %g, post: %g\n',negAttenFactor,preAttenSum,postAttenSum);
+        temporalFilter.filterValues = -temporalFilter.filterValues;
     else
         % Filter explicitly passed
         temporalFilter.filterValues = temporalFilterValues;
@@ -531,7 +538,9 @@ switch (whichNoiseFreeNre)
         noiseFreeResponseParams.temporalFilter = temporalFilter;
 
         % Set Gaussian sigma in case we're using Gaussian noise below.
-        gaussianSigma = 50;
+        if (isempty(gaussianSigma))
+            gaussianSigma = 50;
+        end
 
     case 'sceneAsResponses'
         % This is image photon counts, and thus provides an estimate of the
@@ -548,6 +557,13 @@ switch (whichNoiseFreeNre)
 
         % This scene engine should not use cone contrast, no matter what
         useConeContrast = false;
+
+        % Probably wouldn't use Gaussian noise with this case, but set the
+        % sigma in case someone tries it.  No idea whether this is a good
+        % value.  Probably not since I just made it up.
+        if (isempty(gaussianSigma))
+            gaussianSigma = 50;
+        end
 
     otherwise
         error('Unsupported noise free nre specified');
@@ -799,7 +815,7 @@ for idx = 1:length(spatialFreqs)
         testFixationalEMObj = [];
     end
 
-    % Create a static grating scene with a particular chromatic direction,
+    % Create a grating scene engine with a particular chromatic direction,
     % spatial frequency, and temporal duration.  Put grating in sine phase
     % becuase that keeps the spatial mean constant across spatial
     % frequencies.

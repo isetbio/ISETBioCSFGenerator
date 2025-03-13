@@ -164,7 +164,6 @@ function dataOut = nreNoisyInstancesGaussian(...
             error('noiseFlag must be ''random'' or ''none''');
     end
 
-
     % If an activation function has been specified, apply it to the noisy repsonse instances here
     if (isfield(noisyInstancesComputeParams, 'activationFunctionParams'))
        noisyResponseInstances = neuralResponseEngine.applyActivationFunction(...
@@ -185,8 +184,7 @@ function dataOut = nreNoisyInstancesGaussian(...
         set(hFig, 'Position', [350 25 1650 550]);
         neuralEngineOBJ.visualize(noisyResponseInstances, temporalSupportSeconds, ...
             'figureHandle', hFig, ...
-            'responseLabel', 'noisy mRGCmosaic responses');
-       
+            'responseLabel', 'noisy mRGCmosaic responses'); 
     end
 
     % Assemble the dataOut struct
