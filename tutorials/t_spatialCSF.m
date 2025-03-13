@@ -161,6 +161,7 @@ arguments
     %   Choices: 'Poisson'
     %            'Gaussian'
     options.whichNoisyInstanceNre (1,:) char = 'Poisson'
+    options.gaussianSigma (1,1) double = [];
 
     % Choose classifier engine
     %    rcePoisson - signal known exactly Poission max likelihood
@@ -304,6 +305,7 @@ nTrain = options.nTrain;
 nTest = options.nTest;
 whichNoiseFreeNre = options.whichNoiseFreeNre;
 whichNoisyInstanceNre = options.whichNoisyInstanceNre;
+gaussianSigma = options.gaussianSigma;
 whichClassifierEngine = options.whichClassifierEngine;
 validationThresholds = options.validationThresholds;
 mRGCOutputSignalType = options.mRGCOutputSignalType;
@@ -459,13 +461,15 @@ switch (whichNoiseFreeNre)
         % different value more like 100 or 1000 would be reasonable, depending on
         % light level.
         noiseFreeResponseParams.mRGCMosaicParams.outputSignalType = mRGCOutputSignalType;
-        switch (mRGCOutputSignalType)
-            case 'mRGCs'
-                gaussianSigma = 0.003;
-            case 'cones'
-                gaussianSigma = 50;
-            otherwise
-                error('Unknown mRGC output signal type specified');
+        if (isempty(gaussianSigma))
+            switch (mRGCOutputSignalType)
+                case 'mRGCs'
+                    gaussianSigma = 0.003;
+                case 'cones'
+                    gaussianSigma = 50;
+                otherwise
+                    error('Unknown mRGC output signal type specified');
+            end
         end
 
         % Handle cone contrast setting
