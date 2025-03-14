@@ -596,7 +596,7 @@ switch (whichClassifierEngine)
             'nTrain', nTrain, 'nTest', nTest);
 
     case {'rceTemplateDistance'}
-        whichClassifierEngine = responseClassifierEngine(@rcePoisson);
+        whichClassifierEngine = responseClassifierEngine(@rceTemplateDistance);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
             'nTrain', nTrain, 'nTest', nTest);
