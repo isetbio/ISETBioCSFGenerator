@@ -117,7 +117,7 @@ function dataOut = rceTemplateDistanceTAFC(obj, operationMode, ~, theResponses, 
 
 % For consistency with the interface
 if (nargin == 0)
-    dataOut = struct('Classifier', 'Poisson Forced Choice Ideal Observer');
+    dataOut = struct('Classifier', 'Template Distance Classifier Ideal');
     return;
 elseif (nargin < 5 | isempty(whichAlternatives))
     whichAlternatives = [];
