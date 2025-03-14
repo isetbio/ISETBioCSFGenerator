@@ -107,7 +107,7 @@ function thresholdRet = t_spatialCSF(options)
         'useFixationalEMs', false, ...
         'temporalFilterValues', [], ...
         'oiPadMethod', 'mean', ...
-        'validationThresholds', [0.0993    0.1673    0.3377    1.0000]);
+        'validationThresholds', [ 0.0993    0.1673    0.3377    1.0000]);
 
     % Verify that rcePcaSVM works
     t_spatialCSF('useMetaContrast', true, ...
@@ -414,10 +414,8 @@ switch (stimType)
         chromaDir = [1.0, 1.0, 1.0]';
     case 'red-green'
         chromaDir = [1.0, -1.0, 0.0]';
-        validationThresholds = [];
     case 'L-isolating'
         chromaDir = [1.0, 0.0, 0.0]';
-        validationThresholds = [];
 end
 
 % Set the RMS cone contrast of the stimulus. Things may go badly if you
@@ -519,12 +517,7 @@ switch (whichNoiseFreeNre)
             'oiPadMethod',oiPadMethod);
         noiseFreeResponseParams.coneMosaicParams.sizeDegs = mosaicSizeDegs;
         noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = frameDurationSeconds;
-        if (~all(noiseFreeResponseParams.coneMosaicParams.sizeDegs == mosaicSizeDegs))
-            validationThresholds = [];
-        elseif (noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds ~= 0.1)
-            validationThresholds = [];
-        end
-
+        
         % Handle cone contrast setting
         if (useConeContrast)
             noiseFreeResponseParams.coneMosaicParams.outputSignalType = 'coneContrast';
