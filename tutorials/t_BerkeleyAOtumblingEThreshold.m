@@ -13,10 +13,18 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
 %
 % See also t_BerkeleyAOtumblingESceneEngine.
 
+% Examples:
+%{
+
+%}
+
 %% Pick up optional arguments
 arguments
     % Run with fast parameters overrides
     options.fastParams (1,1) logical = true;
+
+    % Keep rng doing the same thing each time for validation
+    options.rngSeed (1,1) double = 12;
 
     % Print out/plot  more diagnostics, or not
     options.verbose (1,1) logical = false;
@@ -81,16 +89,23 @@ arguments
     options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
-    
+
+    % Run the validation check?  This gets overridden to empty if other
+    % options change the conditions so that the validation data don't
+    % apply.
+    options.validationThresholds (1,:) double = []
 end
 
 %% Initialize figures
 close all;
 
+%% Stabilize rng
+rng(options.rngSeed);
+
 %% Fast parameter overrides
 if (options.fastParams)
     options.displayNPixels = 128;
-    options.letterSizesNumExamined = 3;
+    options.letterSizesNumExamined = 4;
     options.nTest = 64;
 end
 
@@ -272,7 +287,7 @@ questEnginePara = struct( ...
 logMAR = log10(10.^logThreshold*60/5);
 threshold = 10.^logThreshold;
 
-% Plot the derived psychometric function and other things. 
+%% Plot the derived psychometric function and other things. 
 pdfFileName = [];
 plotDerivedPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
     thresholdPara,pdfFileName, 'xRange', [0.02 0.2]);
@@ -284,4 +299,26 @@ if (options.visualEsOnMosaic)
        pdfFileName);
 end
 
+%% Do a check on the answer
+%
+% So that if we break something in the future we will have
+% a chance of knowing it. The current numbers don't quite
+% match the old version, but I think that is because of a change
+% away from iePoisson which was not freezing the rng, and also
+% other changes somewhere in stochasticity that I have not quite
+% tracked down. But this validation generally passes.  Might fail
+% sometimes.
+validationTolerance = 0.01;
+if (~isempty(validationThresholds))
+    if (any(abs(threshold-validationThresholds)./validationThresholds > validationTolerance))
+        threshold
+        validationThresholds
+        error(sprintf('Do not replicate validation thresholds to %d%%. Check that parameters match, or for a bug.',round(100*validationTolerance)));
+    else
+        fprintf('Validation regression check passes\n');
+    end
+else
+    threshold
+    fprintf('No validation thresholds, validation regression check not run\n');
+end
 end
