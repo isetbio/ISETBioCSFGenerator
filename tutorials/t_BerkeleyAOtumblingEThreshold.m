@@ -15,8 +15,11 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
 
 % Examples:
 %{
-    t_BerkeleyAOtumblingEThreshold('validationThresholds',[]);
-
+    % Run with default parameters.  More examples are available in the
+    % ISETBerkeleyAO project.  Those call into this tutorial function.
+    t_BerkeleyAOtumblingEThreshold( ...
+        'visualizeScene', false, ...
+        'validationThresholds',[0.0283]);
 %}
 
 %% Pick up optional arguments
@@ -228,7 +231,7 @@ switch (options.whichNoisyInstanceNre)
     case 'Gaussian'
         nreNoisyInstances = @nreNoisyInstancesGaussian;
         noisyInstancesParams = nreNoisyInstancesGaussian;
-        noisyInstancesParams.sigma = gaussianSigma;
+        noisyInstancesParams.sigma = options.gaussianSigma;
 end
 
 % Set up nre
@@ -310,10 +313,10 @@ end
 % tracked down. But this validation generally passes.  Might fail
 % sometimes.
 validationTolerance = 0.01;
-if (~isempty(validationThresholds))
-    if (any(abs(threshold-validationThresholds)./validationThresholds > validationTolerance))
+if (~isempty(options.validationThresholds))
+    if (any(abs(threshold-options.validationThresholds)./options.validationThresholds > validationTolerance))
         threshold
-        validationThresholds
+        options.validationThresholds
         error(sprintf('Do not replicate validation thresholds to %d%%. Check that parameters match, or for a bug.',round(100*validationTolerance)));
     else
         fprintf('Validation regression check passes\n');
