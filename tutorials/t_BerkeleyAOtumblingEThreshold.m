@@ -15,7 +15,7 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
 
 % Examples:
 %{
-    t_BerkeleyAOtumblineEThreshold('validationThresholds',[]);
+    t_BerkeleyAOtumblingEThreshold('validationThresholds',[]);
 
 %}
 
@@ -290,7 +290,7 @@ threshold = 10.^logThreshold;
 
 %% Plot the derived psychometric function and other things. 
 pdfFileName = [];
-plotDerivedPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
+plotPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
     thresholdPara,pdfFileName, 'xRange', [0.02 0.2]);
 if (options.visualEsOnMosaic)
     % This runs but I am not sure it is actually showing the stimulus.
