@@ -15,6 +15,7 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
 
 % Examples:
 %{
+    t_BerkeleyAOtumblineEThreshold('validationThresholds',[]);
 
 %}
 
