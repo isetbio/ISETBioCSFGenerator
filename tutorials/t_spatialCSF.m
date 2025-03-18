@@ -159,7 +159,7 @@ arguments
 
     % Choose noise model
     %   Choices: 'Poisson'
-    %            'Gaussian'
+    %                  'Gaussian'
     options.whichNoisyInstanceNre (1,:) char = 'Poisson'
     options.gaussianSigma double = [];
 
@@ -379,13 +379,6 @@ if (~isempty(temporalFilterValues))
         temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
 
-        % Temporary.  Sanity check
-        % negAttenFactor = 0;
-        % preAttenSum = sum(temporalFilter.filterValues);
-        % temporalFilter.filterValues(temporalFilter.filterValues < 0) = negAttenFactor*temporalFilter.filterValues(temporalFilter.filterValues < 0);
-        % postAttenSum = sum(temporalFilter.filterValues);
-        % fprintf('Watson filter negative attenuation factor: %0.g, pre attenuation sum: %g, post: %g\n',negAttenFactor,preAttenSum,postAttenSum);
-        % temporalFilter.filterValues = -temporalFilter.filterValues;
     else
         % Filter explicitly passed
         temporalFilter.filterValues = temporalFilterValues;

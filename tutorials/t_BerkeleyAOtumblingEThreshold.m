@@ -1,4 +1,6 @@
-function t_BerkeleyAOtumblingEThreshold(options)
+function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometricParams, ...
+    trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
+    t_BerkeleyAOtumblingEThreshold(options)
 % Compute tumbling E threshold with AO optics
 %
 % This takes a number of key/value pairs that control its detailed
@@ -13,18 +15,109 @@ function t_BerkeleyAOtumblingEThreshold(options)
 
 %% Pick up optional arguments
 arguments
-    % Add this amount of defocus to the diffraction limited optics
-    options.defocusDiopters (1,1) double = 0.05;
+    % Run with fast parameters overrides
+    options.fastParams (1,1) logical = true;
 
-    % Pupil diameter in mm.
-    options.pupilDiameterMm (1,1) double = 6;
-
-    % Print out more diagnostics, or not
+    % Print out/plot  more diagnostics, or not
     options.verbose (1,1) logical = false;
+    options.visualEsOnMosaic (1,1) logical = false;
+    options.visualizeScene (1,1) logical = true;
+
+    % Wavelength support
+    options.wave (:,1) double = (500:5:870)';
+
+    % Psychometric parameters
+    options.letterSizesNumExamined = 9;
+    options.nTest = 512;
+    options.thresholdP =  0.781;
+
+    % Optics parameters
+    options.pupilDiameterMm (1,1) double = 6;
+    options.accommodatedWl  (1,1) double = 840;
+    options.defocusDiopters (1,1) double =  0.05;
+
+    % Use cone contrast
+    options.useConeContrast (1,1) logical = false
+
+     % Choose noise model
+    %   Choices: 'Poisson'
+    %                  'Gaussian'
+    options.whichNoisyInstanceNre (1,:) char = 'Poisson'
+    options.gaussianSigma double = [];
+
+     % Apply temporal filter?
+    %
+    % The timebase of the filter is assumed to match the frame rate, so we
+    % only need to specify a list of filter values.  Since these can
+    % describe gain changes as well as temporal processing per se, we do
+    % not require that these sum to 1.  If you want to preserve signal
+    % magnitude, you can normalize the filter values yourself, so that they
+    % sum to 1. This can also be set to some string, e.g.,
+    % 'photocurrentImpulseResponseBased', in which case the filter values
+    % are computed on the fly
+    %
+    % Finally, this can be 'watsonFilter'
+    options.temporalFilterValues (1,:) = []
+
+    % Choose classifier engine
+    %    rcePoisson - signal known exactly Poission max likelihood
+    %    rceTemplateDistance - signal known exactly nearest L2 template
+    %                 distance.
+    options.whichClassifierEngine (1,:) char = 'rcePoisson'
+
+    % AO scene parameters
+    options.displayNPixels (1,1) double = 128;
+    options.displayFOVDeg (1,1) double = 1.413;
+    options.AOPrimaryWls (1,3) double = [840 683 543]; % [700 683 54];
+    options.AOPrimaryFWHM (1,3) double = [22 27 23];
+    options.AOCornealPowersUW (1,3) double = [141.4 10 10];
+    options.plotDisplayCharacteristics (1,1) logical = false;
+    options.chromaSpecification_type (1,:) char = 'RGBsettings';
+    options.chromaSpecification_backgroundRGB (1,3) double = [1 0 0];
+    options.chromaSpecification_foregroundRGB (1,3) double = [0 0 0];
+    options.eHeightMin (1,1) double = 30;
+    options.temporalModulationParams_frameRateHz (1,1) double = 60;
+    options.temporalModulationParams_numFrame (1,1) double = 3;
+    options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
+    options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
+    options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
+    
 end
 
-% Initialize
+%% Initialize figures
 close all;
+
+%% Fast parameter overrides
+if (options.fastParams)
+    options.displayNPixels = 128;
+    options.letterSizesNumExamined = 3;
+    options.nTest = 64;
+end
+
+%% Map options the way we need them below
+
+% Scene parameters default overrides
+aoSceneParams = struct( ...
+    'visualizeScene', options.visualizeScene, ...
+    'pupilSizeMM', options.pupilDiameterMm, ...
+    'displayNPixels', options.displayNPixels, ...
+    'displayFOVDeg', options.displayFOVDeg, ...
+    'AOPrimaryWls', options.AOPrimaryWls, ...
+    'AOPrimaryFWHM', options.AOPrimaryFWHM, ...
+    'AOCornealPowersUW', options.AOCornealPowersUW, ...
+    'ambientSpd', zeros(size(options.wave)), ...
+    'plotDisplayCharacteristics', options.plotDisplayCharacteristics, ...
+    'chromaSpecification_type', options.chromaSpecification_type , ...
+    'chromaSpecification_backgroundRGB', options.chromaSpecification_backgroundRGB , ...
+    'chromaSpecification_foregroundRGB', options.chromaSpecification_foregroundRGB , ...
+    'eHeightMin', options.eHeightMin' , ...
+    'temporalModulationParams_frameRateHz', options.temporalModulationParams_frameRateHz , ...
+    'temporalModulationParams_numFrame', options.temporalModulationParams_numFrame , ...
+    'temporalModulationParams_xShiftPerFrame', options.temporalModulationParams_xShiftPerFrame , ...
+    'temporalModulationParams_yShiftPerFrame', options.temporalModulationParams_yShiftPerFrame , ...
+    'temporalModulationParams_backgroundRGBPerFrame', options.temporalModulationParams_backgroundRGBPerFrame , ...
+    'wave', options.wave ...
+    );
 
 % Make sure figures and results directories exist so that output writes
 % don't fail
@@ -45,86 +138,39 @@ end
 % function.
 %
 % The scene engine tutorial returns its parameters, which are used below to
-% try to match things up as best as possible.
-orientations = [0 90 180 270];
-[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOtumblingESceneEngine('VisualizeScene',false);
+% try to match things up as best as possible.  One thing it doesn't return
+% is its four hard coded orientaions, so we build that here for use below.
+sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
+[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOtumblingESceneEngine(sceneOptionsCell{:});
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
 
-% Parameters. These control many aspects of what gets done, particular the subject.
+%% Set up temporal filter if we have one.
 %
-% To run a different subject or pupil size, change 'psdDataSubdir'
-% field below to have the desired subject number in the directory string, and the desired
-% pupil string in the name if using other than the default 4 mm.
-%
-% Parameter fields below allow change of integration time, lens age,
-% MPD, L:M:S proportion (although you won't get many S because of the
-% tritanopic zone).
-%
-% Note that that the custom pupil diameter field does not affect the
-% optical quality because we are using the PSF read from the PSF data
-% file.  What it does is allow you to set a pupil diameter different
-% from the one for which the PSF was computed.  What this does is allow
-% independent control of retinal illuminance and PSF, if you want to
-% separate the two effects.  The full data set does contain PSFs
-% computed for different pupil sizes for each TCA/LCA combination which
-% may be used to explore the effect of pupil size on optical quality.
-% Note again that using a PSF computed for various pupil sizes will not
-% affect the retinal illuminance as that is controlled by the pupil
-% size set explicitly here.  The PSF file naming convention for the
-% various pupil sizes is described in the README.
-%
-% The code in this script is reasonably clever about creating figure
-% and results subdirectories to hold its ouput, that keep the separate
-% conditions you might run separate.  But it may not be perfect at
-% this, particularly if you start digging deeper into the code and
-% customizing more things.
-params = struct(...
-    'letterSizesNumExamined',  9, ...                           % How many sizes to use for sampling the psychometric curve (9 used in the paper)
-    'maxLetterSizeDegs', 0.2, ...                               % The maximum letter size in degrees of visual angle
-    'sceneUpSampleFactor', 4, ...                               % Upsample scene, so that the pixel for the smallest scene is < cone aperture
-    'mosaicIntegrationTimeSeconds', 1/backgroundSceneEngine.sceneParams.temporalModulationParams.frameRateHz, ... % Integration time, here one scene frame
-    'nTest', 512, ...                                           % Number of trial to use for computing Pcorrect
-    'thresholdP', 0.781, ...                                    % Probability correct level for estimating threshold performance
-    'customLensAgeYears', [], ...                               % Lens age in years (valid range: 20-80), or empty to use the default age of 32.
-    'customMacularPigmentDensity', [], ...                      % Cu∂stom MPD, or empty to use the default density of 0.35; example, 0.7
-    'customConeDensities', [], ...                              % Custom L-M-S ratio or empty to use default; example [0.6 0.3 0.1]
-    'customPupilDiameterMM', [], ...                            % Custom pupil diameter in MM or empty to use the value from the psfDataFile
-    'visualizedPSFwavelengths', [], ...                         % Vector with wavelengths for visualizing the PSF. If set to empty[] there is no visualization; example 400:20:700
-    'visualizeDisplayCharacteristics', ~true, ...               % Flag, indicating whether to visualize the display characteristics
-    'visualizeScene', ~true, ...                                % Flag, indicating whether to visualize one of the scenes
-    'visualEsOnMosaic', ~true ...                               % Flag, indicating whether to visualize E's against mosaic as function of their size
-    );
-
-% % Set up summary filename and output dir
-% summaryFileName = sprintf('Summary_%s_%dms.mat', strrep(params.psfDataSubDir, '.mat', ''), round(1000*params.mosaicIntegrationTimeSeconds));
-% if (~isempty(params.customMacularPigmentDensity))
-%     summaryFileName = strrep(summaryFileName, '.mat', sprintf('_MPD_%2.2f.mat', params.customMacularPigmentDensity));
-% end
-% if (~isempty(params.customPupilDiameterMM))
-%     summaryFileName = strrep(summaryFileName, '.mat', sprintf('_pupilDiamMM_%2.2f.mat', params.customPupilDiameterMM));
-% end
-% if (~isempty(params.customConeDensities))
-%     summaryFileName = strrep(summaryFileName, '.mat', sprintf('_cones_%2.2f_%2.2f_%2.2f.mat', params.customConeDensities(1), params.customConeDensities(2), params.customConeDensities(3)));
-% end
-% if (~isempty(params.customLensAgeYears))
-%     summaryFileName = strrep(summaryFileName, '.mat', sprintf('_lensAge_%d.mat', params.customLensAgeYears));
-% end
-% params.outputResultsDir = fullfile(ISETBioCSFGeneratorrootPath,'local',mfilename,'results',strrep(summaryFileName, '.mat',''));
-% params.outputFiguresDir =  fullfile(ISETBioCSFGeneratorrootPath,'local',mfilename,'figures',strrep(summaryFileName, '.mat',''));
-% if (~exist(params.outputResultsDir,'dir'))
-%     mkdir(params.outputResultsDir);
-% end
-% if (~exist(params.outputFiguresDir,'dir'))
-%     mkdir(params.outputFiguresDir);
-% end
-
-% Unpack simulation params
-letterSizesNumExamined = params.letterSizesNumExamined;
-maxLetterSizeDegs = params.maxLetterSizeDegs;
-mosaicIntegrationTimeSeconds = params.mosaicIntegrationTimeSeconds;
-nTest = params.nTest;
-thresholdP = params.thresholdP;
+% Note that the nre returns the same number of frames it was passed.  So if
+% you want post-stimulus responses produced by the temporal filter, you
+% need to pad your input appropriately. That padding process is not
+% illustrated in this tutorial script.
+if (~isempty(options.temporalFilterValues))
+    % Photocurrent filter computed and applied in nre
+    if (ischar(options.temporalFilterValues) & strcmp(options.temporalFilterValues,'photocurrentImpulseResponseBased'))
+        temporalFilter.temporalSupport = '';
+        temporalFilter.filterValues = options.temporalFilterValues;
+        
+    elseif (ischar(options.temporalFilterValues) & strcmp(options.temporalFilterValues,'watsonFilter'))
+        % Watson filter, computed here
+        [~,watsonParams] = WatsonFilter([],[]);
+        temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
+        temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
+        
+    else
+        % Filter explicitly passed
+        temporalFilter.filterValues = options.temporalFilterValues;
+        temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
+    end
+else
+    temporalFilter = [];
+end
 
 %% Create neural response engine
 %
@@ -133,108 +179,109 @@ thresholdP = params.thresholdP;
 noiseFreeResponseParams = nreNoiseFreeCMosaic([],[],[],[],'opticsType','BerkeleyAO');
 
 % Set optics params
-wls = sceneParams.spectralSupport;
-fieldSizeDegs = sceneParams.displayParams.displayFOVDeg;
-accommodatedWl = sceneParams.displayParams.AOPrimaryWls(1);
-pupilDiameterMm = options.pupilDiameterMm;
-defocusDiopters = options.defocusDiopters;
-
-noiseFreeResponseParams.opticsParams.wls = wls;
-noiseFreeResponseParams.opticsParams.opticsType = 'BerkeleyAO';
-noiseFreeResponseParams.opticsParams.pupilDiameterMM = pupilDiameterMm;
-noiseFreeResponseParams.opticsParams.defocusAmount = defocusDiopters;
-noiseFreeResponseParams.opticsParams.accommodatedWl = accommodatedWl;
+noiseFreeResponseParams.opticsParams.wls = options.wave;
+noiseFreeResponseParams.opticsParams.pupilDiameterMM = options.pupilDiameterMm;
+noiseFreeResponseParams.opticsParams.defocusAmount = options.defocusDiopters;
+noiseFreeResponseParams.opticsParams.accommodatedWl = options.accommodatedWl;
 noiseFreeResponseParams.opticsParams.zCoeffs = zeros(66,1);
 noiseFreeResponseParams.opticsParams.defeatLCA = true;
 noiseFreeResponseParams.verbose = options.verbose;
 
 % Cone params
-noiseFreeResponseParams.coneMosaicParams.wave = wls;
-noiseFreeResponseParams.coneMosaicParams.fovDegs = fieldSizeDegs;
-
-noiseFreeResponseParams = nreNoiseFreeCMosaic;
+noiseFreeResponseParams.coneMosaicParams.wave = options.wave;
+noiseFreeResponseParams.coneMosaicParams.fovDegs = options.displayFOVDeg;
 noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
-noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = mosaicIntegrationTimeSeconds;
+noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = ...
+    1/backgroundSceneEngine.sceneParams.temporalModulationParams.frameRateHz;
 
-noisyInstancesParams = nreNoisyInstancesPoisson;
+% Temporal filter
+noiseFreeResponseParams.temporalFilter = temporalFilter;
+
+% Handle cone contrast setting
+if (options.useConeContrast)
+    noiseFreeResponseParams.coneMosaicParams.outputSignalType = 'coneContrast';
+else
+    noiseFreeResponseParams.coneMosaicParams.outputSignalType = 'coneExcitations';
+end
+
+switch (options.whichNoisyInstanceNre)
+    case 'Poisson'
+        nreNoisyInstances = @nreNoisyInstancesPoisson;
+        noisyInstancesParams = nreNoisyInstancesPoisson;
+
+    case 'Gaussian'
+        nreNoisyInstances = @nreNoisyInstancesGaussian;
+        noisyInstancesParams = nreNoisyInstancesGaussian;
+        noisyInstancesParams.sigma = gaussianSigma;
+end
+
+% Set up nre
 theNeuralEngine = neuralResponseEngine( ...
     @nreNoiseFreeCMosaic, ...
-    @nreNoisyInstancesPoisson, ...
+    nreNoisyInstances, ...
     noiseFreeResponseParams, ...
     noisyInstancesParams);
 
-% Poisson N-way classifier
-classifierEngine = responseClassifierEngine(@rcePoisson);
-classifierPara = struct('trainFlag', 'none', ...
-    'testFlag', 'random', ...
-    'nTrain', 1, 'nTest', nTest);
+%% N-way classifier.
+switch (options.whichClassifierEngine)
+    case {'rcePoisson'}
+        classifierEngine = responseClassifierEngine(@rcePoisson);
+        classifierPara = struct('trainFlag', 'none', ...
+            'testFlag', 'random', ...
+            'nTrain', 1, 'nTest', options.nTest);
+
+    case {'rceTemplateDistance'}
+        classifierEngine = responseClassifierEngine(@rceTemplateDistance);
+        classifierPara = struct('trainFlag', 'none', ...
+            'testFlag', 'random', ...
+            'nTrain', 1, 'nTest', options.nTest)
+
+    otherwise
+        error('Unsupported rce specified')
+end
 
 %% Parameters for threshold estimation/quest engine
 thresholdPara = struct(...
-    'maxParamValue', maxLetterSizeDegs, ...    % The maximum value of the examined param (letter size in degs)
+    'maxParamValue', 1, ...    
     'logThreshLimitLow', 2.0, ...              % minimum log10(normalized param value)
     'logThreshLimitHigh', 0.0, ...             % maximum log10(normalized param value)
     'logThreshLimitDelta', 0.01, ...
     'slopeRangeLow', 1/20, ...
     'slopeRangeHigh', 500/20, ...
     'slopeDelta', 2/20, ...
-    'thresholdCriterion', thresholdP, ...
-    'guessRate', 1/numel(orientations), ...
+    'thresholdCriterion', options.thresholdP, ...
+    'guessRate', 1/numel(tumblingEsceneEngines), ...
     'lapseRate', [0 0.02]);
 
 % Parameters for Quest
 questEnginePara = struct( ...
     'qpPF',@qpPFWeibullLog, ...
-    'minTrial', nTest*letterSizesNumExamined, ...
-    'maxTrial', nTest*letterSizesNumExamined, ...
+    'minTrial', options.nTest*options.letterSizesNumExamined, ...
+    'maxTrial', options.nTest*options.letterSizesNumExamined, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
 
 % Compute psychometric function for the 4AFC paradigm with the 4 E scenes
-[threshold, questObj, psychometricFunction, fittedPsychometricParams] = computeThreshold(...
-    tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
+[logThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
+    trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
+    computeThreshold(tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, ...
     'visualizeAllComponents', ~true, ...
     'verbose', true, ...
     'TAFC', false, 'useMetaContrast', false);
+logMAR = log10(10.^logThreshold*60/5);
+threshold = 10.^logThreshold;
 
-% Plot the derived psychometric function and other things.  The lower
-% level routines put this in ISETBioJandJRootPath/figures.
-% pdfFileName = sprintf('Performance_%s_Reps_%d.pdf', strrep(params.psfDataFile, '.mat', ''), nTest);
-% plotDerivedPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...ISETBio
-%     thresholdParameters, fullfile(params.outputFiguresDir,pdfFileName), 'xRange', [0.02 0.2]);
-% if (params.visualEsOnMosaic)
-%     pdfFileName = sprintf('Simulation_%s_Reps_%d.pdf', strrep(params.psfDataFile, '.mat', ''), nTest);
-%     visualizeSimulationResults(questObj, threshold, fittedPsychometricParams, ...
-%         thresholdParameters, tumblingEsceneEngines, theNeuralEngine, ...
-%         fullfile(params.outputFiguresDir,pdfFileName));
-% end
-
-% % Export the results
-% exportFileName = sprintf('Results_%s_Reps_%d.mat', strrep(params.psfDataFile, '.mat', ''), nTest);
-% if (~isempty(params.customMacularPigmentDensity))
-%     exportFileName = strrep(exportFileName, '.mat', sprintf('_MPD_%2.2f.mat', params.customMacularPigmentDensity));
-% end
-% if (~isempty(params.customPupilDiameterMM))
-%     exportFileName = strrep(exportFileName, '.mat', sprintf('_PupilDiamMM_%2.2f.mat', params.customPupilDiameterMM));
-% end
-% if (~isempty(params.customConeDensities))
-%     exportFileName = strrep(exportFileName, '.mat', sprintf('_cones_%2.2f_%2.2f_%2.2f.mat', params.customConeDensities(1), params.customConeDensities(2), params.customConeDensities(3)));
-% end
-% if (~isempty(params.customLensAgeYears))
-%     exportFileName = strrep(exportFileName, '.mat', sprintf('_lensAge_%d.mat', params.customLensAgeYears));
-% end
-% 
-% fprintf('Saving data to %s\n', fullfile(params.outputResultsDir,exportFileName));
-% exportSimulation(questObj, threshold, fittedPsychometricParams, ...
-%     thresholdParameters, classifierPara, questEnginePara, ...
-%     tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
-%     fullfile(params.outputResultsDir,exportFileName));
-
-% logMAR(iPSF) = log10(threshold(iPSF)*60/5);
-
-% Save summary,  This allows examination of the numbers and/or
-% replotting.
-% save(fullfile(params.outputResultsDir,summaryFileName),"examinedPSFDataFiles","threshold","logMAR","LCA","TCA","theConeMosaic");
+% Plot the derived psychometric function and other things. 
+pdfFileName = [];
+plotDerivedPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
+    thresholdPara,pdfFileName, 'xRange', [0.02 0.2]);
+if (options.visualEsOnMosaic)
+    % This runs but I am not sure it is actually showing the stimulus.
+    % Might have to do with the fact that the stimulus is at 840 nm.
+    visualizeSimulationResults(questObj, threshold, fittedPsychometricParams, ...
+        thresholdPara, tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
+       pdfFileName);
+end
 
 end

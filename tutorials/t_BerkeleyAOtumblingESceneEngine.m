@@ -63,7 +63,7 @@ arguments
     options.visualizeScene (1,1) logical = true;
     options.displayNPixels (1,1) double = 512;
     options.displayFOVDeg (1,1) double = 1.413;
-    options.spectralSupport (:,1) double = (500:5:870)';
+    options.wave (:,1) double = (500:5:870)';
     options.AOPrimaryWls (1,3) double = [840 683 543]; % [700 683 54];
     options.AOPrimaryFWHM (1,3) double = [22 27 23];
     options.AOCornealPowersUW (1,3) double = [141.4 10 10];
@@ -79,6 +79,8 @@ arguments
     options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
+    options.responseFlag (1,:) char = 'excitations';
+    options.exportCondition (1,:) char = 'no change';
 end
 
 % Initialize
@@ -91,13 +93,14 @@ if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
     mkdir(fullfile(rootPath,'local',mfilename,'figures'));
 end
 
-% Display spatial parameters
+% Get the basic parameters for the AO scene engine and override according
+% to passed key/value pairs.
+sceneParams = sceBerkeleyAOTumblingEscene;
+sceneParams.spectralSupport = options.wave; 
+
+% Spatial
 sceneParams.displayPixelSize = options.displayNPixels;
 sceneParams.displayFOVDeg = options.displayFOVDeg; 
-
-% Set the basic parameters for the AO mimicing display
-sceneParams = sceBerkeleyAOTumblingEscene;
-sceneParams.spectralSupport = options.spectralSupport; % (500:5:870)'
 
 % Update parameters according to key/value pairs
 sceneParams.displayParams.AOPrimaryWls = options.AOPrimaryWls; 
