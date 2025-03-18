@@ -41,7 +41,7 @@ function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOtumblingESce
 %   bar width -- either 0, 0.5, 1.0, or 2.0. "0" imposed motion in this
 %   case means it was retinally stabilized
 %   direction: shifts were imposed in retinal coordinates along the four
-%   cardinal meridians Performance was assessed as % correct for a fixed
+%   cardinal meridians Performance was assessed as correct for a fixed
 %   letter size
 %
 % Spatial parameters
@@ -78,6 +78,7 @@ arguments
     options.temporalModulationParams_numFrame (1,1) double = 3;
     options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
+    options.temporalModulationParams_stimOnFrames (1,:) double = [1 1 1];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
     options.responseFlag (1,:) char = 'excitations';
     options.exportCondition (1,:) char = 'no change';
@@ -138,10 +139,11 @@ sceneParams.eHeightMin = options.eHeightMin;
 testESizeMin = 10;
 sceneParams.temporalModulationParams = struct(...   % temporal: modulation params struct
                 'frameRateHz', options.temporalModulationParams_frameRateHz, ...              % frame rate in Hz
-                'numFrames', options.temporalModulationParams_numFrame, ...                 % number of frames we want the E on for
-                'xShiftPerFrame', options.temporalModulationParams_xShiftPerFrame, ...    % How much the E should be shifted in the x dimension in each frame, in degrees
-                'yShiftPerFrame', options.temporalModulationParams_yShiftPerFrame,  ...    % How much the E should be shifted in the y dimension in each frame, in degrees
-                'backgroundRGBPerFrame', options.temporalModulationParams_backgroundRGBPerFrame ... % background color in RGB for each frame
+                'numFrames', options.temporalModulationParams_numFrame, ...                   % number of frames we want the E on for
+                'xShiftPerFrame', options.temporalModulationParams_xShiftPerFrame, ...        % how much the E should be shifted in the x dimension in each frame, in degrees
+                'yShiftPerFrame', options.temporalModulationParams_yShiftPerFrame,  ...       % how much the E should be shifted in the y dimension in each frame, in degrees
+                'backgroundRGBPerFrame', options.temporalModulationParams_backgroundRGBPerFrame, ... % background color in RGB for each frame
+                'stimOnFrames', options.temporalModulationParams_stimOnFrames ...
                 );
 
 % Instantiate a tumblingEsceneEngine for 0 deg rotation E

@@ -64,11 +64,12 @@ arguments
     % describe gain changes as well as temporal processing per se, we do
     % not require that these sum to 1.  If you want to preserve signal
     % magnitude, you can normalize the filter values yourself, so that they
-    % sum to 1. This can also be set to some string, e.g.,
-    % 'photocurrentImpulseResponseBased', in which case the filter values
-    % are computed on the fly
+    % sum to 1.
+    % 
+    % This can also be set to 'photocurrentImpulseResponseBased', in which
+    % case the filter values are computed on the fly
     %
-    % Finally, this can be 'watsonFilter'
+    % It can also be 'watsonFilter'
     options.temporalFilterValues (1,:) = []
 
     % Choose classifier engine
@@ -93,6 +94,7 @@ arguments
     options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
+    options.temporalModulationParams_stimOnFrames (:,:) double = [0 1 0];
 
     % Run the validation check?  This gets overridden to empty if other
     % options change the conditions so that the validation data don't
@@ -135,6 +137,7 @@ aoSceneParams = struct( ...
     'temporalModulationParams_xShiftPerFrame', options.temporalModulationParams_xShiftPerFrame , ...
     'temporalModulationParams_yShiftPerFrame', options.temporalModulationParams_yShiftPerFrame , ...
     'temporalModulationParams_backgroundRGBPerFrame', options.temporalModulationParams_backgroundRGBPerFrame , ...
+    'temporalModulationParams_stimOnFrames', options.temporalModulationParams_stimOnFrames , ...
     'wave', options.wave ...
     );
 

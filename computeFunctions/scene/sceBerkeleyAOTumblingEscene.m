@@ -158,12 +158,14 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
         numFrames = 1;
         xShiftPerFrame = 0;
         yShiftPerFrame = 0;
+        stimOnFrames = 1;
     else
         frameRateHz = paramsForTextRendering.temporalModulationParams.frameRateHz;
         numFrames = paramsForTextRendering.temporalModulationParams.numFrames;
         xShiftDegrees = paramsForTextRendering.temporalModulationParams.xShiftPerFrame;
         yShiftDegrees = paramsForTextRendering.temporalModulationParams.yShiftPerFrame;
         backgroundRGBPerFrame = paramsForTextRendering.temporalModulationParams.backgroundRGBPerFrame;
+        stimOnFrames = paramsForTextRendering.temporalModulationParams.stimOnFrames;
     end
     frameDurationSec = 1 / frameRateHz;
 
@@ -183,6 +185,9 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     xPixelsNumMargin0 = paramsForTextRendering.xPixelsNumMargin;
     yPixelsNumMargin0 = paramsForTextRendering.yPixelsNumMargin;
 
+    % Save actual foregroundRGB
+    foregroundRGB = paramsForTextRendering.chromaSpecification.foregroundRGB;
+
     % Generate each frame
     for frameIndex = 1:numFrames
         % Update scene parameters for current frame.  This handles the
@@ -192,6 +197,11 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
 
         % change background for each frame
         paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
+        if (stimOnFrames(frameIndex))
+            paramsForTextRendering.chromaSpecification.foregroundRGB = foregroundRGB;
+        else
+            paramsForTextRendering.chromaSpecification.foregroundRGB = backgroundRGBPerFrame(frameIndex, :);
+        end
 
         % Generate the scene frame
         theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, paramsForTextRendering, 'visualizeScene', visualizeScene);
