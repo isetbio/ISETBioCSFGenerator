@@ -1,4 +1,4 @@
-function plotPsychometricFunction(questObj, threshold, ...
+function [parameterValuesExamined,pCorrect] = plotPsychometricFunction(questObj, threshold, ...
     fittedPsychometricParams, thresholdParameters, pdfFileName, varargin)
 
     p = inputParser;
@@ -42,14 +42,15 @@ function plotPsychometricFunction(questObj, threshold, ...
     plot(threshold, 0.03, 'kv', 'MarkerSize', 12, 'LineWidth', 1.5, 'MarkerFaceColor', [1 0.9 0.9], 'MarkerEdgeColor', [0 0. 0.]);
     
     % Finalize plot
-    xlim([min(examinedParameterAxis), max(examinedParameterAxis)]);
+    if (length(examinedParameterAxis) > 1)
+        xlim([min(examinedParameterAxis), max(examinedParameterAxis)]);
+    end
     ylim([0, 1]);
     xlabel('size (degs)');
     ylabel('Pcorrect');
 
     set(gca, 'FontSize', 16);
-    set(gca, 'YTick', 0:0.1:1, 'XTick', [0.01 0.03 0.06 0.1 0.2 0.3 0.6], ...
-        'XScale', 'log', 'XLim', [parameterValuesExamined(1) parameterValuesExamined(end)]);
+    set(gca, 'YTick', 0:0.1:1, 'XScale', 'log');
 
     if (~isempty(xRange))
         set(gca, 'XLim', xRange);

@@ -36,8 +36,7 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
 %                                  flexibility in the future and matches
 %                                  conventions for the other classes in
 %                                  this toolbox.
-%    testContrast                - Scalar providing the contrast for the
-%                                  scene to be generated.                           
+%    testESizeDegs               - Scalar providing the size of the test E in degrees.                          
 %    sceneParamsStruct           - Struct containing properties of the
 %                                  scene understood by this function.
 %                                  As noted above, execute sceGrating at

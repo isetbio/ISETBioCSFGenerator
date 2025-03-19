@@ -19,7 +19,7 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
     % ISETBerkeleyAO project.  Those call into this tutorial function.
     t_BerkeleyAOtumblingEThreshold( ...
         'visualizeScene', false, ...
-        'validationThresholds',[0.0283]);
+        'validationThresholds',[0.0268]);
 %}
 
 %% Pick up optional arguments
@@ -41,7 +41,9 @@ arguments
     % Psychometric parameters
     options.letterSizesNumExamined = 9;
     options.nTest = 512;
-    options.thresholdP =  0.781;
+    options.thresholdP = 0.781;
+    options.minLetterSizeMinutes (1,1) double = 0.02;
+    options.maxLetterSizeMinutes (1,1) double = 2;
 
     % Optics parameters
     options.pupilDiameterMm (1,1) double = 6;
@@ -88,11 +90,10 @@ arguments
     options.chromaSpecification_type (1,:) char = 'RGBsettings';
     options.chromaSpecification_backgroundRGB (1,3) double = [1 0 0];
     options.chromaSpecification_foregroundRGB (1,3) double = [0 0 0];
-    options.eHeightMin (1,1) double = 30;
     options.temporalModulationParams_frameRateHz (1,1) double = 60;
     options.temporalModulationParams_numFrame (1,1) double = 3;
-    options.temporalModulationParams_xShiftPerFrame (1,:) double = [0 10/60 0];
-    options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
+    options.temporalModulationParams_xShiftPerFrameMin (1,:) double = [0 10 0];
+    options.temporalModulationParams_yShiftPerFrameMin (1,:) double = [0 0 10];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
     options.temporalModulationParams_stimOnFrames (:,:) double = [0 1 0];
 
@@ -131,11 +132,10 @@ aoSceneParams = struct( ...
     'chromaSpecification_type', options.chromaSpecification_type , ...
     'chromaSpecification_backgroundRGB', options.chromaSpecification_backgroundRGB , ...
     'chromaSpecification_foregroundRGB', options.chromaSpecification_foregroundRGB , ...
-    'eHeightMin', options.eHeightMin' , ...
     'temporalModulationParams_frameRateHz', options.temporalModulationParams_frameRateHz , ...
     'temporalModulationParams_numFrame', options.temporalModulationParams_numFrame , ...
-    'temporalModulationParams_xShiftPerFrame', options.temporalModulationParams_xShiftPerFrame , ...
-    'temporalModulationParams_yShiftPerFrame', options.temporalModulationParams_yShiftPerFrame , ...
+    'temporalModulationParams_xShiftPerFrame', options.temporalModulationParams_xShiftPerFrameMin/60 , ...
+    'temporalModulationParams_yShiftPerFrame', options.temporalModulationParams_yShiftPerFrameMin/60 , ...
     'temporalModulationParams_backgroundRGBPerFrame', options.temporalModulationParams_backgroundRGBPerFrame , ...
     'temporalModulationParams_stimOnFrames', options.temporalModulationParams_stimOnFrames , ...
     'wave', options.wave ...
@@ -265,15 +265,15 @@ end
 %% Parameters for threshold estimation/quest engine
 thresholdPara = struct(...
     'maxParamValue', 1, ...    
-    'logThreshLimitLow', 2.0, ...              % minimum log10(normalized param value)
-    'logThreshLimitHigh', 0.0, ...             % maximum log10(normalized param value)
+    'logThreshLimitLow', -1*log10(options.minLetterSizeMinutes/60), ...              % negative minimum log10(normalized param value) 
+    'logThreshLimitHigh', -1*log10(options.maxLetterSizeMinutes/60), ...             % negative maximum log10(normalized param value)
     'logThreshLimitDelta', 0.01, ...
     'slopeRangeLow', 1/20, ...
     'slopeRangeHigh', 500/20, ...
     'slopeDelta', 2/20, ...
     'thresholdCriterion', options.thresholdP, ...
     'guessRate', 1/numel(tumblingEsceneEngines), ...
-    'lapseRate', [0 0.02]);
+    'lapseRate', [0 0]);
 
 % Parameters for Quest
 questEnginePara = struct( ...
@@ -296,8 +296,8 @@ threshold = 10.^logThreshold;
 
 %% Plot the derived psychometric function and other things. 
 pdfFileName = [];
-plotPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
-    thresholdPara,pdfFileName, 'xRange', [0.02 0.2]);
+[stimulusLevels, pCorrect] = plotPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
+    thresholdPara,pdfFileName, 'xRange', [options.minLetterSizeMinutes/60  options.maxLetterSizeMinutes/60]);
 if (options.visualEsOnMosaic)
     % This runs but I am not sure it is actually showing the stimulus.
     % Might have to do with the fact that the stimulus is at 840 nm.
@@ -305,6 +305,13 @@ if (options.visualEsOnMosaic)
         thresholdPara, tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
        pdfFileName);
 end
+
+%% Print out table of stimulus levels and pCorrect
+fprintf('Measured performance\n')
+for ii = 1:length(stimulusLevels)
+    fprintf('%0.2f min (%0.3f deg), %0.2f pCorrect\n',60*stimulusLevels(ii),stimulusLevels(ii),pCorrect(ii));
+end
+fprintf('\n');
 
 %% Do a check on the answer
 %
@@ -318,14 +325,14 @@ end
 validationTolerance = 0.01;
 if (~isempty(options.validationThresholds))
     if (any(abs(threshold-options.validationThresholds)./options.validationThresholds > validationTolerance))
-        threshold
-        options.validationThresholds
+        fprintf('Threshold is %0.3f degs, %0.2f minutes; validation threshold is %0.3f degs\n',threshold,60*threshold, options.validationThresholds);
         error(sprintf('Do not replicate validation thresholds to %d%%. Check that parameters match, or for a bug.',round(100*validationTolerance)));
     else
         fprintf('Validation regression check passes\n');
+        fprintf('Threshold is %0.3f degs, %0.2f minutes\n',threshold,60*threshold);
     end
 else
-    threshold
     fprintf('No validation thresholds, validation regression check not run\n');
+    fprintf('Threshold is %0.3f degs, %0.2f minutes\n',threshold,60*threshold);
 end
 end
