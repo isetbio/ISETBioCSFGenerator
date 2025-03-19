@@ -307,7 +307,7 @@ if (options.visualEsOnMosaic)
 end
 
 %% Print out table of stimulus levels and pCorrect
-fprintf('Measured performance\n')
+fprintf('\nMeasured performance\n')
 for ii = 1:length(stimulusLevels)
     fprintf('%0.2f min (%0.3f deg), %0.2f pCorrect\n',60*stimulusLevels(ii),stimulusLevels(ii),pCorrect(ii));
 end

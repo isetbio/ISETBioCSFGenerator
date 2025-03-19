@@ -53,7 +53,9 @@ function [parameterValuesExamined,pCorrect] = plotPsychometricFunction(questObj,
     set(gca, 'YTick', 0:0.1:1, 'XScale', 'log');
 
     if (~isempty(xRange))
-        set(gca, 'XLim', xRange);
+        if (min(xRange) ~= max(xRange))
+            set(gca, 'XLim', xRange);
+        end
     end
 
     grid on; box off
