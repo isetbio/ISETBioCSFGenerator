@@ -27,7 +27,8 @@ arguments
     % Run with fast parameters overrides
     options.fastParams (1,1) logical = true;
 
-    % Keep rng doing the same thing each time for validation
+    % Keep rng doing the same thing each time for validation.
+    % 0 means don't touch the seed so we get random variation
     options.rngSeed (1,1) double = 12;
 
     % Print out/plot  more diagnostics, or not
@@ -55,7 +56,7 @@ arguments
 
      % Choose noise model
     %   Choices: 'Poisson'
-    %                  'Gaussian'
+    %            'Gaussian'
     options.whichNoisyInstanceNre (1,:) char = 'Poisson'
     options.gaussianSigma double = [];
 
@@ -107,7 +108,9 @@ end
 close all;
 
 %% Stabilize rng
-rng(options.rngSeed);
+if (options.rngSeed ~= 0)
+    rng(options.rngSeed);
+end
 
 %% Fast parameter overrides
 if (options.fastParams)
@@ -166,6 +169,7 @@ sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
 [sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOtumblingESceneEngine(sceneOptionsCell{:});
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
+backgroundSceneSequence = backgroundSceneEngine.compute(sceneParams.displayFOVDeg/5);
 
 %% Set up temporal filter if we have one.
 %
@@ -173,6 +177,7 @@ clear sce0 sce90 sce180 sce270
 % you want post-stimulus responses produced by the temporal filter, you
 % need to pad your input appropriately. That padding process is not
 % illustrated in this tutorial script.
+frameDurationSeconds = 1/backgroundSceneEngine.sceneParams.temporalModulationParams.frameRateHz;
 if (~isempty(options.temporalFilterValues))
     % Photocurrent filter computed and applied in nre
     if (ischar(options.temporalFilterValues) & strcmp(options.temporalFilterValues,'photocurrentImpulseResponseBased'))
@@ -182,13 +187,13 @@ if (~isempty(options.temporalFilterValues))
     elseif (ischar(options.temporalFilterValues) & strcmp(options.temporalFilterValues,'watsonFilter'))
         % Watson filter, computed here
         [~,watsonParams] = WatsonFilter([],[]);
-        temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
+        temporalFilter.temporalSupport = frameDurationSeconds*(0:options.temporalModulationParams_numFrame-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
         
     else
         % Filter explicitly passed
         temporalFilter.filterValues = options.temporalFilterValues;
-        temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
+        temporalFilter.temporalSupport = frameDurationSeconds*(0:options.temporalModulationParams_numFrame-1);
     end
 else
     temporalFilter = [];
@@ -207,6 +212,7 @@ noiseFreeResponseParams.opticsParams.defocusAmount = options.defocusDiopters;
 noiseFreeResponseParams.opticsParams.accommodatedWl = options.accommodatedWl;
 noiseFreeResponseParams.opticsParams.zCoeffs = zeros(66,1);
 noiseFreeResponseParams.opticsParams.defeatLCA = true;
+noiseFreeResponseParams.nullStimulusSceneSequence = backgroundSceneSequence;
 noiseFreeResponseParams.verbose = options.verbose;
 
 % Cone params
@@ -214,7 +220,7 @@ noiseFreeResponseParams.coneMosaicParams.wave = options.wave;
 noiseFreeResponseParams.coneMosaicParams.fovDegs = options.displayFOVDeg;
 noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
 noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = ...
-    1/backgroundSceneEngine.sceneParams.temporalModulationParams.frameRateHz;
+    frameDurationSeconds;
 
 % Temporal filter
 noiseFreeResponseParams.temporalFilter = temporalFilter;
@@ -256,10 +262,10 @@ switch (options.whichClassifierEngine)
         classifierEngine = responseClassifierEngine(@rceTemplateDistance);
         classifierPara = struct('trainFlag', 'none', ...
             'testFlag', 'random', ...
-            'nTrain', 1, 'nTest', options.nTest)
+            'nTrain', 1, 'nTest', options.nTest);
 
     otherwise
-        error('Unsupported rce specified')
+        error('Unsupported rce specified');
 end
 
 %% Parameters for threshold estimation/quest engine

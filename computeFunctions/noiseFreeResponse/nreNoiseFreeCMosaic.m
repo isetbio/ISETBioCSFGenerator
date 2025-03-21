@@ -247,6 +247,13 @@ else
 
     % Get the cone mosaic from the previously computed neural pipeline
     theConeMosaic = neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaic;
+
+    % Get the info for converting to contrast
+    coneMosaicNullResponse =  neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaicNullResponse;
+    coneMosaicNormalizingResponse = ...
+        neuralEngineOBJ.neuralPipeline.noiseFreeResponse.coneMosaicNormalizingResponse;
+
+    % No need to store anything
     returnTheNoiseFreePipeline = false;
 end
 
@@ -289,6 +296,19 @@ else
         'nTrials', 1, ...
         'withFixationalEyeMovements', true ...
         );
+end
+
+% Transform the cone excitation responses to cone modulation responses if
+% needed.
+if (~isempty(coneMosaicNullResponse))
+    % Transform the noise-free cone mosaic response modulation to a contrast response
+    % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
+    % This mimics the photocurrent response which is normalized with respect to the
+    % mean cone activations.
+    theNeuralResponses = ...
+            bsxfun(@times, bsxfun(@minus, theNeuralResponses, ...
+            coneMosaicNullResponse), ...
+            coneMosaicNormalizingResponse);
 end
 
 %% Put neural responses into the right format
@@ -436,6 +456,8 @@ dataOut = struct(...
 if (returnTheNoiseFreePipeline)
     dataOut.noiseFreeResponsePipeline.optics = theOptics;
     dataOut.noiseFreeResponsePipeline.coneMosaic = theConeMosaic;
+    dataOut.noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
+    dataOut.noiseFreeResponsePipeline.coneMosaicNormalizingResponse = coneMosaicNormalizingResponse;
 end
 end
 
