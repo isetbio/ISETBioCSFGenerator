@@ -2,7 +2,7 @@ function [timp,filterParams] = WatsonFilter(filterParams,tSecs)
 % Return the temporal impulse function suggested by Watson.
 %
 % Synopsis:
-%    timp = WatsonFilter(filterParams,tmSecs) 
+%    timp = WatsonFilter(filterParams,tSecs) 
 %
 % Description:
 %    Return the temporal impulse response function as described in Watson's
@@ -13,6 +13,7 @@ function [timp,filterParams] = WatsonFilter(filterParams,tSecs)
 %                                     is an example that indicates the
 %                                     fields, as well as the default values
 %                                     if filterParams is passed as [].
+%                                         filterParams.type = 'watson';            % filter type      
 %                                         filterParams.integrationTime = 10;   % integration time in msec
 %                                         filterParams.tau = 6.25;                    % time constant in msec
 %                                         filterParams.k = 1.33;                       % scaling factor for the time constant of the second filter (which equals k*tau)
@@ -20,7 +21,7 @@ function [timp,filterParams] = WatsonFilter(filterParams,tSecs)
 %                                         filterParams.n2 = 10;                        % number of stages for the second filter
 %                                         filterParams.zeta = 1;                       % transience factor (0 = no adaptation/sustained; 1 = full adaptation/transient)
 %                                         filterParams.xi = 22;                         % sensitivity factor (sensitivity factor or gain that scales the impulse response and amplitude response up or down in amplitude)
-%   tSecs                   - Timebase in seconds for the impulse response
+%   tSecs                   - Timebase in seconds for the impulse response, in seconds
 %
 % Outputs:
 %   timp                        - The temporal impulse response

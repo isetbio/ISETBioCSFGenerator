@@ -74,6 +74,7 @@ arguments
     %
     % It can also be 'watsonFilter'
     options.temporalFilterValues (1,:) = []
+    options.watsonParams_tau = 6.25;
 
     % Choose classifier engine
     %    rcePoisson - signal known exactly Poission max likelihood
@@ -187,6 +188,7 @@ if (~isempty(options.temporalFilterValues))
     elseif (ischar(options.temporalFilterValues) & strcmp(options.temporalFilterValues,'watsonFilter'))
         % Watson filter, computed here
         [~,watsonParams] = WatsonFilter([],[]);
+        watsonParams.tau = options.wastonParams_tau;
         temporalFilter.temporalSupport = frameDurationSeconds*(0:options.temporalModulationParams_numFrame-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
         

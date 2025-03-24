@@ -31,10 +31,10 @@ function dataOut = nreNoiseFreeCMosaic(...
 %    directly - it should be called by the compute method of its parent
 %    @neuralResponseEngine.
 %
-%    In addition to computing, this function checks the `visualizeEachCompute` 
+%    In addition to computing, this function checks the `visualizeEachCompute`
 %    flag of the neuralEngineOBJ and, if it set, calls the nreVisualizeCMosaic()
 %    visualization function. This causes figures to appear that visualize
-%    the noise-free spatiotemporal activation of the cone mosaic, along with 
+%    the noise-free spatiotemporal activation of the cone mosaic, along with
 %    any eye movements that may be in effect, which is helpful for debugging.
 %    Note that everything runs much more slowly in this case.
 %
@@ -306,9 +306,9 @@ if (~isempty(coneMosaicNullResponse))
     % This mimics the photocurrent response which is normalized with respect to the
     % mean cone activations.
     theNeuralResponses = ...
-            bsxfun(@times, bsxfun(@minus, theNeuralResponses, ...
-            coneMosaicNullResponse), ...
-            coneMosaicNormalizingResponse);
+        bsxfun(@times, bsxfun(@minus, theNeuralResponses, ...
+        coneMosaicNullResponse), ...
+        coneMosaicNormalizingResponse);
 end
 
 %% Put neural responses into the right format
@@ -336,7 +336,7 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
                     else
                         % Retrieve the null stimulus scene sequence
                         nullStimulusSceneSequence = noiseFreeComputeParams.nullStimulusSceneSequence;
-            
+
                         % Compute the optical image of the null scene
                         listOfNullOpticalImages = cell(1, framesNum);
                         for frame = 1:framesNum
@@ -344,39 +344,38 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
                         end
                         nullOIsequence = oiArbitrarySequence(listOfNullOpticalImages, sceneSequenceTemporalSupport);
                         clear listOfNullOpticalImages;
-            
+
                         % Compute theConeMosaicNullResponse, i.e., the input cone mosaic response to the NULL scene
                         coneMosaicNullResponse = theConeMosaic.compute(...
                             nullOIsequence, ...
                             'nTrials', 1);
                     end
-                end % if (~exist('coneMosaicNullResponse', 'var'))|| (isempty(coneMosaicNullResponse))
+                end % if (~exist('coneMosaicNullResponse', 'var'))|| (isempty(coneMosaicNullResponse)
 
+                % Call the standalone photocurrent impulse response compute function
+                % The contrast of the impulse stimulus
+                theConeFlashImpulseContrast = 0.01*[1 1 1];
+
+                % Visualize the computed impulse responses only if the
+                % neuralEngineOBJ.visualizeEachCompute flag has been set to true
+                visualizePhotocurrentImpulseResponses = neuralEngineOBJ.visualizeEachCompute;
+
+                % Compute the impulse responses
+                thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseResponses(...
+                    theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, framesNum, ...
+                    visualizePhotocurrentImpulseResponses);
+
+                % Retrieve the computed filterValues and its temporal support from the returned photocurrentImpulseResponseStruct
+                filterTemporalSupport = thePhotocurrentImpulseResponseStruct.temporalSupportSeconds;
+
+                % Ensure temporal support are consistent
+                assert(all(size(filterTemporalSupport) == size(temporalSupportSeconds)), 'mismatch in temporal support lengths');
+                assert(all(temporalSupportSeconds == filterTemporalSupport), 'mismatch in temporal support values');
+
+                filterValues = thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse;
             otherwise
                 error('Unsupported temporal filter method: ''%s''.', filterValues);
         end % switch
-
-        % Call the standalone photocurrent impulse response compute function
-        % The contrast of the impulse stimulus
-        theConeFlashImpulseContrast = 0.01*[1 1 1];
-
-        % Visualize the computed impulse responses only if the
-        % neuralEngineOBJ.visualizeEachCompute flag has been set to true
-        visualizePhotocurrentImpulseResponses = neuralEngineOBJ.visualizeEachCompute;
-
-        % Compute the impulse responses
-        thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseResponses(...
-            theConeMosaic, coneMosaicNullResponse, theConeFlashImpulseContrast, framesNum, ...
-            visualizePhotocurrentImpulseResponses);
-
-        % Retrieve the computed filterValues and its temporal support from the returned photocurrentImpulseResponseStruct
-        filterTemporalSupport = thePhotocurrentImpulseResponseStruct.temporalSupportSeconds;
-
-        % Ensure temporal support are consistent
-        assert(all(size(filterTemporalSupport) == size(temporalSupportSeconds)), 'mismatch in temporal support lengths');
-        assert(all(temporalSupportSeconds == filterTemporalSupport), 'mismatch in temporal support values');
-        
-        filterValues = thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse;
 
     else % ~ischar(filterValues)
         filterTemporalSupport = noiseFreeComputeParams.temporalFilter.temporalSupport;
