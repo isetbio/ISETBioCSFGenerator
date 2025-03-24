@@ -188,7 +188,7 @@ if (~isempty(options.temporalFilterValues))
     elseif (ischar(options.temporalFilterValues) & strcmp(options.temporalFilterValues,'watsonFilter'))
         % Watson filter, computed here
         [~,watsonParams] = WatsonFilter([],[]);
-        watsonParams.tau = options.wastonParams_tau;
+        watsonParams.tau = options.watsonParams_tau;
         temporalFilter.temporalSupport = frameDurationSeconds*(0:options.temporalModulationParams_numFrame-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
         
