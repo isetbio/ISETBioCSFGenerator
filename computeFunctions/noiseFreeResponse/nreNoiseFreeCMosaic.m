@@ -177,11 +177,13 @@ opticsType = p.Results.opticsType;
 oiPadMethod = p.Results.oiPadMethod;
 verbose = p.Results.verbose;
 
+
 % Check input arguments. If called with zero input arguments, just return the default params struct
 if (nargin == 0 | isempty(neuralEngineOBJ))
     dataOut = generateDefaultParams(opticsType,oiPadMethod);
     return;
 end
+
 
 % Get the number of scene sequence frames
 framesNum = numel(sceneSequence);
@@ -302,7 +304,8 @@ end
 % needed.
 %
 % CHECK PARAMETERS AS WELL JUST TO BE SAFE.
-if (~isempty(coneMosaicNullResponse))
+% if (~isempty(coneMosaicNullResponse)) - NPC: CHANGED THIS CHECK TO THE BELOW
+if (strcmp(noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast'))
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.
     % This mimics the photocurrent response which is normalized with respect to the
@@ -380,11 +383,18 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
                 noiseFreeComputeParams.temporalFilter.temporalSupport = filterTemporalSupport;
                 noiseFreeComputeParams.temporalFilter.filterValues = filterValues;
 
+                % Update the noiseFreeComputeParams with the newly computed temporal filter so we can cache it and not have to recompute it again
+                neuralEngineOBJ.updateParamsStruct(noiseFreeComputeParams, neuralEngineOBJ.noisyInstancesComputeParams);
+
+                %fprintf(2, 'We are re-computing the filter values\n')
+                %pause
             otherwise
                 error('Unsupported temporal filter method: ''%s''.', filterValues);
         end % switch
 
     else % ~ischar(filterValues)
+        %fprintf(2, 'We retrieve the CACHED filter values instead of recomputing them !!!')
+        %pause
         filterTemporalSupport = noiseFreeComputeParams.temporalFilter.temporalSupport;
     end
 
