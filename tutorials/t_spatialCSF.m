@@ -747,7 +747,7 @@ for idx = 1:length(spatialFreqs)
 
         % Check that we aren't trying to vary EMs across contrasts, which
         % is not currently possible.
-        if (~sameEMsEachContrast )
+        if (~sameEMsEachContrast)
             error('Varying EMs across contrasts in threshold determination not currently supported by computeThreshold');
         end
 

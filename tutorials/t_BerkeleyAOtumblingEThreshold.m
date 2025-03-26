@@ -19,7 +19,7 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
     % ISETBerkeleyAO project.  Those call into this tutorial function.
     t_BerkeleyAOtumblingEThreshold( ...
         'visualizeScene', false, ...
-        'validationThresholds',[0.0268]);
+        'validationThresholds',[0.028]);
 %}
 
 %% Pick up optional arguments
@@ -34,7 +34,11 @@ arguments
     % Print out/plot  more diagnostics, or not
     options.verbose (1,1) logical = false;
     options.visualEsOnMosaic (1,1) logical = false;
+
     options.visualizeScene (1,1) logical = true;
+    options.scenePdfFileBase (1,:) char = '';
+
+    options.plotPsychometric (1,1) logical = true;
 
     % Wavelength support
     options.wave (:,1) double = (500:5:870)';
@@ -73,7 +77,7 @@ arguments
     % case the filter values are computed on the fly
     %
     % It can also be 'watsonFilter'
-    options.temporalFilterValues (1,:) = []
+    options.temporalFilterValues (1,:) = [];
     options.watsonParams_tau = 6.25;
 
     % Choose classifier engine
@@ -125,6 +129,7 @@ end
 % Scene parameters default overrides
 aoSceneParams = struct( ...
     'visualizeScene', options.visualizeScene, ...
+    'scenePdfFileBase', options.scenePdfFileBase, ...
     'pupilSizeMM', options.pupilDiameterMm, ...
     'displayNPixels', options.displayNPixels, ...
     'displayFOVDeg', options.displayFOVDeg, ...
@@ -196,6 +201,9 @@ if (~isempty(options.temporalFilterValues))
         % Filter explicitly passed
         temporalFilter.filterValues = options.temporalFilterValues;
         temporalFilter.temporalSupport = frameDurationSeconds*(0:options.temporalModulationParams_numFrame-1);
+        if (length(temporalFilter.values) ~= length(temporalFilter.temporalSupport))
+            error('Passed temporal filter values not matched in length to computed temporal filter support');
+        end
     end
 else
     temporalFilter = [];
@@ -303,9 +311,18 @@ logMAR = log10(10.^logThreshold*60/5);
 threshold = 10.^logThreshold;
 
 %% Plot the derived psychometric function and other things. 
-pdfFileName = [];
-[stimulusLevels, pCorrect] = plotPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
-    thresholdPara,pdfFileName, 'xRange', [options.minLetterSizeMinutes/60  options.maxLetterSizeMinutes/60]);
+if (options.plotPsychometric)
+    pdfFileName = [];
+    [stimulusLevels, pCorrect] = plotPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
+        thresholdPara,pdfFileName, 'xRange', [options.minLetterSizeMinutes/60  options.maxLetterSizeMinutes/60]);
+
+    % Print out table of stimulus levels and pCorrect
+    fprintf('\nMeasured performance\n')
+    for ii = 1:length(stimulusLevels)
+        fprintf('%0.2f min (%0.3f deg), %0.2f pCorrect\n',60*stimulusLevels(ii),stimulusLevels(ii),pCorrect(ii));
+    end
+    fprintf('\n');
+end
 if (options.visualEsOnMosaic)
     % This runs but I am not sure it is actually showing the stimulus.
     % Might have to do with the fact that the stimulus is at 840 nm.
@@ -314,12 +331,7 @@ if (options.visualEsOnMosaic)
        pdfFileName);
 end
 
-%% Print out table of stimulus levels and pCorrect
-fprintf('\nMeasured performance\n')
-for ii = 1:length(stimulusLevels)
-    fprintf('%0.2f min (%0.3f deg), %0.2f pCorrect\n',60*stimulusLevels(ii),stimulusLevels(ii),pCorrect(ii));
-end
-fprintf('\n');
+%
 
 %% Do a check on the answer
 %

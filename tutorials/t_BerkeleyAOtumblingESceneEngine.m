@@ -61,6 +61,8 @@ function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOtumblingESce
 
 arguments
     options.visualizeScene (1,1) logical = true;
+    options.scenePdfFileBase (1,:) char = '';
+
     options.displayNPixels (1,1) double = 512;
     options.displayFOVDeg (1,1) double = 1.413;
     options.wave (:,1) double = (500:5:870)';
@@ -80,8 +82,6 @@ arguments
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
     options.temporalModulationParams_stimOnFrames (1,:) double = [1 1 1];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
-    options.responseFlag (1,:) char = 'excitations';
-    options.exportCondition (1,:) char = 'no change';
 end
 
 % Initialize
@@ -289,7 +289,11 @@ for ff = 1:length(theSmallEsceneSequence0degs)
         set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
         projectBaseDir = ISETBioCSFGeneratorRootPath;
-        pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
+        if (isempty(options.scenePdfFileBase))
+            pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
+        else
+            pdfFile = [options.scenePdfFileBase sprintf('_frame%d.pdf',ff)];
+        end
         NicePlot.exportFigToPDF(pdfFile,hFig, 300);
     end
 end
