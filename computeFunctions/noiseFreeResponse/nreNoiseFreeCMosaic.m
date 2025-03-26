@@ -375,6 +375,11 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
                 assert(all(temporalSupportSeconds == filterTemporalSupport), 'mismatch in temporal support values');
 
                 filterValues = thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse;
+
+                % Save the temporal filter for returning it in dataOut
+                noiseFreeComputeParams.temporalFilter.temporalSupport = filterTemporalSupport;
+                noiseFreeComputeParams.temporalFilter.filterValues = filterValues;
+
             otherwise
                 error('Unsupported temporal filter method: ''%s''.', filterValues);
         end % switch
@@ -457,6 +462,7 @@ dataOut = struct(...
 if (returnTheNoiseFreePipeline)
     dataOut.noiseFreeResponsePipeline.optics = theOptics;
     dataOut.noiseFreeResponsePipeline.coneMosaic = theConeMosaic;
+    dataOut.noiseFreeResponsePipeline.temporalFilter = noiseFreeComputeParams.temporalFilter;
     dataOut.noiseFreeResponsePipeline.coneMosaicNullResponse = coneMosaicNullResponse;
     dataOut.noiseFreeResponsePipeline.coneMosaicNormalizingResponse = coneMosaicNormalizingResponse;
 end
