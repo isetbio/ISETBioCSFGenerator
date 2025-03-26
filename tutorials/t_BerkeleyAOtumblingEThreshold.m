@@ -1,5 +1,5 @@
 function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometricParams, ...
-    trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
+    trialByTrialStimulusAlternatives, trialByTrialPerformance, thresholdPara] = ...
     t_BerkeleyAOtumblingEThreshold(options)
 % Compute tumbling E threshold with AO optics
 %
@@ -33,7 +33,8 @@ arguments
 
     % Print out/plot  more diagnostics, or not
     options.verbose (1,1) logical = false;
-    options.visualEsOnMosaic (1,1) logical = false;
+    options.visualizeEsOnMosaic (1,1) logical = false;
+    options.visualizeEsFileBase (1,:) char = '';
 
     options.visualizeScene (1,1) logical = true;
     options.scenePdfFileBase (1,:) char = '';
@@ -312,9 +313,9 @@ threshold = 10.^logThreshold;
 
 %% Plot the derived psychometric function and other things. 
 if (options.plotPsychometric)
-    pdfFileName = [];
+    pdfFileName = options.scenePdfFileBase;
     [stimulusLevels, pCorrect] = plotPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
-        thresholdPara,pdfFileName, 'xRange', [options.minLetterSizeMinutes/60  options.maxLetterSizeMinutes/60]);
+        thresholdPara, pdfFileName, 'xRange', [options.minLetterSizeMinutes/60  options.maxLetterSizeMinutes/60]);
 
     % Print out table of stimulus levels and pCorrect
     fprintf('\nMeasured performance\n')
@@ -323,15 +324,18 @@ if (options.plotPsychometric)
     end
     fprintf('\n');
 end
-if (options.visualEsOnMosaic)
+if (options.visualizeEsOnMosaic)
     % This runs but I am not sure it is actually showing the stimulus.
     % Might have to do with the fact that the stimulus is at 840 nm.
-    visualizeSimulationResults(questObj, threshold, fittedPsychometricParams, ...
-        thresholdPara, tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
-       pdfFileName);
+    if (~isempty(options.visualizeEsFileBase))
+        pdfFileName = [options.visualizeEsFileBase '_VisualizeEsOnMosaic.pdf'];
+    else
+        pdfFileName = [];
+    end
+    visualizeAOTumblingESimulationResults(questObj, threshold, fittedPsychometricParams, ...
+        thresholdPara, options.visualizeEsWhichFrame, tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
+        pdfFileName);
 end
-
-%
 
 %% Do a check on the answer
 %
