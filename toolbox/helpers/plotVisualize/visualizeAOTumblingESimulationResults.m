@@ -59,7 +59,7 @@ function visualizeAOTumblingESimulationResults(questObj, threshold, fittedPsycho
             if (letterRotationIndex == 1)
                 % Compute the background scene
                 theSceneSequence = backgroundSceneEngine.compute(letterSizeDegs);
-                theBackgroundScene = theSceneSequence{1};
+                theBackgroundScene = theSceneSequence{whichSceneFrame};
             end
 
             % Compute the optical image of the test scene
