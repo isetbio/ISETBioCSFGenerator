@@ -1,5 +1,5 @@
 function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychometricParams, ...
-    trialByTrialStimulusAlternatives,trialByTrialPerformance,trialByTrialResponses] = ...
+    trialByTrialStimulusAlternatives,trialByTrialPerformance,triailByTrialWhichResponses] = ...
     computeThreshold(theSceneEngine, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, varargin)
 % Compute contrast threshold for different scenes, neural response engine, 
@@ -8,7 +8,7 @@ function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychomet
 %
 % Syntax:
 %    [logThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
-%        trialByTrialStimulusAlternatives,trialByTrialPerformance,trialByTrialResponses] = computeThreshold( ...
+%        trialByTrialStimulusAlternatives,trialByTrialPerformance,triailByTrialWhichResponses] = computeThreshold( ...
 %        theSceneEngine, theNeuralEngine, classifierEngine, ...
 %        classifierPara, thresholdPara, questEnginePara)  
 %
@@ -72,7 +72,7 @@ function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychomet
 %   trialByTrialPerformance   - One more dictionary matched to
 %                               trialByTrialStimulusAlternatives that gives correct (1) or incorrect
 %                               (0) for each trial.
-%   trialByTrialResponses     - One more dictionary matched to
+%   triailByTrialWhichResponses     - One more dictionary matched to
 %                               trialByTrialStimulusAlternatives that gives response (same codes as whichAlternatives) for each trial.
 %
 % Optional key/value pairs:
@@ -234,7 +234,7 @@ end
 psychometricFunction = containers.Map();
 trialByTrialStimulusAlternatives = containers.Map();
 trialByTrialPerformance = containers.Map();
-trialByTrialResponses = containers.Map();
+triailByTrialWhichResponses = containers.Map();
 
 testCounter = 0;
 stimCounter = 0;
@@ -441,7 +441,7 @@ while (nextFlag)
         % TRAIN-AND-PREDICT BRANCH OF THE CODE.  BUT SAVING THAT FOR A
         % MOMENT WHEN EVERYTHING IS A BIT MORE STABLE.
         if (nTrainFixationalEMPaths == 1 && nTestFixationalEMPaths == 1)
-            [predictions, ~, responses, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
+            [predictions, ~, ~, whichAltenatives, whichResponses] = computePerformance(theSceneSequences{testedIndex}, ...
                 theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
                 theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
                 'TAFC', isTAFC, ...
@@ -473,7 +473,7 @@ while (nextFlag)
                 end
 
                 % Predict
-                [predictionsTemp, ~, responsesTemp, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                [predictionsTemp, ~, ~, whichAltenativesTemp, whichResponsesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
                     theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
@@ -486,7 +486,7 @@ while (nextFlag)
                 % Accumulate predictions over EM paths
                 predictions = [predictions ; predictionsTemp];
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
-                responses = [responses ; responsesTemp];
+                whichResponses = [whichResponses ; whichResponsesTemp];
             end
 
             % Restore test EM object paths
@@ -511,7 +511,7 @@ while (nextFlag)
             % Loop over training EM paths getting predictions for each
             for eeTrain = 1:nTrainFixationalEMPaths
                 % Predict
-                [predictionsTemp, ~, responsesTemp, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                [predictionsTemp, ~, ~, whichAltenativesTemp, whichResponsesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
                     theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
@@ -524,7 +524,7 @@ while (nextFlag)
                 % Accumulate predictions over EM paths
                 predictions = [predictions ; predictionsTemp];
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
-                responses = [responses ; responsesTemp];
+                whichResponses = [whichResponses ; whichResponsesTemp];
 
             end
 
@@ -553,7 +553,7 @@ while (nextFlag)
                 end
 
                 % Predict
-                [predictionsTemp, ~, responseTemp, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                [predictionsTemp, ~, ~, whichAltenativesTemp, whichResponsesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
                     theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
@@ -566,7 +566,7 @@ while (nextFlag)
                 % Accumulate predictions over EM paths
                 predictions = [predictions ; predictionsTemp];
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
-                responses = [responses ; responsesTemp];
+                whichResponses = [whichResponses ; whichResponsesTemp];
             end
 
             % Restore train and test EM object paths
@@ -581,7 +581,7 @@ while (nextFlag)
         % contrast level.  Also the trial-by-trial containers.
         psychometricFunction(contrastLabel) = mean(predictions);
         trialByTrialStimulusAlternatives(contrastLabel) = whichAlternatives;
-        trialByTrialResponses(contrastLabel) = responses;
+        triailByTrialWhichResponses(contrastLabel) = whichResponses;
         trialByTrialPerformance(contrastLabel) = predictions';    
         if (verbose)
             fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
@@ -632,7 +632,7 @@ while (nextFlag)
         % Now predict. Handle each of the four fixations EM cases
         % separately.
         if (nTrainFixationalEMPaths == 1 && nTestFixationalEMPaths == 1)
-            [predictions, ~, responses, whichAlternatives] = computePerformance(theSceneSequences{testedIndex}, ...
+            [predictions, ~, ~, whichAltenatives, whichResponses] = computePerformance(theSceneSequences{testedIndex}, ...
                 theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
                 theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
                 'TAFC', isTAFC, ...
@@ -664,7 +664,7 @@ while (nextFlag)
                 end
 
                 % Predict
-                [predictionsTemp, ~, responsesTemp, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                [predictionsTemp, ~, ~, whichAltenativesTemp, whichResponsesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
                     theNeuralEngine, theTrainedClassifierEngines{testedIndex}{1}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
@@ -677,7 +677,7 @@ while (nextFlag)
                 % Accumulate predictions over EM paths
                 predictions = [predictions ; predictionsTemp];
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
-                responses = [responses ; responsesTemp];
+                whichResponses = [whichResponses ; whichResponsesTemp];
             end
 
             % Restore test EM object paths
@@ -702,7 +702,7 @@ while (nextFlag)
             % Loop over training EM paths getting predictions for each
             for eeTrain = 1:nTrainFixationalEMPaths
                 % Predict
-                [predictionsTemp, ~, responsesTemp, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                [predictionsTemp, ~, ~, whichAltenativesTemp, whichResponsesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, nTestPerEMPath, ...
                     theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
@@ -715,7 +715,7 @@ while (nextFlag)
                 % Accumulate predictions over EM paths
                 predictions = [predictions ; predictionsTemp];
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
-                responses = [responses ; responsesTemp];
+                whichResponses = [whichResponses ; whichResponsesTemp];
             end
 
         else
@@ -742,7 +742,7 @@ while (nextFlag)
                 end
 
                 % Predict
-                [predictionsTemp, ~, responsesTemp, whichAlternativesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
+                [predictionsTemp, ~, ~, whichAltenativesTemp, whichResponsesTemp] = computePerformance(theSceneSequences{testedIndex}, ...
                     theSceneTemporalSupportSeconds, 0, classifierPara.nTest, ...
                     theNeuralEngine, theTrainedClassifierEngines{testedIndex}{eeTrain}, [], classifierPara.testFlag, ...
                     'TAFC', isTAFC, ...
@@ -755,7 +755,7 @@ while (nextFlag)
                 % Accumulate predictions over EM paths
                 predictions = [predictions ; predictionsTemp];
                 whichAlternatives = [whichAlternatives ; whichAlternativesTemp];
-                responses = [responses ; responsesTemp];
+                whichResponses = [whichResponses ; whichResponsesTemp];
             end
 
             % Restore train EM object paths
@@ -785,9 +785,9 @@ while (nextFlag)
         currentTemp = cat(1,prevTemp,whichAlternatives);
         trialByTrialStimulusAlternatives(contrastLabel) = currentTemp;
 
-        prevTemp = trialByTrialResponses(contrastLabel);
-        currentTemp = cat(1,prevTemp,responses);
-        trialByTrialResponses(contrastLabel) = currentTemp;
+        prevTemp = triailByTrialWhichResponses(contrastLabel);
+        currentTemp = cat(1,prevTemp,whichResponses);
+        triailByTrialWhichResponses(contrastLabel) = currentTemp;
 
         prevTemp = trialByTrialPerformance(contrastLabel);
         currentTemp = cat(1,prevTemp,predictions');
