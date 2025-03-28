@@ -34,6 +34,7 @@ arguments
     % Print out/plot  more diagnostics, or not
     options.verbose (1,1) logical = false;
     options.visualizeEsOnMosaic (1,1) logical = false;
+    options.visualizeEsWhichFrames (1,:) double = 1;
     options.visualizeEsFileBase (1,:) char = '';
 
     options.visualizeScene (1,1) logical = true;
@@ -327,14 +328,16 @@ end
 if (options.visualizeEsOnMosaic)
     % This runs but I am not sure it is actually showing the stimulus.
     % Might have to do with the fact that the stimulus is at 840 nm.
-    if (~isempty(options.visualizeEsFileBase))
-        pdfFileName = [options.visualizeEsFileBase '_VisualizeEsOnMosaic.pdf'];
-    else
-        pdfFileName = [];
+    for ff = 1:length(options.visualizeEsWhichFrames)
+        if (~isempty(options.visualizeEsFileBase))
+            pdfFileName = [options.visualizeEsFileBase '_VisualizeEsOnMosaic_Frame' num2str(options.visualizeEsWhichFrames(ff)) '.pdf'];
+        else
+            pdfFileName = [];
+        end
+        visualizeAOTumblingESimulationResults(questObj, threshold, fittedPsychometricParams, ...
+            thresholdPara, options.visualizeEsWhichFrames(ff), tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
+            pdfFileName);
     end
-    visualizeAOTumblingESimulationResults(questObj, threshold, fittedPsychometricParams, ...
-        thresholdPara, options.visualizeEsWhichFrame, tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
-        pdfFileName);
 end
 
 %% Do a check on the answer

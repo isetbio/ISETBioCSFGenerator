@@ -290,9 +290,9 @@ for ff = 1:length(theSmallEsceneSequence0degs)
 
         projectBaseDir = ISETBioCSFGeneratorRootPath;
         if (isempty(options.scenePdfFileBase))
-            pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
+            pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_Frame%d.pdf',ff));
         else
-            pdfFile = [options.scenePdfFileBase sprintf('_frame%d.pdf',ff)];
+            pdfFile = [options.scenePdfFileBase sprintf('_Frame%d.pdf',ff)];
         end
         NicePlot.exportFigToPDF(pdfFile,hFig, 300);
     end
