@@ -45,6 +45,10 @@ function t_WatsonTemporalFilterWithEyeMovements(options)
 
     t_WatsonTemporalFilterWithEyeMovements(...
         'fixationalEyeMovements', false);
+%}
+%{
+   % ETTBSkip
+   % Don't run very slow examples when autorunning the examples.
 
     t_WatsonTemporalFilterWithEyeMovements(...
         'fixationalEyeMovements', true, ...
