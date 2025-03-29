@@ -19,7 +19,7 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
     % ISETBerkeleyAO project.  Those call into this tutorial function.
     t_BerkeleyAOTumblingEThreshold( ...
         'visualizeScene', false, ...
-        'validationThresholds',[0.028]);  % CURRENTLY GETTING 0.027
+        'validationThresholds',[0.027]);
 %}
 
 %% Pick up optional arguments
