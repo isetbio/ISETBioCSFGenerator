@@ -1,4 +1,4 @@
-function [predictions, theClassifierEngine, responses, whichAlternatives] = computePerformance(theScenes, ...
+function [predictions, theClassifierEngine, responses, whichAlternatives, whichResponses] = computePerformance(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     varargin)
 % Compute performance of a classifier given different scenes, a neural
@@ -71,12 +71,16 @@ function [predictions, theClassifierEngine, responses, whichAlternatives] = comp
 %     theClassifierEngine    - Trained version of passed classifier object.
 %     responses              - Neural responses computed for testing,
 %                              Returned as empty if nTest == 0;
-%     whichAlternatives      - Vector with integers that tells us which
+%     whichAlternatives      - Vector with integers that tell us which
 %                              stimulus alternative was presented on each
 %                              of the stimulated test trials.  This should have
 %                              the same length as the predictions vector
-%                              returned. This is currently only meaningful
-%                              for the rcePoisson calssification engine.
+%                              returned.
+%                              If nTest == 0, this is returned as empty.
+%     whichResponses        -  Vector with integers that tell us which
+%                              alternative the classifier picked on each trial.
+%                              Currently only meaningful for rcePoisson and
+%                              rceTemplateDistance classifiers.
 %                              If nTest == 0, this is returned as empty.
 %
 % Optional key/value pairs:
@@ -331,6 +335,9 @@ if (nTest ~= 0)
     % Set return variable.  For each trial 0 means wrong and 1 means right.
     % Taking mean(response) gives fraction correct.
     predictions = dataOut.trialPredictions;
+
+    % Set whichResponses return variable
+    whichResponses = dataOut.whichAlternativePredicted;
 
 else
     % Not testing, only training
