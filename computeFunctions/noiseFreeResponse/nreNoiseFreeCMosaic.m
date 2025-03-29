@@ -302,9 +302,6 @@ end
 
 % Transform the cone excitation responses to cone modulation responses if
 % needed.
-%
-% CHECK PARAMETERS AS WELL JUST TO BE SAFE.
-% if (~isempty(coneMosaicNullResponse)) - NPC: CHANGED THIS CHECK TO THE BELOW
 if (strcmp(noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast'))
     % Transform the noise-free cone mosaic response modulation to a contrast response
     % i.e., relative to the cone mosaic response to the null (zero contrast) stimulus.

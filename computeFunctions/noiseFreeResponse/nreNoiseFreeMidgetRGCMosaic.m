@@ -314,6 +314,12 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
             % want to pad the input with extra zero frames.
             filteredResponse = conv(theResponse,filterValues(:));
 
+            % Just return the values at time points where we had input.
+            % I had thought that this is what calling the conv function
+            % with the 'same' argument would do, but it picks out the
+            % center of the full return, which is not what we want.
+            filteredResponse = filteredResponse(1:nTimePoints);
+
             % Put it back
             newNeuralResponses(ii,jj,:) = filteredResponse;
         end
