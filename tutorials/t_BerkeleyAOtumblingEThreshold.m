@@ -1,6 +1,6 @@
 function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometricParams, thresholdPara, ...
     trialByTrialStimulusAlternatives, trialByTrialPerformance, trialByTrialWhichResponses] = ...
-    t_BerkeleyAOtumblingEThreshold(options)
+    t_BerkeleyAOTumblingEThreshold(options)
 % Compute tumbling E threshold with AO optics
 %
 % This takes a number of key/value pairs that control its detailed
@@ -11,13 +11,13 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
 % contrast, and responses do not scale as a linear function of size the way
 % they do with contrast.
 %
-% See also t_BerkeleyAOtumblingESceneEngine.
+% See also t_BerkeleyAOTumblingESceneEngine.
 
 % Examples:
 %{
     % Run with default parameters.  More examples are available in the
     % ISETBerkeleyAO project.  Those call into this tutorial function.
-    t_BerkeleyAOtumblingEThreshold( ...
+    t_BerkeleyAOTumblingEThreshold( ...
         'visualizeScene', false, ...
         'validationThresholds',[0.028]);  % CURRENTLY GETTING 0.027
 %}
@@ -174,7 +174,7 @@ end
 % try to match things up as best as possible.  One thing it doesn't return
 % is its four hard coded orientaions, so we build that here for use below.
 sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
-[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOtumblingESceneEngine(sceneOptionsCell{:});
+[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOTumblingESceneEngine(sceneOptionsCell{:});
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
 backgroundSceneSequence = backgroundSceneEngine.compute(sceneParams.displayFOVDeg/5);

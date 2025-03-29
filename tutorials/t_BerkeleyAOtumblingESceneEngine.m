@@ -1,4 +1,4 @@
-function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOtumblingESceneEngine(options)
+function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOTumblingESceneEngine(options)
 % Show how to describe and control a tumbling E stimulus as presented in
 % the Berkeley (Tuten lab) AO system.
 %
