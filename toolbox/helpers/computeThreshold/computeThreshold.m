@@ -455,7 +455,7 @@ while (nextFlag)
             % Set up accumulation variable
             predictions = [];
             whichAlternatives = [];
-            responses = [];
+            whichResponses = [];
 
              % Make sure numbers work out
             if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
@@ -500,7 +500,7 @@ while (nextFlag)
             % Set up accumulation variable
             predictions = [];
             whichAlternatives = [];
-            responses = [];
+            whichResponses = [];
 
              % Make sure numbers work out
             if (rem(classifierPara.nTest,nTrainFixationalEMPaths) ~= 0)
@@ -532,7 +532,7 @@ while (nextFlag)
             % Set up accumulation variable
             predictions = [];
             whichAlternatives = [];
-            responses = [];
+            whichResponses = [];
 
             % Make sure numbers work out
             if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
@@ -646,7 +646,7 @@ while (nextFlag)
             % Set up accumulation variable
             predictions = [];
             whichAlternatives = [];
-            responses = [];
+            whichResponses = [];
 
              % Make sure numbers work out
             if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)
@@ -691,7 +691,7 @@ while (nextFlag)
             % Set up accumulation variable
             predictions = [];
             whichAlternatives = [];
-            responses = [];
+            whichResponses = [];
 
              % Make sure numbers work out
             if (rem(classifierPara.nTest,nTrainFixationalEMPaths) ~= 0)
@@ -722,7 +722,7 @@ while (nextFlag)
             % Set up accumulation variable
             predictions = [];
             whichAlternatives = [];
-            responses = [];
+            whichResponses = [];
 
             % Make sure numbers work out
             if (rem(classifierPara.nTest,nTestFixationalEMPaths) ~= 0)

@@ -337,7 +337,7 @@ if (nTest ~= 0)
     predictions = dataOut.trialPredictions;
 
     % Set whichResponses return variable
-    whichResponses = dataOut.whichAlternativePredicted;
+    whichResponses = dataOut.whichAlternativePredicted(:);
 
 else
     % Not testing, only training

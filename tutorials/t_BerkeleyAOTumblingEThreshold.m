@@ -177,7 +177,7 @@ sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
 [sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOTumblingESceneEngine(sceneOptionsCell{:});
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
-backgroundSceneSequence = backgroundSceneEngine.compute(sceneParams.displayFOVDeg/5);
+backgroundSceneSequence = backgroundSceneEngine.compute(sceneParams.displayFOVDeg);
 
 %% Set up temporal filter if we have one.
 %
