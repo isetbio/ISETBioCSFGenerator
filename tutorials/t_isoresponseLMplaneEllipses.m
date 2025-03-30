@@ -592,6 +592,7 @@ else
 end % recomputeThresholds
 
 %% Restore handle visibility so that a future close will close the figures
+hAllFigs = findall(groot,'Type','figure');
 for i = 1:numel(hAllFigs)
     set(hAllFigs(i), 'HandleVisibility', 'on')
 end
