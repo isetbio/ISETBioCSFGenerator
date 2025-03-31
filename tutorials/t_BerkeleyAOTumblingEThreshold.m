@@ -177,7 +177,11 @@ sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
 [sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOTumblingESceneEngine(sceneOptionsCell{:});
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
-backgroundSceneSequence = backgroundSceneEngine.compute(sceneParams.displayFOVDeg);
+
+% For the background scene, we have to supply a letter size.  We don't care what
+% what it is because the foreground and background colors are matched for
+% the background scene.  But can't make it too big relative to the FOV.
+backgroundSceneSequence = backgroundSceneEngine.compute(sceneParams.displayFOVDeg/5);
 
 %% Set up temporal filter if we have one.
 %
