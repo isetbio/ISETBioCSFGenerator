@@ -730,7 +730,7 @@ function generateStimulusMovie(theVideoFileName, theSceneSequence, theSceneTempo
 end
 
 function reformatVideo(videoFileName)
-    if (exist('/opt/homebrew/bin/ffmpeg'))
+    if (exist('/opt/homebrew/bin/ffmpeg', 'file'))
         sysCommand = sprintf('/opt/homebrew/bin/ffmpeg -i %s.avi -c:v libx264 -crf 22 -pix_fmt yuv420p %s.mp4', ...
             videoFileName, videoFileName);
         system(sysCommand);
