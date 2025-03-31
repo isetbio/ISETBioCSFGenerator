@@ -45,12 +45,15 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     % previous simulation so we can generate figures and videos
     t_onTheFlyPhotocurrentComputationWithEyeMovements(...
         'loadResponsesFromPreviousSimulation', true);
-
+%}
+%{
+    % ETTBSkip
+    % Set to skip on autorun because it takes a long time
+    %
     % Compute new responses using high-res parameters which take 
-    % longer to compute
+    % longer to compute.     
     t_onTheFlyPhotocurrentComputationWithEyeMovements(...
         'fastParameters', false);
-
 %}
 
     arguments

@@ -1,6 +1,6 @@
-function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometricParams, ...
-    trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
-    t_BerkeleyAOtumblingEThreshold(options)
+function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometricParams, thresholdPara, ...
+    trialByTrialStimulusAlternatives, trialByTrialPerformance, trialByTrialWhichResponses] = ...
+    t_BerkeleyAOTumblingEThreshold(options)
 % Compute tumbling E threshold with AO optics
 %
 % This takes a number of key/value pairs that control its detailed
@@ -11,15 +11,15 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
 % contrast, and responses do not scale as a linear function of size the way
 % they do with contrast.
 %
-% See also t_BerkeleyAOtumblingESceneEngine.
+% See also t_BerkeleyAOTumblingESceneEngine.
 
 % Examples:
 %{
     % Run with default parameters.  More examples are available in the
     % ISETBerkeleyAO project.  Those call into this tutorial function.
-    t_BerkeleyAOtumblingEThreshold( ...
+    t_BerkeleyAOTumblingEThreshold( ...
         'visualizeScene', false, ...
-        'validationThresholds',[0.028]);
+        'validationThresholds',[0.027]);
 %}
 
 %% Pick up optional arguments
@@ -33,7 +33,9 @@ arguments
 
     % Print out/plot  more diagnostics, or not
     options.verbose (1,1) logical = false;
-    options.visualEsOnMosaic (1,1) logical = false;
+    options.visualizeEsOnMosaic (1,1) logical = false;
+    options.visualizeEsWhichFrames (1,:) double = 1;
+    options.visualizeEsFileBase (1,:) char = '';
 
     options.visualizeScene (1,1) logical = true;
     options.scenePdfFileBase (1,:) char = '';
@@ -172,9 +174,13 @@ end
 % try to match things up as best as possible.  One thing it doesn't return
 % is its four hard coded orientaions, so we build that here for use below.
 sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
-[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOtumblingESceneEngine(sceneOptionsCell{:});
+[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOTumblingESceneEngine(sceneOptionsCell{:});
 tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
 clear sce0 sce90 sce180 sce270
+
+% For the background scene, we have to supply a letter size.  We don't care what
+% what it is because the foreground and background colors are matched for
+% the background scene.  But can't make it too big relative to the FOV.
 backgroundSceneSequence = backgroundSceneEngine.compute(sceneParams.displayFOVDeg/5);
 
 %% Set up temporal filter if we have one.
@@ -301,7 +307,7 @@ questEnginePara = struct( ...
 
 % Compute psychometric function for the 4AFC paradigm with the 4 E scenes
 [logThreshold, questObj, psychometricFunction, fittedPsychometricParams, ...
-    trialByTrialStimulusAlternatives,trialByTrialPerformance] = ...
+    trialByTrialStimulusAlternatives,trialByTrialPerformance,trialByTrialWhichResponses] = ...
     computeThreshold(tumblingEsceneEngines, theNeuralEngine, classifierEngine, ...
     classifierPara, thresholdPara, questEnginePara, ...
     'visualizeAllComponents', ~true, ...
@@ -312,9 +318,9 @@ threshold = 10.^logThreshold;
 
 %% Plot the derived psychometric function and other things. 
 if (options.plotPsychometric)
-    pdfFileName = [];
+    pdfFileName = options.scenePdfFileBase;
     [stimulusLevels, pCorrect] = plotPsychometricFunction(questObj, threshold, fittedPsychometricParams, ...
-        thresholdPara,pdfFileName, 'xRange', [options.minLetterSizeMinutes/60  options.maxLetterSizeMinutes/60]);
+        thresholdPara, pdfFileName, 'xRange', [options.minLetterSizeMinutes/60  options.maxLetterSizeMinutes/60]);
 
     % Print out table of stimulus levels and pCorrect
     fprintf('\nMeasured performance\n')
@@ -323,15 +329,20 @@ if (options.plotPsychometric)
     end
     fprintf('\n');
 end
-if (options.visualEsOnMosaic)
+if (options.visualizeEsOnMosaic)
     % This runs but I am not sure it is actually showing the stimulus.
     % Might have to do with the fact that the stimulus is at 840 nm.
-    visualizeSimulationResults(questObj, threshold, fittedPsychometricParams, ...
-        thresholdPara, tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
-       pdfFileName);
+    for ff = 1:length(options.visualizeEsWhichFrames)
+        if (~isempty(options.visualizeEsFileBase))
+            pdfFileName = [options.visualizeEsFileBase '_VisualizeEsOnMosaic_Frame' num2str(options.visualizeEsWhichFrames(ff)) '.pdf'];
+        else
+            pdfFileName = [];
+        end
+        visualizeAOTumblingESimulationResults(questObj, threshold, fittedPsychometricParams, ...
+            thresholdPara, options.visualizeEsWhichFrames(ff), tumblingEsceneEngines, backgroundSceneEngine, theNeuralEngine, ...
+            pdfFileName);
+    end
 end
-
-%
 
 %% Do a check on the answer
 %

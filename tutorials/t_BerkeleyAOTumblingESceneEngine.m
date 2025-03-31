@@ -1,4 +1,4 @@
-function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOtumblingESceneEngine(options)
+function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOTumblingESceneEngine(options)
 % Show how to describe and control a tumbling E stimulus as presented in
 % the Berkeley (Tuten lab) AO system.
 %
@@ -290,9 +290,9 @@ for ff = 1:length(theSmallEsceneSequence0degs)
 
         projectBaseDir = ISETBioCSFGeneratorRootPath;
         if (isempty(options.scenePdfFileBase))
-            pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_frame%d.pdf',ff));
+            pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_Frame%d.pdf',ff));
         else
-            pdfFile = [options.scenePdfFileBase sprintf('_frame%d.pdf',ff)];
+            pdfFile = [options.scenePdfFileBase sprintf('_Frame%d.pdf',ff)];
         end
         NicePlot.exportFigToPDF(pdfFile,hFig, 300);
     end

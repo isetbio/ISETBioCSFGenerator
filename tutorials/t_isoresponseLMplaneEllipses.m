@@ -334,7 +334,6 @@ switch (whichNoiseFreeNre)
 end  % switch (whichNoiseFreeNre)
 
 % Setup the noisy neural response engine
-
 switch (whichNoisyInstanceNre)
     case 'Poisson'
         nreNoisyInstancesComputeFunction = @nreNoisyInstancesPoisson;
@@ -369,11 +368,9 @@ switch (whichNoisyInstanceNre)
 
         % Set the sigma parameter
         nreNoiseInstancesParams.sigma = gaussianSigma;
-
         if (simulateHighSaturationRegime) && (simulateHalfWaveRectification)
             error('Either select ''simulateHighSaturationRegime'' or ''simulateHalfWaveRectification'', NOT both.')
         end
-
 
         if (simulateHighSaturationRegime)
             % Saturating activation function. If the type is specified as
@@ -395,12 +392,9 @@ switch (whichNoisyInstanceNre)
                 );
         end
 
-
     otherwise
         error('Unsupported noisy instances neural response engine: ''%s''.', whichNoisyInstanceNre);
 end % switch (whichNoisyInstanceNre)
-
-
 
 %% If we use cone contrast, we will neeed a null scene for normalization.
 if (useConeContrast) 
@@ -467,7 +461,6 @@ switch (whichClassifierEngine)
         error('Unsupported response classifier engine: ''%s''.', whichClassifierEngine)
 end
 
-
 %% Parameters for threshold estimation/quest engine
 questEngineParams = struct( ...
     'qpPF',@qpPFWeibullLog, ...
@@ -513,8 +506,6 @@ set(hFigStimuliAndThresholds, 'HandleVisibility', 'off');
 
 % Max visualized threshold
 maxVisualizedThreshold = 0.2; % 0.05;
-
-
 recomputeThresholds = true;
 if (recomputeThresholds)
 
@@ -563,7 +554,6 @@ if (recomputeThresholds)
         drawnow;
         set(psychometricCurvesFig, 'HandleVisibility', 'off');
     
-    
         if (iChromaDirection == length(examinedDirectionsOnLMplane))
 
             % Visualize thresholds up to this point
@@ -601,6 +591,11 @@ else
             exportFig, initializeFig, []);
 end % recomputeThresholds
 
+%% Restore handle visibility so that a future close will close the figures
+hAllFigs = findall(groot,'Type','figure');
+for i = 1:numel(hAllFigs)
+    set(hAllFigs(i), 'HandleVisibility', 'on')
+end
 
 end % - function end
 
@@ -765,7 +760,7 @@ function theThresholdAxes = visualizeStimuliAndThresholdsOnLMPlane(...
         NicePlot.exportFigToPNG(fullfile(figureFileBaseDir,'/stimuliOnLMplane.png'), hFig, 300);
     end
 
-    set(hFig, 'HandleVisibility', 'off');
+    %set(hFig, 'HandleVisibility', 'off');
 end
 
 
