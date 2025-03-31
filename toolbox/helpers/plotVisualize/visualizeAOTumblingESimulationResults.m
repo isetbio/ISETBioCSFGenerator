@@ -11,7 +11,7 @@ function visualizeAOTumblingESimulationResults(questObj, threshold, fittedPsycho
     % excitations or noisy instances (generates a video)
     visualizeNoiseFreeMosaicActivation = true;
 
-    % Define plot range in minutes
+    % Define plot range in degrees
     domainSize = 0.2;
 
     if (visualizeNoiseFreeMosaicActivation == false)
