@@ -128,6 +128,20 @@ if (options.fastParams)
     options.nTest = 64;
 end
 
+%% Make sure figures and results directories exist so that output writes don't fail
+if (isempty(options.outputFiguresDir))
+    options.outputFiguresDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'figures');
+end
+if (isempty(options.outputResultsDir))
+    options.outputResultsDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'results');
+end
+if (~exist(options.outputFiguresDir,'dir'))
+    mkdir(options.outputFiguresDir);
+end
+if (~exist(options.outputResultsDir,'dir'))
+    mkdir(options.outputResultsDir);
+end
+
 %% Map options the way we need them below
 
 % Scene parameters default overrides
@@ -154,21 +168,6 @@ aoSceneParams = struct( ...
     'temporalModulationParams_stimOnFrames', options.temporalModulationParams_stimOnFrames , ...
     'wave', options.wave ...
     );
-
-% Make sure figures and results directories exist so that output writes
-% don't fail
-if (isempty(options.outputFiguresDir))
-    options.outputFiguresDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'figures');
-end
-if (isempty(options.outputResultsDir))
-    options.outputResultsDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'results');
-end
-if (~exist(options.outputFiguresDir,'dir'))
-    mkdir(options.outputFiguresDir);
-end
-if (~exist(options.outputResultsDir,'dir'))
-    mkdir(options.outputResultsDir);
-end
 
 % Define the AO scene parameters for the experiment we are modeling
 %
