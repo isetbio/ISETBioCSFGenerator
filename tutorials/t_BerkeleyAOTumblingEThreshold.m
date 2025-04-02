@@ -132,7 +132,7 @@ end
 
 % Scene parameters default overrides
 aoSceneParams = struct( ...
-    'outputFiguresDir', options.outputFiguresDir;
+    'outputFiguresDir', options.outputFiguresDir, ...
     'visualizeScene', options.visualizeScene, ...
     'scenePdfFileBase', options.scenePdfFileBase, ...
     'pupilSizeMM', options.pupilDiameterMm, ...
@@ -158,16 +158,16 @@ aoSceneParams = struct( ...
 % Make sure figures and results directories exist so that output writes
 % don't fail
 if (isempty(options.outputFiguresDir))
-    outputFiguresDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'figures');
+    options.outputFiguresDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'figures');
 end
 if (isempty(options.outputResultsDir))
-    outputResultsDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'results');
+    options.outputResultsDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'results');
 end
-if (~exist(outputFiguresDir,'dir'))
-    mkdir(outputFiguresDir);
+if (~exist(options.outputFiguresDir,'dir'))
+    mkdir(options.outputFiguresDir);
 end
-if (~exist(outputResultsDir,'dir'))
-    mkdir(outputResultsDir);
+if (~exist(options.outputResultsDir,'dir'))
+    mkdir(options.outputResultsDir);
 end
 
 % Define the AO scene parameters for the experiment we are modeling
@@ -342,7 +342,7 @@ if (options.visualizeEsOnMosaic)
     % Might have to do with the fact that the stimulus is at 840 nm.
     for ff = 1:length(options.visualizeEsWhichFrames)
         if (~isempty(options.visualizeEsFileBase))
-            pdfFileName = fullfile(outputFiguresDir, [options.visualizeEsFileBase '_VisualizeEsOnMosaic_Frame' num2str(options.visualizeEsWhichFrames(ff)) '.pdf']);
+            pdfFileName = fullfile(options.outputFiguresDir, [options.visualizeEsFileBase '_VisualizeEsOnMosaic_Frame' num2str(options.visualizeEsWhichFrames(ff)) '.pdf']);
         else
             pdfFileName = [];
         end
