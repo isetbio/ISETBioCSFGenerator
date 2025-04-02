@@ -39,6 +39,8 @@ arguments
 
     options.visualizeScene (1,1) logical = true;
     options.scenePdfFileBase (1,:) char = '';
+    options.outputFiguresDir (1,:) char = '';
+    options.outputResultsDir (1,:) char = '';
 
     options.plotPsychometric (1,1) logical = true;
 
@@ -130,6 +132,7 @@ end
 
 % Scene parameters default overrides
 aoSceneParams = struct( ...
+    'outputFiguresDir', options.outputFiguresDir;
     'visualizeScene', options.visualizeScene, ...
     'scenePdfFileBase', options.scenePdfFileBase, ...
     'pupilSizeMM', options.pupilDiameterMm, ...
@@ -154,12 +157,17 @@ aoSceneParams = struct( ...
 
 % Make sure figures and results directories exist so that output writes
 % don't fail
-rootPath = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
-    mkdir(fullfile(rootPath,'local',mfilename,'figures'));
+if (isempty(options.outputFiguresDir))
+    outputFiguresDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'figures');
 end
-if (~exist(fullfile(rootPath,'local',mfilename,'results'),'dir'))
-    mkdir(fullfile(rootPath,'local',mfilename,'results'));
+if (isempty(options.outputResultsDir))
+    outputResultsDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'results');
+end
+if (~exist(outputFiguresDir,'dir'))
+    mkdir(outputFiguresDir);
+end
+if (~exist(outputResultsDir,'dir'))
+    mkdir(outputResultsDir);
 end
 
 % Define the AO scene parameters for the experiment we are modeling
@@ -334,7 +342,7 @@ if (options.visualizeEsOnMosaic)
     % Might have to do with the fact that the stimulus is at 840 nm.
     for ff = 1:length(options.visualizeEsWhichFrames)
         if (~isempty(options.visualizeEsFileBase))
-            pdfFileName = [options.visualizeEsFileBase '_VisualizeEsOnMosaic_Frame' num2str(options.visualizeEsWhichFrames(ff)) '.pdf'];
+            pdfFileName = fullfile(outputFiguresDir, [options.visualizeEsFileBase '_VisualizeEsOnMosaic_Frame' num2str(options.visualizeEsWhichFrames(ff)) '.pdf']);
         else
             pdfFileName = [];
         end

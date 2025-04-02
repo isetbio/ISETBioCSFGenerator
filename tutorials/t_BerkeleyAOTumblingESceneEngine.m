@@ -62,6 +62,7 @@ function [sce0,sce90,sce180,sce270,sceBg,sceneParams] = t_BerkeleyAOTumblingESce
 arguments
     options.visualizeScene (1,1) logical = true;
     options.scenePdfFileBase (1,:) char = '';
+    options.outputFiguresDir (1,:) char = '';
 
     options.displayNPixels (1,1) double = 512;
     options.displayFOVDeg (1,1) double = 1.413;
@@ -89,9 +90,11 @@ close all;
 
 % Make sure figures directory exists so that output writes
 % don't fail
-rootPath = ISETBioCSFGeneratorRootPath;
-if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
-    mkdir(fullfile(rootPath,'local',mfilename,'figures'));
+if (isempty(options.outputFiguresDir))
+    options.outputFiguresDir = fullfile(ISETBioCSFGeneratorRootPath,'local',mfilename,'figures');
+end
+if (~exist(options.outputFiguresDir ,'dir'))
+    mkdir(options.outputFiguresDir);
 end
 
 % Get the basic parameters for the AO scene engine and override according
@@ -288,11 +291,10 @@ for ff = 1:length(theSmallEsceneSequence0degs)
         set(ax, 'XTickLabel', xTickLabels, 'YTickLabel', yTickLabels);
         set(ax, 'FontSize', 10, 'FontWeight', 'bold');
 
-        projectBaseDir = ISETBioCSFGeneratorRootPath;
         if (isempty(options.scenePdfFileBase))
-            pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures',sprintf('t_AOTumblingSceneEngine_stimuli_Frame%d.pdf',ff));
+            pdfFile = fullfile(options.outputFiguresDir,sprintf('t_AOTumblingSceneEngine_stimuli_Frame%d.pdf',ff));
         else
-            pdfFile = [options.scenePdfFileBase sprintf('_Frame%d.pdf',ff)];
+            pdfFile = fullfile(options.outputFiguresDir,[options.scenePdfFileBase sprintf('_Frame%d.pdf',ff)]);
         end
         NicePlot.exportFigToPDF(pdfFile,hFig, 300);
     end
