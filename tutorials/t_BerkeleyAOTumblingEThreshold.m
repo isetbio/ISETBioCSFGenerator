@@ -93,6 +93,8 @@ arguments
     % AO scene parameters
     options.displayNPixels (1,1) double = 128;
     options.displayFOVDeg (1,1) double = 1.413;
+    options.eccDegs (1,2) double = [0 0];
+    options.sizeDegs (1,2) double = [0.5 0.5];
     options.AOPrimaryWls (1,3) double = [840 683 543]; % [700 683 54];
     options.AOPrimaryFWHM (1,3) double = [22 27 23];
     options.AOCornealPowersUW (1,3) double = [141.4 10 10];
@@ -241,7 +243,8 @@ noiseFreeResponseParams.verbose = options.verbose;
 % Cone params
 noiseFreeResponseParams.coneMosaicParams.wave = options.wave;
 noiseFreeResponseParams.coneMosaicParams.fovDegs = options.displayFOVDeg;
-noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.5 0.5];
+noiseFreeResponseParams.coneMosaicParams.sizeDegs = options.sizeDegs;
+noiseFreeResponseParams.coneMosaicParams.eccDegs = options.eccDegs;
 noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = ...
     frameDurationSeconds;
 
