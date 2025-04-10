@@ -118,7 +118,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         for iPoint = 1:nTimePoints
 
             % Retrieve spatiotemporal response up to this time point
-            [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
+            t i[mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
                 spatioTemporalResponseComponents(theConeMosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint);
             
             % The spatiotemporal mosaic activation up to this time point
