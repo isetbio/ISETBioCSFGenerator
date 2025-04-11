@@ -3,7 +3,8 @@ classdef neuralResponseEngine < handle
 %
 % Syntax:
 %   theNeuralResponseEngine =
-%      neuralResponseEngine(noiseFreeComputeFunctionHandle, noisyInstancesComputeFunctionHandle, noiseFreeComputeParams, noisyInstancesComputeParams)
+%      neuralResponseEngine(noiseFreeComputeFunctionHandle, noisyInstancesComputeFunctionHandle, ...
+%       noiseFreeComputeParams, noisyInstancesComputeParams)
 %
 % Description:
 %    The neuralResponseEngine computes neural responses according to the
@@ -191,8 +192,10 @@ classdef neuralResponseEngine < handle
     % Public static methods.  These are useful functions that can be called
 	% without having to instantiate a @nre object first
 	methods (Static)
-        theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, theNoisyResponseInstances, activationFunctionParams);
-        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, responseVideoFileName, neuralPipelineID] = parseVisualizationOptions(options);
+        theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, ...
+            theNoisyResponseInstances, activationFunctionParams);
+        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ...
+            responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = parseVisualizationOptions(options);
     end % static methods
 
 end

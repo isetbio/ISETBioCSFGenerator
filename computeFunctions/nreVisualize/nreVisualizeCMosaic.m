@@ -59,7 +59,8 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 % History:
 %    01/11/2025  NPC  Wrote it
 
-    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, responseVideoFileName, neuralPipelineID] = ...
+    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ...
+     responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
 
@@ -91,14 +92,21 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     end
 
     % Get the response dimensins and range
+    minResponse = min([0 min(neuralResponses(:))])
+
     [nInstances, nTimePoints, ~] = size(neuralResponses);
-    activationRange = [0 max(neuralResponses(:))];
+    activationRange = [minResponse max(abs(neuralResponses(:)))];
 
     % Treat special case of zero activation range
     if (activationRange(1) == activationRange(2))
-       activationRange = [0 10*eps]; 
+       activationRange = activationRange(1) + [0 10*eps];
     end
+
     
+    if (visualizeResponsesAsModulations)
+        activationRange = max(activationRange)*[-1 1];
+    end
+
     if (~isempty(theConeMosaic.fixEMobj)) 
         emPathsDegs = theConeMosaic.fixEMobj.emPosArcMin/60;
     else
@@ -118,9 +126,9 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
         timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
         if (isempty(neuralPipelineID))
-            theFullVideoFileName = sprintf('%s_%s.mp4',responseVideoFileName,timeDataInfoStr);
+            theFullVideoFileName = sprintf('%s_%s_%s.mp4',responseVideoFileName,responseLabel,timeDataInfoStr);
         else
-            theFullVideoFileName = sprintf('%s_ID_%s_%s.mp4',responseVideoFileName, neuralPipelineID,timeDataInfoStr);
+            theFullVideoFileName = sprintf('%s_%s_ID_%s_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,timeDataInfoStr);
         end
         videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
         videoOBJ.FrameRate = 30;
