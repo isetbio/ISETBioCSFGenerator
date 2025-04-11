@@ -62,6 +62,16 @@ classdef neuralResponseEngine < handle
         % User-settable flag for visualizing the output of each compute() call
         visualizeEachCompute = false;
 
+        % User-settable parameter speficying that we want to generate a
+        % video of the response, if it is not [], and the filename of the
+        % video to be generated
+        responseVideoFileName = [];
+
+        % User-settable ID (just a string) to label the condition that this
+        % neuralResponseEngine corresponds to. Used when saving videos of
+        % responses but could be used also for figures etc
+        ID = '';
+
         % User-settable visualization function handle
         % If set, the default visualization function is by passed and the
         % function pointed to by this handle is executed instead
@@ -182,7 +192,7 @@ classdef neuralResponseEngine < handle
 	% without having to instantiate a @nre object first
 	methods (Static)
         theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, theNoisyResponseInstances, activationFunctionParams);
-        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = parseVisualizationOptions(options);
+        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, responseVideoFileName, neuralPipelineID] = parseVisualizationOptions(options);
     end % static methods
 
 end

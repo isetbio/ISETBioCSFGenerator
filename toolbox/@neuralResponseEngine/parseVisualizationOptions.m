@@ -1,4 +1,4 @@
-function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = ...
+function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, responseVideoFileName, neuralPipelineID] = ...
     parseVisualizationOptions(options)
     
     arguments
@@ -6,12 +6,16 @@ function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = ...
         options.axesHandle = [];
         options.responseLabel (1,:) char  = ''
         options.clearAxesBeforeDrawing (1,1) logical = true;
+        options.responseVideoFileName (1,:) char  = ''
+        options.neuralPipelineID (1,:) char  = ''
     end
 
     figureHandle = options.figureHandle;
     axesHandle = options.axesHandle;
     responseLabel = options.responseLabel;
     clearAxesBeforeDrawing = options.clearAxesBeforeDrawing;
+    responseVideoFileName = options.responseVideoFileName;
+    neuralPipelineID = options.neuralPipelineID;
 
     assert(isEmptyOrHandle('figure', figureHandle), 'Figure handle is not valid');
     

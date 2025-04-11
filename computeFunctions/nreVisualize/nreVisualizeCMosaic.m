@@ -19,7 +19,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 %   The visualize() method is called both from the noiseFree and the noisyInstances compute methods
 %
 % Inputs:
-%    neuralPipeline                 - the parent @neuralResponseEngine object that
+%    neuralPipeline                 - the pipeline of the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
 %    neuralResponses                - a 3D matrix, [kTrials x mNeurons x tFrames], of neural responses
 %    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
@@ -31,6 +31,8 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 %    'axesHandle'                   - either [] or an axes handle
 %    'responseLabel'                - string, just a comment about the responses visualized
 %    'clearAxesBeforeDrawing'       - boolean, whether to clear the axes before drawing
+%    'responseVideoFileName'        - either [] or a videofilename for saving the response video
+%    'neuralPipelineID'             - either [] or a char providing a label for the neural engine
 %
 % Outputs:
 %   None
@@ -57,8 +59,9 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 % History:
 %    01/11/2025  NPC  Wrote it
 
-    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ] = ...
+    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, responseVideoFileName, neuralPipelineID] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
+
 
     if (isempty(figureHandle))
         figureHandle = figure(); clf;
@@ -112,13 +115,26 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         XTick = temporalSupportSeconds(1);
     end
 
+    if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+        if (isempty(neuralPipelineID))
+            theFullVideoFileName = sprintf('%s%s.mp4',responseVideoFileName);
+        else
+            theFullVideoFileName = sprintf('%s_ID_%s.mp4',responseVideoFileName, neuralPipelineID);
+        end
+        videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
+        videoOBJ.FrameRate = 30;
+        videoOBJ.Quality = 100;
+        videoOBJ.open();
+    end
+
     for iTrial = 1:min([nInstances maxVisualizedInstances])
 
         % The instantaneous spatial activation
         for iPoint = 1:nTimePoints
 
+
             % Retrieve spatiotemporal response up to this time point
-            t i[mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
+            [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
                 spatioTemporalResponseComponents(theConeMosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint);
             
             % The spatiotemporal mosaic activation up to this time point
@@ -180,9 +196,17 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             end 
 
             drawnow;
+            if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+                videoOBJ.writeVideo(getframe(figureHandle));
+            end
 
         end % iPoint
     end % iTrial
+
+    if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+        videoOBJ.close();
+    end
+
 end
 
 function [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...

@@ -38,6 +38,7 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
         'visualizeEsOnMosaic', false, ...
         'visualizeEsWhichFrames', 2, ...
         'visualizeEachResponse', true, ...
+        'responseVideoFileName', 'TumblingEvideo', ...
         'responseVisualizationFunction', @nreVisualizeCMosaic, ...
         'maxVisualizedNoisyResponseInstances', 1, ...
         'maxVisualizedNoisyResponseInstanceStimuli', 1, ...
@@ -59,6 +60,7 @@ arguments
     options.visualizeEsWhichFrames (1,:) double = 1;
     options.visualizeEsFileBase (1,:) char = '';
     options.visualizeEachResponse (1,1) logical = false
+    options.responseVideoFileName(1,:) char = '';
     options.responseVisualizationFunction = []
     options.maxVisualizedNoisyResponseInstances = 1
     options.maxVisualizedNoisyResponseInstanceStimuli = 1
@@ -169,6 +171,10 @@ end
 if (~exist(options.outputResultsDir,'dir'))
     mkdir(options.outputResultsDir);
 end
+if (~isempty(options.responseVideoFileName)) && (ischar(options.responseVideoFileName))
+    options.responseVideoFileName = fullfile(options.outputFiguresDir, options.responseVideoFileName);
+end
+
 
 %% Map options the way we need them below
 
@@ -304,6 +310,7 @@ theNeuralEngine = neuralResponseEngine( ...
 
 % Set the neuralEngine's various visualization properties
 theNeuralEngine.visualizeEachCompute = options.visualizeEachResponse;
+theNeuralEngine.responseVideoFileName = options.responseVideoFileName;
 theNeuralEngine.customVisualizationFunctionHandle = options.responseVisualizationFunction;
 theNeuralEngine.maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
 
