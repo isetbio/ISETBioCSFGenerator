@@ -1,4 +1,5 @@
-function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, responseVideoFileName, neuralPipelineID] = ...
+function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ...
+    responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = ...
     parseVisualizationOptions(options)
     
     arguments
@@ -8,6 +9,7 @@ function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, respo
         options.clearAxesBeforeDrawing (1,1) logical = true;
         options.responseVideoFileName (1,:) char  = ''
         options.neuralPipelineID (1,:) char  = ''
+        options.visualizeResponsesAsModulations (1,1) logical = false;
     end
 
     figureHandle = options.figureHandle;
@@ -16,7 +18,8 @@ function [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, respo
     clearAxesBeforeDrawing = options.clearAxesBeforeDrawing;
     responseVideoFileName = options.responseVideoFileName;
     neuralPipelineID = options.neuralPipelineID;
-
+    visualizeResponsesAsModulations = options.visualizeResponsesAsModulations;
+    
     assert(isEmptyOrHandle('figure', figureHandle), 'Figure handle is not valid');
     
     if (numel(axesHandle) <= 1)

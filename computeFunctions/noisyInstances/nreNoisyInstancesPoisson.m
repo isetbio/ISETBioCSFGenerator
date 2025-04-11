@@ -133,6 +133,13 @@ function dataOut = nreNoisyInstancesPoisson(...
         oldSeed = rng(p.Results.rngSeed);
     end
 
+    % Check whether the noise-free response is a cone contrast based
+    % response and raise an error
+    noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast');
+    if (noiseFreeResponsesAreContrastResponses)
+        error('You cannot have Poisson noisy instances when the mean response is a contrast-based response\n');
+    end
+
     % Compute noisy response instances
     [noiseFreeInstancesNum, responseDim, framesNum] = size(noiseFreeResponses);
     if (noiseFreeInstancesNum ~= 1)
@@ -186,7 +193,11 @@ function dataOut = nreNoisyInstancesPoisson(...
         set(hFig, 'Position', [350 25 1650 550]);
         neuralEngineOBJ.visualize(noisyResponseInstances, temporalSupportSeconds, ...
             'figureHandle', hFig, ...
-            'responseLabel', 'Poisson response instances');
+            'responseLabel', 'Poisson response instances', ...
+            'responseVideoFileName', neuralEngineOBJ.responseVideoFileName, ...
+            'neuralPipelineID', neuralEngineOBJ.ID, ...
+            'visualizeResponsesAsModulations', noiseFreeResponsesAreContrastResponses);
+
     end
 
     % Assemble the dataOut struct
