@@ -116,10 +116,11 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     end
 
     if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+        timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
         if (isempty(neuralPipelineID))
-            theFullVideoFileName = sprintf('%s%s.mp4',responseVideoFileName);
+            theFullVideoFileName = sprintf('%s_%s.mp4',responseVideoFileName,timeDataInfoStr);
         else
-            theFullVideoFileName = sprintf('%s_ID_%s.mp4',responseVideoFileName, neuralPipelineID);
+            theFullVideoFileName = sprintf('%s_ID_%s_%s.mp4',responseVideoFileName, neuralPipelineID,timeDataInfoStr);
         end
         videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
         videoOBJ.FrameRate = 30;
