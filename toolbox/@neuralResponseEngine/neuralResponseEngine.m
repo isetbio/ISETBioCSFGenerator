@@ -21,7 +21,6 @@ classdef neuralResponseEngine < handle
 %    will be used instead of the default visualization function, each time
 %    neuralResponseEngine.visualize() is called
 %    
-%
 % Inputs:
 %    noiseFreeComputeFunctionHandle     - Function handle to the noiseFreeComputeFunction that defines the
 %                                       operation of the employed neural response pipeline
@@ -47,7 +46,7 @@ classdef neuralResponseEngine < handle
 %    t_neuralResponseCompute.m
 
 % History:
-%    9/20/2020  NPC Wrote it
+%    9/20/2020   NPC Wrote it
 %    12/18/2024 DHB Major updates
 
     %% Public properties

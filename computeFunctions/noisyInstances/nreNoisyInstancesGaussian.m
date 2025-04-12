@@ -37,15 +37,15 @@ function dataOut = nreNoisyInstancesGaussian(...
 %    Note that everything runs much more slowly in this case.
 %
 % Inputs:
-%    neuralEngineOBJ                - the parent @neuralResponseEngine object that
+%    neuralEngineOBJ   - the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
-%    noisyInstanceComputeParams     - a struct containing properties of the employed neural chain.
+%    noisyInstanceComputeParams - a struct containing properties of the employed neural chain.
 %                                     This should just be empty for this function.                                
-%    noiseFreeResponses             - a matrix of noise free neural
+%    noiseFreeResponses  - a matrix of noise free neural
 %                                     responses, with each column providing the responses for one frame.
-%    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
-%    instancesNum                   - the number of response instances to compute
-%    noiseFlag                      - string: 'random' (default) or 'none'.
+%    temporalSupportSeconds  - the temporal support for the stimulus frames, in seconds
+%    instancesNum        - the number of response instances to compute
+%    noiseFlag               - string: 'random' (default) or 'none'.
 %                                     The defalt value of 'random' means
 %                                     actually add the noise.  The value of
 %                                     'none' means return instancesNum
@@ -88,7 +88,7 @@ function dataOut = nreNoisyInstancesGaussian(...
 %       frame.
 % 
 % Optional key/value input arguments:
-%   'rngSeed'                       - Integer or string.  Set rng seed. Empty (default) means don't touch the
+%   'rngSeed'                 - Integer or string.  Set rng seed. Empty (default) means don't touch the
 %                                     seed. An integer uses that as the
 %                                     seed.  A string (e.g. 'shuffle') sets
 %                                     the seed by passing the string into
@@ -98,7 +98,6 @@ function dataOut = nreNoisyInstancesGaussian(...
 %                                     setting the seed is slow, so you want
 %                                     to invoke this option with some
 %                                     trepidation.
-%
 %
 % See Also:
 %     nreNoiseFreeSceneAsResponse, t_neuralResponseCompute

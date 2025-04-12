@@ -1,5 +1,5 @@
 function [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstances(obj, ...
-                noiseFreeReponses, temporalSupportSeconds, instancesNum, varargin)
+                noiseFreeReponses, temporalSupportSeconds, instancesNum, noiseFlag, varargin)
 % Generic compute method for the @neuralResponseEngine class.
 %
 % Syntax:
@@ -21,17 +21,15 @@ function [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstance
 %    neuralPipeline struct of the parent @neuralResponseEngine object.
 %
 % Inputs:
-%    obj                            - the parent @neuralResponseEngine object
-%                               
-%    noiseFreeResponses             - noisy free neural repsonse sequence as returned by
-%                                     nre computeNoiseFree method.
-%
-%    temporalSupportSeconds         - a vector of time stamps for each frame 
-%                                     of the noise free response sequence
-%
-%    instancesNum                   - a scalar, specifying the number of noisy response 
-%                                     instances to generate
-%
+%    obj                                 - the parent @neuralResponseEngine object                             
+%    noiseFreeResponses    - noisy free neural repsonse sequence as returned by
+%                                            nre computeNoiseFree method.
+%    temporalSupportSeconds  - a vector of time stamps for each frame 
+%                                           of the noise free response sequence
+%    instancesNum                - a scalar, specifying the number of noisy response 
+%                                             instances to generate
+%    noiseFlag                       - passed on to the object's noisy instance compute method.    
+%                                             Typically 'random' or 'none'.
 %
 % Optional key/value input arguments:
 %    optional key/value pairs       - these are passed directly to the
@@ -52,7 +50,7 @@ function [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstance
 %    9/20/2020  NPC Wrote it
 
     % Call the user-supplied compute function
-    dataOut = obj.noisyInstancesComputeFunction(obj, obj.noisyInstancesComputeParams, noiseFreeReponses, temporalSupportSeconds, instancesNum, varargin{:});
+    dataOut = obj.noisyInstancesComputeFunction(obj, obj.noisyInstancesComputeParams, noiseFreeReponses, temporalSupportSeconds, instancesNum, noiseFlag, varargin{:});
 
     % Parse dataOut struct
     noisyResponseInstances = dataOut.neuralResponses;
