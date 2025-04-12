@@ -151,9 +151,7 @@ function dataOut = nreNoisyInstancesGaussian(...
     end
 
     noisyResponseInstances = zeros(instancesNum,responseDim,framesNum);
-    noiseFlag
-    sigma
-    pause
+
     switch (noiseFlag)
         case {'random'}
             for ii = 1:instancesNum
