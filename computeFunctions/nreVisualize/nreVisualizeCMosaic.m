@@ -92,7 +92,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     end
 
     % Get the response dimensins and range
-    minResponse = min([0 min(neuralResponses(:))])
+    minResponse = min([0 min(neuralResponses(:))]);
 
     [nInstances, nTimePoints, ~] = size(neuralResponses);
     activationRange = [minResponse max(abs(neuralResponses(:)))];
