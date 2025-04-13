@@ -201,17 +201,21 @@ arguments
     options.temporalFrequencyHz (1,1) double = 5;
     options.stimOnFrameIndices (1,:) double = [];
 
-    % Apply temporal filter?
+   % Apply temporal filter?
     %
     % The timebase of the filter is assumed to match the frame rate, so we
     % only need to specify a list of filter values.  Since these can
     % describe gain changes as well as temporal processing per se, we do
     % not require that these sum to 1.  If you want to preserve signal
     % magnitude, you can normalize the filter values yourself, so that they
-    % sum to 1. This can also be set to some string, e.g.,
-    % 'photocurrentImpulseResponseBased', in which case the filter values
-    % are computed on the fly
-    options.temporalFilterValues (1,:) = []
+    % sum to 1.
+    % 
+    % This can also be set to 'photocurrentImpulseResponseBased', in which
+    % case the filter values are computed on the fly
+    %
+    % It can also be 'watsonFilter'
+    options.temporalFilterValues (1,:) = [];
+    options.watsonParams_tau = 6.25;
 
     % Run the validation check?  This gets overridden to empty if other
     % options change the conditions so that the validation data don't
@@ -366,6 +370,7 @@ if (~isempty(temporalFilterValues))
     elseif (ischar(temporalFilterValues) & strcmp(temporalFilterValues,'watsonFilter'))
         % Watson filter, computed here
         [~,watsonParams] = WatsonFilter([],[]);
+        watsonParams.tau = options.watsonParams_tau;
         temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
 
