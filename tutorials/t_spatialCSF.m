@@ -189,7 +189,7 @@ arguments
     %
     % nTest determines the number of test instances. When there are
     % fixationsal EMs, this number is spread across them equally.  Thus
-    % this number must be a multiple of the number of fixationsal EMs
+    % this number must be a multiple of the number of fixational EMs
     % specified.
     options.nTrain (1,1) double = 1
     options.nTest (1,1) double = 128
@@ -199,6 +199,7 @@ arguments
     options.numberOfFrames double = []
     options.frameDurationSeconds (1,1) double = 0.1;
     options.temporalFrequencyHz (1,1) double = 5;
+    options.stimOnFrameIndices (1,:) double = [];
 
     % Apply temporal filter?
     %
@@ -251,7 +252,9 @@ arguments
     options.responseVisualizationFunction = []
     options.maxVisualizedNoisyResponseInstances = 1
     options.maxVisualizedNoisyResponseInstanceStimuli = 1
-
+    options.figureFileBase (1,:) char = [];
+    options.resultsFileBase (1,:) char = [];
+    
     % Some sizes
     options.stimSizeDegs (1,1) double = 0.5;
     options.pixelsNum (1,1) double = 128;
@@ -304,10 +307,23 @@ pixelsNum = options.pixelsNum;
 rng(1);
 
 %% Figure output base name
-figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
+if (isempty(options.figureFileBase))
+    figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+else
+    figureFileBase = fullfile(options.figureFileBase, ...
     sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
     useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
     whichClassifierEngine,mRGCOutputSignalType));
+end
+if (~isempty(options.resultsFileBase))
+    resultsFileBase = fullfile(options.resultsFileBase, ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+end
 
 %% Set base values for parameters that control what we do
 if (~isempty(numberOfFrames))
@@ -326,6 +342,7 @@ end
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
 temporalFrequencyHz = options.temporalFrequencyHz;
+stimOnFrameIndices = options.stimOnFrameIndices;
 
 % Set up some sizes.  Note that these are small so that the examples run
 % fast.
@@ -632,6 +649,7 @@ else
         'duration', stimulusDuration, ...
         'frameDurationSeconds', stimulusDuration/framesNum, ...
         'temporalFrequencyHz', temporalFrequencyHz, ...
+        'stimOnFrameIndices', stimOnFrameIndices, ...
         'orientation', gratingOrientationDegs, ...
         'spatialPhase', gratingSpatialPhase, ...
         'pixelsNum', pixelsNum, ...
@@ -890,6 +908,13 @@ end
 %% Return threshold values if requested
 if (nargout > 0)
     thresholdRet = threshold;
+end
+
+%% Save output if desired
+if (~isempty(options.resultsFileBase))
+    close all;
+    drawnow;
+    save(resultsFileBase);
 end
 
 end

@@ -372,7 +372,7 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
 
                 % Ensure temporal support are consistent
                 assert(all(size(filterTemporalSupport) == size(temporalSupportSeconds)), 'mismatch in temporal support lengths');
-                assert(all(temporalSupportSeconds == filterTemporalSupport), 'mismatch in temporal support values');
+                assert(max(abs(temporalSupportSeconds - filterTemporalSupport)) < 1e-6, 'mismatch in temporal support values');
 
                 filterValues = thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse;
 

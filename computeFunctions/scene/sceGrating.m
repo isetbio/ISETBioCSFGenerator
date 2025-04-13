@@ -157,9 +157,13 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
             
             for frameIndex = 1:stimDurationFramesNum
-                % Contrast is kept constant throughout all frames
+                % Contrast is kept constant throughout all frames, except
+                % when stimulus is off
                 frameContrastSequence(frameIndex) = testContrast;
-                
+                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
+                    frameContrastSequence(frameIndex) = 0;
+                end
+
                 % Spatial phase is advanced
                 frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs * gratingParams.temporalModulationParams.phaseDirection;
             end
@@ -174,6 +178,10 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
                 frameContrastSequence(frameIndex) = testContrast * cosd((frameIndex-1)*deltaTemporalPhaseDegs) * gratingParams.temporalModulationParams.phaseDirection;
+                frameContrastSequence(frameIndex) = testContrast;
+                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
+                    frameContrastSequence(frameIndex) = 0;
+                end
                 
                 % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
