@@ -253,6 +253,7 @@ arguments
     % Scene and response visualization are controlled separately.
     options.visualizeEachScene (1,1) logical = false
     options.visualizeEachResponse (1,1) logical = false
+    options.responseVideoFileName(1,:) char = '';
     options.responseVisualizationFunction = []
     options.maxVisualizedNoisyResponseInstances = 1
     options.maxVisualizedNoisyResponseInstanceStimuli = 1
@@ -327,6 +328,9 @@ if (~isempty(options.resultsFileBase))
         sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
         useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
         whichClassifierEngine,mRGCOutputSignalType));
+end
+if (~isempty(options.responseVideoFileName)) && (ischar(options.responseVideoFileName))
+    options.responseVideoFileName = fullfile(options.figureFileBase, options.responseVideoFileName);
 end
 
 %% Set base values for parameters that control what we do
@@ -694,6 +698,7 @@ theNeuralEngine = neuralResponseEngine( ...
 
 % Set the neuralEngine's various visualization properties
 theNeuralEngine.visualizeEachCompute = visualizeEachResponse;
+theNeuralEngine.responseVideoFileName = options.responseVideoFileName;
 theNeuralEngine.customVisualizationFunctionHandle = responseVisualizationFunction;
 theNeuralEngine.maxVisualizedNoisyResponseInstances = maxVisualizedNoisyResponseInstances;
 
