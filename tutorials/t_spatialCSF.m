@@ -200,6 +200,8 @@ arguments
     options.frameDurationSeconds (1,1) double = 0.1;
     options.temporalFrequencyHz (1,1) double = 5;
     options.stimOnFrameIndices (1,:) double = [];
+    options.eccDegs (1,2) double = [0 0];
+    options.sizeDegs (1,2) double = [0.5 0.5];
 
    % Apply temporal filter?
     %
@@ -354,8 +356,8 @@ stimOnFrameIndices = options.stimOnFrameIndices;
 
 % Set up some sizes.  Note that these are small so that the examples run
 % fast.
-mosaicEccDegs = [0 0];
-mosaicSizeDegs = [0.5 0.5];
+mosaicEccDegs = options.eccDegs;
+mosaicSizeDegs = options.sizeDegs;
 mRGCRawSizeDegs = [2 2];
 mRGCCropSize = mosaicSizeDegs;
 
@@ -432,6 +434,9 @@ switch (whichNoiseFreeNre)
         %
         % 1. Select one of the pre-computed mRGC mosaics by specifying its
         % eccentricity, size, and type.
+        if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1) | mosaicSizeDegs(2) > mRGCRawSizeDegs)
+            error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
+        end
         noiseFreeResponseParams.mRGCMosaicParams.eccDegs = mosaicEccDegs;
         noiseFreeResponseParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
         noiseFreeResponseParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
@@ -508,8 +513,9 @@ switch (whichNoiseFreeNre)
         noiseFreeResponseParams = nreNoiseFreeCMosaic([],[],[],[], ...
             'oiPadMethod',oiPadMethod);
         noiseFreeResponseParams.coneMosaicParams.sizeDegs = mosaicSizeDegs;
+        noiseFreeResponseParams.coneMosaicParams.eccDegs = mosaicEccDegs;
         noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = frameDurationSeconds;
-        
+
         % Handle cone contrast setting
         if (useConeContrast)
             noiseFreeResponseParams.coneMosaicParams.outputSignalType = 'coneContrast';
