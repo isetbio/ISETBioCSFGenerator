@@ -135,9 +135,11 @@ function dataOut = nreNoisyInstancesPoisson(...
 
     % Check whether the noise-free response is a cone contrast based
     % response and raise an error
-    noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast');
-    if (noiseFreeResponsesAreContrastResponses)
-        error('You cannot have Poisson noisy instances when the mean response is a contrast-based response\n');
+    if (isfield(neuralEngineOBJ.noiseFreeComputeParams,'coneMosaicParams'))
+        noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast');
+        if (noiseFreeResponsesAreContrastResponses)
+            error('You cannot have Poisson noisy instances when the mean response is a contrast-based response\n');
+        end
     end
 
     % Compute noisy response instances
