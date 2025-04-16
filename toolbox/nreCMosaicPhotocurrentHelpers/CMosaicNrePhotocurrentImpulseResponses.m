@@ -69,9 +69,9 @@ function thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseRes
     theSconeExcitations = coneMosaicNullResponse(1:instancesNum, 1:timeBinsNum, theConeMosaic.sConeIndices);
 
     % Compute the mean cone excitations for each cone class based on the null response
-    meanConeExcitationsPerIntegrationTime(cMosaic.LCONE_ID) = mean(theLconeExcitations(:));
-    meanConeExcitationsPerIntegrationTime(cMosaic.MCONE_ID) = mean(theMconeExcitations(:));
-    meanConeExcitationsPerIntegrationTime(cMosaic.SCONE_ID) = mean(theSconeExcitations(:));
+    meanConeExcitationsPerIntegrationTime(cMosaic.LCONE_ID) = mean(theLconeExcitations(:), 'omitnan');
+    meanConeExcitationsPerIntegrationTime(cMosaic.MCONE_ID) = mean(theMconeExcitations(:), 'omitnan');
+    meanConeExcitationsPerIntegrationTime(cMosaic.SCONE_ID) = mean(theSconeExcitations(:), 'omitnan');
 
     % Compute the background photon rate (R*/sec) for each cone class
     theBackgroundConeExcitationRates = meanConeExcitationsPerIntegrationTime / theConeMosaic.integrationTime;
@@ -92,15 +92,24 @@ function thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseRes
     for iCone = cMosaic.LCONE_ID:cMosaic.SCONE_ID
         [decimatedLMSincrementImpulseResponses(:,iCone), decimatedTemporalSupport] = ...
             resampleResponse(temporalSupport, LMSincrementImpulseResponses(:,iCone), theConeMosaic.integrationTime, downsampleMethod);
+        if (any(isnan(decimatedLMSincrementImpulseResponses(:,iCone))))
+            decimatedLMSincrementImpulseResponses(:,iCone) = decimatedTemporalSupport * 0;
+        end
+
         decimatedLMSdecrementImpulseResponses(:,iCone) = ...
             resampleResponse(temporalSupport, LMSdecrementImpulseResponses(:,iCone), theConeMosaic.integrationTime, downsampleMethod);
+        if (any(isnan(decimatedLMSdecrementImpulseResponses(:,iCone))))
+            decimatedLMSdecrementImpulseResponses(:,iCone) = decimatedTemporalSupport * 0;
+        end
     end
 
     if (visualizePhotocurrentImpulseResponses)
-        hFig = visualizeResponses(100, theFlashDurationSeconds, ...
-            temporalSupport, LMSincrementImpulseResponses, LMSdecrementImpulseResponses, ...
-            decimatedTemporalSupport, decimatedLMSincrementImpulseResponses, decimatedLMSdecrementImpulseResponses);
+        if (~any(isnan(LMSincrementImpulseResponses(:))))
+            hFig = visualizeResponses(100, theFlashDurationSeconds, ...
+                temporalSupport, LMSincrementImpulseResponses, LMSdecrementImpulseResponses, ...
+                decimatedTemporalSupport, decimatedLMSincrementImpulseResponses, decimatedLMSdecrementImpulseResponses);
          %NicePlot.exportFigToPDF('100.pdf', hFig, 300);
+        end
     end
 
     % Compute cone density weighted impulse response
@@ -131,7 +140,13 @@ function thePhotocurrentImpulseResponseStruct = CMosaicNrePhotocurrentImpulseRes
             'k-', 'filled', ...
             'LineWidth', 2.0, 'MarkerSize', 16);
         set(gca, 'XTick', thePhotocurrentImpulseResponseStruct.temporalSupportSeconds);
-        set(gca, 'YLim', max(abs(thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse(:))) * [-1 1]);
+        yRange = max(abs(thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse(:)));
+        if (yRange > 0)
+            set(gca, 'YLim',  yRange * [-1 1]);
+        else
+            set(gca, 'YLim',  [-1 1]);
+        end
+
         grid on
         set(gca, 'FontSize', 16)
         xlabel('time (sec)');

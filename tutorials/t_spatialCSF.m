@@ -189,7 +189,7 @@ arguments
     %
     % nTest determines the number of test instances. When there are
     % fixationsal EMs, this number is spread across them equally.  Thus
-    % this number must be a multiple of the number of fixationsal EMs
+    % this number must be a multiple of the number of fixational EMs
     % specified.
     options.nTrain (1,1) double = 1
     options.nTest (1,1) double = 128
@@ -199,18 +199,25 @@ arguments
     options.numberOfFrames double = []
     options.frameDurationSeconds (1,1) double = 0.1;
     options.temporalFrequencyHz (1,1) double = 5;
+    options.stimOnFrameIndices (1,:) double = [];
+    options.eccDegs (1,2) double = [0 0];
+    options.sizeDegs (1,2) double = [0.5 0.5];
 
-    % Apply temporal filter?
+   % Apply temporal filter?
     %
     % The timebase of the filter is assumed to match the frame rate, so we
     % only need to specify a list of filter values.  Since these can
     % describe gain changes as well as temporal processing per se, we do
     % not require that these sum to 1.  If you want to preserve signal
     % magnitude, you can normalize the filter values yourself, so that they
-    % sum to 1. This can also be set to some string, e.g.,
-    % 'photocurrentImpulseResponseBased', in which case the filter values
-    % are computed on the fly
-    options.temporalFilterValues (1,:) = []
+    % sum to 1.
+    % 
+    % This can also be set to 'photocurrentImpulseResponseBased', in which
+    % case the filter values are computed on the fly
+    %
+    % It can also be 'watsonFilter'
+    options.temporalFilterValues (1,:) = [];
+    options.watsonParams_tau = 6.25;
 
     % Run the validation check?  This gets overridden to empty if other
     % options change the conditions so that the validation data don't
@@ -248,10 +255,13 @@ arguments
     % Scene and response visualization are controlled separately.
     options.visualizeEachScene (1,1) logical = false
     options.visualizeEachResponse (1,1) logical = false
+    options.responseVideoFileName(1,:) char = '';
     options.responseVisualizationFunction = []
     options.maxVisualizedNoisyResponseInstances = 1
     options.maxVisualizedNoisyResponseInstanceStimuli = 1
-
+    options.figureFileBase (1,:) char = [];
+    options.resultsFileBase (1,:) char = [];
+    
     % Some sizes
     options.stimSizeDegs (1,1) double = 0.5;
     options.pixelsNum (1,1) double = 128;
@@ -304,10 +314,26 @@ pixelsNum = options.pixelsNum;
 rng(1);
 
 %% Figure output base name
-figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
+if (isempty(options.figureFileBase))
+    figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures', ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+else
+    figureFileBase = fullfile(options.figureFileBase, ...
     sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
     useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
     whichClassifierEngine,mRGCOutputSignalType));
+end
+if (~isempty(options.resultsFileBase))
+    resultsFileBase = fullfile(options.resultsFileBase, ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+end
+if (~isempty(options.responseVideoFileName)) && (ischar(options.responseVideoFileName))
+    options.responseVideoFileName = fullfile(options.figureFileBase, options.responseVideoFileName);
+end
 
 %% Set base values for parameters that control what we do
 if (~isempty(numberOfFrames))
@@ -326,11 +352,12 @@ end
 gratingOrientationDegs = 90;
 gratingSpatialPhase = 90;
 temporalFrequencyHz = options.temporalFrequencyHz;
+stimOnFrameIndices = options.stimOnFrameIndices;
 
 % Set up some sizes.  Note that these are small so that the examples run
 % fast.
-mosaicEccDegs = [0 0];
-mosaicSizeDegs = [0.5 0.5];
+mosaicEccDegs = options.eccDegs;
+mosaicSizeDegs = options.sizeDegs;
 mRGCRawSizeDegs = [2 2];
 mRGCCropSize = mosaicSizeDegs;
 
@@ -349,6 +376,7 @@ if (~isempty(temporalFilterValues))
     elseif (ischar(temporalFilterValues) & strcmp(temporalFilterValues,'watsonFilter'))
         % Watson filter, computed here
         [~,watsonParams] = WatsonFilter([],[]);
+        watsonParams.tau = options.watsonParams_tau;
         temporalFilter.temporalSupport = frameDurationSeconds*(0:framesNum-1);
         temporalFilter.filterValues = WatsonFilter(watsonParams,temporalFilter.temporalSupport);
 
@@ -406,6 +434,9 @@ switch (whichNoiseFreeNre)
         %
         % 1. Select one of the pre-computed mRGC mosaics by specifying its
         % eccentricity, size, and type.
+        if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1) | mosaicSizeDegs(2) > mRGCRawSizeDegs)
+            error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
+        end
         noiseFreeResponseParams.mRGCMosaicParams.eccDegs = mosaicEccDegs;
         noiseFreeResponseParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
         noiseFreeResponseParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
@@ -482,8 +513,9 @@ switch (whichNoiseFreeNre)
         noiseFreeResponseParams = nreNoiseFreeCMosaic([],[],[],[], ...
             'oiPadMethod',oiPadMethod);
         noiseFreeResponseParams.coneMosaicParams.sizeDegs = mosaicSizeDegs;
+        noiseFreeResponseParams.coneMosaicParams.eccDegs = mosaicEccDegs;
         noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = frameDurationSeconds;
-        
+
         % Handle cone contrast setting
         if (useConeContrast)
             noiseFreeResponseParams.coneMosaicParams.outputSignalType = 'coneContrast';
@@ -632,6 +664,7 @@ else
         'duration', stimulusDuration, ...
         'frameDurationSeconds', stimulusDuration/framesNum, ...
         'temporalFrequencyHz', temporalFrequencyHz, ...
+        'stimOnFrameIndices', stimOnFrameIndices, ...
         'orientation', gratingOrientationDegs, ...
         'spatialPhase', gratingSpatialPhase, ...
         'pixelsNum', pixelsNum, ...
@@ -671,6 +704,7 @@ theNeuralEngine = neuralResponseEngine( ...
 
 % Set the neuralEngine's various visualization properties
 theNeuralEngine.visualizeEachCompute = visualizeEachResponse;
+theNeuralEngine.responseVideoFileName = options.responseVideoFileName;
 theNeuralEngine.customVisualizationFunctionHandle = responseVisualizationFunction;
 theNeuralEngine.maxVisualizedNoisyResponseInstances = maxVisualizedNoisyResponseInstances;
 
@@ -809,7 +843,7 @@ for idx = 1:length(spatialFreqs)
             'trainFixationalEM', trainFixationalEMObj, ...
             'testFixationalEM', testFixationalEMObj, ...
             'verbose', verbose, ...
-            'maxVisualizedNoisyResponseInstances', maxVisualizedNoisyResponseInstances);
+            'maxVisualizedNoisyResponseInstanceStimuli', maxVisualizedNoisyResponseInstanceStimuli);
     else
         % Compute the threshold for our grating scene with the previously
         % defined neural and classifier engine.  This function does a lot
@@ -822,7 +856,7 @@ for idx = 1:length(spatialFreqs)
             'trainFixationalEM', trainFixationalEMObj, ...
             'testFixationalEM', testFixationalEMObj, ...
             'verbose', verbose, ...
-            'maxVisualizedNoisyResponseInstances', maxVisualizedNoisyResponseInstances);
+            'maxVisualizedNoisyResponseInstanceStimuli', maxVisualizedNoisyResponseInstanceStimuli);
     end
 
     % Plot stimulus
@@ -890,6 +924,13 @@ end
 %% Return threshold values if requested
 if (nargout > 0)
     thresholdRet = threshold;
+end
+
+%% Save output if desired
+if (~isempty(options.resultsFileBase))
+    close all;
+    drawnow;
+    save(resultsFileBase);
 end
 
 end

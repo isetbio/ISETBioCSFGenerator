@@ -19,7 +19,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 %   The visualize() method is called both from the noiseFree and the noisyInstances compute methods
 %
 % Inputs:
-%    neuralPipeline                 - the parent @neuralResponseEngine object that
+%    neuralPipeline                 - the pipeline of the parent @neuralResponseEngine object that
 %                                     is calling this function as its computeFunctionHandle
 %    neuralResponses                - a 3D matrix, [kTrials x mNeurons x tFrames], of neural responses
 %    temporalSupportSeconds         - the temporal support for the stimulus frames, in seconds
@@ -31,6 +31,8 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 %    'axesHandle'                   - either [] or an axes handle
 %    'responseLabel'                - string, just a comment about the responses visualized
 %    'clearAxesBeforeDrawing'       - boolean, whether to clear the axes before drawing
+%    'responseVideoFileName'        - either [] or a videofilename for saving the response video
+%    'neuralPipelineID'             - either [] or a char providing a label for the neural engine
 %
 % Outputs:
 %   None
@@ -57,8 +59,10 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 % History:
 %    01/11/2025  NPC  Wrote it
 
-    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ] = ...
+    [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ...
+     responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
+
 
     if (isempty(figureHandle))
         figureHandle = figure(); clf;
@@ -88,14 +92,21 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     end
 
     % Get the response dimensins and range
+    minResponse = min([0 min(neuralResponses(:))]);
+
     [nInstances, nTimePoints, ~] = size(neuralResponses);
-    activationRange = [0 max(neuralResponses(:))];
+    activationRange = [minResponse max(abs(neuralResponses(:)))];
 
     % Treat special case of zero activation range
     if (activationRange(1) == activationRange(2))
-       activationRange = [0 10*eps]; 
+       activationRange = activationRange(1) + [0 10*eps];
     end
+
     
+    if (visualizeResponsesAsModulations)
+        activationRange = max(activationRange)*[-1 1];
+    end
+
     if (~isempty(theConeMosaic.fixEMobj)) 
         emPathsDegs = theConeMosaic.fixEMobj.emPosArcMin/60;
     else
@@ -112,10 +123,24 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         XTick = temporalSupportSeconds(1);
     end
 
+    if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+        timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
+        if (isempty(neuralPipelineID))
+            theFullVideoFileName = sprintf('%s_%s_%s.mp4',responseVideoFileName,responseLabel,timeDataInfoStr);
+        else
+            theFullVideoFileName = sprintf('%s_%s_ID_%s_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,timeDataInfoStr);
+        end
+        videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
+        videoOBJ.FrameRate = 30;
+        videoOBJ.Quality = 100;
+        videoOBJ.open();
+    end
+
     for iTrial = 1:min([nInstances maxVisualizedInstances])
 
         % The instantaneous spatial activation
         for iPoint = 1:nTimePoints
+
 
             % Retrieve spatiotemporal response up to this time point
             [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
@@ -180,9 +205,17 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             end 
 
             drawnow;
+            if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+                videoOBJ.writeVideo(getframe(figureHandle));
+            end
 
         end % iPoint
     end % iTrial
+
+    if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+        videoOBJ.close();
+    end
+
 end
 
 function [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...

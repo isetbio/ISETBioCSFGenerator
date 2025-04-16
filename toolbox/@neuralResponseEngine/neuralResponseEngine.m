@@ -3,7 +3,8 @@ classdef neuralResponseEngine < handle
 %
 % Syntax:
 %   theNeuralResponseEngine =
-%      neuralResponseEngine(noiseFreeComputeFunctionHandle, noisyInstancesComputeFunctionHandle, noiseFreeComputeParams, noisyInstancesComputeParams)
+%      neuralResponseEngine(noiseFreeComputeFunctionHandle, noisyInstancesComputeFunctionHandle, ...
+%       noiseFreeComputeParams, noisyInstancesComputeParams)
 %
 % Description:
 %    The neuralResponseEngine computes neural responses according to the
@@ -20,7 +21,6 @@ classdef neuralResponseEngine < handle
 %    will be used instead of the default visualization function, each time
 %    neuralResponseEngine.visualize() is called
 %    
-%
 % Inputs:
 %    noiseFreeComputeFunctionHandle     - Function handle to the noiseFreeComputeFunction that defines the
 %                                       operation of the employed neural response pipeline
@@ -46,7 +46,7 @@ classdef neuralResponseEngine < handle
 %    t_neuralResponseCompute.m
 
 % History:
-%    9/20/2020  NPC Wrote it
+%    9/20/2020   NPC Wrote it
 %    12/18/2024 DHB Major updates
 
     %% Public properties
@@ -61,6 +61,16 @@ classdef neuralResponseEngine < handle
 
         % User-settable flag for visualizing the output of each compute() call
         visualizeEachCompute = false;
+
+        % User-settable parameter speficying that we want to generate a
+        % video of the response, if it is not [], and the filename of the
+        % video to be generated
+        responseVideoFileName = [];
+
+        % User-settable ID (just a string) to label the condition that this
+        % neuralResponseEngine corresponds to. Used when saving videos of
+        % responses but could be used also for figures etc
+        ID = '';
 
         % User-settable visualization function handle
         % If set, the default visualization function is by passed and the
@@ -181,8 +191,10 @@ classdef neuralResponseEngine < handle
     % Public static methods.  These are useful functions that can be called
 	% without having to instantiate a @nre object first
 	methods (Static)
-        theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, theNoisyResponseInstances, activationFunctionParams);
-        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel] = parseVisualizationOptions(options);
+        theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, ...
+            theNoisyResponseInstances, activationFunctionParams);
+        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ...
+            responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = parseVisualizationOptions(options);
     end % static methods
 
 end

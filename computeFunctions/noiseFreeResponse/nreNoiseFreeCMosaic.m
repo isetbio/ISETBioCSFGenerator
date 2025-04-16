@@ -376,7 +376,7 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
 
                 % Ensure temporal support are consistent
                 assert(all(size(filterTemporalSupport) == size(temporalSupportSeconds)), 'mismatch in temporal support lengths');
-                assert(all(temporalSupportSeconds == filterTemporalSupport), 'mismatch in temporal support values');
+                assert(max(abs(temporalSupportSeconds - filterTemporalSupport)) < 1e-6, 'mismatch in temporal support values');
 
                 filterValues = thePhotocurrentImpulseResponseStruct.coneDensityWeightedPhotocurrentImpulseResponse;
 
@@ -461,8 +461,11 @@ if (neuralEngineOBJ.visualizeEachCompute)
     hFig = figure(1000);
     set(hFig, 'Position', [350 700 1650 550]);
     neuralEngineOBJ.visualize(theNeuralResponses, temporalSupportSeconds, ...
+        'figureHandle', hFig, ...
         'responseLabel', 'noise-free cMosaic responses', ...
-        'figureHandle', hFig);
+        'responseVideoFileName', neuralEngineOBJ.responseVideoFileName, ...
+        'neuralPipelineID', neuralEngineOBJ.ID, ...
+        'visualizeResponsesAsModulations', strcmp(noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast'));
 end
 
 %% Assemble the dataOut struct
