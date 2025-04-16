@@ -261,7 +261,11 @@ end
 
 % Compute the sequence of optical images corresponding to the sequence of scenes
 if framesNum == 1
-    theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue',noiseFreeComputeParams.opticsParams.oiPadMethod);
+    if isstruct(sceneSequence)
+        theOIsequence = oiCompute(theOptics, sceneSequence,'padvalue',noiseFreeComputeParams.opticsParams.oiPadMethod);
+    elseif iscell(sceneSequence)
+        theOIsequence = oiCompute(theOptics, sceneSequence{1},'padvalue',noiseFreeComputeParams.opticsParams.oiPadMethod);
+    end
 else
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum

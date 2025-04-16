@@ -626,8 +626,17 @@ while (nextFlag)
         % Compute with trained classifier. We have already visualized for
         % this stimulus if we are visualizing, so we don't do it again here.
         eStart = tic;
-        savevisualizeEachCompute = theNeuralEngine.visualizeEachCompute;
-        theNeuralEngine.visualizeEachCompute = false;
+        if iscell(theNeuralEngine)
+            for n = 1:length(theNeuralEngine)
+                if n == 1
+                    savevisualizeEachCompute = theNeuralEngine{n}.visualizeEachCompute;
+                end
+                theNeuralEngine{n}.visualizeEachCompute = false;
+            end
+        elseif isstruct(theNeuralEngine)
+            savevisualizeEachCompute = theNeuralEngine.visualizeEachCompute;
+            theNeuralEngine.visualizeEachCompute = false;
+        end
 
         % Now predict. Handle each of the four fixations EM cases
         % separately.
@@ -767,7 +776,13 @@ while (nextFlag)
         end
        
         % Restore the visualizeEachCompute flag.
-        theNeuralEngine.visualizeEachCompute = savevisualizeEachCompute;
+        if iscell(theNeuralEngine)
+            for n = 1:length(theNeuralEngine)
+                theNeuralEngine{n}.visualizeEachCompute = savevisualizeEachCompute;
+            end
+        elseif isstruct(theNeuralEngine)
+            theNeuralEngine.visualizeEachCompute = savevisualizeEachCompute;
+        end
 
         testCounter = testCounter + 1;
         e = toc(eStart);
