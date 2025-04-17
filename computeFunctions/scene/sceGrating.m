@@ -178,7 +178,6 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
                 frameContrastSequence(frameIndex) = testContrast * cosd((frameIndex-1)*deltaTemporalPhaseDegs) * gratingParams.temporalModulationParams.phaseDirection;
-                frameContrastSequence(frameIndex) = testContrast;
                 if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
                     frameContrastSequence(frameIndex) = 0;
                 end
