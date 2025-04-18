@@ -166,7 +166,6 @@ end
 % Restore visualize flag
 metaNoisyInstancesParams.neuralEngine.visualizeEachCompute = saveNeuralEngineVisualize;
 
-
 % Assemble the dataOut struct
 dataOut = struct(...
     'neuralResponses', noisyResponseInstances, ...

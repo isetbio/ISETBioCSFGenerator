@@ -116,6 +116,16 @@ function dataOut = nreNoisyInstancesNoNoise(...
     else
         returnTheNoisyInstancesPipeline =  false;
     end
+
+    % Check whether the noise-free responses are cone contrast based, for
+    % visualizaition.
+    if (isfield(neuralEngineOBJ.noiseFreeComputeParams,'coneMosaicParams'))
+        noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast');
+    elseif (isfield(neuralEngineOBJ.noiseFreeComputeParams,'mRGCMosaicParams'))
+        noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneContrast');
+    else
+        noiseFreeResponsesAreContrastResponses = false;
+    end
     
     % Compute noisy response instances. Here we aren't adding noise,
     % so the noisy response is just the noise free response.

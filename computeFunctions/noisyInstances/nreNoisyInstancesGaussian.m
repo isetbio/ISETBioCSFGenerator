@@ -141,8 +141,15 @@ function dataOut = nreNoisyInstancesGaussian(...
         oldSeed = rng(p.Results.rngSeed);
     end
 
-    % Check whether the noise-free response is a cone contrast based response
-    noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast');
+    % Check whether the noise-free responses are cone contrast based, for
+    % visualizaition.
+    if (isfield(neuralEngineOBJ.noiseFreeComputeParams,'coneMosaicParams'))
+        noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast');
+    elseif (isfield(neuralEngineOBJ.noiseFreeComputeParams,'mRGCMosaicParams'))
+        noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneContrast');
+    else
+        noiseFreeResponsesAreContrastResponses = false;
+    end
 
     % Get dimensions of noiseFreeResponses
     [noiseFreeInstancesNum, responseDim, framesNum] = size(noiseFreeResponses);
