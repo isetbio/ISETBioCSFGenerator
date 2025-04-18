@@ -134,11 +134,15 @@ function dataOut = nreNoisyInstancesPoisson(...
     end
 
     % Check whether the noise-free responses are cone contrast based, for
-    % visualizaition.
+    % visualizaition. This is used so that the visualization routine
+    % can more sensibly display things.  Each nre has this information in
+    % different fields or not at all, so this is a little fussy. Next time
+    % this breaks we should encapsulate this in one place so that can be
+    % firxed once rather than fixing in every nreNoisyInstances routine.
     if (isfield(neuralEngineOBJ.noiseFreeComputeParams,'coneMosaicParams'))
         noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.outputSignalType,'coneContrast');
     elseif (isfield(neuralEngineOBJ.noiseFreeComputeParams,'mRGCMosaicParams'))
-        noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.coneMosaicParams.inputSignalType,'coneContrast');
+        noiseFreeResponsesAreContrastResponses = strcmp(neuralEngineOBJ.noiseFreeComputeParams.mRGCMosaicParams.inputSignalType,'coneContrast');
     else
         noiseFreeResponsesAreContrastResponses = false;
     end
