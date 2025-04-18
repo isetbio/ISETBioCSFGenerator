@@ -79,7 +79,7 @@ function [logThreshold, questObj, psychometricFunction, estimatorFittedPsychomet
 %   'verbose'           - Logical. Provide some printout? Default true.
 %   'extraVerbose'        - Logical.  More detailed printout? Default false.
 %   'visualizeStimulus'   - Logical. Provide stimulus visualization.
-%                           Default false.https://canvas.upenn.edu/courses/1841993v
+%                           Default false.
 %   'visualizeAllComponents' - Logical. All component visualization.
 %                           Default false. If set to true, it visualizes
 %                           the mosaic responses to all the stimuli (multiple contrasts)
