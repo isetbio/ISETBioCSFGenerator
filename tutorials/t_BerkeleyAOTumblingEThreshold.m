@@ -379,8 +379,6 @@ if (options.plotPsychometric)
     fprintf('\n');
 end
 if (options.visualizeEsOnMosaic)
-    % This runs but I am not sure it is actually showing the stimulus.
-    % Might have to do with the fact that the stimulus is at 840 nm.
     for ff = 1:length(options.visualizeEsWhichFrames)
         if (~isempty(options.visualizeEsFileBase))
             pdfFileName = fullfile(options.outputFiguresDir, [options.visualizeEsFileBase '_VisualizeEsOnMosaic_Frame' num2str(options.visualizeEsWhichFrames(ff)) '.pdf']);
