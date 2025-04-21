@@ -144,7 +144,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     % Run the simulation from scratch
 
     % Mosaic parameters
-    mosaicSizeDegs = 1.2*[1 1];
+    mosaicSizeDegs = 1.0*[1 1];
     mosaicEccDegs = [0 0];
     mosaicIntegrationTimeSeconds = 2/1000;
     
@@ -525,14 +525,26 @@ function generateResponseVideos(responseTimeAxis, ...
     % Videos of cone mosaic spatiotemporal activatio
     colorbarTickLabelColor = [0.1 0.1 0.1];
     backgroundColor = [0.1 0.1 0.1];
-    pCurrentResponseRange = [-61 -49];            % outer segment current, pAmps
-    coneExcitationsResponseRange = [1000 3500];   % isomerizations/sec (R*/sec)
+    pCurrentResponseRange = [-60 -45];            % outer segment current, pAmps
+    coneExcitationsResponseRange = [1000 4500];   % isomerizations/sec (R*/sec)
 
     domainvisualizationlimits(1) = theConeMosaic.eccentricityDegs(1) - 0.51*theConeMosaic.sizeDegs(1);
     domainvisualizationlimits(2) = theConeMosaic.eccentricityDegs(1) + 0.51*theConeMosaic.sizeDegs(1);
     domainvisualizationlimits(3) = theConeMosaic.eccentricityDegs(2) - 0.51*theConeMosaic.sizeDegs(2);
     domainvisualizationlimits(4) = theConeMosaic.eccentricityDegs(2) + 0.51*theConeMosaic.sizeDegs(2);
 
+    widthPixels = 1280;
+    heightPixels = 1152;
+    hFig0 = figure(20); clf;
+    set(hFig0, 'Position', [10 10 widthPixels heightPixels], 'Color', [1 1 1]);
+    ax0 = subplot('Position', [0.09 0.09 0.91 0.89]);
+    theConeMosaic.visualize('figureHandle', hFig0, 'axesHandle', ax0, ...
+                    'domainvisualizationlimits', domainvisualizationlimits, ...
+                    'backgroundColor', backgroundColor, ...
+                    'fontSize', fontSize, ...
+                    'plotTitle', sprintf('cone mosaic'));
+    NicePlot.exportFigToPNG(sprintf('%s/theConeMosaic.png',figureFileBase), hFig0, 300);
+    
     if (reformatExportedAVIvideoToMP4format)
         videoFormat = 'Uncompressed AVI';
         videoQuality = [];
@@ -542,7 +554,6 @@ function generateResponseVideos(responseTimeAxis, ...
     end
 
     frameRate = 30;
-
     for iTrial = 1:size(coneMosaicNoisySpatiotemporalActivation,1)
 
         % Setup video streams
@@ -575,20 +586,22 @@ function generateResponseVideos(responseTimeAxis, ...
 
 
         % Setup figures
+        widthPixels = 1280;
+        heightPixels = 1152;
         hFig1 = figure(21); clf;
-        set(hFig1, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
+        set(hFig1, 'Position', [10 10 widthPixels heightPixels], 'Color', [1 1 1]);
         ax1 = subplot('Position', [0.09 0.09 0.91 0.89]);
     
         hFig2 = figure(22); clf;
-        set(hFig2, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
+        set(hFig2, 'Position', [110 10 widthPixels heightPixels], 'Color', [1 1 1]);
         ax2 = subplot('Position', [0.09 0.09 0.91 0.89]);
     
         hFig3 = figure(23); clf;
-        set(hFig3, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
+        set(hFig3, 'Position', [210 10 widthPixels heightPixels], 'Color', [1 1 1]);
         ax3 = subplot('Position', [0.09 0.09 0.91 0.89]);
     
         hFig4 = figure(24); clf;
-        set(hFig4, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
+        set(hFig4, 'Position', [310 10 widthPixels heightPixels], 'Color', [1 1 1]);
         ax4 = subplot('Position', [0.09 0.09 0.91 0.89]);
 
     
