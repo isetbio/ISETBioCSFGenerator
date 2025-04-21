@@ -63,6 +63,15 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
         % Whether to load responses already computed 
         % If not, we compute new responses
         options.loadResponsesFromPreviousSimulation (1,1) logical = false;
+
+        % Whether to include fixational eye movements or not
+        options.fixationalEyeMovements (1,1) logical = true;
+
+        % If we have fixational EMs, how many different paths to simulate
+        options.emPathsNum (1,1) double = 2
+
+        % Whether to reformat the exported AVI videos to MP4 format
+        options.reformatExportedAVIvideoToMP4format (1,1) logical = false;
     end
 
     % Parse input
@@ -72,11 +81,17 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     % previous simulation so we can generate figures and videos
     loadResponsesFromPreviousSimulation = options.loadResponsesFromPreviousSimulation;
 
+    % Whether to include fixational eye movements or not
+    fixationalEyeMovements = options.fixationalEyeMovements;
+
+    % How many different fixational EM paths
+    emPathsNum = options.emPathsNum;
+
+    % Whether to reformat the exported AVI videos to MP4 format
+    reformatExportedAVIvideoToMP4format = options.reformatExportedAVIvideoToMP4format;
+
     % Close figs
     close all;
-
-    % Whether to include fixational eye movements or not
-    fixationalEyeMovements = true;
 
     % Where to output results, figures and videos
     projectBaseDir = ISETBioCSFGeneratorRootPath;
@@ -97,11 +112,10 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     end
     simFileName = fullfile(projectBaseDir,'local',mfilename,'results',simFileName);
     
-    % Whether to reformat the exported AVI videos to MP4 format
-    reformatExportedAVIvideoToMP4format = ~true;
-
+   
     if (loadResponsesFromPreviousSimulation)
         % Load previous results
+        fprintf('Loading results from %s\n', simFileName);
         load(simFileName, ...
             'theConeMosaic', ...
             'theExemplarConeIndices', ...
@@ -130,7 +144,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     % Run the simulation from scratch
 
     % Mosaic parameters
-    mosaicSizeDegs = 0.6*[1 1];
+    mosaicSizeDegs = 1.2*[1 1];
     mosaicEccDegs = [0 0];
     mosaicIntegrationTimeSeconds = 2/1000;
     
@@ -141,9 +155,9 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     stimulationDurationTemporalCycles = 6;
     simulationDurationSeconds = stimulationDurationTemporalCycles/temporalFrequencyHz;  
     if (fixationalEyeMovements)
-        nTrials = 10;
+        nTrials = emPathsNum;
     else
-        nTrials = 2;
+        nTrials = 1;
     end
 
    % Override parameters if we want to go through the paces fast
@@ -172,6 +186,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     customSceneParams.temporalModulationParams.phaseDirection = -1;
     customSceneParams.temporalModulationParams.temporalFrequencyHz = temporalFrequencyHz;
     customSceneParams.temporalModulationParams.stimDurationFramesNum = round(simulationDurationSeconds/customSceneParams.frameDurationSeconds);
+    customSceneParams.temporalModulationParams.stimOnFrameIndices = 1:customSceneParams.temporalModulationParams.stimDurationFramesNum;
    
     % Instantiate the scene engine
     thePolarGratingEngine = sceneEngine(sceneComputeFunction, customSceneParams);
@@ -245,11 +260,20 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     % Compute the sequence of optical images corresponding to the polar grating
     fprintf('Computing the optical image sequences (null stimulus + test stimulus)');
     framesNum = numel(theSceneSequence);
-    theListOfOpticalImages = cell(1, framesNum);
+
+    % The null stimulus OIs
     listOfNullOpticalImages = cell(1, framesNum);
+    listOfNullOpticalImages{1} = oiCompute(theOI, theNullSceneSequence{1}, 'pad value', 'mean');
+    for frame = 2:framesNum
+        listOfNullOpticalImages{frame} = listOfNullOpticalImages{1};
+    end
+
+
+    % The test stimulus OIs
+    theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
+        fprintf('Frame %d of %d\n', frame, framesNum);
         theListOfOpticalImages{frame} = oiCompute(theOI, theSceneSequence{frame}, 'pad value', 'mean');
-        listOfNullOpticalImages{frame} = oiCompute(theOI, theNullSceneSequence{frame}, 'pad value', 'mean');
     end
 
     % Generate an @oiSequence object from the list of computed optical images
@@ -310,8 +334,9 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     thePcurrentImpulseResponses = thePhotocurrentImpulseResponseStruct.LMSconeImpulseResponses;
 
     % Compute photocurrent responses
-    parfor coneIndex = 1:theConeMosaic.conesNum
+    for coneIndex = 1:theConeMosaic.conesNum
 
+        fprintf('Computing photocurrent response for cone %d of %d\n', coneIndex, theConeMosaic.conesNum);
         % Retrieve the cone class
         theConeClass = theConeTypes(coneIndex);
 
@@ -367,6 +392,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     coneMosaicNoisyPhotocurrentSpatiotemporalActivation = ...
         permute(osNoiseFormatNoisySpatiotemporalPhotocurrentSignal, [1 3 2]);
 
+    fprintf('Saving results to %s\n', simFileName);
     % Save the results
     save(simFileName, ...
         'theConeMosaic', ...
@@ -507,54 +533,66 @@ function generateResponseVideos(responseTimeAxis, ...
     domainvisualizationlimits(3) = theConeMosaic.eccentricityDegs(2) - 0.51*theConeMosaic.sizeDegs(2);
     domainvisualizationlimits(4) = theConeMosaic.eccentricityDegs(2) + 0.51*theConeMosaic.sizeDegs(2);
 
+    if (reformatExportedAVIvideoToMP4format)
+        videoFormat = 'Uncompressed AVI';
+        videoQuality = [];
+    else
+        videoFormat = 'MPEG-4';
+        videoQuality = 100;
+    end
+
+    frameRate = 30;
+
     for iTrial = 1:size(coneMosaicNoisySpatiotemporalActivation,1)
 
+        % Setup video streams
         theVideoFileName1 = sprintf('%s/NoiseFreeExcitationsTrial%d',figureFileBase, iTrial);
-	    %videoOBJ1 = VideoWriter(theVideoFileName1, 'M PEG-4');  % H264format (has artifacts)
-        videoOBJ1 = VideoWriter(theVideoFileName1, 'Uncompressed AVI');
-	    videoOBJ1.FrameRate = 30;
-	    %videoOBJ1.Quality = 100;
-	    videoOBJ1.open();
-
         theVideoFileName2 = sprintf('%s/NoiseFreePhotocurrentsTrial%d',figureFileBase, iTrial);
-	    % videoOBJ2 = VideoWriter(theVideoFileName2, 'MPEG-4'); % H264format (has artifacts)
-        videoOBJ2 = VideoWriter(theVideoFileName2, 'Uncompressed AVI');
-	    videoOBJ2.FrameRate = 30;
-	    %videoOBJ2.Quality = 100;
-	    videoOBJ2.open();
-    
         theVideoFileName3 = sprintf('%s/NoisyExcitationsTrial%d',figureFileBase, iTrial);
-	    % videoOBJ3 = VideoWriter(theVideoFileName3, 'MPEG-4'); % H264format (has artifacts)
-        videoOBJ3 = VideoWriter(theVideoFileName3, 'Uncompressed AVI');
-	    videoOBJ3.FrameRate = 30;
-	    %videoOBJ3.Quality = 100;
-	    videoOBJ3.open();
-
         theVideoFileName4 = sprintf('%s/NoisyPhotocurrentsTrial%d',figureFileBase, iTrial);
-	    % videoOBJ4 = VideoWriter(theVideoFileName3, 'MPEG-4'); % H264format (has artifacts)
-        videoOBJ4 = VideoWriter(theVideoFileName4, 'Uncompressed AVI');
-	    videoOBJ4.FrameRate = 30;
-	    %videoOBJ4.Quality = 100;
+
+        videoOBJ1 = VideoWriter(theVideoFileName1, videoFormat);
+        videoOBJ2 = VideoWriter(theVideoFileName2, videoFormat);
+        videoOBJ3 = VideoWriter(theVideoFileName3, videoFormat);
+        videoOBJ4 = VideoWriter(theVideoFileName4, videoFormat);
+
+	    videoOBJ1.FrameRate = frameRate;
+        videoOBJ2.FrameRate = frameRate;
+        videoOBJ3.FrameRate = frameRate;
+        videoOBJ4.FrameRate = frameRate;
+
+        if (~isempty(videoQuality))
+	        videoOBJ1.Quality = videoQuality;
+            videoOBJ2.Quality = videoQuality;
+            videoOBJ3.Quality = videoQuality;
+            videoOBJ4.Quality = videoQuality;
+        end
+
+	    videoOBJ1.open();
+	    videoOBJ2.open();
+	    videoOBJ3.open();
 	    videoOBJ4.open();
 
 
+        % Setup figures
         hFig1 = figure(21); clf;
-        set(hFig1, 'Position', [10 10 600 650], 'Color', [1 1 1]);
+        set(hFig1, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
         ax1 = subplot('Position', [0.09 0.09 0.91 0.89]);
     
         hFig2 = figure(22); clf;
-        set(hFig2, 'Position', [10 10 600 650], 'Color', [1 1 1]);
+        set(hFig2, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
         ax2 = subplot('Position', [0.09 0.09 0.91 0.89]);
     
         hFig3 = figure(23); clf;
-        set(hFig3, 'Position', [10 10 600 650], 'Color', [1 1 1]);
+        set(hFig3, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
         ax3 = subplot('Position', [0.09 0.09 0.91 0.89]);
     
         hFig4 = figure(24); clf;
-        set(hFig4, 'Position', [10 10 600 650], 'Color', [1 1 1]);
+        set(hFig4, 'Position', [10 10 960 1024], 'Color', [1 1 1]);
         ax4 = subplot('Position', [0.09 0.09 0.91 0.89]);
 
     
+        % Render video frames
         for t = 1:size(coneMosaicNoisySpatiotemporalActivation,2)
             if (fixationalEyeMovements)
                 % Visualize cone mosaic response with fEM
@@ -688,6 +726,7 @@ function generateResponseVideos(responseTimeAxis, ...
 		    videoOBJ4.writeVideo(getframe(hFig4));
         end
  
+        % Close video streams
         videoOBJ1.close;
         videoOBJ2.close;
         videoOBJ3.close;
