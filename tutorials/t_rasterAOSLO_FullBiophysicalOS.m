@@ -1,24 +1,53 @@
 function t_rasterAOSLO_FullBiophysicalOS
 
+    % Simulation parameters.
     simulateStimulusRaster = true;
+     
+    % How many frames / trial. 
+    nStimulusFramesPerTrial = 2;
 
+    % How many trials, which also means how many fEMs
+    nTrials = 3;
+
+    % Compute cone mosaic and retinal images of stimulus and background
+    recomputeRetinalImages = ~true;
+
+    % Compute cone excitations response
     recomputeConeExcitations = ~true;
+
+    % Visualize the stimulus and the cone excitations response
     visualizeStimulusAndConeExcitationSequence = true;
 
-    recomputePhotocurrents = true;
+    recomputePhotocurrents = ~true;
 
+
+    % Where to output results, figures and videos
+    projectBaseDir = ISETBioCSFGeneratorRootPath;
+    if (~exist(fullfile(projectBaseDir,'local',mfilename,'figures'),'dir'))
+        mkdir(fullfile(projectBaseDir,'local',mfilename,'figures'));
+    end
+    figureFileBase = fullfile(projectBaseDir,'local',mfilename,'figures');
+
+    % Simulation results filename
+    if (~exist(fullfile(projectBaseDir,'local',mfilename,'results'),'dir'))
+        mkdir(fullfile(projectBaseDir,'local',mfilename,'results'));
+    end
+    simFileBase = fullfile(projectBaseDir,'local',mfilename,'results');
+    
 
     if (simulateStimulusRaster)
-        coneExcitationsMatFileName = 'R01coneExcitations0degsWithRaster.mat';
-        photocurrentsMatFileName = 'R01photoCurrents0degsWithRaster.mat';
-        videoFilename = 'TumblingE0degsMosaicActivationWithRaster';
+        retinalImagesMatFileName = fullfile(simFileBase, 'coneMosaicAndRetinalImages0degsWithRaster.mat');
+        coneExcitationsMatFileName = fullfile(simFileBase, 'coneExcitations0degsWithRaster.mat');
+        photocurrentsMatFileName = fullfile(simFileBase, 'photoCurrents0degsWithRaster.mat');
+        videoFilename = fullfile(figureFileBase, 'TumblingE0degsMosaicActivationWithRaster');
     else
-        coneExcitationsMatFileName = 'R01coneExcitations0degsNoRaster.mat';
-        photocurrentsMatFileName = 'R01photoCurrents0degsNoRaster.mat';
-        videoFilename = 'TumblingE0degsMosaicActivationNoRaster';
+        retinalImagesMatFileName = fullfile(simFileBase, 'coneMosaicAndRetinalImages0degsNoRaster.mat');
+        coneExcitationsMatFileName = fullfile(simFileBase, 'coneExcitations0degsNoRaster.mat');
+        photocurrentsMatFileName = fullfile(simFileBase, 'photoCurrents0degsNoRaster.mat');
+        videoFilename = fullfile(figureFileBase, 'TumblingE0degsMosaicActivationNoRaster');
     end
 
-    if (recomputeConeExcitations)
+    if (recomputeRetinalImages)
         % Generate scenes
         testESizeDeg = 10/60;
         [theNullScene, theEscene0degs] = generateScenes(testESizeDeg);
@@ -26,22 +55,15 @@ function t_rasterAOSLO_FullBiophysicalOS
         pixelTimeOnSeconds = 50 * 1e-9;
         rasterLineDutyCycle = 0.4;
 
-        % Simulation parameters. 
-        % 1. Simulation time step: here we pick a simulation time step during
+     
+        % Simulation time step: here we pick a simulation time step during
         % which the AOSLO will scan through 8 of the 512 raster lines. This
         % computes to around 0.51 milliseconds
         fractionLinesScannedPerSimulationTimeStep = 8/512;
-
-        nStimulusFramesPerTrial = 2;
-        nTrials = 3;
-
-        % Compute the simulation time step and the actual stimulus refresh interval
         [simulationTimeStepSeconds, stimulusRefreshIntervalSeconds] = ...
             computeSimulationTimeStep(pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 theEscene0degs, fractionLinesScannedPerSimulationTimeStep);
 
-        % Simulation duration
-        simulationDurationSeconds = stimulusRefreshIntervalSeconds * nStimulusFramesPerTrial;
 
         % Set the mosaic integration time to the simulation time step
         mosaicIntegrationTimeSeconds = simulationTimeStepSeconds;
@@ -50,52 +72,126 @@ function t_rasterAOSLO_FullBiophysicalOS
         mosaicSizeDegs = 0.5*[1.0 1.0];
         mosaicEccDegs = [-1 0];
 
-        % Generate the cone mosaic and fixational eye movements for nTrials, 
-        % each lasting for simulationDurationSeconds
-        theConeMosaic = generateConeMosaicAndFixationalEMs(mosaicEccDegs, mosaicSizeDegs, ...
-                mosaicIntegrationTimeSeconds, simulationDurationSeconds, nTrials);
+        % Generate the cone mosaic
+        theConeMosaic = generateConeMosaic(mosaicEccDegs, mosaicSizeDegs, ...
+                mosaicIntegrationTimeSeconds);
+
 
         % Generate optics
         simulateAdaptiveOpticsviewingConditions = true;
         theOI = generateOptics(simulateAdaptiveOpticsviewingConditions, theConeMosaic);
     
-        % Compute the retinal image sequence of the rasterized stimulus
-        % given the chosen simulationTImeStep
-        visualizeEachRetinalImage = ~true;
+        % Whether to visualize the retinal images of the rasterized stimulus
+        visualizeEachRetinalImage = true;
 
-        % The retinal image is by the default at the size of the AOSLO display.
-        % Here we do no cropping
-        croppedRetinalImageRectDegs = [];
-
-        % Or, crop 
-        %croppedRetinalImageRectDegs = [-0.55*theConeMosaic.sizeDegs(1) -0.55*theConeMosaic.sizeDegs(2) theConeMosaic.sizeDegs(1)*1.1 theConeMosaic.sizeDegs(2)*1.1];
-
-        theOIsequence = computeRasterScanRetinalImageSequence(theOI, theEscene0degs, ...
+        % Generate the OIs for one period of the rasterized background
+        fprintf('\nGenerating retinal images for the background raster. Please wait ...')
+        theListOfBackgroundRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theNullScene, ...
                 pixelTimeOnSeconds, rasterLineDutyCycle, ...
-                simulationDurationSeconds, simulationTimeStepSeconds, ...
-                croppedRetinalImageRectDegs, ...
+                stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
                 visualizeEachRetinalImage);
+        fprintf('Done !\n');
+
+        fprintf('\nGenerating retinal images for the stimulus raster. Please wait ...')
+        % Generate the OIs for one period of the rasterized stimulus
+        theListOfStimulusRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theEscene0degs, ...
+                pixelTimeOnSeconds, rasterLineDutyCycle, ...
+                stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+                visualizeEachRetinalImage);
+        fprintf('Done !\n');
+
+        fprintf('\nSaving retinal images for the stimulus and the background raster. Please wait ...')
+        save(retinalImagesMatFileName, ...
+            'theConeMosaic', ...
+            'stimulusRefreshIntervalSeconds', ...
+            'simulationTimeStepSeconds', ...
+            'theListOfBackgroundRasterRetinalImages', ...
+            'theListOfStimulusRasterRetinalImages', ...
+            '-v7.3', '-nocompression');
+        fprintf('Done !\n');
+    end
 
 
-        % Cone excitation response time series to test stimulus with eye movements
-        fprintf('\nComputing cone excitations response to OI sequence. Please wait ... ');
-        [noiseFreeConeExcitationResponseTimeSeries, noisyConeExcitationResponseTimeSeries, ~,~,timeAxis] = ...
-            theConeMosaic.compute(theOIsequence, ...
+    if (recomputeConeExcitations)
+
+        fprintf('\nLoading retinal images for the background raster. Please wait ...')
+        load(retinalImagesMatFileName, ...
+            'theConeMosaic', ...
+            'simulationTimeStepSeconds', ...
+            'theListOfBackgroundRasterRetinalImages');
+        fprintf('Done !\n');
+
+        fprintf('\nGenerating the background OI sequence. Please wait ...');
+        theSceneTemporalSupportSeconds = (0:(numel(theListOfBackgroundRasterRetinalImages)-1)) * simulationTimeStepSeconds;
+        
+        theBackgroundOIsequence = oiArbitrarySequence(...
+            theListOfBackgroundRasterRetinalImages, ...
+            theSceneTemporalSupportSeconds);
+        fprintf('Done ! \n');
+
+        % Cone excitation response time series to the background raster
+        fprintf('\nComputing cone excitations response to the background raster OI sequence. Please wait ... ');
+        [backgroundConeExcitationResponseTimeSeries, ~, ~,~, backgroundConeExcitationsTimeAxis] = ...
+            theConeMosaic.compute(theBackgroundOIsequence, ...
+            'withFixationalEyeMovements', false);
+        fprintf('Done !\n');
+
+        % Free some memory
+        clear 'theBackgroundOIsequence'
+        clear 'theListOfBackgroundRasterRetinalImages'
+
+
+
+        fprintf('\nLoading retinal images for the stimulus raster. Please wait ...')
+        load(retinalImagesMatFileName, ...
+            'stimulusRefreshIntervalSeconds', ...
+            'simulationTimeStepSeconds', ...
+            'theListOfStimulusRasterRetinalImages');
+        fprintf('Done !\n');
+
+
+        % Simulation duration
+        simulationDurationSeconds = stimulusRefreshIntervalSeconds * nStimulusFramesPerTrial;
+
+        % Generate  fixational eye movements for nTrials, each lasting for simulationDurationSeconds
+        generateFixationalEyeMovements(theConeMosaic, ...
+                simulationDurationSeconds, nTrials);
+
+
+        fprintf('\nGenerating the (periodic) stimulus OI sequence. Please wait ...');
+        totalSimulationTimeSteps = size(theConeMosaic.fixEMobj.emPosArcMin,2);
+        theSceneTemporalSupportSeconds = (0:(totalSimulationTimeSteps-1)) * simulationTimeStepSeconds;
+
+        theStimulusOIsequence = oiArbitrarySequence(...
+            theListOfStimulusRasterRetinalImages, ...
+            theSceneTemporalSupportSeconds, ...
+            'isPeriodic', true);
+        fprintf('Done ! \n');
+
+
+        % Cone excitation response time series to the stimulus raster 
+        fprintf('\nComputing cone excitations response to the stimulus raster OI sequence. Please wait ... ');
+        [noiseFreeConeExcitationResponseTimeSeries, noisyConeExcitationResponseTimeSeries, ~,~, timeAxis] = ...
+            theConeMosaic.compute(theStimulusOIsequence, ...
             'withFixationalEyeMovements', true);
         fprintf('Done !\n');
 
         fprintf('\nSaving cone excitation responses to %s ... ', coneExcitationsMatFileName);
         save(coneExcitationsMatFileName, ...
             'theConeMosaic', ...
-            'theOIsequence', ...
+            'backgroundConeExcitationResponseTimeSeries', ...
+            'backgroundConeExcitationsTimeAxis', ...
             'noiseFreeConeExcitationResponseTimeSeries', ...
+            'noisyConeExcitationResponseTimeSeries', ...
             'timeAxis', '-v7.3');
         fprintf('Done !\n');
-
     end
 
     if (visualizeStimulusAndConeExcitationSequence) && (~recomputePhotocurrents)
-        visualizeRetinalImageAndConeExcitations(coneExcitationsMatFileName, videoFilename);
+        visualizeRetinalImageAndConeExcitations(...
+            retinalImagesMatFileName, ...
+            coneExcitationsMatFileName, ...
+            videoFilename);
     end
 
 
@@ -155,30 +251,79 @@ function visualizeRetinalImageAndConePhotoCurrents(coneExcitationsMatFileName, p
 end
 
 
-function visualizeRetinalImageAndConeExcitations(coneExcitationsMatFileName, videoFilename)
+function visualizeRetinalImageAndConeExcitations(...
+    retinalImagesMatFileName,coneExcitationsMatFileName, videoFilename)
 
-    fprintf('\nLoading data from %s. Please wait ...', coneExcitationsMatFileName);
-
+    fprintf('\nLoading cone excitation data from %s. Please wait ...', coneExcitationsMatFileName);
     load(coneExcitationsMatFileName, ...
             'theConeMosaic', ...
-            'theOIsequence', ...
-            'noiseFreeConeExcitationResponseTimeSeries', ...
-            'timeAxis');
-    fprintf('Done \n');
+            'backgroundConeExcitationResponseTimeSeries', ...
+            'backgroundConeExcitationsTimeAxis');
+
+    fprintf('\nLoading retinal image data from %s. Please wait ...', coneExcitationsMatFileName);
+    load(retinalImagesMatFileName, ...
+            'simulationTimeStepSeconds', ...
+            'theListOfBackgroundRasterRetinalImages');
 
 
     % Determine the cone indices for which we will visualize their time series responses 
     [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
         determineVisualizedConeIndices(theConeMosaic);
 
+    % Transform excitation counts to excitations rate
+    dT = backgroundConeExcitationsTimeAxis(2)-backgroundConeExcitationsTimeAxis(1);
+    backgroundConeExcitationResponseTimeSeries = backgroundConeExcitationResponseTimeSeries / dT;
+
+
+    % First, visualize the response to the background raster
+    fprintf('\nGenerating the background raster OI sequence. Please wait ...');
+    theSceneTemporalSupportSeconds = (0:(numel(theListOfBackgroundRasterRetinalImages)-1)) * simulationTimeStepSeconds;
+        
+    theBackgroundOIsequence = oiArbitrarySequence(...
+            theListOfBackgroundRasterRetinalImages, ...
+            theSceneTemporalSupportSeconds);
+    fprintf('Done ! \n');
+
+    % Generate the video of the cone mosaic excitations response to the stimulus raster
+    generateMosaicActivationVideo(theConeMosaic, theBackgroundOIsequence , backgroundConeExcitationResponseTimeSeries, ...
+        LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
+        backgroundConeExcitationsTimeAxis, sprintf('%s-BackgroundRaster', videoFilename));
+    
+    clear 'theBackgroundOIsequence'
+    clear 'theListOfBackgroundRasterRetinalImages'
+
+
+    fprintf('\nLoading cone excitation data from %s. Please wait ...', coneExcitationsMatFileName);
+    load(coneExcitationsMatFileName, ...
+            'noiseFreeConeExcitationResponseTimeSeries', ...
+            'timeAxis');
+
+    fprintf('\nLoading retinal image data from %s. Please wait ...', coneExcitationsMatFileName);
+    load(retinalImagesMatFileName, ...
+            'theListOfStimulusRasterRetinalImages');
+
+
+    % Next, visualize the response to the stimulus raster
+    fprintf('\nGenerating the (periodic) stimulus raster OI sequence. Please wait ...');
+    totalSimulationTimeSteps = size(theConeMosaic.fixEMobj.emPosArcMin,2);
+    theSceneTemporalSupportSeconds = (0:(totalSimulationTimeSteps-1)) * simulationTimeStepSeconds;
+      
+    theStimulusOIsequence = oiArbitrarySequence(...
+            theListOfStimulusRasterRetinalImages, ...
+            theSceneTemporalSupportSeconds, ...
+            'isPeriodic', true);
+    fprintf('Done ! \n');
 
     % Transform excitation counts to excitations rate
     dT = timeAxis(2)-timeAxis(1);
     noiseFreeConeExcitationResponseTimeSeries = noiseFreeConeExcitationResponseTimeSeries / dT;
 
-    generateMosaicActivationVideo(theConeMosaic, theOIsequence, noiseFreeConeExcitationResponseTimeSeries, ...
+
+    % Generate the video of the cone mosaic excitations response to the stimulus raster
+    generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, noiseFreeConeExcitationResponseTimeSeries, ...
         LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
-        timeAxis, videoFilename);
+        timeAxis, sprintf('%s-StimulusRaster', videoFilename));
+
 end
 
 
@@ -248,7 +393,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
 
     targetWavelength = 840;
 
-    irradianceEnergyMapWatts480nmPerMMsquared = zeros(nTimePoints, numel(spatialSupportY), numel(spatialSupportX));
+    irradianceMapWatts480nmPerMMsquared = zeros(nTimePoints, numel(spatialSupportY), numel(spatialSupportX));
     for iTimePoint = 1:nTimePoints
         % Get the current retinal image
         theRetinalImage = theOIsequence.frameAtIndex(iTimePoint);
@@ -356,8 +501,8 @@ function [theNullScene, theEscene0degs] = generateScenes(testESizeDeg)
     theNullScene = theNullSequence{frameNo};
 end
 
-function theConeMosaic = generateConeMosaicAndFixationalEMs(mosaicEccDegs, mosaicSizeDegs, ...
-    mosaicIntegrationTimeSeconds, simulationDurationSeconds, nTrials)
+function theConeMosaic = generateConeMosaic(...
+    mosaicEccDegs, mosaicSizeDegs, mosaicIntegrationTimeSeconds)
     
     % Set cone aperture parameters for the @cMosaic
     % Use a Gaussian cone aperture with
@@ -378,9 +523,12 @@ function theConeMosaic = generateConeMosaicAndFixationalEMs(mosaicEccDegs, mosai
                 'coneApertureModifiers', coneApertureModifiers, ...
                 'integrationTime', mosaicIntegrationTimeSeconds ...
                 );
+end
+
+function generateFixationalEyeMovements(theConeMosaic, simulationDurationSeconds, nTrials)
 
     % Fixational eye movements
-    eyeMovementsPerTrial = round(simulationDurationSeconds/mosaicIntegrationTimeSeconds);
+    eyeMovementsPerTrial = round(simulationDurationSeconds/theConeMosaic.integrationTime);
     
     fixEMobj = fixationalEM();
     fixEMobj.controlGamma = 0.18;
@@ -483,17 +631,16 @@ end
 
 
 
-function theOIsequence = computeRasterScanRetinalImageSequence(theOI, theTestScene, ...
+function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theTestScene, ...
         pixelTimeOnSeconds, rasterLineDutyCycle,  ...
-        simulationDurationSeconds, simulationTimeStepSeconds, ...
-        croppedRetinalImageRectDegs, ...
+        stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
         visualizeEachRetinalImage)
 
+    % Compute the retinal image of the non-rasterized scene
     theRetinalImage = oiCompute(theOI, theTestScene, 'pad value', 'mean');
 
-    if (~isempty(croppedRetinalImageRectDegs))
-        % Compute cropping rect in pixels
-
+    if (visualizeEachRetinalImage)
+        % Compute the spatial support
         spatialSupportMM = oiGet(theRetinalImage, 'spatial support', 'mm');
         theOptics = oiGet(theRetinalImage, 'optics');
         focalLength = opticsGet(theOptics, 'focal length');
@@ -501,31 +648,14 @@ function theOIsequence = computeRasterScanRetinalImageSequence(theOI, theTestSce
         spatialSupportDegs = spatialSupportMM/mmPerDegree;
         spatialSupportXdegs = spatialSupportDegs(1,:,1);
         spatialSupportYdegs = spatialSupportDegs(:,1,2);
-
-        idx = find(spatialSupportXdegs >= croppedRetinalImageRectDegs(1));
-        upperLeftPixelColumn = idx(1);
-
-        idx = find(spatialSupportYdegs >= croppedRetinalImageRectDegs(2));
-        upperLeftPixelRow = idx(1);
-
-        retainedPixelColumns = find( ...
-            (spatialSupportXdegs >= croppedRetinalImageRectDegs(1)) & ...
-            (spatialSupportXdegs <= croppedRetinalImageRectDegs(1)+croppedRetinalImageRectDegs(3)));
-
-        retainedPixelRows = find( ...
-            (spatialSupportYdegs >= croppedRetinalImageRectDegs(2)) & ...
-            (spatialSupportYdegs <= croppedRetinalImageRectDegs(2)+croppedRetinalImageRectDegs(4)));
-        croppedRetinalImageRectPixels = [upperLeftPixelColumn upperLeftPixelRow numel(retainedPixelColumns) numel(retainedPixelRows)];
-    else
-        croppedRetinalImageRectPixels = [];
     end
 
 
+    % Compute the power at 840 nm
     irradiancePowerWatts480nmPerMMsquared = computeIrradianceInWattsPerMM2(theRetinalImage, 840);
-
     nonRasterizedEscenePower = mean(irradiancePowerWatts480nmPerMMsquared(:));
-    fprintf(2,'non-rasterized scene power at 840 nm is: %E W/mm2.\n', nonRasterizedEscenePower)
-    fprintf(2,'Will says it is: 8.37E-04 W/mm2.\n');
+    fprintf(2,'\nNon-rasterized scene power at 840 nm is: %E W/mm2.', nonRasterizedEscenePower);
+    fprintf(2,'\nWill says it should be: 8.37E-04 W/mm2.\n');
 
     % Retrieve the photons map of the non-raster scene
     theScenePhotons = sceneGet(theTestScene, 'photons');
@@ -552,19 +682,21 @@ function theOIsequence = computeRasterScanRetinalImageSequence(theOI, theTestSce
         pixelONtimes(pixelIndices) = activeScanONtime  + (1:numel(pixelIndices)) * pixelTimeOnSeconds;
     end
 
-    % Compute stimulus refresh interval
-    stimulusRefreshIntervalSeconds = rasterLinesNum * rasterLineTotalDurationSeconds;
+    % Checks
+    assert(stimulusRefreshIntervalSeconds == rasterLinesNum * rasterLineTotalDurationSeconds, ...
+        'something is wrong with the temporal properties of the stimulus');
+    assert(rem(stimulusRefreshIntervalSeconds,simulationTimeStepSeconds) == 0, ...
+        'the stimulus refresh interval is not an integer multiple of the simulationTimeStepSeconds');
+
+    simulationTimeStepsNum = stimulusRefreshIntervalSeconds/simulationTimeStepSeconds;
 
     % The testScene was generated asumming that all pixels are ON during the stimulusRefreshIntervalSeconds
     % In the rasterized scene, a few raster lines are ON and only during the duration of the simulation step.
     % So we need to amplify their irradiance by the ratio of stimulusRefreshIntervalSeconds / simulationTimeStepSeconds
-    radianceMultiplierToAccountForRasterSimulation = stimulusRefreshIntervalSeconds / simulationTimeStepSeconds;
-
+    radianceMultiplierToAccountForRasterSimulation = simulationTimeStepsNum;
 
     % Generate a scene for each simulation time step and its associated retinal image
-    simulationTimeStepsNum = ceil(simulationDurationSeconds/simulationTimeStepSeconds);
     theListOfRetinalImages = cell(1, simulationTimeStepsNum);
-
     for iTimeStep = 1:simulationTimeStepsNum
 
         if (~visualizeEachRetinalImage)
@@ -574,18 +706,9 @@ function theOIsequence = computeRasterScanRetinalImageSequence(theOI, theTestSce
         t1 = (iTimeStep-1)*simulationTimeStepSeconds;
         t2 = t1 + simulationTimeStepSeconds;
 
-        t1ModuloRefresh = t1;
-        t2ModuloRefresh = t2;
 
-        frameCounter = 1;
-        while (t1ModuloRefresh>=stimulusRefreshIntervalSeconds)
-            t1ModuloRefresh = t1ModuloRefresh-stimulusRefreshIntervalSeconds;
-            t2ModuloRefresh = t2ModuloRefresh-stimulusRefreshIntervalSeconds;
-            frameCounter = frameCounter + 1;
-        end
-
-        % Find which pixels are ON between t1ModuloRefresh and t2ModuloRefresh
-        activePixelsIndices = find( (pixelONtimes >= t1ModuloRefresh) & (pixelONtimes < t2ModuloRefresh));
+        % Find which pixels are ON between t1 and t2
+        activePixelsIndices = find( (pixelONtimes >= t1) & (pixelONtimes < t2));
         
         % Find (rows,cols) of the active pixels 
         [activePixelCols, activePixelRows] = ind2sub([rasterLinesNum pixelsPerRasterLine], activePixelsIndices);
@@ -593,44 +716,23 @@ function theOIsequence = computeRasterScanRetinalImageSequence(theOI, theTestSce
         % Zero photons everywhere for the scene corresponding to this iTimeStep
         theFrameScenePhotons = theScenePhotons*0;
 
-        % Adjusted radiance for the active pixels
+        % Adjusted radiance for the rasterized stimulus
         theFrameScenePhotons(activePixelRows, activePixelCols,:) = ...
                 theScenePhotons(activePixelRows, activePixelCols,:) * radianceMultiplierToAccountForRasterSimulation;
         
         theFrameScene = sceneSet(theTestScene, 'photons', theFrameScenePhotons);
-        theRetinalImageAtThisSimulationTimeStep = oiCompute(theOI, theFrameScene, 'pad value', 'mean');
+        theRetinalImageAtThisSimulationTimeStep = oiCompute(theOI, theFrameScene, 'pad value', 'zero');
 
         if (visualizeEachRetinalImage)
             figure(33); clf;
-            subplot(1,2,1)
-            image(oiGet(theRetinalImageAtThisSimulationTimeStep, 'rgbimage'));
+            image(spatialSupportXdegs, spatialSupportYdegs, oiGet(theRetinalImageAtThisSimulationTimeStep, 'rgbimage'));
             axis 'image'
-        end
-
-        % Crop the retinal image to the desired size
-        if (~isempty(croppedRetinalImageRectPixels))
-            theRetinalImageAtThisSimulationTimeStep = oiCrop(theRetinalImageAtThisSimulationTimeStep, croppedRetinalImageRectPixels);
         end
 
         theListOfRetinalImages{iTimeStep} = theRetinalImageAtThisSimulationTimeStep;
-
-        if (visualizeEachRetinalImage)
-            subplot(1,2,2)
-            image(oiGet(theRetinalImageAtThisSimulationTimeStep, 'rgbimage'));
-            axis 'image'
-            title(sprintf('t: %2.3f msec', t1*1000));
-            drawnow
-        end
     end
 
-    fprintf('Generating raster OI sequence. Please wait ...\n');
-    theSceneTemporalSupportSeconds = (0:(numel(theListOfRetinalImages)-1))*simulationTimeStepSeconds;
-    theOIsequence = oiArbitrarySequence(theListOfRetinalImages, theSceneTemporalSupportSeconds);
-
 end
-
-
-
 
 
 
