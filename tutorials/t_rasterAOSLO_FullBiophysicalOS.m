@@ -16,10 +16,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     recomputeConeExcitations = ~true;
 
     % Visualize the stimulus and the cone excitations response
-    visualizeStimulusAndConeExcitationSequence = true;
+    visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = ~true;
+    recomputePhotocurrents = true;
 
 
     % Where to output results, figures and videos
@@ -431,8 +431,8 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
     spatialSupportY = theConeMosaic.eccentricityDegs(2) + spatialSupportDegs(:,1,2);
 
     visualizedFOV = max(spatialSupportX) - min(spatialSupportX);
-    domainVisualizationLimits(1:2) = theConeMosaic.eccentricityDegs(1) + 0.5*visualizedFOV*[-1 1];
-    domainVisualizationLimits(3:4) = theConeMosaic.eccentricityDegs(2) + 0.5*visualizedFOV*[-1 1];
+    domainVisualizationLimits(1:2) = theConeMosaic.eccentricityDegs(1) + 0.35*visualizedFOV*[-1 1];
+    domainVisualizationLimits(3:4) = theConeMosaic.eccentricityDegs(2) + 0.35*visualizedFOV*[-1 1];
     domainVisualizationTicks.x = -2:0.2:2;
     domainVisualizationTicks.y = -2:0.2:2;
 
@@ -456,18 +456,22 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
                 set(ax1, 'CLim', irradianceRange);
                 colormap(ax1, 'gray');
                 colorbar(ax1,'north', 'Color', [0.8 0.8 0.8], 'FontSize', 12, 'FontName', 'Spot mono');
-                title(ax1, sprintf('irradiance, mWatts/mm^2 @ %dnm (simulated Tuten AOSLO, time step: %2.2f msec)',targetWavelength, dT*1000), ...
-                'FontSize', 14);
+                set(ax1, 'FontSize', 16);
+                title(ax1, ...
+                    sprintf('simulated Tuten AOSLO display, time step: %2.2f msec (irradiance, mWatts/mm^2 @ %dnm )', dT*1000, targetWavelength), ...
+                    'FontSize', 14);
             else
                 theRetinalImage = theOIsequence.frameAtIndex(iTimePoint);
                 image(ax1, spatialSupportX, spatialSupportY, oiGet(theRetinalImage, 'rgbimage'));
+                set(ax1, 'FontSize', 16);
+                title(ax1, ...
+                    sprintf('simulated Tuten AOSLO display, time step: %2.2f msec', dT*1000), ...
+                    'FontSize', 13);
             end
 
             axis(ax1,'image');
             set(ax1, 'XTick', domainVisualizationTicks.x, 'YTick', domainVisualizationTicks.y);
             set(ax1, 'XLim', domainVisualizationLimits(1:2), 'YLim', domainVisualizationLimits(3:4));
-            set(ax1, 'FontSize', 16);
-            
             xlabel(ax1, 'eccentricity, x (degs)');
             ylabel(ax1, 'eccentricity, y (degs)');
 
@@ -506,6 +510,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
 
 
             if (strcmp(signalType, 'excitations'))
+                % Excitations
                 scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(LconeIndicesResponses(iTrial, 1:iTimePoint,:)), 50, ...
                     'MarkerFaceColor', [1 0 0], 'MarkerEdgeColor', [1 0.5 0.5], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
                 hold(ax3, 'on');
@@ -514,6 +519,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
                 scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(SconeIndicesResponses(iTrial, 1:iTimePoint,:)), 10, ...
                     'MarkerFaceColor', [0 0 1],  'MarkerEdgeColor', [0.5 0.5 1], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
             else
+                % Photocurrents
                 plot(ax3, timeAxis(1:iTimePoint)*1000, squeeze(LconeIndicesResponses(iTrial, 1:iTimePoint,:)), '-', ...
                     'Color', [1 0 0], 'LineWidth', 1.0);
                 hold(ax3, 'on');
@@ -521,6 +527,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
                     'Color', [0 1 0], 'LineWidth', 1.0);
                 plot(ax3, timeAxis(1:iTimePoint)*1000, squeeze(SconeIndicesResponses(iTrial, 1:iTimePoint,:)), '-', ...
                     'Color', [0 0 1], 'LineWidth', 1.0);
+                set(ax3, 'YTick', -50:5:50)
             end
 
             hold(ax3, 'off');
