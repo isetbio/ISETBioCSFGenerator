@@ -4,10 +4,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     simulateStimulusRaster = true;
      
     % How many frames / trial. 
-    nStimulusFramesPerTrial = 3;
+    nStimulusFramesPerTrial = 4;
 
     % How many trials, which also means how many fEMs
-    nTrials = 4;
+    nTrials = 8;
 
     % Compute cone mosaic and retinal images of stimulus and background
     recomputeRetinalImages = ~true;
@@ -16,10 +16,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     recomputeConeExcitations = ~true;
 
     % Visualize the stimulus and the cone excitations response
-    visualizeStimulusAndConeExcitationSequence = ~true;
+    visualizeStimulusAndConeExcitationSequence = true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = true;
+    recomputePhotocurrents = ~true;
 
 
     % Where to output results, figures and videos
@@ -469,6 +469,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
                     'FontSize', 13);
             end
 
+            
             axis(ax1,'image');
             set(ax1, 'XTick', domainVisualizationTicks.x, 'YTick', domainVisualizationTicks.y);
             set(ax1, 'XLim', domainVisualizationLimits(1:2), 'YLim', domainVisualizationLimits(3:4));
@@ -535,6 +536,11 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
             set(ax3, 'XColor', [0.75 0.75 0.75], 'YColor', [0.75 0.75 0.75], 'Color', 'none', 'FontSize', 14);
             grid(ax3, 'on');
             box(ax3, 'off')
+
+            if ((max(timeAxis)-min(timeAxis))*1000 > 100)
+                xtickangle(ax3, '90');
+            end
+
             xlabel(ax3, 'time (ms)');
             ylabel(ax3, yAxisLabel);
 
