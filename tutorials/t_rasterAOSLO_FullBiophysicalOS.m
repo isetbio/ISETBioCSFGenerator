@@ -4,10 +4,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     simulateStimulusRaster = true;
      
     % How many frames / trial. 
-    nStimulusFramesPerTrial = 2;
+    nStimulusFramesPerTrial = 3;
 
     % How many trials, which also means how many fEMs
-    nTrials = 3;
+    nTrials = 4;
 
     % Compute cone mosaic and retinal images of stimulus and background
     recomputeRetinalImages = ~true;
@@ -18,6 +18,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     % Visualize the stimulus and the cone excitations response
     visualizeStimulusAndConeExcitationSequence = true;
 
+    % Compute photocurrent response
     recomputePhotocurrents = ~true;
 
 
@@ -124,6 +125,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         fprintf('\nGenerating the background OI sequence. Please wait ...');
         theSceneTemporalSupportSeconds = (0:(numel(theListOfBackgroundRasterRetinalImages)-1)) * simulationTimeStepSeconds;
         
+        % Generate OI sequence for the background raster sequence
         theBackgroundOIsequence = oiArbitrarySequence(...
             theListOfBackgroundRasterRetinalImages, ...
             theSceneTemporalSupportSeconds);
@@ -139,7 +141,6 @@ function t_rasterAOSLO_FullBiophysicalOS
         % Free some memory
         clear 'theBackgroundOIsequence'
         clear 'theListOfBackgroundRasterRetinalImages'
-
 
 
         fprintf('\nLoading retinal images for the stimulus raster. Please wait ...')
@@ -158,6 +159,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                 simulationDurationSeconds, nTrials);
 
 
+        % Generate OI sequence for the stimulus raster (periodic)
         fprintf('\nGenerating the (periodic) stimulus OI sequence. Please wait ...');
         totalSimulationTimeSteps = size(theConeMosaic.fixEMobj.emPosArcMin,2);
         theSceneTemporalSupportSeconds = (0:(totalSimulationTimeSteps-1)) * simulationTimeStepSeconds;
@@ -187,72 +189,97 @@ function t_rasterAOSLO_FullBiophysicalOS
         fprintf('Done !\n');
     end
 
-    if (visualizeStimulusAndConeExcitationSequence) && (~recomputePhotocurrents)
+
+    if (visualizeStimulusAndConeExcitationSequence)
         visualizeRetinalImageAndConeExcitations(...
             retinalImagesMatFileName, ...
             coneExcitationsMatFileName, ...
-            videoFilename);
+            strrep(videoFilename, 'MosaicActivation', 'MosaicConeExcitationActivation'));
     end
 
 
     if (recomputePhotocurrents)
         load(coneExcitationsMatFileName, ...
             'theConeMosaic', ...
+            'backgroundConeExcitationResponseTimeSeries', ...
+            'backgroundConeExcitationsTimeAxis', ...
             'noiseFreeConeExcitationResponseTimeSeries', ...
+            'noisyConeExcitationResponseTimeSeries', ...
             'timeAxis');
 
-        warmupPeriodSeconds = 0.0;
-        backgroundConeExcitations = zeros(1, theConeMosaic.conesNum);
 
-        [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis] = ...
-            computeFullPhotocurrentModelResponse(backgroundConeExcitations, noiseFreeConeExcitationResponseTimeSeries, ...
-            theConeMosaic.integrationTime, warmupPeriodSeconds);
+        warmupPeriodSeconds = 1.0;
+        coolDownPeriodSeconds = 0.0;
+
+        [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis] = computeConeMosaicPhotoCurrentsResponse(...
+            theConeMosaic, ...
+            backgroundConeExcitationResponseTimeSeries, ...
+            noiseFreeConeExcitationResponseTimeSeries, ...
+            warmupPeriodSeconds, ...
+            coolDownPeriodSeconds);
 
         save(photocurrentsMatFileName, ...
+            'theConeMosaic', ...
             'photocurrentResponseTimeSeries', ...
             'photocurrentResponseTimeAxis', ...
             '-v7.3');
 
-        videoFilename = strrep(videoFilename, 'MosaicActivation', 'MosaicPhotocurrents');
-        visualizeRetinalImageAndConePhotoCurrents(coneExcitationsMatFileName, photocurrentsMatFileName, videoFilename);
+        visualizeRetinalImageAndConePhotoCurrents(...
+            retinalImagesMatFileName, ...
+            photocurrentsMatFileName, ...
+            strrep(videoFilename, 'MosaicActivation', 'MosaicPhotocurrentActivation'));
     end
 
 end
 
 
-function visualizeRetinalImageAndConePhotoCurrents(coneExcitationsMatFileName, photocurrentsMatFileName, videoFilename)
+function visualizeRetinalImageAndConePhotoCurrents(retinalImagesMatFileName, photocurrentsMatFileName, videoFilename)
 
-    fprintf('\nLoading data from %s. Please wait ...', coneExcitationsMatFileName);
-
-    load(coneExcitationsMatFileName, ...
-            'theConeMosaic', ...
-            'theOIsequence', ...
-            'timeAxis');
-    fprintf('Done \n');
-
-
-    fprintf('\nLoading data from %s. Please wait ...', photocurrentsMatFileName);
-
+    fprintf('\nLoading photocurrent response data from %s. Please wait ...', photocurrentsMatFileName);
     load(photocurrentsMatFileName, ...
+            'theConeMosaic', ...
             'photocurrentResponseTimeSeries', ...
             'photocurrentResponseTimeAxis');
-    fprintf('Done \n');
 
+    fprintf('\nLoading retinal image data from %s. Please wait ...', retinalImagesMatFileName);
+    load(retinalImagesMatFileName, ...
+            'theListOfStimulusRasterRetinalImages');
+
+
+    % Next, visualize the response to the stimulus raster
+    fprintf('\nGenerating the (periodic) stimulus raster OI sequence. Please wait ...');
+    totalSimulationTimeSteps = size(theConeMosaic.fixEMobj.emPosArcMin,2);
+    simulationTimeStepSeconds = photocurrentResponseTimeAxis(2)-photocurrentResponseTimeAxis(1);
+    theSceneTemporalSupportSeconds = (0:(totalSimulationTimeSteps-1)) * simulationTimeStepSeconds;
+      
+    theStimulusOIsequence = oiArbitrarySequence(...
+            theListOfStimulusRasterRetinalImages, ...
+            theSceneTemporalSupportSeconds, ...
+            'isPeriodic', true);
+    fprintf('Done ! \n');
 
 
     % Determine the cone indices for which we will visualize their time series responses 
     [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
         determineVisualizedConeIndices(theConeMosaic);
 
-
-    generateMosaicActivationVideo(theConeMosaic, theOIsequence, photocurrentResponseTimeSeries, ...
+    irradianceAtTargetWavelengthInsteadOfRGBimage = false;
+    displayEyeMovements = true;
+    yAxisLabel = 'photocurrent (pAmps)';
+    % Generate the video of the cone mosaic excitations response to the stimulus raster
+    generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseTimeSeries, ...
         LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
-        timeAxis, videoFilename);
+        displayEyeMovements, ...
+        photocurrentResponseTimeAxis, yAxisLabel, ...
+        'photocurrent', ...
+        irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+        sprintf('%s-StimulusRaster', videoFilename));
 end
 
 
+
 function visualizeRetinalImageAndConeExcitations(...
-    retinalImagesMatFileName,coneExcitationsMatFileName, videoFilename)
+    retinalImagesMatFileName, coneExcitationsMatFileName, videoFilename)
 
     fprintf('\nLoading cone excitation data from %s. Please wait ...', coneExcitationsMatFileName);
     load(coneExcitationsMatFileName, ...
@@ -260,7 +287,7 @@ function visualizeRetinalImageAndConeExcitations(...
             'backgroundConeExcitationResponseTimeSeries', ...
             'backgroundConeExcitationsTimeAxis');
 
-    fprintf('\nLoading retinal image data from %s. Please wait ...', coneExcitationsMatFileName);
+    fprintf('\nLoading retinal image data from %s. Please wait ...', retinalImagesMatFileName);
     load(retinalImagesMatFileName, ...
             'simulationTimeStepSeconds', ...
             'theListOfBackgroundRasterRetinalImages');
@@ -284,10 +311,18 @@ function visualizeRetinalImageAndConeExcitations(...
             theSceneTemporalSupportSeconds);
     fprintf('Done ! \n');
 
-    % Generate the video of the cone mosaic excitations response to the stimulus raster
+    irradianceAtTargetWavelengthInsteadOfRGBimage = false;
+    displayEyeMovements = false;
+    yAxisLabel = 'cone excitation rate (R*/sec)';
+
+    % Generate the video of the cone mosaic excitations response to the background raster
     generateMosaicActivationVideo(theConeMosaic, theBackgroundOIsequence , backgroundConeExcitationResponseTimeSeries, ...
         LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
-        backgroundConeExcitationsTimeAxis, sprintf('%s-BackgroundRaster', videoFilename));
+        displayEyeMovements, ...
+        backgroundConeExcitationsTimeAxis, yAxisLabel, ...
+        'excitations', ...
+        irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+        sprintf('%s-BackgroundRaster', videoFilename));
     
     clear 'theBackgroundOIsequence'
     clear 'theListOfBackgroundRasterRetinalImages'
@@ -318,18 +353,24 @@ function visualizeRetinalImageAndConeExcitations(...
     dT = timeAxis(2)-timeAxis(1);
     noiseFreeConeExcitationResponseTimeSeries = noiseFreeConeExcitationResponseTimeSeries / dT;
 
-
+    irradianceAtTargetWavelengthInsteadOfRGBimage = false;
+    displayEyeMovements = true;
+    yAxisLabel = 'cone excitation rate (R*/sec)';
     % Generate the video of the cone mosaic excitations response to the stimulus raster
     generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, noiseFreeConeExcitationResponseTimeSeries, ...
         LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
-        timeAxis, sprintf('%s-StimulusRaster', videoFilename));
+        displayEyeMovements, ...
+        timeAxis, yAxisLabel, ...
+        'excitations', ...
+        irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+        sprintf('%s-StimulusRaster', videoFilename));
 
 end
 
 
 function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicResponseTimeSeries, ...
     LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
-    timeAxis, videoFilename)
+    displayEyeMovements, timeAxis, yAxisLabel, signalType, irradianceAtTargetWavelengthInsteadOfRGBimage, videoFilename)
 
     labeledConeIndices = [...
         LconeIndicesVisualized(:); ...
@@ -342,7 +383,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
     
 
     hFig = figure(1); clf;
-    set(hFig, 'Position', [10 10 1504 768], 'Color', [1 1 1]);
+    set(hFig, 'Position', [10 10 1984 1024], 'Color', [1 1 1]);
     
     colsNum = 2; 
     rowsNum = 1;
@@ -361,7 +402,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
 
     ax3 = axes('Position', [0.575 0.12 0.4 0.22]);
 
-    videoOBJ = VideoWriter(sprintf('%s_RetinalImageAndConeExcitations',videoFilename), 'MPEG-4');  % H264format (has artifacts)
+    videoOBJ = VideoWriter(videoFilename, 'MPEG-4');  % H264format 
     videoOBJ.FrameRate = 60;
     videoOBJ.Quality = 100;
     videoOBJ.open();
@@ -372,7 +413,11 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
     visualizedConeAperture = 'lightCollectingArea5Sigma';
     backgroundColor = [0.2 0.2 0.2];
 
-    activationRange = [min(mosaicResponseTimeSeries(:)) max(mosaicResponseTimeSeries(:))]; 
+    if (strcmp(signalType, 'excitations'))
+        activationRange = [min(mosaicResponseTimeSeries(:)) max(mosaicResponseTimeSeries(:))]; 
+    else
+        activationRange = max(abs(mosaicResponseTimeSeries(:)))* [-1 1];
+    end
 
     theRetinalImage = theOIsequence.frameAtIndex(1);
 
@@ -405,46 +450,78 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
     for iTrial = 1:nTrials
         for iTimePoint = 1:nTimePoints
 
-            % Plot retinal irradiance at target wavelengh
-            imagesc(ax1, spatialSupportX, spatialSupportY, squeeze(irradianceMapWatts480nmPerMMsquared(iTimePoint,:,:)));
-            set(ax1, 'CLim', irradianceRange);
+            if (irradianceAtTargetWavelengthInsteadOfRGBimage)
+                % Plot retinal irradiance at target wavelengh
+                imagesc(ax1, spatialSupportX, spatialSupportY, squeeze(irradianceMapWatts480nmPerMMsquared(iTimePoint,:,:)));
+                set(ax1, 'CLim', irradianceRange);
+                colormap(ax1, 'gray');
+                colorbar(ax1,'north', 'Color', [0.8 0.8 0.8], 'FontSize', 12, 'FontName', 'Spot mono');
+                title(ax1, sprintf('irradiance, mWatts/mm^2 @ %dnm (simulated Tuten AOSLO, time step: %2.2f msec)',targetWavelength, dT*1000), ...
+                'FontSize', 14);
+            else
+                theRetinalImage = theOIsequence.frameAtIndex(iTimePoint);
+                image(ax1, spatialSupportX, spatialSupportY, oiGet(theRetinalImage, 'rgbimage'));
+            end
+
             axis(ax1,'image');
             set(ax1, 'XTick', domainVisualizationTicks.x, 'YTick', domainVisualizationTicks.y);
             set(ax1, 'XLim', domainVisualizationLimits(1:2), 'YLim', domainVisualizationLimits(3:4));
-
-            colormap(ax1, 'gray');
-            colorbar(ax1,'north', 'Color', [0.8 0.8 0.8], 'FontSize', 12, 'FontName', 'Spot mono');
-    
             set(ax1, 'FontSize', 16);
-            title(ax1, sprintf('irradiance, mWatts/mm^2 @ %dnm (simulated Tuten AOSLO, time step: %2.2f msec)',targetWavelength, dT*1000), ...
-                'FontSize', 14);
+            
             xlabel(ax1, 'eccentricity, x (degs)');
             ylabel(ax1, 'eccentricity, y (degs)');
 
-            theConeMosaic.visualize('figureHandle', hFig, 'axesHandle', ax2, ...
-                'visualizedConeAperture', visualizedConeAperture, ...
-                'activation', mosaicResponseTimeSeries(iTrial,iTimePoint,:), ...
-                'activationRange', activationRange, ...
-                'currentEMposition', squeeze(theConeMosaic.fixEMobj.emPosArcMin(iTrial,iTimePoint,:))/60, ...
-                'displayedEyeMovementData', struct('trial', iTrial, 'timePoints', 1:iTimePoint), ...
-                'domainVisualizationLimits', domainVisualizationLimits, ...
-                'domainVisualizationTicks', domainVisualizationTicks, ...
-                'horizontalActivationColorBarInside', true, ...
-                'colorbarFontSize', 10, ...
-                'labelConesWithIndices', labeledConeIndices, ...
-                'noYLabel', true, ...
-                'backgroundColor', backgroundColor, ...
-                'plotTitleFontSize', 14, ...
-                'plotTitle',  sprintf('simulated cone mosaic excitation rate, R*/sec (trial no.%d, t = %2.2f ms)', iTrial, timeAxis(iTimePoint)*1000));
-        
+            if (displayEyeMovements)
+                theConeMosaic.visualize('figureHandle', hFig, 'axesHandle', ax2, ...
+                    'visualizedConeAperture', visualizedConeAperture, ...
+                    'activation', mosaicResponseTimeSeries(iTrial,iTimePoint,:), ...
+                    'activationRange', activationRange, ...
+                    'currentEMposition', squeeze(theConeMosaic.fixEMobj.emPosArcMin(iTrial,iTimePoint,:))/60, ...
+                    'displayedEyeMovementData', struct('trial', iTrial, 'timePoints', 1:iTimePoint), ...
+                    'domainVisualizationLimits', domainVisualizationLimits, ...
+                    'domainVisualizationTicks', domainVisualizationTicks, ...
+                    'horizontalActivationColorBarInside', true, ...
+                    'colorbarFontSize', 10, ...
+                    'labelConesWithIndices', labeledConeIndices, ...
+                    'noYLabel', true, ...
+                    'backgroundColor', backgroundColor, ...
+                    'plotTitleFontSize', 14, ...
+                    'plotTitle',  sprintf('%s (trial no.%d, t = %2.2f ms)', yAxisLabel, iTrial, timeAxis(iTimePoint)*1000));
+            else
+                theConeMosaic.visualize('figureHandle', hFig, 'axesHandle', ax2, ...
+                    'visualizedConeAperture', visualizedConeAperture, ...
+                    'activation', mosaicResponseTimeSeries(iTrial,iTimePoint,:), ...
+                    'activationRange', activationRange, ...
+                    'domainVisualizationLimits', domainVisualizationLimits, ...
+                    'domainVisualizationTicks', domainVisualizationTicks, ...
+                    'horizontalActivationColorBarInside', true, ...
+                    'colorbarFontSize', 10, ...
+                    'labelConesWithIndices', labeledConeIndices, ...
+                    'noYLabel', true, ...
+                    'backgroundColor', backgroundColor, ...
+                    'plotTitleFontSize', 14, ...
+                    'plotTitle',  sprintf('%s (trial no.%d, t = %2.2f ms)', yAxisLabel, iTrial, timeAxis(iTimePoint)*1000));
+      
+            end
 
-            scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(LconeIndicesResponses(iTrial, 1:iTimePoint,:)), 50, ...
-                'MarkerFaceColor', [1 0 0], 'MarkerEdgeColor', [1 0.5 0.5], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
-            hold(ax3, 'on');
-            scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(MconeIndicesResponses(iTrial, 1:iTimePoint,:)), 30, ...
-                'MarkerFaceColor', [0 1 0], 'MarkerEdgeColor', [0.5 0.8 0.5], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
-            scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(SconeIndicesResponses(iTrial, 1:iTimePoint,:)), 10, ...
-                'MarkerFaceColor', [0 0 1],  'MarkerEdgeColor', [0.5 0.5 1], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
+
+            if (strcmp(signalType, 'excitations'))
+                scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(LconeIndicesResponses(iTrial, 1:iTimePoint,:)), 50, ...
+                    'MarkerFaceColor', [1 0 0], 'MarkerEdgeColor', [1 0.5 0.5], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
+                hold(ax3, 'on');
+                scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(MconeIndicesResponses(iTrial, 1:iTimePoint,:)), 30, ...
+                    'MarkerFaceColor', [0 1 0], 'MarkerEdgeColor', [0.5 0.8 0.5], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
+                scatter(ax3, timeAxis(1:iTimePoint)*1000, squeeze(SconeIndicesResponses(iTrial, 1:iTimePoint,:)), 10, ...
+                    'MarkerFaceColor', [0 0 1],  'MarkerEdgeColor', [0.5 0.5 1], 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.4, 'LineWidth', 0.5);
+            else
+                plot(ax3, timeAxis(1:iTimePoint)*1000, squeeze(LconeIndicesResponses(iTrial, 1:iTimePoint,:)), '-', ...
+                    'Color', [1 0 0], 'LineWidth', 1.0);
+                hold(ax3, 'on');
+                plot(ax3, timeAxis(1:iTimePoint)*1000, squeeze(MconeIndicesResponses(iTrial, 1:iTimePoint,:)), '-', ...
+                    'Color', [0 1 0], 'LineWidth', 1.0);
+                plot(ax3, timeAxis(1:iTimePoint)*1000, squeeze(SconeIndicesResponses(iTrial, 1:iTimePoint,:)), '-', ...
+                    'Color', [0 0 1], 'LineWidth', 1.0);
+            end
 
             hold(ax3, 'off');
             set(ax3, 'XLim', [timeAxis(1) timeAxis(end)]*1000, 'XTick', 0:3:200, 'YLim', activationRange);
@@ -452,7 +529,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
             grid(ax3, 'on');
             box(ax3, 'off')
             xlabel(ax3, 'time (ms)');
-            ylabel(ax3, 'cone excitation rate (R*/sec)');
+            ylabel(ax3, yAxisLabel);
 
             drawnow;
             videoOBJ.writeVideo(getframe(hFig));
@@ -468,7 +545,7 @@ function [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized
         determineVisualizedConeIndices(theConeMosaic)
         
     slicePositionDegs = -0.08;
-    sliceThicknessDegs = 0.05;
+    sliceThicknessDegs = 0.02;
     [LconeIndicesVisualized, theROI] = ...
             theConeMosaic.coneIndicesOfCertainTypeWithinHorizontalSlice(...
             slicePositionDegs, sliceThicknessDegs, cMosaic.LCONE_ID);
@@ -735,8 +812,7 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
 end
 
 
-
-function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, coneExcitationResponseTimeSeries] = ...
+function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis] = ...
         computeConeMosaicPhotoCurrentsResponse(theConeMosaic, ...
             coneExcitationResponseBackground, ...
             coneExcitationResponseTimeSeries, ...
@@ -744,21 +820,21 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, coneExci
             coolDownPeriodSeconds)
 
     
-    warmUpSamplesNum = warmupPeriodSeconds / theConeMosaic.integrationTime;
-    coolDownSamplesNum = coolDownPeriodSeconds / theConeMosaic.integrationTime;
+    warmUpSamplesNum = ceil(warmupPeriodSeconds / (size(coneExcitationResponseBackground,2) * theConeMosaic.integrationTime));
+    coolDownSamplesNum = ceil(coolDownPeriodSeconds / (size(coneExcitationResponseBackground,2) * theConeMosaic.integrationTime));
 
     % Concatenate (pre-stimulus) warm up background
     backgroundConeExcitationsRepMat = repmat(coneExcitationResponseBackground, [size(coneExcitationResponseTimeSeries,1) warmUpSamplesNum 1 ]);
+    actualWarmupPeriodSeconds = size(backgroundConeExcitationsRepMat,2)*theConeMosaic.integrationTime;
     coneExcitationResponseTimeSeries = cat(2, backgroundConeExcitationsRepMat, coneExcitationResponseTimeSeries);
-    size(coneExcitationResponseTimeSeries)
+
     % Concatenate (post-stimulus) cool down background
     backgroundConeExcitationsRepMat = repmat(coneExcitationResponseBackground, [size(coneExcitationResponseTimeSeries,1) coolDownSamplesNum 1 ]);
     coneExcitationResponseTimeSeries = cat(2, coneExcitationResponseTimeSeries, backgroundConeExcitationsRepMat);
 
-
     [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis] = ...
          computeFullPhotocurrentModelResponse(coneExcitationResponseBackground, coneExcitationResponseTimeSeries, ...
-         theConeMosaic.integrationTime, warmupPeriodSeconds);
+         theConeMosaic.integrationTime, actualWarmupPeriodSeconds);
 end
 
 
