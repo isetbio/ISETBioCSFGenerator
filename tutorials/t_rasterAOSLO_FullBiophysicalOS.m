@@ -3,11 +3,19 @@ function t_rasterAOSLO_FullBiophysicalOS
     % Simulation parameters.
     simulateStimulusRaster = true;
      
+    % Simulation time step: here we pick a simulation time step during
+    % which the AOSLO will scan through 8 of the 512 raster lines. This
+    % computes to around 0.51 milliseconds
+    fractionLinesScannedPerSimulationTimeStep = 8/512;
+
+    % 1 raster line
+    fractionLinesScannedPerSimulationTimeStep = 2/512;
+
     % How many frames / trial. 
-    nStimulusFramesPerTrial = 4;
+    nStimulusFramesPerTrial = 3;
 
     % How many trials, which also means how many fEMs
-    nTrials = 8;
+    nTrials = 6;
 
     % Compute cone mosaic and retinal images of stimulus and background
     recomputeRetinalImages = true;
@@ -21,7 +29,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = true;
+    recomputePhotocurrents = ~true;
 
 
     % Where to output results, figures and videos
@@ -39,10 +47,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     
 
     if (simulateStimulusRaster)
-        retinalImagesMatFileName = fullfile(simFileBase, 'coneMosaicAndRetinalImages0degsWithRaster.mat');
-        coneExcitationsMatFileName = fullfile(simFileBase, 'coneExcitations0degsWithRaster.mat');
-        photocurrentsMatFileName = fullfile(simFileBase, 'photoCurrents0degsWithRaster.mat');
-        videoFilename = fullfile(figureFileBase, 'TumblingE0degsMosaicActivationWithRaster');
+        retinalImagesMatFileName = fullfile(simFileBase, sprintf('coneMosaicAndRetinalImages0degsWithRaster%2.3fFraction.mat', fractionLinesScannedPerSimulationTimeStep));
+        coneExcitationsMatFileName = fullfile(simFileBase, sprintf('coneExcitations0degsWithRaster%2.3fFraction.mat', fractionLinesScannedPerSimulationTimeStep));
+        photocurrentsMatFileName = fullfile(simFileBase, sprintf('photoCurrents0degsWithRaster%2.3fFraction.mat', fractionLinesScannedPerSimulationTimeStep));
+        videoFilename = fullfile(figureFileBase, sprintf('TumblingE0degsMosaicActivationWithRaster%2.3fFraction', fractionLinesScannedPerSimulationTimeStep));
     else
         retinalImagesMatFileName = fullfile(simFileBase, 'coneMosaicAndRetinalImages0degsNoRaster.mat');
         coneExcitationsMatFileName = fullfile(simFileBase, 'coneExcitations0degsNoRaster.mat');
@@ -78,10 +86,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         rasterLineDutyCycle = 0.4;
 
      
-        % Simulation time step: here we pick a simulation time step during
-        % which the AOSLO will scan through 8 of the 512 raster lines. This
-        % computes to around 0.51 milliseconds
-        fractionLinesScannedPerSimulationTimeStep = 8/512;
+        
         [simulationTimeStepSeconds, stimulusRefreshIntervalSeconds] = ...
             computeSimulationTimeStep(pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 theDecrementsEscene0degs, fractionLinesScannedPerSimulationTimeStep);
