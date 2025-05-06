@@ -10,8 +10,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     nTrials = 8;
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = ~true;
-
+    recomputeRetinalImages = true;
+    testIncrementDecrementScenes = true;
+    visualizeTheSceneRadiance = false;
+    
     % Compute cone excitations response
     recomputeConeExcitations = ~true;
 
@@ -51,7 +53,26 @@ function t_rasterAOSLO_FullBiophysicalOS
     if (recomputeRetinalImages)
         % Generate scenes
         testESizeDeg = 10/60;
-        [theNullScene, theEscene0degs] = generateScenes(testESizeDeg);
+
+        if (testIncrementDecrementScenes)
+            defaultParams = sceBerkeleyAOTumblingEscene();
+            % Change the second p
+            % rimary to 680 from 650
+            AOPrimaryWls = defaultParams.AOPrimaryWls;
+            AOAOCornealPowersUW = defaultParams.AOAOCornealPowersUW;
+    
+            AOPrimaryWls(1) = 840; AOAOCornealPowersUW(1) = 120;     % Imaging channel
+            AOPrimaryWls(2) = 680; AOAOCornealPowersUW(2) = 170;     % Stimulus modulation channel 
+            AOAOCornealPowersUW(3) = 170;
+
+            [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs] = generateIncrementDecrementScenes(...
+                testESizeDeg, AOPrimaryWls, AOAOCornealPowersUW, visualizeTheSceneRadiance);
+
+        else
+            [theNullScene, theDecrementsEscene0degs] = generateScenes(testESizeDeg);
+            theIncrementsEscene0degs = [];
+        end
+
 
         pixelTimeOnSeconds = 50 * 1e-9;
         rasterLineDutyCycle = 0.4;
@@ -63,7 +84,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         fractionLinesScannedPerSimulationTimeStep = 8/512;
         [simulationTimeStepSeconds, stimulusRefreshIntervalSeconds] = ...
             computeSimulationTimeStep(pixelTimeOnSeconds, rasterLineDutyCycle, ...
-                theEscene0degs, fractionLinesScannedPerSimulationTimeStep);
+                theDecrementsEscene0degs, fractionLinesScannedPerSimulationTimeStep);
 
 
         % Set the mosaic integration time to the simulation time step
@@ -87,29 +108,61 @@ function t_rasterAOSLO_FullBiophysicalOS
 
         % Generate the OIs for one period of the rasterized background
         fprintf('\nGenerating retinal images for the background raster. Please wait ...')
-        theListOfBackgroundRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theNullScene, ...
-                pixelTimeOnSeconds, rasterLineDutyCycle, ...
+        theListOfBackgroundRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
+                theNullScene, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
                 visualizeEachRetinalImage);
         fprintf('Done !\n');
 
-        fprintf('\nGenerating retinal images for the stimulus raster. Please wait ...')
-        % Generate the OIs for one period of the rasterized stimulus
-        theListOfStimulusRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theEscene0degs, ...
-                pixelTimeOnSeconds, rasterLineDutyCycle, ...
+        if (testIncrementDecrementScenes)
+            fprintf('\nGenerating retinal images for the stimulus raster (E-decrements). Please wait ...')
+            % Generate the OIs for one period of the rasterized stimulus
+            theListOfStimulusDecrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
+                theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
                 visualizeEachRetinalImage);
-        fprintf('Done !\n');
+            fprintf('Done !\n');
 
-        fprintf('\nSaving retinal images for the stimulus and the background raster. Please wait ...')
-        save(retinalImagesMatFileName, ...
-            'theConeMosaic', ...
-            'stimulusRefreshIntervalSeconds', ...
-            'simulationTimeStepSeconds', ...
-            'theListOfBackgroundRasterRetinalImages', ...
-            'theListOfStimulusRasterRetinalImages', ...
-            '-v7.3', '-nocompression');
-        fprintf('Done !\n');
+            fprintf('\nGenerating retinal images for the stimulus raster (E-increments). Please wait ...')
+            % Generate the OIs for one period of the rasterized stimulus
+            theListOfStimulusIncrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
+                theIncrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
+                stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+                visualizeEachRetinalImage);
+            fprintf('Done !\n');
+
+            fprintf('\nSaving retinal images for the decrements stimulus and the background raster. Please wait ...')
+            save(retinalImagesMatFileName, ...
+                'theConeMosaic', ...
+                'stimulusRefreshIntervalSeconds', ...
+                'simulationTimeStepSeconds', ...
+                'theListOfBackgroundRasterRetinalImages', ...
+                'theListOfStimulusDecrementsRasterRetinalImages', ...
+                'theListOfStimulusIncrementsRasterRetinalImages', ...
+                '-v7.3', '-nocompression');
+            fprintf('Done !\n');
+
+        else
+            fprintf('\nGenerating retinal images for the stimulus raster (default E scene). Please wait ...')
+            % Generate the OIs for one period of the rasterized stimulus
+            theListOfStimulusRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
+                theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
+                stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+                visualizeEachRetinalImage);
+            fprintf('Done !\n');
+
+
+            fprintf('\nSaving retinal images for the stimulus and the background raster. Please wait ...')
+            save(retinalImagesMatFileName, ...
+                'theConeMosaic', ...
+                'stimulusRefreshIntervalSeconds', ...
+                'simulationTimeStepSeconds', ...
+                'theListOfBackgroundRasterRetinalImages', ...
+                'theListOfStimulusRasterRetinalImages', ...
+                '-v7.3', '-nocompression');
+            fprintf('Done !\n');
+        end
+
     end
 
 
@@ -591,8 +644,147 @@ end
 
 
 
+
+function [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs] = ...
+    generateIncrementDecrementScenes(testESizeDeg, AOPrimaryWls, AOAOCornealPowersUW, ...
+    visualizeTheSceneRadiance)
+
+    temporalModulationParams_xShiftPerFrame = [0 5/60 0];
+    temporalModulationParams_yShiftPerFrame = [0 5/60 0];
+    
+    % We keep the imaging channel at max gain
+    imagingChannelGain = 1.0;
+
+    % The background: Stimulus channel at 0.5
+    stimulusChannelGain = 0.5;
+    backgroundRGB = [imagingChannelGain stimulusChannelGain 0];
+
+    % The E increments engines: Stimulus channel at 1.0
+    stimulusChannelGain = 1.0;
+    foregroundRGB = [imagingChannelGain stimulusChannelGain 0];
+    [sce0Increments, sce90Increments, sce180Increments, sce270Increments, sceBg, sceneParams] = t_BerkeleyAOTumblingESceneEngine( ...
+        'temporalModulationParams_xShiftPerFrame', temporalModulationParams_xShiftPerFrame, ...
+        'temporalModulationParams_yShiftPerFrame', temporalModulationParams_yShiftPerFrame, ...
+        'AOPrimaryWls', AOPrimaryWls, ...
+        'AOCornealPowersUW', AOAOCornealPowersUW, ...
+        'temporalModulationParams_backgroundRGBPerFrame', [backgroundRGB; backgroundRGB; backgroundRGB], ...
+        'temporalModulationParams_foregroundRGBPerFrame', [backgroundRGB; foregroundRGB; backgroundRGB]);
+
+    frameNo = 2;
+
+    theNullSequence = sceBg.compute(testESizeDeg);
+    theNullScene = theNullSequence{frameNo};
+    if (visualizeTheSceneRadiance)
+        visualizeSceneRadiance(200, theNullScene, 'background', sceBg.presentationDisplay);
+    end
+
+    theEsceneSequence = sce0Increments.compute(testESizeDeg);
+    theIncrementsEscene0degs = theEsceneSequence{frameNo};
+    if (visualizeTheSceneRadiance)
+        visualizeSceneRadiance(300, theIncrementsEscene0degs, 'increments', sceBg.presentationDisplay);
+    end
+    
+
+    % The E decrements engines: Stimulus channel at 0.0
+    stimulusChannelGain = 0.0;
+    foregroundRGB = [imagingChannelGain stimulusChannelGain 0];
+    [sce0Decrements, sce90Decrements, sce180Decrements, sce270Decrements] = t_BerkeleyAOTumblingESceneEngine( ...
+        'temporalModulationParams_xShiftPerFrame', temporalModulationParams_xShiftPerFrame, ...
+        'temporalModulationParams_yShiftPerFrame', temporalModulationParams_yShiftPerFrame, ...
+        'AOPrimaryWls', AOPrimaryWls, ...
+        'AOCornealPowersUW', AOAOCornealPowersUW, ...
+        'temporalModulationParams_backgroundRGBPerFrame', [backgroundRGB; backgroundRGB; backgroundRGB], ...
+        'temporalModulationParams_foregroundRGBPerFrame', [backgroundRGB; foregroundRGB; backgroundRGB]);
+
+    
+    theEsceneSequence = sce0Decrements.compute(testESizeDeg);
+    theDecrementsEscene0degs = theEsceneSequence{frameNo};
+    if (visualizeTheSceneRadiance)
+        visualizeSceneRadiance(100, theDecrementsEscene0degs, 'decrements', sceBg.presentationDisplay);
+    end
+end
+
+function visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDisplay)
+    
+    displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
+    displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
+
+    photons = sceneGet(scene, 'energy');
+    wave = sceneGet(scene, 'wave');
+
+    % retrieve the XYZ tristimulus components of the scene
+    XYZmap = sceneGet(scene, 'xyz');
+    sceneRGBsettings = imageLinearTransform(XYZmap, displayXYZToLinearRGB);
+
+    redChannel = sceneRGBsettings(:,:,1);
+    greenChannel = sceneRGBsettings(:,:,2);
+    blueChannel = sceneRGBsettings(:,:,3);
+    
+    maxR = 1e24;
+    minR = -1*maxR;
+
+    bias = 0.6;
+    redChannel = bias + (1-bias)*(redChannel-minR)/(maxR-minR);
+    greenChannel = (1-bias)*(greenChannel-minR)/(maxR-minR);
+    blueChannel  = (1-bias)*(blueChannel-minR)/(maxR-minR);
+
+    redChannel(redChannel>1) = 1;
+    [min(redChannel(:)) max(redChannel(:))]
+    [min(greenChannel(:)) max(greenChannel(:))]
+    [min(blueChannel(:)) max(blueChannel(:))]
+
+    sceneRGBsettings(:,:,1) = redChannel;
+    sceneRGBsettings(:,:,2) = greenChannel;
+    sceneRGBsettings(:,:,3) = blueChannel;
+
+    viewingDistance = sceneGet(scene, 'distance');
+    spatialSupportMilliMeters = sceneGet(scene, 'spatial support', 'mm');
+    spatialSupportDegs = 2 * atand(spatialSupportMilliMeters/1e3/2/viewingDistance);
+    
+    spatialSupport = spatialSupportDegs;
+    spatialSupportX = squeeze(spatialSupport(1,:,1));
+    spatialSupportY = squeeze(spatialSupport(:,1,2));
+
+    [~,targetRow] = min(abs(spatialSupportY-0.01));
+    [~,targetCol] = min(abs(spatialSupportX-0.09));
+
+    figure(figNo); clf;
+    ax = subplot(1,3,1);
+    image(ax,spatialSupportX, spatialSupportY, sceneRGBsettings);
+    hold(ax, 'on')
+    plot(ax, zeros(size(spatialSupportY)) + spatialSupportX(targetCol), spatialSupportY, 'g:', 'LineWidth', 1.0);
+    axis(ax,'xy'); axis(ax, 'square')
+    xlabel('space, x (degs)')
+    ylabel('space, y (degs)')
+    title(ax, sprintf('%s scene',sceneLabel));
+    set(ax, 'FontSize', 16);
+
+    ax = subplot(1,3,2);
+    imagesc(ax,spatialSupportX, spatialSupportY, sceneGet(scene, 'luminance'));
+    hold(ax, 'on');
+    plot(ax, zeros(size(spatialSupportY)) + spatialSupportY(targetCol), spatialSupportY, 'r--');
+    colormap(ax,gray);
+    axis(ax,'xy'); axis(ax, 'square')
+    xlabel('space, x (degs)')
+    ylabel('space, y (degs)')
+    title(ax, 'luminance')
+    colorbar(ax, 'north', 'Color', [0.8 0.8 0.8])
+    set(ax, 'FontSize', 16);
+
+    ax = subplot(1,3,3);
+    spaceWave = squeeze(photons(:, targetCol, :));
+    imagesc(ax,  wave, spatialSupportY, spaceWave);
+    ylabel(ax,'space, y (degs)')
+    xlabel(ax, 'wavelength (nm)')
+    axis(ax,'xy'); axis(ax, 'square');
+    set(ax, 'FontSize', 16);
+    colormap(ax,gray);
+    colorbar(ax, 'north', 'Color', [0.8 0.8 0.8])
+    pause
+
+end
+
 function [theNullScene, theEscene0degs] = generateScenes(testESizeDeg)
-    defaultParams = sceBerkeleyAOTumblingEscene();
 
     temporalModulationParams_xShiftPerFrame = [0 5/60 0];
     temporalModulationParams_yShiftPerFrame = [0 5/60 0];
