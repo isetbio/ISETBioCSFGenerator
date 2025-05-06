@@ -18,12 +18,12 @@ function t_rasterAOSLO_FullBiophysicalOS
     nTrials = 6;
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = ~true;
+    recomputeRetinalImages = true;
     testIncrementDecrementScenes = true;
     visualizeTheSceneRadiance = true;
     
     % Compute cone excitations response
-    recomputeConeExcitations = true;
+    recomputeConeExcitations = ~true;
 
     % Visualize the stimulus and the cone excitations response
     visualizeStimulusAndConeExcitationSequence = ~true;
@@ -69,15 +69,15 @@ function t_rasterAOSLO_FullBiophysicalOS
             AOPrimaryWls = defaultParams.AOPrimaryWls;
             AOAOCornealPowersUW = defaultParams.AOAOCornealPowersUW;
     
-            AOPrimaryWls(1) = 840; AOAOCornealPowersUW(1) = 120;     % Imaging channel
-            AOPrimaryWls(2) = 680; AOAOCornealPowersUW(2) = 170;     % Stimulus modulation channel 
+            AOPrimaryWls(1) = 840; AOAOCornealPowersUW(1) = 100;     % Imaging channel
+            AOPrimaryWls(2) = 680; AOAOCornealPowersUW(2) = 1;      % Stimulus modulation channel 
             AOAOCornealPowersUW(3) = 170;
 
-            [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs] = generateIncrementDecrementScenes(...
-                testESizeDeg, AOPrimaryWls, AOAOCornealPowersUW, visualizeTheSceneRadiance);
+            [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs, thePresentationDisplay] = generateIncrementDecrementScenes(...
+                testESizeDeg, AOPrimaryWls, AOAOCornealPowersUW, visualizeTheSceneRadiance, figureFileBase);
 
         else
-            [theNullScene, theDecrementsEscene0degs] = generateScenes(testESizeDeg);
+            [theNullScene, theDecrementsEscene0degs, thePresentationDisplay] = generateScenes(testESizeDeg, visualizeTheSceneRadiance, figureFileBase);
             theIncrementsEscene0degs = [];
         end
 
@@ -114,7 +114,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         theListOfBackgroundRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theNullScene, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage);
+                visualizeEachRetinalImage, thePresentationDisplay);
         fprintf('Done !\n');
 
         if (testIncrementDecrementScenes)
@@ -123,7 +123,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusDecrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage);
+                visualizeEachRetinalImage, thePresentationDisplay);
             fprintf('Done !\n');
 
             fprintf('\nGenerating retinal images for the stimulus raster (E-increments). Please wait ...')
@@ -131,7 +131,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusIncrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theIncrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage);
+                visualizeEachRetinalImage, thePresentationDisplay);
             fprintf('Done !\n');
 
             fprintf('\nSaving retinal images for the increments and decrements stimuli and the background raster. Please wait ...')
@@ -139,6 +139,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                 'theConeMosaic', ...
                 'stimulusRefreshIntervalSeconds', ...
                 'simulationTimeStepSeconds', ...
+                'thePresentationDisplay', ...
                 'theListOfBackgroundRasterRetinalImages', ...
                 'theListOfStimulusDecrementsRasterRetinalImages', ...
                 'theListOfStimulusIncrementsRasterRetinalImages', ...
@@ -151,7 +152,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage);
+                visualizeEachRetinalImage, thePresentationDisplay);
             fprintf('Done !\n');
 
 
@@ -160,6 +161,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                 'theConeMosaic', ...
                 'stimulusRefreshIntervalSeconds', ...
                 'simulationTimeStepSeconds', ...
+                'thePresentationDisplay', ...
                 'theListOfBackgroundRasterRetinalImages', ...
                 'theListOfStimulusRasterRetinalImages', ...
                 '-v7.3', '-nocompression');
@@ -791,9 +793,9 @@ end
 
 
 
-function [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs] = ...
+function [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs, thePresentationDisplay] = ...
     generateIncrementDecrementScenes(testESizeDeg, AOPrimaryWls, AOAOCornealPowersUW, ...
-    visualizeTheSceneRadiance)
+    visualizeTheSceneRadiance, figureFileBase)
 
     temporalModulationParams_xShiftPerFrame = [0 5/60 0];
     temporalModulationParams_yShiftPerFrame = [0 5/60 0];
@@ -821,13 +823,15 @@ function [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs] = ..
     theNullSequence = sceBg.compute(testESizeDeg);
     theNullScene = theNullSequence{frameNo};
     if (visualizeTheSceneRadiance)
-        visualizeSceneRadiance(200, theNullScene, 'background', sceBg.presentationDisplay);
+        hFig = visualizeSceneRadiance(200, theNullScene, 'background', sceBg.presentationDisplay);
+        NicePlot.exportFigToPDF(fullfile(figureFileBase,'BackgroundScene.pdf'), hFig, 300);
     end
 
     theEsceneSequence = sce0Increments.compute(testESizeDeg);
     theIncrementsEscene0degs = theEsceneSequence{frameNo};
     if (visualizeTheSceneRadiance)
-        visualizeSceneRadiance(300, theIncrementsEscene0degs, 'increments', sceBg.presentationDisplay);
+        hFig = visualizeSceneRadiance(300, theIncrementsEscene0degs, 'increments', sceBg.presentationDisplay);
+        NicePlot.exportFigToPDF(fullfile(figureFileBase,'IncrementsScene.pdf'), hFig, 300);
     end
     
 
@@ -846,53 +850,33 @@ function [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs] = ..
     theEsceneSequence = sce0Decrements.compute(testESizeDeg);
     theDecrementsEscene0degs = theEsceneSequence{frameNo};
     if (visualizeTheSceneRadiance)
-        visualizeSceneRadiance(100, theDecrementsEscene0degs, 'decrements', sceBg.presentationDisplay);
+        hFig = visualizeSceneRadiance(100, theDecrementsEscene0degs, 'decrements', sceBg.presentationDisplay);
+        NicePlot.exportFigToPDF(fullfile(figureFileBase,'DecrementsScene.pdf'), hFig, 300);
     end
+
+    thePresentationDisplay = sceBg.presentationDisplay;
 end
 
-function visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDisplay)
-    
+function RGBsettingsImage = visualizeRGBimageFromXYZimage(XYZimage,presentationDisplay)
+
     displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
+    RGBsettingsImage = imageLinearTransform(XYZimage, displayXYZToLinearRGB);
 
-    photons = sceneGet(scene, 'energy');
-    wave = sceneGet(scene, 'wave');
+    totalPixels = numel(RGBsettingsImage)
+    pixelsNumWithRGBsettingsLessThan0 = numel(find(RGBsettingsImage<0))
+    [min(RGBsettingsImage(:)) max(RGBsettingsImage(:))]
 
-    % retrieve the XYZ tristimulus components of the scene
-    XYZmap = sceneGet(scene, 'xyz');
-    % compute the xy-chroma and the luminance maps
-    luminanceMap = squeeze(XYZmap(:,:,2));
-    xMap = squeeze(XYZmap(:,:,1))./sum(XYZmap,3);
-    yMap = squeeze(XYZmap(:,:,2))./sum(XYZmap,3);
+    pixelsNumWithRGBsettingsGreaterThan1 = numel(find(RGBsettingsImage>1))
+    RGBsettingsImage(RGBsettingsImage<0) = 0;
+    RGBsettingsImage(RGBsettingsImage>1) = 1;
+end
 
-    [min(luminanceMap(:)) max(luminanceMap(:))]
 
-    figure(44);
-    plot(xMap(:), yMap(:), 'k.');
-    pause
-
-    sceneRGBsettings = imageLinearTransform(XYZmap, displayXYZToLinearRGB);
-
-    redChannel = sceneRGBsettings(:,:,1);
-    greenChannel = sceneRGBsettings(:,:,2);
-    blueChannel = sceneRGBsettings(:,:,3);
+function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDisplay)
     
-    maxR = 1e24;
-    minR = -1*maxR;
-
-    bias = 0.6;
-    redChannel = bias + (1-bias)*(redChannel-minR)/(maxR-minR);
-    greenChannel = (1-bias)*(greenChannel-minR)/(maxR-minR);
-    blueChannel  = (1-bias)*(blueChannel-minR)/(maxR-minR);
-
-    redChannel(redChannel>1) = 1;
-    [min(redChannel(:)) max(redChannel(:))]
-    [min(greenChannel(:)) max(greenChannel(:))]
-    [min(blueChannel(:)) max(blueChannel(:))]
-
-    sceneRGBsettings(:,:,1) = redChannel;
-    sceneRGBsettings(:,:,2) = greenChannel;
-    sceneRGBsettings(:,:,3) = blueChannel;
+    XYZimage = sceneGet(scene, 'xyz');
+    sceneRGBsettings = visualizeRGBimageFromXYZimage(XYZimage,presentationDisplay);
 
     viewingDistance = sceneGet(scene, 'distance');
     spatialSupportMilliMeters = sceneGet(scene, 'spatial support', 'mm');
@@ -905,43 +889,63 @@ function visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDisplay)
     [~,targetRow] = min(abs(spatialSupportY-0.01));
     [~,targetCol] = min(abs(spatialSupportX-0.09));
 
-    figure(figNo); clf;
-    ax = subplot(1,3,1);
-    image(ax,spatialSupportX, spatialSupportY, sceneRGBsettings);
+    hFig = figure(figNo); clf;
+    set(hFig, 'Position', [10 10 1100 1080], 'Color', [1 1 1]);
+    ax = subplot(4,2, [1 3]);
+    image(ax,spatialSupportX, spatialSupportY, lrgb2srgb(sceneRGBsettings));
     hold(ax, 'on')
     plot(ax, zeros(size(spatialSupportY)) + spatialSupportX(targetCol), spatialSupportY, 'g:', 'LineWidth', 1.0);
     axis(ax,'xy'); axis(ax, 'square')
-    xlabel('space, x (degs)')
     ylabel('space, y (degs)')
     title(ax, sprintf('%s scene',sceneLabel));
     set(ax, 'FontSize', 16);
 
-    ax = subplot(1,3,2);
-    imagesc(ax,spatialSupportX, spatialSupportY, sceneGet(scene, 'luminance'));
+    ax = subplot(4,2, [5 7]);
+    luminanceMap = sceneGet(scene, 'luminance');
+    imagesc(ax,spatialSupportX, spatialSupportY, luminanceMap);
+    maxSceneLuminance = max(luminanceMap(:));
+    maxDisplayedLuminance = 1000;
+    [maxSceneLuminance maxDisplayedLuminance]
+    set(ax, 'CLim', [0 maxDisplayedLuminance]);
     hold(ax, 'on');
     plot(ax, zeros(size(spatialSupportY)) + spatialSupportY(targetCol), spatialSupportY, 'r--');
     colormap(ax,gray);
     axis(ax,'xy'); axis(ax, 'square')
     xlabel('space, x (degs)')
     ylabel('space, y (degs)')
-    title(ax, 'luminance')
+    title(ax, 'luminance (cd/m2)')
     colorbar(ax, 'north', 'Color', [0.8 0.8 0.8])
     set(ax, 'FontSize', 16);
 
-    ax = subplot(1,3,3);
+    photons = sceneGet(scene, 'energy');
+    wave = sceneGet(scene, 'wave');
+
+    ax = subplot(4,2,[2 4]);
     spaceWave = squeeze(photons(:, targetCol, :));
-    imagesc(ax,  wave, spatialSupportY, spaceWave);
+    meanE = mean(spaceWave, 1);
+    max(meanE)
+    imagesc(ax,  wave, spatialSupportY, log10(spaceWave));
+    axis(ax,'xy');
+    set(ax, 'CLim', log10([0.1 300]), 'XTick', 500:20:900, 'XLim', [500 880]);
+    grid(ax, 'on')
     ylabel(ax,'space, y (degs)')
-    xlabel(ax, 'wavelength (nm)')
-    axis(ax,'xy'); axis(ax, 'square');
+     
     set(ax, 'FontSize', 16);
     colormap(ax,gray);
-    colorbar(ax, 'north', 'Color', [0.8 0.8 0.8])
-    pause
-
+    colorbar(ax, 'north', 'Color', [1 0.2 0.2]);
+    title('log10 (energy) [Watts]')
+    
+    ax = subplot(4,2,[6 8]);
+    plot(ax, wave, mean(spaceWave, 1), 'r-', 'LineWidth', 1.5);
+    set(ax, 'XLim', [500 880], 'YScale', 'log', 'YLim', [0.1 350], ...
+        'YTick', [0.1 0.3 1 3 10 30 100 300], 'XTick', 500:20:900);
+    grid(ax, 'on')
+    xlabel(ax, 'wavelength (nm)');
+    ylabel(ax, 'energy (Watts)');
+    set(ax, 'FontSize', 16);
 end
 
-function [theNullScene, theEscene0degs] = generateScenes(testESizeDeg)
+function [theNullScene, theEscene0degs, thePresentationDisplay] = generateScenes(testESizeDeg, visualizeTheSceneRadiance, figureFileBase)
 
     temporalModulationParams_xShiftPerFrame = [0 5/60 0];
     temporalModulationParams_yShiftPerFrame = [0 5/60 0];
@@ -956,6 +960,12 @@ function [theNullScene, theEscene0degs] = generateScenes(testESizeDeg)
     frameNo = 2;
     theEscene0degs = theEsceneSequence0degs{frameNo};
     theNullScene = theNullSequence{frameNo};
+
+    if (visualizeTheSceneRadiance)
+        visualizeSceneRadiance(100, theEscene0degs , 'decrements', sceBg.presentationDisplay);
+    end
+
+    thePresentationDisplay = sceBg.presentationDisplay;
 end
 
 function theConeMosaic = generateConeMosaic(...
@@ -1091,7 +1101,7 @@ end
 function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theTestScene, ...
         pixelTimeOnSeconds, rasterLineDutyCycle,  ...
         stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-        visualizeEachRetinalImage)
+        visualizeEachRetinalImage, thePresentationDisplay)
 
     % Compute the retinal image of the non-rasterized scene
     theRetinalImage = oiCompute(theOI, theTestScene, 'pad value', 'mean');
@@ -1182,8 +1192,14 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
 
         if (visualizeEachRetinalImage)
             figure(33); clf;
-            image(spatialSupportXdegs, spatialSupportYdegs, oiGet(theRetinalImageAtThisSimulationTimeStep, 'rgbimage'));
+            %XYZimage = oiGet(theRetinalImageAtThisSimulationTimeStep, 'XYZ');
+            %RGBsettingsImage = visualizeRGBimageFromXYZimage(XYZimage,thePresentationDisplay);
+            %image(spatialSupportXdegs, spatialSupportYdegs, lrgb2srgb(RGBsettingsImage));
+            theRetinalIlluminance = oiGet(theRetinalImageAtThisSimulationTimeStep, 'illuminance');
+            imagesc(spatialSupportXdegs, spatialSupportYdegs, theRetinalIlluminance);
+            set(gca, 'CLim', [0 6 * 1.0e+03]);
             axis 'image'
+            colormap(gray(1024));
         end
 
         theListOfRetinalImages{iTimeStep} = theRetinalImageAtThisSimulationTimeStep;
