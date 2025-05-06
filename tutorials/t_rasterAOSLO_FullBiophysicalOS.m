@@ -1016,7 +1016,7 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
     set(ax, 'FontSize', 16);
     colormap(ax,gray);
     colorbar(ax, 'north', 'Color', [1 0.2 0.2]);
-    title('log10 (energy) [Watts]')
+    title('log10 (peak power) [Watts]')
     
     ax = subplot(4,2,[6 8]);
     plot(ax, wave, mean(spaceWave, 1), 'r-', 'LineWidth', 1.5);
@@ -1024,7 +1024,7 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
         'YTick', [0.1 0.3 1 3 10 30 100 300], 'XTick', 500:20:900);
     grid(ax, 'on')
     xlabel(ax, 'wavelength (nm)');
-    ylabel(ax, 'energy (Watts)');
+    ylabel(ax, 'peak power (Watts)');
     set(ax, 'FontSize', 16);
 end
 
