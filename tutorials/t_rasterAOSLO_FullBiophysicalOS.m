@@ -18,7 +18,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     nTrials = 6;
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = true;
+    recomputeRetinalImages = ~true;
     testIncrementDecrementScenes = true;
     visualizeTheSceneRadiance = true;
     
@@ -29,7 +29,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = ~true;
+    recomputePhotocurrents = true;
 
 
     % Where to output results, figures and videos
@@ -257,7 +257,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                 'theListOfStimulusIncrementsRasterRetinalImages');
 
 
-            fprintf('\nGenerating the (periodic) stimulus OI sequence for the DECREMENTS stimulus. Please wait ...');
+            fprintf('\nGenerating the (periodic) stimulus OI sequence for the INCREMENTS stimulus. Please wait ...');
             theStimulusOIsequence = oiArbitrarySequence(...
                 theListOfStimulusIncrementsRasterRetinalImages, ...
                 theSceneTemporalSupportSeconds, ...
@@ -267,7 +267,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             clear 'theListOfStimulusIncrementsRasterRetinalImages';
 
             % Cone excitation response time series to the stimulus raster 
-            fprintf('\nComputing cone excitations response to the DECREMENTS stimulus raster OI sequence. Please wait ... ');
+            fprintf('\nComputing cone excitations response to the INCREMENTS stimulus raster OI sequence. Please wait ... ');
             [noiseFreeConeExcitationIncrementsResponseTimeSeries, noisyConeExcitationIncrementsResponseTimeSeries, ~,~, timeAxis] = ...
                 theConeMosaic.compute(theStimulusOIsequence, ...
                 'withFixationalEyeMovements', true);
@@ -437,7 +437,73 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             'theListOfStimulusDecrementsRasterRetinalImages', ...
             'theListOfStimulusIncrementsRasterRetinalImages');
 
-        fprintf('---> Need to implement visualization\n')
+        
+        % Determine the cone indices for which we will visualize their time series responses 
+        [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
+            determineVisualizedConeIndices(theConeMosaic);
+    
+        irradianceAtTargetWavelengthInsteadOfRGBimage = true;
+        displayEyeMovements = true;
+        yAxisLabel = 'photocurrent (pAmps)';
+
+
+        % Next, visualize the response to the stimulus raster (DECREMENTS)
+        fprintf('\nGenerating the (periodic) stimulus raster OI sequence for DECREMENTS. Please wait ...');
+        totalSimulationTimeSteps = size(theConeMosaic.fixEMobj.emPosArcMin,2);
+        simulationTimeStepSeconds = photocurrentResponseTimeAxis(2)-photocurrentResponseTimeAxis(1);
+        theSceneTemporalSupportSeconds = (0:(totalSimulationTimeSteps-1)) * simulationTimeStepSeconds;
+          
+        theStimulusOIsequence = oiArbitrarySequence(...
+                theListOfStimulusDecrementsRasterRetinalImages, ...
+                theSceneTemporalSupportSeconds, ...
+                'isPeriodic', true);
+        fprintf('Done ! \n');
+
+        % Generate the video of the cone mosaic NOISY photocurrent response to the stimulus raster
+        generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseDecrementsTimeSeriesNoisy, ...
+            LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
+            displayEyeMovements, ...
+            photocurrentResponseTimeAxis, yAxisLabel, ...
+            'photocurrent', ...
+            irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            sprintf('%sNoisy-StimulusRaster-Decrements', videoFilename));
+    
+        % Generate the video of the cone mosaic NOISE-FREE photocurrent response to the stimulus raster
+        generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseDecrementsTimeSeries, ...
+            LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
+            displayEyeMovements, ...
+            photocurrentResponseTimeAxis, yAxisLabel, ...
+            'photocurrent', ...
+            irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            sprintf('%s-StimulusRaster-Decrements', videoFilename));
+
+
+        % REPEAT FOR THE INCREMENTS
+        theStimulusOIsequence = oiArbitrarySequence(...
+                theListOfStimulusIncrementsRasterRetinalImages, ...
+                theSceneTemporalSupportSeconds, ...
+                'isPeriodic', true);
+        fprintf('Done ! \n');
+
+         % Generate the video of the cone mosaic NOISY photocurrent response to the stimulus raster
+        generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseIncrementsTimeSeriesNoisy, ...
+            LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
+            displayEyeMovements, ...
+            photocurrentResponseTimeAxis, yAxisLabel, ...
+            'photocurrent', ...
+            irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            sprintf('%sNoisy-StimulusRaster-Increments', videoFilename));
+    
+        % Generate the video of the cone mosaic NOISE-FREE photocurrent response to the stimulus raster
+        generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseIncrementsTimeSeries, ...
+            LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
+            displayEyeMovements, ...
+            photocurrentResponseTimeAxis, yAxisLabel, ...
+            'photocurrent', ...
+            irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            sprintf('%s-StimulusRaster-Increments', videoFilename));
+
+
     else
         load(photocurrentsMatFileName, ...
             'theConeMosaic', ...
@@ -449,6 +515,14 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
         load(retinalImagesMatFileName, ...
             'theListOfStimulusRasterRetinalImages');
     
+
+        % Determine the cone indices for which we will visualize their time series responses 
+        [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
+            determineVisualizedConeIndices(theConeMosaic);
+    
+        irradianceAtTargetWavelengthInsteadOfRGBimage = true;
+        displayEyeMovements = true;
+        yAxisLabel = 'photocurrent (pAmps)';
 
 
         % Next, visualize the response to the stimulus raster
@@ -462,15 +536,6 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
                 theSceneTemporalSupportSeconds, ...
                 'isPeriodic', true);
         fprintf('Done ! \n');
-
-
-        % Determine the cone indices for which we will visualize their time series responses 
-        [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
-            determineVisualizedConeIndices(theConeMosaic);
-    
-        irradianceAtTargetWavelengthInsteadOfRGBimage = false;
-        displayEyeMovements = true;
-        yAxisLabel = 'photocurrent (pAmps)';
 
         % Generate the video of the cone mosaic NOISY photocurrent response to the stimulus raster
         generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseTimeSeriesNoisy, ...
@@ -528,7 +593,7 @@ function visualizeRetinalImageAndConeExcitations(...
             theSceneTemporalSupportSeconds);
     fprintf('Done ! \n');
 
-    irradianceAtTargetWavelengthInsteadOfRGBimage = false;
+    irradianceAtTargetWavelengthInsteadOfRGBimage = true;
     displayEyeMovements = false;
     yAxisLabel = 'cone excitation rate (R*/sec)';
 
@@ -570,7 +635,7 @@ function visualizeRetinalImageAndConeExcitations(...
     dT = timeAxis(2)-timeAxis(1);
     noiseFreeConeExcitationResponseTimeSeries = noiseFreeConeExcitationResponseTimeSeries / dT;
 
-    irradianceAtTargetWavelengthInsteadOfRGBimage = false;
+
     displayEyeMovements = true;
     yAxisLabel = 'cone excitation rate (R*/sec)';
     % Generate the video of the cone mosaic excitations response to the stimulus raster
