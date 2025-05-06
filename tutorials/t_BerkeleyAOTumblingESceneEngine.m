@@ -83,6 +83,7 @@ arguments
     options.temporalModulationParams_yShiftPerFrame (1,:) double = [0 0 10/60];
     options.temporalModulationParams_stimOnFrames (1,:) double = [1 1 1];
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
+    options.temporalModulationParams_foregroundRGBPerFrame (:,:) double = [];
 end
 
 % Initialize
@@ -131,6 +132,7 @@ sceneParams.chromaSpecification.type = options.chromaSpecification_type;
 sceneParams.chromaSpecification.backgroundRGB = options.chromaSpecification_backgroundRGB;
 sceneParams.chromaSpecification.foregroundRGB = options.chromaSpecification_foregroundRGB;
 
+
 % Specifiy E spatial parameters.  The scene engine only produces binary
 % text characters so the size of the letter has to be an integer, and we
 % want it to be an even integer so that we can put it in the center of an 
@@ -140,12 +142,14 @@ sceneParams.eHeightMin = options.eHeightMin;
 % Define the E size temporal sequence of scenes that we want that includes
 % how the E should move around across frames
 testESizeMin = 10;
+
 sceneParams.temporalModulationParams = struct(...   % temporal: modulation params struct
                 'frameRateHz', options.temporalModulationParams_frameRateHz, ...              % frame rate in Hz
                 'numFrames', options.temporalModulationParams_numFrame, ...                   % number of frames we want the E on for
                 'xShiftPerFrame', options.temporalModulationParams_xShiftPerFrame, ...        % how much the E should be shifted in the x dimension in each frame, in degrees
                 'yShiftPerFrame', options.temporalModulationParams_yShiftPerFrame,  ...       % how much the E should be shifted in the y dimension in each frame, in degrees
                 'backgroundRGBPerFrame', options.temporalModulationParams_backgroundRGBPerFrame, ... % background color in RGB for each frame
+                'foregroundRGBPerFrame', options.temporalModulationParams_foregroundRGBPerFrame, ... % foreground color in RGB for each frame
                 'stimOnFrames', options.temporalModulationParams_stimOnFrames ...
                 );
 
@@ -167,6 +171,7 @@ tumblingEsceneEngine270degs = sceneEngine(@sceBerkeleyAOTumblingEscene,scenePara
 
 % Generate params for the background scene
 backgroundSceneParams = sceneParams;
+backgroundSceneParams.temporalModulationParams.foregroundRGBPerFrame = backgroundSceneParams.temporalModulationParams.backgroundRGBPerFrame;
 backgroundSceneParams.chromaSpecification.foregroundRGB = sceneParams.chromaSpecification.backgroundRGB;
 backgroundSceneEngine = sceneEngine(@sceBerkeleyAOTumblingEscene,backgroundSceneParams);
 

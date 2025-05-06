@@ -8,8 +8,8 @@ function t_rasterAOSLO_FullBiophysicalOS
     % computes to around 0.51 milliseconds
     fractionLinesScannedPerSimulationTimeStep = 8/512;
 
-    % 1 raster line
-    fractionLinesScannedPerSimulationTimeStep = 2/512;
+    % 2 raster lines
+    %fractionLinesScannedPerSimulationTimeStep = 2/512;
 
     % How many frames / trial. 
     nStimulusFramesPerTrial = 3;
@@ -81,12 +81,10 @@ function t_rasterAOSLO_FullBiophysicalOS
             theIncrementsEscene0degs = [];
         end
 
-
+        % These are fixed params
         pixelTimeOnSeconds = 50 * 1e-9;
         rasterLineDutyCycle = 0.4;
 
-     
-        
         [simulationTimeStepSeconds, stimulusRefreshIntervalSeconds] = ...
             computeSimulationTimeStep(pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 theDecrementsEscene0degs, fractionLinesScannedPerSimulationTimeStep);

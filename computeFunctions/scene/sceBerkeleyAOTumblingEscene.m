@@ -164,6 +164,7 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
         xShiftDegrees = paramsForTextRendering.temporalModulationParams.xShiftPerFrame;
         yShiftDegrees = paramsForTextRendering.temporalModulationParams.yShiftPerFrame;
         backgroundRGBPerFrame = paramsForTextRendering.temporalModulationParams.backgroundRGBPerFrame;
+        foregroundRGBPerFrame = paramsForTextRendering.temporalModulationParams.foregroundRGBPerFrame;
         stimOnFrames = paramsForTextRendering.temporalModulationParams.stimOnFrames;
     end
     frameDurationSec = 1 / frameRateHz;
@@ -187,6 +188,7 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     % Save actual foregroundRGB
     foregroundRGB = paramsForTextRendering.chromaSpecification.foregroundRGB;
 
+
     % Generate each frame
     for frameIndex = 1:numFrames
         % Update scene parameters for current frame.  This handles the
@@ -194,12 +196,20 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
         paramsForTextRendering.xPixelsNumMargin = xPixelsNumMargin0 + xShiftPixels(frameIndex) + paramsForTextRendering.xOffset;
         paramsForTextRendering.yPixelsNumMargin = yPixelsNumMargin0  + yShiftPixels(frameIndex) + paramsForTextRendering.yOffset;
 
-        % change background for each frame
-        paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
-        if (stimOnFrames(frameIndex))
-            paramsForTextRendering.chromaSpecification.foregroundRGB = foregroundRGB;
+        if (~isempty(foregroundRGBPerFrame))
+             % change BOTH the foreground & background for each frame so we
+             % can model both increments and decrements E
+             paramsForTextRendering.chromaSpecification.foregroundRGB = foregroundRGBPerFrame(frameIndex, :);
+             paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
         else
-            paramsForTextRendering.chromaSpecification.foregroundRGB = backgroundRGBPerFrame(frameIndex, :);
+            % ONLY change background for each frame - previous behavior
+            % where we modeled only the decrements E
+            paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
+            if (stimOnFrames(frameIndex))
+                paramsForTextRendering.chromaSpecification.foregroundRGB = foregroundRGB;
+            else
+                paramsForTextRendering.chromaSpecification.foregroundRGB = backgroundRGBPerFrame(frameIndex, :);
+            end
         end
 
         % Generate the scene frame
@@ -263,6 +273,7 @@ function p = generateDefaultParams()
                 'numFrames', 1, ...                 % number of frames we want the E on for
                 'xShiftPerFrame', 0, ...            % shift E in the x dimension in each frame in degree
                 'yShiftPerFrame', 0, ...
+                'foregroundRGBPerFrame', [], ...
                 'backgroundRGBPerFrame', [1 0 0]), ...           % shift E in the y dimension in each frame in degree
         'spectralSupport', (400:10:860)', ...   % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
