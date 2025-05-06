@@ -12,7 +12,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     %fractionLinesScannedPerSimulationTimeStep = 2/512;
 
     % How many frames / trial. 
-    nStimulusFramesPerTrial = 3;
+    nStimulusFramesPerTrial = 9;
 
     % How many trials, which also means how many fEMs
     nTrials = 6;
@@ -23,13 +23,13 @@ function t_rasterAOSLO_FullBiophysicalOS
     visualizeTheSceneRadiance = true;
     
     % Compute cone excitations response
-    recomputeConeExcitations = ~true;
+    recomputeConeExcitations = true;
 
     % Visualize the stimulus and the cone excitations response
     visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = true;
+    recomputePhotocurrents = ~true;
 
 
     % Where to output results, figures and videos
@@ -114,7 +114,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         theListOfBackgroundRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theNullScene, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage, thePresentationDisplay);
+                visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
         fprintf('Done !\n');
 
         if (testIncrementDecrementScenes)
@@ -123,7 +123,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusDecrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage, thePresentationDisplay);
+                visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
             fprintf('Done !\n');
 
             fprintf('\nGenerating retinal images for the stimulus raster (E-increments). Please wait ...')
@@ -131,7 +131,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusIncrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theIncrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage, thePresentationDisplay);
+                visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
             fprintf('Done !\n');
 
             fprintf('\nSaving retinal images for the increments and decrements stimuli and the background raster. Please wait ...')
@@ -152,7 +152,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-                visualizeEachRetinalImage, thePresentationDisplay);
+                visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
             fprintf('Done !\n');
 
 
@@ -459,6 +459,8 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
                 'isPeriodic', true);
         fprintf('Done ! \n');
 
+        targetWavelength = 640;
+
         % Generate the video of the cone mosaic NOISY photocurrent response to the stimulus raster
         generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseDecrementsTimeSeriesNoisy, ...
             LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
@@ -466,6 +468,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             photocurrentResponseTimeAxis, yAxisLabel, ...
             'photocurrent', ...
             irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            targetWavelength, ...
             sprintf('%sNoisy-StimulusRaster-Decrements', videoFilename));
     
         % Generate the video of the cone mosaic NOISE-FREE photocurrent response to the stimulus raster
@@ -475,6 +478,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             photocurrentResponseTimeAxis, yAxisLabel, ...
             'photocurrent', ...
             irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            targetWavelength, ...
             sprintf('%s-StimulusRaster-Decrements', videoFilename));
 
 
@@ -492,6 +496,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             photocurrentResponseTimeAxis, yAxisLabel, ...
             'photocurrent', ...
             irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            targetWavelength, ...
             sprintf('%sNoisy-StimulusRaster-Increments', videoFilename));
     
         % Generate the video of the cone mosaic NOISE-FREE photocurrent response to the stimulus raster
@@ -501,6 +506,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             photocurrentResponseTimeAxis, yAxisLabel, ...
             'photocurrent', ...
             irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            targetWavelength, ...
             sprintf('%s-StimulusRaster-Increments', videoFilename));
 
 
@@ -537,6 +543,8 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
                 'isPeriodic', true);
         fprintf('Done ! \n');
 
+        targetWavelength = 840;
+
         % Generate the video of the cone mosaic NOISY photocurrent response to the stimulus raster
         generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseTimeSeriesNoisy, ...
             LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
@@ -544,6 +552,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             photocurrentResponseTimeAxis, yAxisLabel, ...
             'photocurrent', ...
             irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            targetWavelength, ...
             sprintf('%sNoisy-StimulusRaster', videoFilename));
     
         % Generate the video of the cone mosaic NOISE-FREE photocurrent response to the stimulus raster
@@ -553,6 +562,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             photocurrentResponseTimeAxis, yAxisLabel, ...
             'photocurrent', ...
             irradianceAtTargetWavelengthInsteadOfRGBimage, ...
+            targetWavelength, ...
             sprintf('%s-StimulusRaster', videoFilename));
     end
 
@@ -652,7 +662,8 @@ end
 
 function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicResponseTimeSeries, ...
     LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
-    displayEyeMovements, timeAxis, yAxisLabel, signalType, irradianceAtTargetWavelengthInsteadOfRGBimage, videoFilename)
+    displayEyeMovements, timeAxis, yAxisLabel, signalType, ...
+    irradianceAtTargetWavelengthInsteadOfRGBimage, targetWavelength, videoFilename)
 
     labeledConeIndices = [...
         LconeIndicesVisualized(:); ...
@@ -717,8 +728,6 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
     domainVisualizationLimits(3:4) = theConeMosaic.eccentricityDegs(2) + 0.35*visualizedFOV*[-1 1];
     domainVisualizationTicks.x = -2:0.2:2;
     domainVisualizationTicks.y = -2:0.2:2;
-
-    targetWavelength = 840;
 
     irradianceMapWatts480nmPerMMsquared = zeros(nTimePoints, numel(spatialSupportY), numel(spatialSupportX));
     for iTimePoint = 1:nTimePoints
@@ -841,18 +850,27 @@ end
 function [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
         determineVisualizedConeIndices(theConeMosaic)
         
-    slicePositionDegs = -0.08;
-    sliceThicknessDegs = 0.02;
-    [LconeIndicesVisualized, theROI] = ...
-            theConeMosaic.coneIndicesOfCertainTypeWithinHorizontalSlice(...
-            slicePositionDegs, sliceThicknessDegs, cMosaic.LCONE_ID);
-    MconeIndicesVisualized = ...
-            theConeMosaic.coneIndicesOfCertainTypeWithinHorizontalSlice(...
-            slicePositionDegs, sliceThicknessDegs, cMosaic.MCONE_ID);
 
-    SconeIndicesVisualized = ...
-            theConeMosaic.coneIndicesOfCertainTypeWithinHorizontalSlice(...
-            slicePositionDegs, sliceThicknessDegs, cMosaic.SCONE_ID);
+    theROI = regionOfInterest(...
+        'geometryStruct', struct(...
+            'units', 'degs', ...
+            'shape', 'rect', ...
+            'center', [-0.9 -0.1], ...
+            'width', 0.25, ...
+            'height', 0.25, ...
+            'rotation', 0.0...
+        ));
+    
+
+    idx = theROI.indicesOfPointsInside(theConeMosaic.coneRFpositionsDegs(theConeMosaic.lConeIndices,:));
+    LconeIndicesVisualized = theConeMosaic.lConeIndices(idx);
+
+    idx = theROI.indicesOfPointsInside(theConeMosaic.coneRFpositionsDegs(theConeMosaic.mConeIndices,:));
+    MconeIndicesVisualized = theConeMosaic.mConeIndices(idx);
+     
+    idx = theROI.indicesOfPointsInside(theConeMosaic.coneRFpositionsDegs(theConeMosaic.sConeIndices,:));
+    SconeIndicesVisualized = theConeMosaic.sConeIndices(idx);
+
 end
 
 
@@ -1063,8 +1081,8 @@ function generateFixationalEyeMovements(theConeMosaic, simulationDurationSeconds
     eyeMovementsPerTrial = round(simulationDurationSeconds/theConeMosaic.integrationTime);
     
     fixEMobj = fixationalEM();
-    fixEMobj.controlGamma = 0.18;
-    fixEMobj.feedbackGain = 0.16;
+    %fixEMobj.controlGamma = 0.18;
+    %fixEMobj.feedbackGain = 0.16;
     fixEMobj.microSaccadeType = 'none';    % No micro-saccades
     fixEMobj.randomSeed = 1;
 
@@ -1166,7 +1184,7 @@ end
 function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theTestScene, ...
         pixelTimeOnSeconds, rasterLineDutyCycle,  ...
         stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
-        visualizeEachRetinalImage, thePresentationDisplay)
+        visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes)
 
     % Compute the retinal image of the non-rasterized scene
     theRetinalImage = oiCompute(theOI, theTestScene, 'pad value', 'mean');
@@ -1184,10 +1202,16 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
 
 
     % Compute the power at 840 nm
-    irradiancePowerWatts480nmPerMMsquared = computeIrradianceInWattsPerMM2(theRetinalImage, 840);
-    nonRasterizedEscenePower = mean(irradiancePowerWatts480nmPerMMsquared(:));
-    fprintf(2,'\nNon-rasterized scene power at 840 nm is: %E W/mm2.', nonRasterizedEscenePower);
-    fprintf(2,'\nWill says it should be: 8.37E-04 W/mm2.\n');
+    if (testIncrementDecrementScenes)
+        irradiancePowerWattsTargetWavelengthPerMMsquared = computeIrradianceInWattsPerMM2(theRetinalImage, 680);
+        nonRasterizedEscenePower = mean(irradiancePowerWattsTargetWavelengthPerMMsquared(:));
+    else
+        irradiancePowerWattsTargetWavelengthPerMMsquared = computeIrradianceInWattsPerMM2(theRetinalImage, 840);
+        nonRasterizedEscenePower = mean(irradiancePowerWattsTargetWavelengthPerMMsquared(:));
+        fprintf(2,'\nNon-rasterized scene power at 840 nm is: %E W/mm2.', nonRasterizedEscenePower);
+        fprintf(2,'\nWill says it should be: 8.37E-04 W/mm2.\n');
+    end
+
 
     % Retrieve the photons map of the non-raster scene
     theScenePhotons = sceneGet(theTestScene, 'photons');
