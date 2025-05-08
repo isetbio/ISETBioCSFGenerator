@@ -333,7 +333,7 @@ function t_rasterAOSLO_FullBiophysicalOS
 
     if (recomputePhotocurrents)
 
-        warmupPeriodSeconds = 1.0;
+        warmupPeriodSeconds = 0.5;
         warmUpPeriodSecondsToIncludeInVisualization = 0.1;
         coolDownPeriodSeconds = 0.2;
 
@@ -493,7 +493,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
 
 
         % REPEAT FOR THe DECREMENTS
-        printf('\nGenerating the (periodic) stimulus raster OI sequence for DECREMENTS. Please wait ...');
+        fprintf('\nGenerating the (periodic) stimulus raster OI sequence for DECREMENTS. Please wait ...');
         theStimulusOIsequence = oiArbitrarySequence(...
                 theListOfStimulusDecrementsRasterRetinalImages, ...
                 theSceneTemporalSupportSeconds, ...
@@ -1452,8 +1452,11 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
     backgroundConeExcitationsRepMat = repmat(coneExcitationResponseBackground, [size(coneExcitationResponseTimeSeries,1) coolDownSamplesNum 1 ]);
     coneExcitationResponseTimeSeries = cat(2, coneExcitationResponseTimeSeries, backgroundConeExcitationsRepMat);
 
+    % mean background excitation count over warm-up period
+    backgroundConeExcitationCounts = squeeze(mean(coneExcitationResponseBackground,2));
+    
     [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocurrentResponseTimeSeriesNoisy] = ...
-         computeFullPhotocurrentModelResponse(theConeMosaic, coneExcitationResponseBackground, coneExcitationResponseTimeSeries, ...
+         computeFullPhotocurrentModelResponse(theConeMosaic,  backgroundConeExcitationCounts, coneExcitationResponseTimeSeries, ...
          theConeMosaic.integrationTime, actualWarmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization);
 end
 
@@ -1461,7 +1464,7 @@ end
 
 
 function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocurrentResponseTimeSeriesNoisy] = ...
-    computeFullPhotocurrentModelResponse(theConeMosaic, backgroundConeExcitations, stimulusConeExcitationResponseTimeSeries, ...
+    computeFullPhotocurrentModelResponse(theConeMosaic, backgroundConeExcitationCounts, stimulusConeExcitationResponseTimeSeries, ...
     coneMosaicIntegrationTime, warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization)
 
     osTimeStep = 1e-7;
@@ -1471,7 +1474,6 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
     assert(rem(coneMosaicIntegrationTime, osTimeStep) == 0, 'coneMosaic.intergrationTime must be an integral multiple of os.time step');
 
     upSampleFactor = floor(coneMosaicIntegrationTime / osTimeStep);
-    upSampleGain = 1/upSampleFactor;
 
     nTimeBins = size(stimulusConeExcitationResponseTimeSeries,2);
     theOSphotocurrentResponseTimeBinsNum = nTimeBins*upSampleFactor-1;
@@ -1487,46 +1489,58 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
 
     theOSphotoCurrentResponseTimeAxis = (0:(theOSphotocurrentResponseTimeBinsNum-1))*osTimeStep;
 
-
     parfor iCone = 1:nCones
 
         if (theConeMosaic.coneTypes(iCone) == cMosaic.SCONE_ID)
             %fprintf('S-cone. Skipping photocurrent computation.\n')
             continue
         end
-        fprintf('Computing pCurrent response for cone %d of %d\n', iCone, nCones);
+        
+
+        % Setup biophysical model of outer segment for each cone 
         os = osBioPhys('eccentricity',0);
         os.timeStep = osTimeStep;
         os.set('noise flag', 'none');
 
-        theBackgroundExcitationRate = backgroundConeExcitations(iCone)/coneMosaicIntegrationTime;
-        theBackgroundExcitationsOStimeFrame = theBackgroundExcitationRate * os.timeStep;
+        % Set the state
+        backgroundConeExcitationRate = backgroundConeExcitationCounts(iCone)/coneMosaicIntegrationTime;
+        theState = os.osAdaptSteadyState(backgroundConeExcitationRate, [1 1]);
 
-        theState = os.osAdaptSteadyState(theBackgroundExcitationsOStimeFrame, [1 1]);
         theState.timeStep = os.timeStep;
         os.setModelState(theState);
 
+
         for iTrial = 1:nTrials
+
+
+            % Get the cone excitations count time series
             singleConeSingleTrialConeExcitationsCountResponse = ...
                 squeeze(stimulusConeExcitationResponseTimeSeries(iTrial, :, iCone));
 
-            % upsample counts to os.timeStep
-            singleConeSingleTrialConeExcitationsCountResponseOStimeSupport = upSampleGain * ...
+           
+            % upsample counts time series to the os.timeStep timebase
+            singleConeSingleTrialConeExcitationsCountResponse = ...
                 interp1(tIn, singleConeSingleTrialConeExcitationsCountResponse, tOut, 'nearest');
+     
 
-            % Convert to rate
+            % Convert excitation counts to excitation rates
             singleConeSingleTrialConeExcitationsRate = ...
-                singleConeSingleTrialConeExcitationsCountResponseOStimeSupport / os.timeStep;
+                singleConeSingleTrialConeExcitationsCountResponse / coneMosaicIntegrationTime;
+              
 
             % Compute full photocurrent model
             theOSphotoCurrentResponse = reshape(...
                 os.osAdaptTemporal(reshape(singleConeSingleTrialConeExcitationsRate, [1 1 numel(singleConeSingleTrialConeExcitationsRate)])), ...
                 [1 theOSphotocurrentResponseTimeBinsNum 1]);
 
+            fprintf(' pCurrent response for cone %d (type:%d) of %d: range: [%2.2f %2.2f]\n', iCone, theConeMosaic.coneTypes(iCone), nCones, min(theOSphotoCurrentResponse), max(theOSphotoCurrentResponse));
+
+            % Downsample to the original cone mosaic time base
             thePcurrentResponse = interp1(theOSphotoCurrentResponseTimeAxis, theOSphotoCurrentResponse, photocurrentResponseTimeAxis, 'linear');
             photocurrentResponseTimeSeries(iTrial,:,iCone) = thePcurrentResponse;
             
         end % iTrial
+        
     end % iCone
 
     % Add noise
