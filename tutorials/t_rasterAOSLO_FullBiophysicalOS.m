@@ -21,14 +21,14 @@ function t_rasterAOSLO_FullBiophysicalOS
     testIncrementDecrementScenes = true;
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = true;
-    visualizeTheSceneRadiance = true;
+    recomputeRetinalImages = ~true;
+    visualizeTheSceneRadiance = ~true;
     
     % Compute cone excitations response
-    recomputeConeExcitations = ~true;
+    recomputeConeExcitations = true;
 
     % Visualize the stimulus and the cone excitations response
-    visualizeStimulusAndConeExcitationSequence = ~true;
+    visualizeStimulusAndConeExcitationSequence = true;
 
     % Compute photocurrent response
     recomputePhotocurrents = ~true;
@@ -70,7 +70,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             AOPrimaryWls = defaultParams.AOPrimaryWls;
             AOAOCornealPowersUW = defaultParams.AOAOCornealPowersUW;
     
-            NDfilterDensity = 1.0;
+            NDfilterDensity = 2.5;
 
             inFocusWavelength = 680;
             AOPrimaryWls(1) = 840; AOAOCornealPowersUW(1) = 140;     % Imaging channel
@@ -1108,7 +1108,7 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
 
     hFig = figure(figNo); clf;
     set(hFig, 'Position', [10 10 1100 1080], 'Color', [1 1 1]);
-    ax = subplot(4,2, [1 3]);
+    ax = subplot(2,2,1);
     image(ax,spatialSupportX, spatialSupportY, lrgb2srgb(sceneRGBsettings));
     hold(ax, 'on')
     plot(ax, zeros(size(spatialSupportY)) + spatialSupportX(targetCol), spatialSupportY, 'g:', 'LineWidth', 1.0);
@@ -1117,12 +1117,10 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
     title(ax, sprintf('%s scene',sceneLabel));
     set(ax, 'FontSize', 16);
 
-    ax = subplot(4,2, [5 7]);
+    ax = subplot(2,2,3);
     luminanceMap = sceneGet(scene, 'luminance');
     imagesc(ax,spatialSupportX, spatialSupportY, luminanceMap);
-    maxSceneLuminance = max(luminanceMap(:));
-    maxDisplayedLuminance = 100;
-    [maxSceneLuminance maxDisplayedLuminance]
+    maxDisplayedLuminance = 500;
     set(ax, 'CLim', [0 maxDisplayedLuminance]);
     hold(ax, 'on');
     plot(ax, zeros(size(spatialSupportY)) + spatialSupportY(targetCol), spatialSupportY, 'r--');
@@ -1130,14 +1128,14 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
     axis(ax,'xy'); axis(ax, 'square')
     xlabel('space, x (degs)')
     ylabel('space, y (degs)')
-    title(ax, 'luminance (cd/m2)')
+    title(ax, sprintf('luminance (cd/m2), range: [%2.1f - %2.0f]', min(luminanceMap(:)), max(luminanceMap(:))));
     colorbar(ax, 'north', 'Color', [0.8 0.8 0.8])
     set(ax, 'FontSize', 16);
 
     photons = sceneGet(scene, 'energy');
     wave = sceneGet(scene, 'wave');
 
-    ax = subplot(4,2,[2 4]);
+    ax = subplot(2,2,2);
     spaceWave = squeeze(photons(:, targetCol, :));
     meanE = mean(spaceWave, 1);
     max(meanE)
@@ -1152,7 +1150,7 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
     colorbar(ax, 'north', 'Color', [1 0.2 0.2]);
     title('log10 (peak power) [Watts]')
     
-    ax = subplot(4,2,[6 8]);
+    ax = subplot(2,2,4);
     plot(ax, wave, mean(spaceWave, 1), 'r-', 'LineWidth', 1.5);
     axis(ax, 'square');
     set(ax, 'XLim', [500 880], 'YScale', 'log', 'YLim', [0.01 350], ...
