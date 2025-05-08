@@ -21,8 +21,8 @@ function t_rasterAOSLO_FullBiophysicalOS
     testIncrementDecrementScenes = true;
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = ~true;
-    visualizeTheSceneRadiance = ~true;
+    recomputeRetinalImages = true;
+    visualizeTheSceneRadiance = true;
     
     % Compute cone excitations response
     recomputeConeExcitations = ~true;
@@ -31,7 +31,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = true;
+    recomputePhotocurrents = ~true;
 
 
     % Where to output results, figures and videos
@@ -70,9 +70,11 @@ function t_rasterAOSLO_FullBiophysicalOS
             AOPrimaryWls = defaultParams.AOPrimaryWls;
             AOAOCornealPowersUW = defaultParams.AOAOCornealPowersUW;
     
+            NDfilterDensity = 1.0;
+
             inFocusWavelength = 680;
-            AOPrimaryWls(1) = 840; AOAOCornealPowersUW(1) = 100;     % Imaging channel
-            AOPrimaryWls(2) = 680; AOAOCornealPowersUW(2) = 0.1;      % Stimulus modulation channel 
+            AOPrimaryWls(1) = 840; AOAOCornealPowersUW(1) = 140;     % Imaging channel
+            AOPrimaryWls(2) = 680; AOAOCornealPowersUW(2) = 140 * 10^-NDfilterDensity;  % Stimulus modulation channel 
             AOAOCornealPowersUW(3) = 170;
 
             [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs, thePresentationDisplay, sceneParams] = generateIncrementDecrementScenes(...
@@ -1272,9 +1274,9 @@ end
 function [simulationTimeStepSeconds, stimulusRefreshIntervalSeconds] = ...
     computeSimulationTimeStep(pixelTimeOnSeconds, rasterLineDutyCycle, theTestScene, fractionLinesScannedPerSimulationTimeStep)
 
-    theScenePhotons = sceneGet(theTestScene, 'photons');
-    rasterLinesNum = size(theScenePhotons,1);
-    pixelsPerRasterLine = size(theScenePhotons,2);
+    s = sceneGet(theTestScene, 'size');
+    rasterLinesNum = s(1);
+    pixelsPerRasterLine = s(2);
 
     % Active scan line duration
     rasterLineActiveDurationSeconds = pixelsPerRasterLine * pixelTimeOnSeconds;
@@ -1338,9 +1340,11 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
 
     % Compute the power at 840 nm
     if (testIncrementDecrementScenes)
+        % Compute the power at 680 nm
         irradiancePowerWattsTargetWavelengthPerMMsquared = computeIrradianceInWattsPerMM2(theRetinalImage, 680);
         nonRasterizedEscenePower = mean(irradiancePowerWattsTargetWavelengthPerMMsquared(:));
     else
+        % Compute the power at 840 nm
         irradiancePowerWattsTargetWavelengthPerMMsquared = computeIrradianceInWattsPerMM2(theRetinalImage, 840);
         nonRasterizedEscenePower = mean(irradiancePowerWattsTargetWavelengthPerMMsquared(:));
         fprintf(2,'\nNon-rasterized scene power at 840 nm is: %E W/mm2.', nonRasterizedEscenePower);
@@ -1386,8 +1390,18 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
     % So we need to amplify their irradiance by the ratio of stimulusRefreshIntervalSeconds / simulationTimeStepSeconds
     radianceMultiplierToAccountForRasterSimulation = simulationTimeStepsNum;
 
+    % Each pixel is ON for pixelTimeOnSeconds. But in the simulation it is
+    % on for simulationTimeStepSeconds. Factor to account for that: 
+    factorToAccountForPixelOnTime = pixelTimeOnSeconds/simulationTimeStepSeconds;
+
+    radianceMultiplierToAccountForRasterSimulation = ...
+        radianceMultiplierToAccountForRasterSimulation * ...
+        factorToAccountForPixelOnTime;
+
+
     % Generate a scene for each simulation time step and its associated retinal image
     theListOfRetinalImages = cell(1, simulationTimeStepsNum);
+
     for iTimeStep = 1:simulationTimeStepsNum
 
         if (~visualizeEachRetinalImage)
@@ -1410,8 +1424,10 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
         % Adjusted radiance for the rasterized stimulus
         theFrameScenePhotons(activePixelRows, activePixelCols,:) = ...
                 theScenePhotons(activePixelRows, activePixelCols,:) * radianceMultiplierToAccountForRasterSimulation;
-        
+
+        % Set the new radiance
         theFrameScene = sceneSet(theTestScene, 'photons', theFrameScenePhotons);
+
         theRetinalImageAtThisSimulationTimeStep = oiCompute(theOI, theFrameScene, 'pad value', 'zero');
 
         if (visualizeEachRetinalImage)
@@ -1421,14 +1437,13 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
             %image(spatialSupportXdegs, spatialSupportYdegs, lrgb2srgb(RGBsettingsImage));
             theRetinalIlluminance = oiGet(theRetinalImageAtThisSimulationTimeStep, 'illuminance');
             imagesc(spatialSupportXdegs, spatialSupportYdegs, theRetinalIlluminance);
-            set(gca, 'CLim', [0 6 * 1.0e+03]);
+            set(gca, 'CLim', [0 max(theRetinalIlluminance(:))]);
             axis 'image'
             colormap(gray(1024));
         end
 
         theListOfRetinalImages{iTimeStep} = theRetinalImageAtThisSimulationTimeStep;
     end
-
 end
 
 
