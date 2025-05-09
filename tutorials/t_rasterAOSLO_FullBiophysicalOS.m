@@ -39,16 +39,12 @@ function t_rasterAOSLO_FullBiophysicalOS
 
 
     NDfilterDensity = 1.7;
-    pCurrentVisualizedRange = 5;
-
     NDfilterDensity = 1.0;
-    pCurrentVisualizedRange = 10;
-            
     NDfilterDensity = 0.5;
-    pCurrentVisualizedRange = 20;
-
     NDfilterDensity = 0.0;
     pCurrentVisualizedRange = 30;
+
+    mosaicHorizontalEccentricity = -1;
 
 
     % Where to output results, figures and videos
@@ -72,10 +68,10 @@ function t_rasterAOSLO_FullBiophysicalOS
         photocurrentsMatFileName = fullfile(simFileBase, sprintf('photoCurrents0degsWithRaster%2.3fFraction.mat', fractionLinesScannedPerSimulationTimeStep));
         videoFilename = fullfile(figureFileBase, sprintf('TumblingE0degsMosaicActivationWithRaster%2.3fFraction', fractionLinesScannedPerSimulationTimeStep));
 
-        retinalImagesMatFileName = fullfile(simFileBase, sprintf('ND_%2.2f_coneMosaicAndRetinalImages.mat', NDfilterDensity));
-        coneExcitationsMatFileName = fullfile(simFileBase, sprintf('ND_%2.2f_excitations.mat', NDfilterDensity));
-        photocurrentsMatFileName = fullfile(simFileBase, sprintf('ND_%2.2f_photocurrents.mat', NDfilterDensity));
-        videoFilename = fullfile(figureFileBase, sprintf('ND_%2.2f_activation', NDfilterDensity));
+        retinalImagesMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_coneMosaicAndRetinalImages.mat', mosaicHorizontalEccentricity, NDfilterDensity));
+        coneExcitationsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_excitations.mat', mosaicHorizontalEccentricity,NDfilterDensity));
+        photocurrentsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_photocurrents.mat', mosaicHorizontalEccentricity,NDfilterDensity));
+        videoFilename = fullfile(figureFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_activation', mosaicHorizontalEccentricity,NDfilterDensity));
 
     else
         retinalImagesMatFileName = fullfile(simFileBase, 'coneMosaicAndRetinalImages0degsNoRaster.mat');
@@ -123,7 +119,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         
         % Mosaic size and eccentricity
         mosaicSizeDegs = 0.5*[1.0 1.0];
-        mosaicEccDegs = [-1 0];
+        mosaicEccDegs = [mosaicHorizontalEccentricity 0];
 
         % Generate the cone mosaic
         theConeMosaic = generateConeMosaic(mosaicEccDegs, mosaicSizeDegs, ...
@@ -855,6 +851,8 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
         activationRange = signalRange * [-1 1];
     end
 
+    mosaicActivationRange = mosaicActivationRange + 0.15*(activationRange(2)-activationRange(1))*[-1 1];
+
     theRetinalImage = theOIsequence.frameAtIndex(1);
 
     % Convert spatial support in degrees
@@ -976,10 +974,9 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
             hold(ax3, 'off');
             set(ax3, 'XLim', [timeAxis(1) timeAxis(end)]*1000, 'XTick', -300:10:500, 'YLim', activationRange);
             set(ax3, 'XColor', [0.75 0.75 0.75], 'YColor', [0.75 0.75 0.75], 'Color', 'none', 'FontSize', 14);
-            xtickangle(ax3, 90);
             grid(ax3, 'on');
             box(ax3, 'off')
-
+            xtickangle(ax3, 90);
             xlabel(ax3, 'time (ms)');
             ylabel(ax3, yAxisLabel);
 
