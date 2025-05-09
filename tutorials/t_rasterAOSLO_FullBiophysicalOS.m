@@ -21,18 +21,18 @@ function t_rasterAOSLO_FullBiophysicalOS
     testIncrementDecrementScenes = true;
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = true;
-    visualizeTheSceneRadiance = true;
+    recomputeRetinalImages = ~true;
+    visualizeTheSceneRadiance = ~true;
     
     % Compute cone excitations response
-    recomputeConeExcitations = true;
+    recomputeConeExcitations = ~true;
 
     % Visualize the stimulus and the cone excitations response
-    visualizeStimulusAndConeExcitationSequence = true;
+    visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = true;
-
+    recomputePhotocurrents = ~true;
+    subtractBackgroundPhotoCurrents = false;
 
     % Visualize the stimulus and the photocurrents response
     visualizeStimulusAndPhotocurrentSequence = true;
@@ -45,7 +45,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     pCurrentVisualizedRange = 30;
 
     mosaicHorizontalEccentricity = -1;
-
+    
 
     % Where to output results, figures and videos
     projectBaseDir = ISETBioCSFGeneratorRootPath;
@@ -301,7 +301,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             save(coneExcitationsMatFileName, ...
                 'noiseFreeConeExcitationIncrementsResponseTimeSeries', ...
                 'noisyConeExcitationIncrementsResponseTimeSeries', ...
-                '-v7.3', '-append');
+                '-append');
 
         else
             load(retinalImagesMatFileName, ...
@@ -372,7 +372,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                     backgroundConeExcitationResponseTimeSeries, ...
                     noiseFreeConeExcitationDecrementsResponseTimeSeries, ...
                     warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization, ...
-                    coolDownPeriodSeconds);
+                    coolDownPeriodSeconds, subtractBackgroundPhotoCurrents);
 
              fprintf('\nSaving photocurrent DECREMENTS responses to %s ... ', photocurrentsMatFileName);
              save(photocurrentsMatFileName, ...
@@ -398,13 +398,13 @@ function t_rasterAOSLO_FullBiophysicalOS
                     backgroundConeExcitationResponseTimeSeries, ...
                     noiseFreeConeExcitationIncrementsResponseTimeSeries, ...
                     warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization, ...
-                    coolDownPeriodSeconds);
+                    coolDownPeriodSeconds, subtractBackgroundPhotoCurrents);
 
             fprintf('\nAppending photocurrent INCREMENTS responses to %s ... ', photocurrentsMatFileName);
             save(photocurrentsMatFileName, ...
                 'photocurrentResponseIncrementsTimeSeries', ...
                 'photocurrentResponseIncrementsTimeSeriesNoisy', ...
-                '-v7.3', '-append');
+                '-append');
 
         else
 
@@ -422,7 +422,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                     backgroundConeExcitationResponseTimeSeries, ...
                     noiseFreeConeExcitationResponseTimeSeries, ...
                     warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization, ...
-                    coolDownPeriodSeconds);
+                    coolDownPeriodSeconds, subtractBackgroundPhotoCurrents);
     
             save(photocurrentsMatFileName, ...
                 'theConeMosaic', ...
@@ -440,6 +440,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         visualizeRetinalImageAndConePhotoCurrents(...
                 testIncrementDecrementScenes, ...
                 pCurrentVisualizedRange, ...
+                subtractBackgroundPhotoCurrents, ...
                 retinalImagesMatFileName, ...
                 photocurrentsMatFileName, ...
                 strrep(videoFilename, 'activation', 'photocurrents'));
@@ -451,7 +452,7 @@ function t_rasterAOSLO_FullBiophysicalOS
 end
 
 
-function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes, pCurrentVisualizedRange, ...
+function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes, pCurrentVisualizedRange, subtractBackgroundPhotoCurrents, ...
     retinalImagesMatFileName, photocurrentsMatFileName, videoFilename)
 
     fprintf('\nLoading photocurrent response data from %s. Please wait ...', photocurrentsMatFileName);
@@ -494,7 +495,11 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
                 'isPeriodic', true);
         fprintf('Done ! \n');
 
-    
+        if (~subtractBackgroundPhotoCurrents)
+            pCurrentVisualizedRange = [-85 -25];
+        end
+
+
         % Generate the video of the cone mosaic NOISE-FREE photocurrent response to the INCREMENTSstimulus raster
         generateMosaicActivationVideo(theConeMosaic, theStimulusOIsequence, photocurrentResponseIncrementsTimeSeries, ...
             LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
@@ -847,11 +852,13 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
 
     if (isempty(signalRange))
         activationRange = [min(mosaicResponseTimeSeries(:)) max(mosaicResponseTimeSeries(:))]; 
-    else
+    elseif (numel(signalRange) == 1)
         activationRange = signalRange * [-1 1];
+    else
+        activationRange = signalRange;
     end
 
-    mosaicActivationRange = mosaicActivationRange + 0.15*(activationRange(2)-activationRange(1))*[-1 1];
+    mosaicActivationRange = activationRange + 0.15*(activationRange(2)-activationRange(1))*[-1 1];
 
     theRetinalImage = theOIsequence.frameAtIndex(1);
 
@@ -918,7 +925,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
                 theConeMosaic.visualize('figureHandle', hFig, 'axesHandle', ax2, ...
                     'visualizedConeAperture', visualizedConeAperture, ...
                     'activation', mosaicResponseTimeSeries(iTrial,theResponseTimePoint,:), ...
-                    'activationRange', activationRange, ...
+                    'activationRange', mosaicActivationRange, ...
                     'currentEMposition', squeeze(theConeMosaic.fixEMobj.emPosArcMin(iTrial,iTimePoint,:))/60, ...
                     'displayedEyeMovementData', struct('trial', iTrial, 'timePoints', 1:iTimePoint), ...
                     'domainVisualizationLimits', domainVisualizationLimits, ...
@@ -934,7 +941,7 @@ function generateMosaicActivationVideo(theConeMosaic, theOIsequence, mosaicRespo
                 theConeMosaic.visualize('figureHandle', hFig, 'axesHandle', ax2, ...
                     'visualizedConeAperture', visualizedConeAperture, ...
                     'activation', mosaicResponseTimeSeries(iTrial,theResponseTimePoint,:), ...
-                    'activationRange', activationRange, ...
+                    'activationRange', mosaicActivationRange, ...
                     'domainVisualizationLimits', domainVisualizationLimits, ...
                     'domainVisualizationTicks', domainVisualizationTicks, ...
                     'horizontalActivationColorBarInside', true, ...
@@ -1482,7 +1489,7 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
             coneExcitationResponseBackground, ...
             coneExcitationResponseTimeSeries, ...
             warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization, ...
-            coolDownPeriodSeconds)
+            coolDownPeriodSeconds, subtractBackgroundPhotoCurrents)
 
     
     warmUpSamplesNum = ceil(warmupPeriodSeconds / (size(coneExcitationResponseBackground,2) * theConeMosaic.integrationTime));
@@ -1502,7 +1509,8 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
     
     [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocurrentResponseTimeSeriesNoisy] = ...
          computeFullPhotocurrentModelResponse(theConeMosaic,  backgroundConeExcitationCounts, coneExcitationResponseTimeSeries, ...
-         theConeMosaic.integrationTime, actualWarmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization);
+         theConeMosaic.integrationTime, actualWarmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization, ...
+         subtractBackgroundPhotoCurrents);
 end
 
 
@@ -1510,9 +1518,10 @@ end
 
 function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocurrentResponseTimeSeriesNoisy] = ...
     computeFullPhotocurrentModelResponse(theConeMosaic, backgroundConeExcitationCounts, stimulusConeExcitationResponseTimeSeries, ...
-    coneMosaicIntegrationTime, warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization)
+    coneMosaicIntegrationTime, warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization, ...
+    subtractBackgroundPhotoCurrents)
 
-    osTimeStep = 1e-7;
+    osTimeStep = 1e-5;
     integerMultiplier = round(coneMosaicIntegrationTime/osTimeStep);
     osTimeStep = coneMosaicIntegrationTime/integerMultiplier;
 
@@ -1611,11 +1620,13 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
         photocurrentResponseTimeAxis = photocurrentResponseTimeAxis - warmupPeriodSeconds;
         idx = find(photocurrentResponseTimeAxis >= -warmUpPeriodSecondsToIncludeInVisualization);
     
-        % The delta-photocurrent (pCurrent - background)
-        baselinePhotoCurrents = photocurrentResponseTimeSeries(1,idx(1)-1,:);
+        if (subtractBackgroundPhotoCurrents)
+            % The delta-photocurrent (pCurrent - background)
+            baselinePhotoCurrents = photocurrentResponseTimeSeries(1,idx(1)-1,:);
 
-        photocurrentResponseTimeSeries = bsxfun(@minus, photocurrentResponseTimeSeries, baselinePhotoCurrents);
-        photocurrentResponseTimeSeriesNoisy = bsxfun(@minus, photocurrentResponseTimeSeriesNoisy, baselinePhotoCurrents);
+            photocurrentResponseTimeSeries = bsxfun(@minus, photocurrentResponseTimeSeries, baselinePhotoCurrents);
+            photocurrentResponseTimeSeriesNoisy = bsxfun(@minus, photocurrentResponseTimeSeriesNoisy, baselinePhotoCurrents);
+        end
 
         photocurrentResponseTimeAxis = photocurrentResponseTimeAxis(idx);
         photocurrentResponseTimeSeries = photocurrentResponseTimeSeries(:,idx,:);
