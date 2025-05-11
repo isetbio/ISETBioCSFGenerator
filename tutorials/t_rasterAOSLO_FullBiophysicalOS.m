@@ -21,17 +21,17 @@ function t_rasterAOSLO_FullBiophysicalOS
     testIncrementDecrementScenes = true;
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = ~true;
+    recomputeRetinalImages = true;
     visualizeTheSceneRadiance = ~true;
     
     % Compute cone excitations response
-    recomputeConeExcitations = ~true;
+    recomputeConeExcitations = true;
 
     % Visualize the stimulus and the cone excitations response
     visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = ~true;
+    recomputePhotocurrents = true;
     subtractBackgroundPhotoCurrents = false;
 
     % Visualize the stimulus and the photocurrents response
@@ -39,9 +39,9 @@ function t_rasterAOSLO_FullBiophysicalOS
 
 
     NDfilterDensity = 1.7;
-    NDfilterDensity = 1.0;
-    NDfilterDensity = 0.5;
-    NDfilterDensity = 0.0;
+    %NDfilterDensity = 1.0;
+    %NDfilterDensity = 0.5;
+    %NDfilterDensity = 0.0;
     pCurrentVisualizedRange = 30;
 
     mosaicHorizontalEccentricity = -1;
