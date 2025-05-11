@@ -22,6 +22,8 @@ function t_rasterAOSLO_FullBiophysicalOS
 
     % Compute cone mosaic and retinal images of stimulus and background
     recomputeRetinalImages = true;
+
+    cropRetinalImagesForConeMosaic = true;
     visualizeTheSceneRadiance = ~true;
     
     % Compute cone excitations response
@@ -121,6 +123,13 @@ function t_rasterAOSLO_FullBiophysicalOS
         mosaicSizeDegs = 0.5*[1.0 1.0];
         mosaicEccDegs = [mosaicHorizontalEccentricity 0];
 
+        if (cropRetinalImagesForConeMosaic)
+            % Add some extra real estate for fMEs
+            cropRetinalImagesForConeMosaicSize = mosaicSizeDegs + [0.1 0.1];
+        else
+            cropRetinalImagesForConeMosaicSize = [];
+        end
+
         % Generate the cone mosaic
         theConeMosaic = generateConeMosaic(mosaicEccDegs, mosaicSizeDegs, ...
                 mosaicIntegrationTimeSeconds, sceneParams.spectralSupport);
@@ -138,6 +147,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         theListOfBackgroundRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theNullScene, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+                cropRetinalImagesForConeMosaicSize, ...
                 visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
         fprintf('Done !\n');
 
@@ -147,6 +157,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusDecrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+                cropRetinalImagesForConeMosaicSize, ...
                 visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
             fprintf('Done !\n');
 
@@ -155,6 +166,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusIncrementsRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theIncrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+                cropRetinalImagesForConeMosaicSize, ...
                 visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
             fprintf('Done !\n');
 
@@ -167,7 +179,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                 'theListOfBackgroundRasterRetinalImages', ...
                 'theListOfStimulusDecrementsRasterRetinalImages', ...
                 'theListOfStimulusIncrementsRasterRetinalImages', ...
-                '-v7.3', '-nocompression');
+                '-v7.3');
             fprintf('Done !\n');
 
         else
@@ -176,6 +188,7 @@ function t_rasterAOSLO_FullBiophysicalOS
             theListOfStimulusRasterRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, ...
                 theDecrementsEscene0degs, pixelTimeOnSeconds, rasterLineDutyCycle, ...
                 stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+                cropRetinalImagesForConeMosaicSize, ...
                 visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes);
             fprintf('Done !\n');
 
@@ -188,7 +201,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                 'thePresentationDisplay', ...
                 'theListOfBackgroundRasterRetinalImages', ...
                 'theListOfStimulusRasterRetinalImages', ...
-                '-v7.3', '-nocompression');
+                '-v7.3');
             fprintf('Done !\n');
         end
 
@@ -1410,11 +1423,13 @@ end
 function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefresh(theOI, theTestScene, ...
         pixelTimeOnSeconds, rasterLineDutyCycle,  ...
         stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+        cropRetinalImagesForConeMosaicSize, ...
         visualizeEachRetinalImage, thePresentationDisplay, testIncrementDecrementScenes)
 
     % Compute the retinal image of the non-rasterized scene
     theRetinalImage = oiCompute(theOI, theTestScene, 'pad value', 'mean');
 
+    
     if (visualizeEachRetinalImage)
         % Compute the spatial support
         spatialSupportMM = oiGet(theRetinalImage, 'spatial support', 'mm');
@@ -1493,9 +1508,7 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
 
     for iTimeStep = 1:simulationTimeStepsNum
 
-        if (~visualizeEachRetinalImage)
-            fprintf('Generating scene for simulation time step %d of %d\n', iTimeStep, simulationTimeStepsNum);
-        end
+        fprintf('Generating scene for simulation time step %d of %d\n', iTimeStep, simulationTimeStepsNum);   
 
         t1 = (iTimeStep-1)*simulationTimeStepSeconds;
         t2 = t1 + simulationTimeStepSeconds;
@@ -1517,7 +1530,55 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
         % Set the new radiance
         theFrameScene = sceneSet(theTestScene, 'photons', theFrameScenePhotons);
 
+        % Compute the OI
         theRetinalImageAtThisSimulationTimeStep = oiCompute(theOI, theFrameScene, 'pad value', 'zero');
+
+       
+        % Crop the OI
+        if (~isempty(cropRetinalImagesForConeMosaicSize))
+            
+            if (iTimeStep == 1)
+                % Compute the cropping rect
+                spatialSupportMM = oiGet(theRetinalImageAtThisSimulationTimeStep, 'spatial support', 'mm');
+                theOptics = oiGet(theRetinalImageAtThisSimulationTimeStep, 'optics');
+                focalLength = opticsGet(theOptics, 'focal length');
+                mmPerDegree = focalLength*tand(1)*1e3;
+                spatialSupportDegs = spatialSupportMM/mmPerDegree;
+                spatialSupportXdegs = spatialSupportDegs(1,:,1);
+                spatialSupportYdegs = spatialSupportDegs(:,1,2);
+ 
+                idx = find(abs(spatialSupportXdegs) <= 0.5*cropRetinalImagesForConeMosaicSize(1));
+                leftColumn = idx(1);
+                colsNum = numel(idx);
+    
+                idx = find(abs(spatialSupportYdegs) <= 0.5*cropRetinalImagesForConeMosaicSize(2));
+                topRow = idx(1);
+                rowsNum = numel(idx);
+
+                croppingRect = [topRow leftColumn rowsNum colsNum];
+            end
+            
+            if (visualizeEachRetinalImage)
+                theRetinalIlluminance = oiGet(theRetinalImageAtThisSimulationTimeStep, 'illuminance');
+                theRetinalIlluminanceRange = [0 max(theRetinalIlluminance(:))];
+            end
+
+            % Crop the image
+            bytesNumOfRetinalImageBeforeCropping = numel(getByteStreamFromArray(theRetinalImageAtThisSimulationTimeStep));
+
+            theRetinalImageAtThisSimulationTimeStep = oiCrop(...
+                theRetinalImageAtThisSimulationTimeStep, croppingRect);
+
+            bytesNumOfRetinalImageAfterCropping = numel(getByteStreamFromArray(theRetinalImageAtThisSimulationTimeStep));
+            bytesRatioAfterCropping = bytesNumOfRetinalImageAfterCropping/bytesNumOfRetinalImageBeforeCropping
+
+            spatialSupportMM = oiGet(theRetinalImageAtThisSimulationTimeStep, 'spatial support', 'mm');
+            mmPerDegree = focalLength*tand(1)*1e3;
+            spatialSupportDegs = spatialSupportMM/mmPerDegree;
+            spatialSupportXdegs = spatialSupportDegs(1,:,1);
+            spatialSupportYdegs = spatialSupportDegs(:,1,2);
+        end
+
 
         if (visualizeEachRetinalImage)
             figure(33); clf;
@@ -1526,7 +1587,7 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
             %image(spatialSupportXdegs, spatialSupportYdegs, lrgb2srgb(RGBsettingsImage));
             theRetinalIlluminance = oiGet(theRetinalImageAtThisSimulationTimeStep, 'illuminance');
             imagesc(spatialSupportXdegs, spatialSupportYdegs, theRetinalIlluminance);
-            set(gca, 'CLim', [0 max(theRetinalIlluminance(:))]);
+            set(gca, 'CLim', theRetinalIlluminanceRange);
             axis 'image'
             colormap(gray(1024));
         end
