@@ -460,6 +460,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     if (visualizeStimulusAndPhotocurrentSequence)
         % Visualize photocurrents response
         visualizeRetinalImageAndConePhotoCurrents(...
+                nStimulusFramesPerTrial, ...
                 testIncrementDecrementScenes, ...
                 pCurrentVisualizedRange, ...
                 subtractBackgroundPhotoCurrents, ...
@@ -470,7 +471,8 @@ function t_rasterAOSLO_FullBiophysicalOS
 end
 
 
-function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes, pCurrentVisualizedRange, subtractBackgroundPhotoCurrents, ...
+function visualizeRetinalImageAndConePhotoCurrents(nStimulusFramesPerTrial, ...
+    testIncrementDecrementScenes, pCurrentVisualizedRange, subtractBackgroundPhotoCurrents, ...
     retinalImagesMatFileName, photocurrentsMatFileName, videoFilename)
 
     fprintf('\nLoading photocurrent response data from %s. Please wait ...', photocurrentsMatFileName);
@@ -507,7 +509,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
         spatialSupportY = theConeMosaic.eccentricityDegs(2) + spatialSupportDegs(:,1,2);
 
         if (~subtractBackgroundPhotoCurrents)
-            pCurrentVisualizedRange = [-100 -25];
+            pCurrentVisualizedRange = [-95 -25];
         end
 
         targetWavelength = 680;
@@ -541,6 +543,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
 
         % Generate the video of the cone mosaic photocurrent response to the INCREMENTS stimulus raster
         generateMosaicActivationVideo(theConeMosaic, ...
+            nStimulusFramesPerTrial, ...
             theSceneTemporalSupportSeconds, ...
             spatialSupportX, spatialSupportY, ...
             theListOfStimulusRetinalIrradianceMaps, ...
@@ -575,6 +578,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
 
         % Generate the video of the cone mosaic photocurrent response to the INCREMENTS stimulus raster
         generateMosaicActivationVideo(theConeMosaic, ...
+            nStimulusFramesPerTrial, ...
             theSceneTemporalSupportSeconds, ...
             spatialSupportX, spatialSupportY, ...
             theListOfStimulusRetinalIrradianceMaps, ...
@@ -592,10 +596,6 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
             irradianceAtTargetWavelengthInsteadOfRGBimage, ...
             targetWavelength, ...
             sprintf('%s-StimulusRaster-Decrements', videoFilename));
-
-
-       
-
 
     else
         load(photocurrentsMatFileName, ...
@@ -666,6 +666,7 @@ function visualizeRetinalImageAndConePhotoCurrents(testIncrementDecrementScenes,
 end
 
 function generateMosaicActivationVideo(theConeMosaic, ...
+    nStimulusFramesPerTrial, ...
     retinalImageSequenceTimeAxis, ...
     spatialSupportX, spatialSupportY, ...
     theListOfStimulusRetinalIrradianceMaps, ...
@@ -722,7 +723,7 @@ function generateMosaicActivationVideo(theConeMosaic, ...
     nTrials = size(mosaicNoiseFreeResponseTimeSeries,1);
 
     visualizedConeAperture = 'lightCollectingArea5Sigma';
-    backgroundColor = 'none';
+    backgroundColor = [0.5 0.5 0.5];
 
     if (isempty(signalRange))
         activationRange = [min(mosaicNoiseFreeResponseTimeSeries(:)) max(mosaicNoiseFreeResponseTimeSeries(:))]; 
@@ -732,7 +733,7 @@ function generateMosaicActivationVideo(theConeMosaic, ...
         activationRange = signalRange;
     end
 
-    mosaicActivationRange = 0.3*(activationRange(2)-activationRange(1))*[-1 1];
+    
     visualizedFOV = max(spatialSupportX) - min(spatialSupportX);
     domainVisualizationLimits(1:2) = theConeMosaic.eccentricityDegs(1) + 0.51*visualizedFOV*[-1 1];
     domainVisualizationLimits(3:4) = theConeMosaic.eccentricityDegs(2) + 0.51*visualizedFOV*[-1 1];
@@ -750,8 +751,12 @@ function generateMosaicActivationVideo(theConeMosaic, ...
         mosaicNoiseFreeResponseTimeSeries = bsxfun(@minus, mosaicNoiseFreeResponseTimeSeries, backgroundResponses);
     end
 
+    mosaicActivationRange = 0.5*max(abs(mosaicNoiseFreeResponseTimeSeries(:)))*[-1 1];
+
     irradianceRange = [0 max(theListOfStimulusRetinalIrradianceMaps(:))];
     dT = responseTimeAxis(2)-responseTimeAxis(1);
+    singleFrameDuration = numel(retinalImageSequenceTimeAxis) * (retinalImageSequenceTimeAxis(2)-retinalImageSequenceTimeAxis(1));
+    stimulusDuration = singleFrameDuration * nStimulusFramesPerTrial;
     for iTrial = 1:nTrials
         for iTimePoint = 1:size(LconeIndicesResponses,2) 
 
@@ -760,7 +765,7 @@ function generateMosaicActivationVideo(theConeMosaic, ...
                 % Photocurrents, which have pre- and post-stimulus time bins
                 currentTime = responseTimeAxis(iTimePoint);
                 
-                if (currentTime < 0) || (currentTime > retinalImageSequenceTimeAxis(end))
+                if (currentTime < 0) || (currentTime > stimulusDuration)
                     % show the background raster
                     inStimulusInterval = false;
                     if (currentTime < 0)
@@ -772,8 +777,8 @@ function generateMosaicActivationVideo(theConeMosaic, ...
                 else
                     % show the stimulus raster
                     inStimulusInterval = true;
-                    idx = find(retinalImageSequenceTimeAxis>=currentTime);
-                    iTimePointMod = idx(1);
+                    sampleNum = round(currentTime/dT);
+                    iTimePointMod = mod(sampleNum-1,numel(retinalImageSequenceTimeAxis)) + 1;
                 end
             end % if (~strcmp(signalType, 'excitations'))
 
@@ -847,7 +852,7 @@ function generateMosaicActivationVideo(theConeMosaic, ...
                     'plotTitle',  sprintf('%s (trial no.%d, t = %2.2f ms)', yAxisLabel, iTrial, responseTimeAxis(iTimePoint)*1000));
       
             end
-
+            set(ax2, 'XColor', [0.5 0.5 0.5], 'YColor', [0.5 0.5 0.5]);
 
             idx = 1:iTimePoint;
             
