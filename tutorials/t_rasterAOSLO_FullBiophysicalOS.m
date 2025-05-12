@@ -83,7 +83,7 @@ function t_rasterAOSLO_FullBiophysicalOS
         retinalImagesMatFileName = strrep(retinalImagesMatFileName, '.mat', postFixString);
         coneExcitationsMatFileName = strrep(coneExcitationsMatFileName, '.mat', postFixString);
         photocurrentsMatFileName = strrep(photocurrentsMatFileName, '.mat', postFixString);
-        videoFilename = strep(videoFilename, 'activation', sprintf('activation_%sFEM.mat',observerFixationalEyeMovementCharacteristics);
+        videoFilename = strep(videoFilename, 'activation', sprintf('activation_%sFEM.mat',observerFixationalEyeMovementCharacteristics));
     end
 
     
@@ -102,7 +102,8 @@ function t_rasterAOSLO_FullBiophysicalOS
             AOPrimaryWls(2) = 680; AOAOCornealPowersUW(2) = 170 * 10^-NDfilterDensity;  % Stimulus modulation channel 
             AOAOCornealPowersUW(3) = 170;
 
-            [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs, thePresentationDisplay, sceneParams] = generateIncrementDecrementScenes(...
+            [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs, thePresentationDisplay, sceneParams] = ...
+                generateIncrementDecrementScenes(...
                 testESizeDeg, AOPrimaryWls, AOAOCornealPowersUW, visualizeTheSceneRadiance, figureFileBase);
 
         else
@@ -1206,9 +1207,19 @@ end
 
 function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDisplay)
     
-    XYZimage = sceneGet(scene, 'xyz');
-    sceneRGBsettings = visualizeRGBimageFromXYZimage(XYZimage,presentationDisplay);
+    if (1==2)
+        XYZimage = sceneGet(scene, 'xyz');
+        sceneRGBsettings = visualizeRGBimageFromXYZimage(XYZimage,presentationDisplay);
+    end
 
+    renderFlag = -2;
+    sceneRGBsettings = sceneShowImage(scene,renderFlag);
+    rChannel = sceneRGBsettings(:,:,1);
+    sceneRGBsettings(:,:,2) = 0;
+    sceneRGBsettings(:,:,3) = 0;
+    %sceneRGBsettings = sceneGet(scene, 'rgbimage');
+    prctile(rChannel(:), [0 1 50 99 100])
+    pause
     viewingDistance = sceneGet(scene, 'distance');
     spatialSupportMilliMeters = sceneGet(scene, 'spatial support', 'mm');
     spatialSupportDegs = 2 * atand(spatialSupportMilliMeters/1e3/2/viewingDistance);
@@ -1234,7 +1245,7 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
     ax = subplot(2,2,3);
     luminanceMap = sceneGet(scene, 'luminance');
     imagesc(ax,spatialSupportX, spatialSupportY, luminanceMap);
-    maxDisplayedLuminance = 500;
+    maxDisplayedLuminance = 15000;
     set(ax, 'CLim', [0 maxDisplayedLuminance]);
     hold(ax, 'on');
     plot(ax, zeros(size(spatialSupportY)) + spatialSupportY(targetCol), spatialSupportY, 'r--');
