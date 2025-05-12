@@ -17,8 +17,11 @@ function t_rasterAOSLO_FullBiophysicalOS
     % How many trials, which also means how many fEMs
     nTrials = 5;
 
-
     testIncrementDecrementScenes = true;
+
+    observerFixationalEyeMovementCharacteristics = 'fast';
+    observerFixationalEyeMovementCharacteristics = 'slow';
+    observerFixationalEyeMovementCharacteristics = 'default';
 
     % Compute cone mosaic and retinal images of stimulus and background
     recomputeRetinalImages = ~true;
@@ -64,24 +67,26 @@ function t_rasterAOSLO_FullBiophysicalOS
     
 
     if (simulateStimulusRaster)
-        % OLD NAMING SCHEME
-        retinalImagesMatFileName = fullfile(simFileBase, sprintf('coneMosaicAndRetinalImages0degsWithRaster%2.3fFraction.mat', fractionLinesScannedPerSimulationTimeStep));
-        coneExcitationsMatFileName = fullfile(simFileBase, sprintf('coneExcitations0degsWithRaster%2.3fFraction.mat', fractionLinesScannedPerSimulationTimeStep));
-        photocurrentsMatFileName = fullfile(simFileBase, sprintf('photoCurrents0degsWithRaster%2.3fFraction.mat', fractionLinesScannedPerSimulationTimeStep));
-        videoFilename = fullfile(figureFileBase, sprintf('TumblingE0degsMosaicActivationWithRaster%2.3fFraction', fractionLinesScannedPerSimulationTimeStep));
-
         retinalImagesMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_coneMosaicAndRetinalImages.mat', mosaicHorizontalEccentricity, NDfilterDensity));
         coneExcitationsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_excitations.mat', mosaicHorizontalEccentricity,NDfilterDensity));
         photocurrentsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_photocurrents.mat', mosaicHorizontalEccentricity,NDfilterDensity));
         videoFilename = fullfile(figureFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_activation', mosaicHorizontalEccentricity,NDfilterDensity));
-
     else
-        retinalImagesMatFileName = fullfile(simFileBase, 'coneMosaicAndRetinalImages0degsNoRaster.mat');
-        coneExcitationsMatFileName = fullfile(simFileBase, 'coneExcitations0degsNoRaster.mat');
-        photocurrentsMatFileName = fullfile(simFileBase, 'photoCurrents0degsNoRaster.mat');
-        videoFilename = fullfile(figureFileBase, 'TumblingE0degsMosaicActivationNoRaster');
+        retinalImagesMatFileName = fullfile(simFileBase, sprintf('noRaster_eccDegs_%1.1f_ND_%2.2f_coneMosaicAndRetinalImages.mat', mosaicHorizontalEccentricity, NDfilterDensity));
+        coneExcitationsMatFileName = fullfile(simFileBase, sprintf('noRaster_eccDegs_%1.1f_ND_%2.2f_excitations.mat', mosaicHorizontalEccentricity,NDfilterDensity));
+        photocurrentsMatFileName = fullfile(simFileBase, sprintf('noRaster_eccDegs_%1.1f_ND_%2.2f_photocurrents.mat', mosaicHorizontalEccentricity,NDfilterDensity));
+        videoFilename = fullfile(figureFileBase, sprintf('noRaster_eccDegs_%1.1f_ND_%2.2f_activation', mosaicHorizontalEccentricity,NDfilterDensity));
     end
 
+    if (~strcmp(observerFixationalEyeMovementCharacteristics, 'default'))
+        postFixString = sprintf('_%sFEM.mat',observerFixationalEyeMovementCharacteristics);
+        retinalImagesMatFileName = strrep(retinalImagesMatFileName, '.mat', postFixString);
+        coneExcitationsMatFileName = strrep(coneExcitationsMatFileName, '.mat', postFixString);
+        photocurrentsMatFileName = strrep(photocurrentsMatFileName, '.mat', postFixString);
+        videoFilename = strep(videoFilename, 'activation', sprintf('activation_%sFEM.mat',observerFixationalEyeMovementCharacteristics);
+    end
+
+    
     if (recomputeRetinalImages)
         % Generate scenes
         testESizeDeg = 10/60;
@@ -244,7 +249,8 @@ function t_rasterAOSLO_FullBiophysicalOS
 
         % Generate  fixational eye movements for nTrials, each lasting for simulationDurationSeconds
         generateFixationalEyeMovements(theConeMosaic, ...
-                simulationDurationSeconds, nTrials);
+                simulationDurationSeconds, nTrials, ...
+                observerFixationalEyeMovementCharacteristics);
 
 
         if (testIncrementDecrementScenes)
@@ -1322,14 +1328,24 @@ function theConeMosaic = generateConeMosaic(...
                 );
 end
 
-function generateFixationalEyeMovements(theConeMosaic, simulationDurationSeconds, nTrials)
+function generateFixationalEyeMovements(theConeMosaic, ...
+    simulationDurationSeconds, nTrials, observerCharacteristics)
 
     % Fixational eye movements
     eyeMovementsPerTrial = round(simulationDurationSeconds/theConeMosaic.integrationTime);
     
     fixEMobj = fixationalEM();
-    %fixEMobj.controlGamma = 0.18;
-    %fixEMobj.feedbackGain = 0.16;
+    switch (observerCharacteristics)
+        case 'fast'
+            fixEMobj.controlGamma = 0.17;
+            fixEMobj.feedbackGain = 0.15;
+        case 'slow'
+            fixEMobj.controlGamma = 0.50;
+            fixEMobj.feedbackGain = 0.12;
+        otherwise
+            % default params of gamma, feeedback
+    end % switch observerCharacteristics
+
     fixEMobj.microSaccadeType = 'none';    % No micro-saccades
     fixEMobj.randomSeed = 1;
 
