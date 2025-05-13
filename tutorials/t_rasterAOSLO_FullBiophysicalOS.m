@@ -22,7 +22,7 @@ function t_rasterAOSLO_FullBiophysicalOS
 
     observerFixationalEyeMovementCharacteristics = 'fast';
     observerFixationalEyeMovementCharacteristics = 'slow';
-    observerFixationalEyeMovementCharacteristics = 'default';
+    %observerFixationalEyeMovementCharacteristics = 'default';
 
     % Compute cone mosaic and retinal images of stimulus and background
     recomputeRetinalImages = ~true;
@@ -31,17 +31,17 @@ function t_rasterAOSLO_FullBiophysicalOS
     visualizeTheSceneRadiance = true;
     
     % Compute cone excitations response
-    recomputeConeExcitations = ~true;
+    recomputeConeExcitations = true;
 
     % Visualize the stimulus and the cone excitations response
     visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = ~true;
+    recomputePhotocurrents = true;
     subtractBackgroundPhotoCurrents = false;
 
     % Visualize the stimulus and the photocurrents response
-    visualizeStimulusAndPhotocurrentSequence = true;
+    visualizeStimulusAndPhotocurrentSequence = ~true;
 
 
     NDfilterDensity = 1.7;
@@ -81,10 +81,9 @@ function t_rasterAOSLO_FullBiophysicalOS
 
     if (~strcmp(observerFixationalEyeMovementCharacteristics, 'default'))
         postFixString = sprintf('_%sFEM.mat',observerFixationalEyeMovementCharacteristics);
-        retinalImagesMatFileName = strrep(retinalImagesMatFileName, '.mat', postFixString);
         coneExcitationsMatFileName = strrep(coneExcitationsMatFileName, '.mat', postFixString);
         photocurrentsMatFileName = strrep(photocurrentsMatFileName, '.mat', postFixString);
-        videoFilename = strep(videoFilename, 'activation', sprintf('activation_%sFEM.mat',observerFixationalEyeMovementCharacteristics));
+        videoFilename = strrep(videoFilename, 'activation', sprintf('activation_%sFEM.mat',observerFixationalEyeMovementCharacteristics));
     end
 
     
