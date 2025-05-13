@@ -1,5 +1,7 @@
 function t_rasterAOSLO_FullBiophysicalOS
 
+    
+
     % Simulation parameters.
     simulateStimulusRaster = true;
      
@@ -15,14 +17,14 @@ function t_rasterAOSLO_FullBiophysicalOS
     nStimulusFramesPerTrial = 3;
 
     % How many trials, which also means how many fEMs
-    nTrials = 512;
+    nTrials = 64;
     maxVideoTrials = 5;
 
     testIncrementDecrementScenes = true;
 
     observerFixationalEyeMovementCharacteristics = 'fast';
     observerFixationalEyeMovementCharacteristics = 'slow';
-    %observerFixationalEyeMovementCharacteristics = 'default';
+    observerFixationalEyeMovementCharacteristics = 'default';
 
     % Compute cone mosaic and retinal images of stimulus and background
     recomputeRetinalImages = ~true;
@@ -43,11 +45,13 @@ function t_rasterAOSLO_FullBiophysicalOS
     % Visualize the stimulus and the photocurrents response
     visualizeStimulusAndPhotocurrentSequence = ~true;
 
+    % Do a spectral analysis of the photocurrent response
+    analyzePhotocurrentSpectra = ~true;
 
     NDfilterDensity = 1.7;
     %NDfilterDensity = 1.0;
     %NDfilterDensity = 0.5;
-    %NDfilterDensity = 0.0;
+    NDfilterDensity = 0.0;
     pCurrentVisualizedRange = 30;
 
     mosaicHorizontalEccentricity = -1;
@@ -377,8 +381,9 @@ function t_rasterAOSLO_FullBiophysicalOS
 
         warmupPeriodSeconds = 1.0;
         warmupPeriodStimulusIntervalsNum = ceil(warmupPeriodSeconds /stimulusRefreshIntervalSeconds);
-        coolDownPeriodStimulusIntervalsNum = 4;
-        warmUpPeriodSecondsToIncludeInVisualization = stimulusRefreshIntervalSeconds;
+        coolDownPeriodStimulusIntervalsNum = 5;
+        warmUpPeriodSecondsToIncludeInVisualization = stimulusRefreshIntervalSeconds*10;
+        timeBaseForSavedPhotocurrentsSeconds = 1e-3;
         debugWarmUpTime = false;
 
         if (testIncrementDecrementScenes)
@@ -396,6 +401,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                     noiseFreeConeExcitationDecrementsResponseTimeSeries, ...
                     warmupPeriodStimulusIntervalsNum, warmUpPeriodSecondsToIncludeInVisualization, ...
                     coolDownPeriodStimulusIntervalsNum, ...
+                    timeBaseForSavedPhotocurrentsSeconds, ...
                     subtractBackgroundPhotoCurrents, debugWarmUpTime);
 
              fprintf('\nSaving photocurrent DECREMENTS responses to %s ... ', photocurrentsMatFileName);
@@ -423,6 +429,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                     noiseFreeConeExcitationIncrementsResponseTimeSeries, ...
                     warmupPeriodStimulusIntervalsNum, warmUpPeriodSecondsToIncludeInVisualization, ...
                     coolDownPeriodStimulusIntervalsNum, ...
+                    timeBaseForSavedPhotocurrentsSeconds, ...
                     subtractBackgroundPhotoCurrents, debugWarmUpTime);
 
             fprintf('\nAppending photocurrent INCREMENTS responses to %s ... ', photocurrentsMatFileName);
@@ -450,6 +457,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                     noiseFreeConeExcitationResponseTimeSeries, ...
                     warmupPeriodStimulusIntervalsNum, warmUpPeriodSecondsToIncludeInVisualization, ...
                     coolDownPeriodStimulusIntervalsNum, ...
+                    timeBaseForSavedPhotocurrentsSeconds, ...
                     subtractBackgroundPhotoCurrents, debugWarmUpTime);
     
             save(photocurrentsMatFileName, ...
@@ -476,6 +484,259 @@ function t_rasterAOSLO_FullBiophysicalOS
                 photocurrentsMatFileName, ...
                 strrep(videoFilename, 'activation', 'photocurrents'));
     end
+
+    % Spectral analysis of photocurrents
+    if (analyzePhotocurrentSpectra)
+
+        % Make sure we have chronux on the path
+        currentPath = path;
+        chronuxLibraryPath = '/Users/nicolas/Developer/Matlab/ThirdParty/chronux_2_11';
+        if (~contains(currentPath, chronuxLibraryPath))
+            addpath(genpath(chronuxLibraryPath));
+        end
+
+        load(retinalImagesMatFileName, ...
+                'stimulusRefreshIntervalSeconds', ...
+                'simulationTimeStepSeconds');
+
+        periStimulusPhotocurrentSpectralAnalysis(...
+            testIncrementDecrementScenes, photocurrentsMatFileName, ...
+            stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+            NDfilterDensity);
+    end
+
+end
+
+function periStimulusPhotocurrentSpectralAnalysis(...
+    testIncrementDecrementScenes, photocurrentsMatFileName, ...
+    stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+    NDfilterDensity)
+
+    fprintf('\nLoading photocurrent response data from %s. Please wait ...', photocurrentsMatFileName);
+    if (testIncrementDecrementScenes)
+        load(photocurrentsMatFileName, ...
+            'theConeMosaic', ...
+            'photocurrentResponseDecrementsTimeSeries', ...
+            'photocurrentResponseIncrementsTimeSeries', ...
+            'photocurrentResponseTimeAxis');
+
+        % Analyze the L-cone photocurrent decrement responses
+        analyzePhotocurrentResponses(1, ...
+            photocurrentResponseTimeAxis, ...
+            photocurrentResponseDecrementsTimeSeries(:,:,theConeMosaic.lConeIndices), ...
+            photocurrentResponseIncrementsTimeSeries(:,:,theConeMosaic.lConeIndices), ...
+            stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+            sprintf('L-cone responses (ND:%2.1f)', NDfilterDensity));
+
+        % Analyze the M-cone photocurrent responses
+        hFig = analyzePhotocurrentResponses(2, ...
+            photocurrentResponseTimeAxis, ...
+            photocurrentResponseDecrementsTimeSeries(:,:,theConeMosaic.mConeIndices), ...
+            photocurrentResponseIncrementsTimeSeries(:,:,theConeMosaic.mConeIndices), ...
+            stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+            sprintf('M-cone responses (ND:%2.1f)', NDfilterDensity));
+    else
+        load(photocurrentsMatFileName, ...
+            'theConeMosaic', ...
+            'photocurrentResponseTimeSeries', ...
+            'photocurrentResponseTimeSeriesNoisy', ...
+            'photocurrentResponseTimeAxis');
+    end
+end
+
+
+function hFig = analyzePhotocurrentResponses(figNo, ...
+    photocurrentResponseTimeAxis, ...
+    photocurrentResponseDecrementsTimeSeries, ...
+    photocurrentResponseIncrementsTimeSeries, ...
+    stimulusRefreshIntervalSeconds, simulationTimeStepSeconds, ...
+    plotTitle)
+
+    [nFixationalEMpaths, nTimeBins, nCones] = size(photocurrentResponseDecrementsTimeSeries);
+        
+    stimulusRefreshesNum = (photocurrentResponseTimeAxis(end)-photocurrentResponseTimeAxis(1)+simulationTimeStepSeconds)/stimulusRefreshIntervalSeconds;
+    nonCausalStimReshPeriodsNum = photocurrentResponseTimeAxis(1)/stimulusRefreshIntervalSeconds;
+
+    nonCausalTimeBins = find(photocurrentResponseTimeAxis<=0);
+    causalTimeBins = find(photocurrentResponseTimeAxis>0);
+
+
+    minStdMultiplier = 5;
+    r = photocurrentResponseDecrementsTimeSeries(:,nonCausalTimeBins,:);
+    minNonCausalResponseAmplitude = mean(r(:)) -  minStdMultiplier*std(r(:));
+    maxNonCausalResponseAmplitude = mean(r(:)) +  minStdMultiplier*std(r(:));
+    
+    
+    hFig = figure(figNo); clf;
+    set(hFig, 'Position', [10 10 830 1000], 'Color', [1 1 1]);
+
+    minPhotocurrentResponse = min(photocurrentResponseDecrementsTimeSeries(:));
+    maxPhotocurrentResponse = max(photocurrentResponseIncrementsTimeSeries(:));
+    
+    stimulusIntervalTimeOn = stimulusRefreshIntervalSeconds*(-5:10)*1e3;
+    stimulusHalfIntervalTimeOn = (0:0.5*stimulusRefreshIntervalSeconds:photocurrentResponseTimeAxis(end))*1e3;
+    stimulusHalfIntervalTimeOn = cat(2, fliplr((-0.5*stimulusRefreshIntervalSeconds:-0.5*stimulusRefreshIntervalSeconds:-0.1)*1e3), stimulusHalfIntervalTimeOn);
+    
+    for emPathIndex = 1:nFixationalEMpaths
+
+        % Time traces for all cones
+        if (emPathIndex == 1)
+            ax = subplot(1, 1, 1);
+        end
+
+        if (emPathIndex == 1)
+            plot(ax, [photocurrentResponseTimeAxis(1) photocurrentResponseTimeAxis(end)]*1e3, ...
+                minNonCausalResponseAmplitude*[1 1], 'k--');
+            hold(ax, 'on');
+            plot(ax, [photocurrentResponseTimeAxis(1) photocurrentResponseTimeAxis(end)]*1e3, ...
+                maxNonCausalResponseAmplitude*[1 1], 'k--');
+            for k = 1:numel(stimulusIntervalTimeOn)
+                plot(ax, stimulusIntervalTimeOn(k)*[1 1], [minPhotocurrentResponse maxPhotocurrentResponse], 'k-');
+            end
+        end
+
+        % The Decrement responses in blue
+        mosaicPhotoCurrentsForCurrentEMpath = squeeze(photocurrentResponseDecrementsTimeSeries(emPathIndex,:,:));
+        % Find the indices of cones whose causal response amplitude is outsize the nonCausalResponse range
+        minResponses = min(mosaicPhotoCurrentsForCurrentEMpath(causalTimeBins,:),[],1);
+        maxResponses = max(mosaicPhotoCurrentsForCurrentEMpath(causalTimeBins,:),[],1);
+        idx = find((minResponses < minNonCausalResponseAmplitude) | (maxResponses > maxNonCausalResponseAmplitude));
+        decrementResponsesForSpectralAnalysis = mosaicPhotoCurrentsForCurrentEMpath(:, idx);
+        plot(ax, photocurrentResponseTimeAxis*1e3, decrementResponsesForSpectralAnalysis', 'b-');
+        
+
+        % The Increment responses in red
+        mosaicPhotoCurrentsForCurrentEMpath = squeeze(photocurrentResponseIncrementsTimeSeries(emPathIndex,:,:));
+        % Find the indices of cones whose causal response amplitude is outsize the nonCausalResponse range
+        minResponses = min(mosaicPhotoCurrentsForCurrentEMpath(causalTimeBins,:),[],1);
+        maxResponses = max(mosaicPhotoCurrentsForCurrentEMpath(causalTimeBins,:),[],1);
+        idx = find((minResponses < minNonCausalResponseAmplitude) | (maxResponses > maxNonCausalResponseAmplitude));
+        incrementResponsesForSpectralAnalysis = mosaicPhotoCurrentsForCurrentEMpath(:, idx);
+        plot(ax, photocurrentResponseTimeAxis*1e3, incrementResponsesForSpectralAnalysis', 'r-');
+
+        %spectrumAnalysis(photocurrentResponseTimeAxis, decrementResponsesForSpectralAnalysis)
+
+        timeFrequencySpectrogramAnalysisForCurrentEMpath(photocurrentResponseTimeAxis, decrementResponsesForSpectralAnalysis, stimulusRefreshIntervalSeconds);
+        timeFrequencySpectrogramAnalysisForCurrentEMpath(photocurrentResponseTimeAxis, incrementResponsesForSpectralAnalysis, stimulusRefreshIntervalSeconds);
+    end
+
+    set(ax, 'YLim', [minPhotocurrentResponse maxPhotocurrentResponse]);
+    set(ax, 'XLim', [photocurrentResponseTimeAxis(1) photocurrentResponseTimeAxis(end)]*1e3);
+    set(ax, 'YTick', -100:2:0, 'XTick', round(stimulusHalfIntervalTimeOn));
+    xlabel(ax, 'time (msec)');
+    ylabel(ax, 'photocurrent (pAmps)');
+    grid(ax, 'on');
+    box(ax, 'on');
+    set(ax, 'FontSize', 16);
+    title(ax, plotTitle)
+
+end
+
+
+function spectrumAnalysis(timeAxis, multiChannelData)
+    hFig = figure(99); clf;
+
+    theWindow = kaiser(numel(timeAxis),2.5);
+
+    for iCone = 1:nCones
+        singleConeResponse = squeeze(multiChannelData(:, iCone));
+        ax = subplot(2,1,1);
+        plot(timeAxis*1e3, singleConeResponse, 'k-');
+        hold(ax, 'on')
+        set(ax, 'XTick', -100:10:300, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
+        xlabel(ax,'time (msec)');
+        ylabel(ax, 'photocurrent (pAmps)');
+        set(ax, 'FontSize', 16);
+
+        dTSeconds = timeAxis(2)-timeAxis(1);
+        samplingFrequencyHz = 1./dTSeconds;
+        singleConeResponse = singleConeResponse .* theWindow;
+
+        [p,f] = pspectrum(singleConeResponse, samplingFrequencyHz);
+        ax = subplot(2,1,2);
+        plot(ax, f, p, 'ko-');
+        set(ax, 'XScale', 'log', 'XLim', [1 500], 'YScale', 'log');
+        grid(ax, 'on');
+        pause
+    end % iCone
+    
+end
+
+function timeFrequencySpectrogramAnalysisForCurrentEMpath(timeAxis, multiChannelData, stimulusRefreshIntervalSeconds)
+    [nTimeBins, nCones] = size(multiChannelData);
+    assert(nTimeBins == numel(timeAxis), 'incosistent dimensions');
+    
+    dTSeconds = timeAxis(2)-timeAxis(1);
+    samplingFrequencyHz = 1./dTSeconds;
+    paddingFactorForFFT = 2;
+    frequenciesOfInterest = [1 100];
+
+    windowSizeSeconds = 100/1000;
+    stepSizeSeconds = 2/1000;
+    movingWindow = [windowSizeSeconds stepSizeSeconds];
+
+    halfBandWidthOfTaperHz = 10;
+    tapers(1) = windowSizeSeconds * halfBandWidthOfTaperHz;
+    tapers(2) = 5;
+    
+    spectrogramParams = struct(...
+        'Fs', samplingFrequencyHz, ...
+        'pad', paddingFactorForFFT, ...
+        'pass',frequenciesOfInterest ...
+        );
+
+    [multiChannelSpectrogram, spectrogramTimeSupport, spectrogramSpectralSupport] = ...
+            mtspecgramc(multiChannelData, movingWindow, spectrogramParams);
+
+    [nTimeBins, nFrequencies, nCones] = size(multiChannelSpectrogram);
+
+    midPointSpectrogram = (spectrogramTimeSupport(end)-spectrogramTimeSupport(1))/2;
+    midPoint = (timeAxis(end)-timeAxis(1))/2;
+    dt = midPointSpectrogram-midPoint;
+    spectrogramTimeSupport = spectrogramTimeSupport - spectrogramTimeSupport(1) + timeAxis(1) - dt;
+    
+
+    % Do not plot 0 Hz
+    frequencyIndicesToPlot = find(spectrogramSpectralSupport > 0);
+    spectrogramSpectralSupport = spectrogramSpectralSupport(frequencyIndicesToPlot);
+    multiChannelSpectrogram = multiChannelSpectrogram(:, frequencyIndicesToPlot,:);
+
+    hFig = figure(99); clf;
+    for iCone = 19:19 % 1:nCones
+        ax = subplot(2,2,1);
+        plot(timeAxis*1e3, multiChannelData(:, iCone), 'k-');
+        set(ax, 'XTick', -100:10:300, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
+        xlabel(ax,'time (msec)');
+        ylabel(ax, 'photocurrent (pAmps)');
+        set(ax, 'FontSize', 16);
+
+        ax = subplot(2,2,3);
+        theSingleConeSpectrogram = squeeze(multiChannelSpectrogram(:,:,iCone));
+        idx = find(spectrogramTimeSupport < spectrogramTimeSupport(1)+stimulusRefreshIntervalSeconds)
+        theSingleConeSpectrogramAtNonCausalDelay = mean(theSingleConeSpectrogram(idx,:),1);
+        theDifferentialSingleConeSpectrogram = log10(bsxfun(@times, theSingleConeSpectrogram, 1./theSingleConeSpectrogramAtNonCausalDelay));
+        
+        imagesc(spectrogramTimeSupport*1e3, spectrogramSpectralSupport, theSingleConeSpectrogram');
+        set(ax, 'YLim', frequenciesOfInterest);
+        set(ax, 'XTick', -100:10:300, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
+        axis(ax, 'xy')
+        xtickangle(ax, 0);
+
+        xlabel(ax,'time (msec)');
+        ylabel(ax, 'frequency (Hz)');
+        set(ax, 'FontSize', 16);
+        colormap(ax, gray(1024));
+        title(ax,sprintf('cone: %d', iCone));
+
+
+        ax = subplot(2,2,[2 4]);
+        plot(spectrogramSpectralSupport, theSingleConeSpectrogram, 'k-')
+        set(ax, 'XScale', 'log', 'XLim', frequenciesOfInterest, 'YTick', [1 3 10 30 100 300 1000]);
+        xlabel(ax, 'frequency (Hz)');
+        pause
+    end
+
+
 end
 
 
@@ -1629,7 +1890,9 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
             coneExcitationResponseBackground, ...
             coneExcitationResponseTimeSeries, ...
             warmBackgroundRefeshCyclesNum, warmUpPeriodSecondsToIncludeInVisualization, ...
-            coolDownBackgroundRefeshCyclesNum, subtractBackgroundPhotoCurrents, debugWarmUpTime)
+            coolDownBackgroundRefeshCyclesNum, ...
+            timeBaseForSavedPhotocurrentsSeconds, ...
+            subtractBackgroundPhotoCurrents, debugWarmUpTime)
 
 
     % Concatenate (pre-stimulus) warm up background
@@ -1650,7 +1913,7 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
     [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocurrentResponseTimeSeriesNoisy] = ...
          computeFullPhotocurrentModelResponse(theConeMosaic,  backgroundConeExcitationCounts, coneExcitationResponseTimeSeries, ...
          theConeMosaic.integrationTime, warmupPeriodSeconds, actualWarmUpPeriodSecondsToIncludeInVisualization, ...
-         subtractBackgroundPhotoCurrents, debugWarmUpTime);
+         timeBaseForSavedPhotocurrentsSeconds, subtractBackgroundPhotoCurrents, debugWarmUpTime);
 end
 
 
@@ -1659,9 +1922,10 @@ end
 function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocurrentResponseTimeSeriesNoisy] = ...
     computeFullPhotocurrentModelResponse(theConeMosaic, backgroundConeExcitationCounts, stimulusConeExcitationResponseTimeSeries, ...
     coneMosaicIntegrationTime, warmupPeriodSeconds, warmUpPeriodSecondsToIncludeInVisualization, ...
-    subtractBackgroundPhotoCurrents, debugWarmUpTime)
+    timeBaseForSavedPhotocurrentsSeconds, subtractBackgroundPhotoCurrents, debugWarmUpTime)
 
     osTimeStep = 1e-5;
+
     integerMultiplier = round(coneMosaicIntegrationTime/osTimeStep);
     osTimeStep = coneMosaicIntegrationTime/integerMultiplier;
 
@@ -1769,7 +2033,7 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
         photocurrentResponseTimeAxis = photocurrentResponseTimeAxis(idx);
         photocurrentResponseTimeSeries = photocurrentResponseTimeSeries(:,idx,:);
         photocurrentResponseTimeSeriesNoisy = photocurrentResponseTimeSeriesNoisy(:,idx,:);
-
+        
         if (debugWarmUpTime)
             figure(3333); clf;
             plot(photocurrentResponseTimeAxis, squeeze(photocurrentResponseTimeSeries(1,:,:)), 'k-');
@@ -1778,6 +2042,18 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
             colormap(gray)
             pause
         end
+
+        % To requested time base
+        timeSampleSkip = round(timeBaseForSavedPhotocurrentsSeconds/osTimeStep);
+        idx = 1:timeSampleSkip:numel(photocurrentResponseTimeAxis);
+        photocurrentResponseTimeAxis = photocurrentResponseTimeAxis(idx);
+        photocurrentResponseTimeSeries = photocurrentResponseTimeSeries(:,idx,:);
+        photocurrentResponseTimeSeriesNoisy = photocurrentResponseTimeSeriesNoisy(:,idx,:);
+
+        % Realign the t = 0 point
+        [~,idx] = min(abs(photocurrentResponseTimeAxis));
+        photocurrentResponseTimeAxis = photocurrentResponseTimeAxis - photocurrentResponseTimeAxis(idx);
+
     end
 
 end
