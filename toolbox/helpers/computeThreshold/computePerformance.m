@@ -20,14 +20,14 @@ function [predictions, theClassifierEngine, responses, whichAlternatives, whichR
 %     these scenes, and the classifer.
 %
 % Inputs:
-%     theScenes             - A collection of scenes (type: cell)
+%     theScenes         - A collection of scenes (type: cell)
 %                             If the task is TAFC, then the cell has a size
 %                             of 1 x 2, the first for the null stimulus,
 %                             and the second for the test stimulus.
 %                             If the task is NWay_OneStimulusPerTrial, then
 %                             the cell has a size of 1 x #alternative
 %                             stimuli.
-%     temporalSupport       - Temporal support vector (in seconds) for
+%     temporalSupport  - Temporal support vector (in seconds) for
 %                             scene sequences.
 %     nTrain                - Number of null and test response instances
 %                             used in classifer training.  The two types of

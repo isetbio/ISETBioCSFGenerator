@@ -25,8 +25,8 @@ function [logThreshold, logMAR, questObj, psychometricFunction, fittedPsychometr
         'fastParams', false, ...
         'eccDegs', [-1 0], ...
         'temporalModulationParams_numFrame', 3, ...
-        'temporalModulationParams_xShiftPerFrameMin', [0 0 0], ...
-        'temporalModulationParams_yShiftPerFrameMin', [0 0 0], ...
+        'temporalModulationParams_xShiftPerFrameMin', {[0 0 0]}, ...
+        'temporalModulationParams_yShiftPerFrameMin', {[0 0 0]}, ...
         'temporalModulationParams_backgroundRGBPerFrame', [ [1 0 0] ; [1 0 0] ; [1 0 0] ], ...
         'temporalModulationParams_stimOnFrames', [0 1 0], ...
         'temporalModulationParams_frameRateHz', 60 , ...
@@ -130,10 +130,12 @@ arguments
     options.chromaSpecification_type (1,:) char = 'RGBsettings';
     options.chromaSpecification_backgroundRGB (1,3) double = [1 0 0];
     options.chromaSpecification_foregroundRGB (1,3) double = [0 0 0];
+    options.jitterMinutesX (1,1) double = 0;
+    options.jitterMinutesY (1,1) double = 0;
     options.temporalModulationParams_frameRateHz (1,1) double = 60;
     options.temporalModulationParams_numFrame (1,1) double = 3;
-    options.temporalModulationParams_xShiftPerFrameMin (1,:) double = [0 10 0];
-    options.temporalModulationParams_yShiftPerFrameMin (1,:) double = [0 0 10];
+    options.temporalModulationParams_xShiftPerFrameMin (:,:) cell = {[0 10 0]};
+    options.temporalModulationParams_yShiftPerFrameMin (:,:) cell = {[0 0 10]};
     options.temporalModulationParams_backgroundRGBPerFrame (:,:) double = [0 0 0; 1 0 0; 0 0 0];
     options.temporalModulationParams_stimOnFrames (:,:) double = [0 1 0];
 
@@ -196,8 +198,6 @@ aoSceneParams = struct( ...
     'chromaSpecification_foregroundRGB', options.chromaSpecification_foregroundRGB , ...
     'temporalModulationParams_frameRateHz', options.temporalModulationParams_frameRateHz , ...
     'temporalModulationParams_numFrame', options.temporalModulationParams_numFrame , ...
-    'temporalModulationParams_xShiftPerFrame', options.temporalModulationParams_xShiftPerFrameMin/60 , ...
-    'temporalModulationParams_yShiftPerFrame', options.temporalModulationParams_yShiftPerFrameMin/60 , ...
     'temporalModulationParams_backgroundRGBPerFrame', options.temporalModulationParams_backgroundRGBPerFrame , ...
     'temporalModulationParams_stimOnFrames', options.temporalModulationParams_stimOnFrames , ...
     'wave', options.wave ...
@@ -214,10 +214,33 @@ aoSceneParams = struct( ...
 % The scene engine tutorial returns its parameters, which are used below to
 % try to match things up as best as possible.  One thing it doesn't return
 % is its four hard coded orientaions, so we build that here for use below.
-sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
-[sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOTumblingESceneEngine(sceneOptionsCell{:});
-tumblingEsceneEngines = {sce0, sce90, sce180, sce270};
-clear sce0 sce90 sce180 sce270
+[nDirections,nShifts] = size(options.temporalModulationParams_xShiftPerFrameMin);
+if (size(options.temporalModulationParams_yShiftPerFrameMin,1) ~= nDirections)
+    error('Error in number of directions specified in x and y');
+end
+if (size(options.temporalModulationParams_yShiftPerFrameMin,2) ~= nShifts)
+    error('Error in number of shifts specified in x and y');
+end
+nSceneEngines = 1;
+for dd = 1:nDirections
+    for ss = 1:nShifts
+        % Update shifts for this one
+        aoSceneParams.temporalModulationParams_xShiftPerFrame = options.temporalModulationParams_xShiftPerFrameMin{dd,ss}/60 + options.jitterMinutesX/60;
+        aoSceneParams.temporalModulationParams_yShiftPerFrame = options.temporalModulationParams_yShiftPerFrameMin{dd,ss}/60 + options.jitterMinutesY/60;
+        sceneOptionsCell = [fieldnames(aoSceneParams) , struct2cell(aoSceneParams)]';
+
+        % Make scene engines and add to cell array of them
+        [sce0,sce90,sce180,sce270,backgroundSceneEngine,sceneParams] = t_BerkeleyAOTumblingESceneEngine(sceneOptionsCell{:});
+        tumblingEsceneEngines{nSceneEngines} = sce0;
+        tumblingEsceneEngines{nSceneEngines + 1} = sce90;
+        tumblingEsceneEngines{nSceneEngines + 2} = sce180;
+        tumblingEsceneEngines{nSceneEngines + 3} = sce270;
+        nSceneEngines = nSceneEngines + 4;
+        clear sce0 sce90 sce180 sce270
+    end
+end
+
+
 
 % For the background scene, we have to supply a letter size.  We don't care what
 % what it is because the foreground and background colors are matched for
