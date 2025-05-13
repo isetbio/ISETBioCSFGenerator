@@ -15,7 +15,8 @@ function t_rasterAOSLO_FullBiophysicalOS
     nStimulusFramesPerTrial = 3;
 
     % How many trials, which also means how many fEMs
-    nTrials = 5;
+    nTrials = 512;
+    maxVideoTrials = 5;
 
     testIncrementDecrementScenes = true;
 
@@ -27,7 +28,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     recomputeRetinalImages = ~true;
 
     cropRetinalImagesForConeMosaic = true;
-    visualizeTheSceneRadiance = ~true;
+    visualizeTheSceneRadiance = true;
     
     % Compute cone excitations response
     recomputeConeExcitations = ~true;
@@ -441,7 +442,7 @@ function t_rasterAOSLO_FullBiophysicalOS
                 'noisyConeExcitationResponseTimeSeries', ...
                 'timeAxis');
 
-             load(retinalImagesMatFileName, 'stimulusRefreshIntervalSeconds');
+            load(retinalImagesMatFileName, 'stimulusRefreshIntervalSeconds');
 
             [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocurrentResponseTimeSeriesNoisy] = ...
                 computeConeMosaicPhotoCurrentsResponse(...
@@ -501,7 +502,6 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
         [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
             determineVisualizedConeIndices(theConeMosaic);
     
-        irradianceAtTargetWavelengthInsteadOfRGBimage = true;
         displayEyeMovements = true;
         
         simulationTimeStepSeconds = photocurrentResponseTimeAxis(2)-photocurrentResponseTimeAxis(1);
@@ -524,30 +524,23 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
 
         nTimePoints = numel(theListOfBackgroundRasterRetinalImages);
        
-        theListOfBackgroundRGBImages = zeros(nTimePoints, numel(spatialSupportY), numel(spatialSupportX),3, 'single');
-        theListOfStimulusRGBImages = zeros(nTimePoints, numel(spatialSupportY), numel(spatialSupportX), 3, 'single');
-
         theListOfBackgroundRetinalIrradianceMaps = zeros(nTimePoints, numel(spatialSupportY), numel(spatialSupportX), 'single');
         theListOfStimulusRetinalIrradianceMaps = zeros(nTimePoints, numel(spatialSupportY), numel(spatialSupportX), 'single'); 
-        
-        
+
         for iTimePoint = 1:nTimePoints
             % Get the current retinal image
             theRetinalImage = theListOfBackgroundRasterRetinalImages{iTimePoint};
-            theListOfBackgroundRGBImages(iTimePoint,:,:,:) = single(oiGet(theRetinalImage, 'rgbimage'));
             theListOfBackgroundRetinalIrradianceMaps(iTimePoint,:,:) = single(computeIrradianceInWattsPerMM2(theRetinalImage, targetWavelength));
         end
-        clear 'theListOfBackgroundRasterRetinalImages';
 
         fprintf('\nLoading stimulus (increments) raster images. Please wait...')
         load(retinalImagesMatFileName,'theListOfStimulusIncrementsRasterRetinalImages');
         for iTimePoint = 1:nTimePoints
             % Get the current retinal image
             theRetinalImage = theListOfStimulusIncrementsRasterRetinalImages{iTimePoint};
-            theListOfStimulusRGBImages(iTimePoint,:,:,:) = single(oiGet(theRetinalImage, 'rgbimage'));
             theListOfStimulusRetinalIrradianceMaps(iTimePoint,:,:) = single(computeIrradianceInWattsPerMM2(theRetinalImage, targetWavelength));
         end
-        clear 'theListOfStimulusIncrementsRasterRetinalImages';
+       
 
         % Generate the video of the cone mosaic photocurrent response to the INCREMENTS stimulus raster
         generateMosaicActivationVideo(theConeMosaic, ...
@@ -557,8 +550,6 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
             spatialSupportX, spatialSupportY, ...
             theListOfStimulusRetinalIrradianceMaps, ...
             theListOfBackgroundRetinalIrradianceMaps, ...
-            theListOfStimulusRGBImages, ...
-            theListOfBackgroundRGBImages, ...
             photocurrentResponseIncrementsTimeSeries, ...
             photocurrentResponseIncrementsTimeSeriesNoisy, ...
             LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
@@ -567,11 +558,10 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
             'photocurrent (pAmps)', ...
             'photocurrent', ...
             pCurrentVisualizedRange, ...
-            irradianceAtTargetWavelengthInsteadOfRGBimage, ...
             targetWavelength, ...
             sprintf('%s-StimulusRaster-Increments', videoFilename));
 
-      
+        clear 'theListOfStimulusIncrementsRasterRetinalImages';
        
        % Generate the video of the cone mosaic photocurrent response to the DECREMENTS stimulus raster
        fprintf('\nLoading stimulus (decrements) raster images. Please wait...')
@@ -579,10 +569,8 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
         for iTimePoint = 1:nTimePoints
             % Get the current retinal image
             theRetinalImage = theListOfStimulusDecrementsRasterRetinalImages{iTimePoint};
-            theListOfStimulusRGBImages(iTimePoint,:,:,:) = single(oiGet(theRetinalImage, 'rgbimage'));
             theListOfStimulusRetinalIrradianceMaps(iTimePoint,:,:) = single(computeIrradianceInWattsPerMM2(theRetinalImage, targetWavelength));
         end
-        clear 'theListOfStimulusDecrementsRasterRetinalImages';
 
 
         % Generate the video of the cone mosaic photocurrent response to the INCREMENTS stimulus raster
@@ -593,8 +581,6 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
             spatialSupportX, spatialSupportY, ...
             theListOfStimulusRetinalIrradianceMaps, ...
             theListOfBackgroundRetinalIrradianceMaps, ...
-            theListOfStimulusRGBImages, ...
-            theListOfBackgroundRGBImages, ...
             photocurrentResponseDecrementsTimeSeries, ...
             photocurrentResponseDecrementsTimeSeriesNoisy, ...
             LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
@@ -603,7 +589,6 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
             'photocurrent (pAmps)', ...
             'photocurrent', ...
             pCurrentVisualizedRange, ...
-            irradianceAtTargetWavelengthInsteadOfRGBimage, ...
             targetWavelength, ...
             sprintf('%s-StimulusRaster-Decrements', videoFilename));
 
@@ -624,7 +609,7 @@ function visualizeRetinalImageAndConePhotoCurrents(maxVideoTrials, nStimulusFram
         [LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized] = ...
             determineVisualizedConeIndices(theConeMosaic);
     
-        irradianceAtTargetWavelengthInsteadOfRGBimage = true;
+        irradianceAtTargetWavelengthInsteadOfRGBimage = ~true;
         displayEyeMovements = true;
         yAxisLabel = 'photocurrent (pAmps)';
 
@@ -682,13 +667,11 @@ function generateMosaicActivationVideo(theConeMosaic, ...
     spatialSupportX, spatialSupportY, ...
     theListOfStimulusRetinalIrradianceMaps, ...
     theListOfBackgroundRetinalIrradianceMaps, ...
-    theListOfStimulusRGBImages, ...
-    theListOfBackgroundRGBImages, ...
     mosaicNoiseFreeResponseTimeSeries, ...
     mosaicNoisyResponseTimeSeries, ...
     LconeIndicesVisualized, MconeIndicesVisualized, SconeIndicesVisualized, ...
     displayEyeMovements, responseTimeAxis, yAxisLabel, signalType, signalRange, ...
-    irradianceAtTargetWavelengthInsteadOfRGBimage, targetWavelength, videoFilename)
+    targetWavelength, videoFilename)
 
     labeledConeIndices = [...
         LconeIndicesVisualized(:); ...
@@ -794,33 +777,25 @@ function generateMosaicActivationVideo(theConeMosaic, ...
                 end
             end % if (~strcmp(signalType, 'excitations'))
 
-            if (irradianceAtTargetWavelengthInsteadOfRGBimage)
-                if (inStimulusInterval)
-                    % Stimulus radiance
-                    imagesc(ax1, spatialSupportX, spatialSupportY, squeeze(theListOfStimulusRetinalIrradianceMaps(iTimePointMod,:,:)));
-                else
-                    % Background radiance
-                    imagesc(ax1, spatialSupportX, spatialSupportY, squeeze(theListOfBackgroundRetinalIrradianceMaps(iTimePointMod,:,:)));
-                end
-                set(ax1, 'CLim', irradianceRange);
-                colormap(ax1, 'gray');
-                colorbar(ax1,'north', 'Color', [0.8 0.8 0.8], 'FontSize', 12, 'FontName', 'Spot mono');
-                set(ax1, 'FontSize', 16, 'XColor', [0.5 0.5 0.5], 'YColor', [0.5 0.5 0.5]);
-                title(ax1, ...
-                    sprintf('simulated Tuten AOSLO display (irradiance, mWatts/mm^2 @ %dnm )', targetWavelength), ...
-                    'FontSize', 14, 'Color', [0.5 0.5 0.5]);
+            if (inStimulusInterval)
+                % Stimulus radiance
+                theIrradianceMap = squeeze(theListOfStimulusRetinalIrradianceMaps(iTimePointMod,:,:));
             else
-                if (inStimulusInterval)
-                    % Stimulus OI
-                    theRetinalImage = squeeze(theListOfStimulusRGBImages(iTimePointMod,:,:,:));
-                else
-                    % Background OI
-                    theRetinalImage = squeeze(theListOfBackgroundRGBImages(iTimePointMod,:,:,:));
-                end
-                image(ax1, spatialSupportX, spatialSupportY, oiGet(theRetinalImage, 'rgbimage'));
-                set(ax1, 'FontSize', 16, 'XColor', [0.5 0.5 0.5], 'YColor', [0.5 0.5 0.5]);
-                title(ax1, sprintf('simulated Tuten AOSLO display'),'FontSize', 14, 'Color', [0.5 0.5 0.5]);
+                % Background radiance
+                theIrradianceMap = squeeze(theListOfBackgroundRetinalIrradianceMaps(iTimePointMod,:,:));
             end
+            imagesc(ax1, spatialSupportX, spatialSupportY, theIrradianceMap);
+            set(ax1, 'CLim', irradianceRange);
+            cMap = gray(1024);
+            cMap(:,2) = 0;
+            cMap(:,3) = 0;
+            colormap(ax1, cMap);
+            colorbar(ax1,'north', 'Color', [0.8 0.8 0.8], 'FontSize', 12, 'FontName', 'Spot mono');
+            set(ax1, 'FontSize', 16, 'XColor', [0.5 0.5 0.5], 'YColor', [0.5 0.5 0.5]);
+            title(ax1, ...
+                sprintf('simulated Tuten AOSLO display (irradiance, mWatts/mm^2 @ %dnm )', targetWavelength), ...
+                'FontSize', 14, 'Color', [0.5 0.5 0.5]);
+
             axis(ax1,'image');
             set(ax1, 'XTick', domainVisualizationTicks.x, 'YTick', domainVisualizationTicks.y);
             set(ax1, 'XLim', domainVisualizationLimits(1:2), 'YLim', domainVisualizationLimits(3:4), 'XTickLabel', {});
@@ -957,7 +932,7 @@ function visualizeRetinalImageAndConeExcitations(...
             theSceneTemporalSupportSeconds);
     fprintf('Done ! \n');
 
-    irradianceAtTargetWavelengthInsteadOfRGBimage = true;
+    irradianceAtTargetWavelengthInsteadOfRGBimage = ~true;
     displayEyeMovements = false;
     yAxisLabel = 'cone excitation rate (R*/sec)';
 
@@ -1160,14 +1135,14 @@ function [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs, theP
     theNullSequence = sceBg.compute(testESizeDeg);
     theNullScene = theNullSequence{frameNo};
     if (visualizeTheSceneRadiance)
-        hFig = visualizeSceneRadiance(200, theNullScene, 'background', sceBg.presentationDisplay);
+        hFig = visualizeSceneRadiance(200, theNullScene, 'background');
         NicePlot.exportFigToPDF(fullfile(figureFileBase,'BackgroundScene.pdf'), hFig, 300);
     end
 
     theEsceneSequence = sce0Increments.compute(testESizeDeg);
     theIncrementsEscene0degs = theEsceneSequence{frameNo};
     if (visualizeTheSceneRadiance)
-        hFig = visualizeSceneRadiance(300, theIncrementsEscene0degs, 'increments', sceBg.presentationDisplay);
+        hFig = visualizeSceneRadiance(300, theIncrementsEscene0degs, 'increments');
         NicePlot.exportFigToPDF(fullfile(figureFileBase,'IncrementsScene.pdf'), hFig, 300);
     end
     
@@ -1187,44 +1162,68 @@ function [theNullScene, theIncrementsEscene0degs, theDecrementsEscene0degs, theP
     theEsceneSequence = sce0Decrements.compute(testESizeDeg);
     theDecrementsEscene0degs = theEsceneSequence{frameNo};
     if (visualizeTheSceneRadiance)
-        hFig = visualizeSceneRadiance(100, theDecrementsEscene0degs, 'decrements', sceBg.presentationDisplay);
+        hFig = visualizeSceneRadiance(100, theDecrementsEscene0degs, 'decrements');
         NicePlot.exportFigToPDF(fullfile(figureFileBase,'DecrementsScene.pdf'), hFig, 300);
     end
 
     thePresentationDisplay = sceBg.presentationDisplay;
 end
 
-function RGBsettingsImage = visualizeRGBimageFromXYZimage(XYZimage,presentationDisplay)
 
-    displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
-    displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
-    RGBsettingsImage = imageLinearTransform(XYZimage, displayXYZToLinearRGB);
+function RGBsettings = renderInfraredImageAsRGBimage(scene, maxContrast)
 
-    totalPixels = numel(RGBsettingsImage)
-    pixelsNumWithRGBsettingsLessThan0 = numel(find(RGBsettingsImage<0))
-    [min(RGBsettingsImage(:)) max(RGBsettingsImage(:))]
+    pLevels = [0 1 99 100];
+    photons = sceneGet(scene,'photons');
+    wList   = sceneGet(scene,'wavelength');
+    sz      = sceneGet(scene,'size');
 
-    pixelsNumWithRGBsettingsGreaterThan1 = numel(find(RGBsettingsImage>1))
-    RGBsettingsImage(RGBsettingsImage<0) = 0;
-    RGBsettingsImage(RGBsettingsImage>1) = 1;
+
+    % Compute gray scale for IR
+    renderFlag = -2;
+    RGBsettings = imageSPD(photons,wList,1,sz(1),sz(2),renderFlag,[],[],[]);
+
+    % Make it red-scale
+    rChannel = RGBsettings(:,:,1);
+    RGBsettings(:,:,2) = 0;
+    RGBsettings(:,:,3) = 0;
+
+    backgroundR = 1-maxContrast/2;
+
+
+        % We only have 2 values: background and foreground
+        p = prctile(rChannel(:), pLevels);
+        minR = p(1);
+        minR1 = p(2);
+        maxR99 = p(3);
+        maxR = p(4);
+
+        if (minR == maxR)
+            rChannel = rChannel*0 + backgroundR;
+        elseif (abs(maxR-maxR99) < abs(minR-minR1))
+            % Decrements scene
+            idx = find(rChannel(:) <= minR);
+            rChannel = rChannel*0 + backgroundR;
+            rChannel(idx) = backgroundR-(1-backgroundR);
+        else
+            % Increments scene
+            idx = find(rChannel(:) >= maxR);
+            rChannel = rChannel*0 + backgroundR;
+            rChannel(idx) = 1.0;
+        end
+
+        RGBsettings(:,:,1) = rChannel;
+
+    
 end
 
-
-function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDisplay)
+function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel)
     
-    if (1==2)
-        XYZimage = sceneGet(scene, 'xyz');
-        sceneRGBsettings = visualizeRGBimageFromXYZimage(XYZimage,presentationDisplay);
-    end
+    % Since we have 2 beams, one at 860nm and one at 680nm and the
+    % 860nm is always ON, maxIRcontrast cannot be 1.0, so we set
+    % it at 0.9
+    maxIRcontrast = 0.9;
 
-    renderFlag = -2;
-    sceneRGBsettings = sceneShowImage(scene,renderFlag);
-    rChannel = sceneRGBsettings(:,:,1);
-    sceneRGBsettings(:,:,2) = 0;
-    sceneRGBsettings(:,:,3) = 0;
-    %sceneRGBsettings = sceneGet(scene, 'rgbimage');
-    prctile(rChannel(:), [0 1 50 99 100])
-    pause
+    sceneRGBsettings = renderInfraredImageAsRGBimage(scene, maxIRcontrast);
     viewingDistance = sceneGet(scene, 'distance');
     spatialSupportMilliMeters = sceneGet(scene, 'spatial support', 'mm');
     spatialSupportDegs = 2 * atand(spatialSupportMilliMeters/1e3/2/viewingDistance);
@@ -1239,7 +1238,7 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
     hFig = figure(figNo); clf;
     set(hFig, 'Position', [10 10 1100 1080], 'Color', [1 1 1]);
     ax = subplot(2,2,1);
-    image(ax,spatialSupportX, spatialSupportY, lrgb2srgb(sceneRGBsettings));
+    image(ax,spatialSupportX, spatialSupportY, sceneRGBsettings);
     hold(ax, 'on')
     plot(ax, zeros(size(spatialSupportY)) + spatialSupportX(targetCol), spatialSupportY, 'g:', 'LineWidth', 1.0);
     axis(ax,'xy'); axis(ax, 'square')
@@ -1250,7 +1249,7 @@ function hFig = visualizeSceneRadiance(figNo, scene, sceneLabel, presentationDis
     ax = subplot(2,2,3);
     luminanceMap = sceneGet(scene, 'luminance');
     imagesc(ax,spatialSupportX, spatialSupportY, luminanceMap);
-    maxDisplayedLuminance = 15000;
+    maxDisplayedLuminance = 2.0*mean(luminanceMap(:));
     set(ax, 'CLim', [0 maxDisplayedLuminance]);
     hold(ax, 'on');
     plot(ax, zeros(size(spatialSupportY)) + spatialSupportY(targetCol), spatialSupportY, 'r--');
@@ -1308,7 +1307,7 @@ function [theNullScene, theEscene0degs, thePresentationDisplay, sceneParams] = g
     theNullScene = theNullSequence{frameNo};
 
     if (visualizeTheSceneRadiance)
-        visualizeSceneRadiance(100, theEscene0degs , 'decrements', sceBg.presentationDisplay);
+        visualizeSceneRadiance(100, theEscene0degs , 'decrements');
     end
 
     thePresentationDisplay = sceBg.presentationDisplay;
@@ -1569,7 +1568,6 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
         % Compute the OI
         theRetinalImageAtThisSimulationTimeStep = oiCompute(theOI, theFrameScene, 'pad value', 'zero');
 
-       
         % Crop the OI
         if (~isempty(cropRetinalImagesForConeMosaicSize))
             
@@ -1605,9 +1603,6 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
             theRetinalImageAtThisSimulationTimeStep = oiCrop(...
                 theRetinalImageAtThisSimulationTimeStep, croppingRect);
 
-            bytesNumOfRetinalImageAfterCropping = numel(getByteStreamFromArray(theRetinalImageAtThisSimulationTimeStep));
-            bytesRatioAfterCropping = bytesNumOfRetinalImageAfterCropping/bytesNumOfRetinalImageBeforeCropping
-
             spatialSupportMM = oiGet(theRetinalImageAtThisSimulationTimeStep, 'spatial support', 'mm');
             mmPerDegree = focalLength*tand(1)*1e3;
             spatialSupportDegs = spatialSupportMM/mmPerDegree;
@@ -1618,9 +1613,6 @@ function theListOfRetinalImages = computeRasterScanRetinalImagesForOneFullRefres
 
         if (visualizeEachRetinalImage)
             figure(33); clf;
-            %XYZimage = oiGet(theRetinalImageAtThisSimulationTimeStep, 'XYZ');
-            %RGBsettingsImage = visualizeRGBimageFromXYZimage(XYZimage,thePresentationDisplay);
-            %image(spatialSupportXdegs, spatialSupportYdegs, lrgb2srgb(RGBsettingsImage));
             theRetinalIlluminance = oiGet(theRetinalImageAtThisSimulationTimeStep, 'illuminance');
             imagesc(spatialSupportXdegs, spatialSupportYdegs, theRetinalIlluminance);
             set(gca, 'CLim', theRetinalIlluminanceRange);
