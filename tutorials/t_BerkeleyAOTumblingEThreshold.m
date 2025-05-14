@@ -240,8 +240,6 @@ for dd = 1:nDirections
     end
 end
 
-
-
 % For the background scene, we have to supply a letter size.  We don't care what
 % what it is because the foreground and background colors are matched for
 % the background scene.  But can't make it too big relative to the FOV.
