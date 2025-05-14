@@ -25,7 +25,7 @@ function t_rasterAOSLO_FullBiophysicalOS
     testIncrementDecrementScenes = true;
 
     observerFixationalEyeMovementCharacteristics = 'fast';
-    observerFixationalEyeMovementCharacteristics = 'slow';
+  %observerFixationalEyeMovementCharacteristics = 'slow';
     %observerFixationalEyeMovementCharacteristics = 'default';
 
     % Compute cone mosaic and retinal images of stimulus and background
@@ -38,14 +38,14 @@ function t_rasterAOSLO_FullBiophysicalOS
     recomputeConeExcitations = ~true;
 
     % Visualize the stimulus and the cone excitations response
-    visualizeStimulusAndConeExcitationSequence = ~true;
+    visualizeStimulusAndConeExcitationSequence = true;
 
     % Compute photocurrent response
     recomputePhotocurrents = ~true;
     subtractBackgroundPhotoCurrents = false;
 
     % Visualize the stimulus and the photocurrents response
-    visualizeStimulusAndPhotocurrentSequence = true;
+    visualizeStimulusAndPhotocurrentSequence = ~true;
 
     % Do a spectral analysis of the photocurrent response
     analyzePhotocurrentSpectra = ~true;
