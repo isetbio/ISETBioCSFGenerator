@@ -18,7 +18,7 @@ function t_rasterAOSLO_FullBiophysicalOS
 
     % How many trials, which also means how many fEMs
     nTrials = 32;
-    maxVideoTrials = 5;
+    maxVideoTrials = 1;
 
     testIncrementDecrementScenes = true;
 
@@ -39,11 +39,11 @@ function t_rasterAOSLO_FullBiophysicalOS
     visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = true;
+    recomputePhotocurrents = ~true;
     subtractBackgroundPhotoCurrents = false;
 
     % Visualize the stimulus and the photocurrents response
-    visualizeStimulusAndPhotocurrentSequence = ~true;
+    visualizeStimulusAndPhotocurrentSequence = true;
 
     % Do a spectral analysis of the photocurrent response
     analyzePhotocurrentSpectra = ~true;
@@ -72,10 +72,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     
 
     if (simulateStimulusRaster)
-        retinalImagesMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_coneMosaicAndRetinalImages.mat', mosaicHorizontalEccentricity, NDfilterDensity));
-        coneExcitationsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_excitations.mat', mosaicHorizontalEccentricity,NDfilterDensity));
-        photocurrentsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_photocurrents.mat', mosaicHorizontalEccentricity,NDfilterDensity));
-        videoFilename = fullfile(figureFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_activation', mosaicHorizontalEccentricity,NDfilterDensity));
+        retinalImagesMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_coneMosaicAndRetinalImages.mat', mosaicHorizontalEccentricity, NDfilterDensity, nStimulusFramesPerTrial));
+        coneExcitationsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_framesNum_%d_excitations.mat', mosaicHorizontalEccentricity,NDfilterDensity, nStimulusFramesPerTrial));
+        photocurrentsMatFileName = fullfile(simFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_framesNum_%d_photocurrents.mat', mosaicHorizontalEccentricity,NDfilterDensity, nStimulusFramesPerTrial));
+        videoFilename = fullfile(figureFileBase, sprintf('eccDegs_%1.1f_ND_%2.2f_framesNum_%d_activation', mosaicHorizontalEccentricity,NDfilterDensity, nStimulusFramesPerTrial));
     else
         retinalImagesMatFileName = fullfile(simFileBase, sprintf('noRaster_eccDegs_%1.1f_ND_%2.2f_coneMosaicAndRetinalImages.mat', mosaicHorizontalEccentricity, NDfilterDensity));
         coneExcitationsMatFileName = fullfile(simFileBase, sprintf('noRaster_eccDegs_%1.1f_ND_%2.2f_excitations.mat', mosaicHorizontalEccentricity,NDfilterDensity));
@@ -610,10 +610,10 @@ function hFig = analyzePhotocurrentResponses(figNo, ...
         incrementResponsesForSpectralAnalysis = mosaicPhotoCurrentsForCurrentEMpath(:, idx);
         plot(ax, photocurrentResponseTimeAxis*1e3, incrementResponsesForSpectralAnalysis', 'r-');
 
-        %spectrumAnalysis(photocurrentResponseTimeAxis, decrementResponsesForSpectralAnalysis)
+        spectrumAnalysis(photocurrentResponseTimeAxis, decrementResponsesForSpectralAnalysis, stimulusRefreshIntervalSeconds);
 
-        timeFrequencySpectrogramAnalysisForCurrentEMpath(photocurrentResponseTimeAxis, decrementResponsesForSpectralAnalysis, stimulusRefreshIntervalSeconds);
-        timeFrequencySpectrogramAnalysisForCurrentEMpath(photocurrentResponseTimeAxis, incrementResponsesForSpectralAnalysis, stimulusRefreshIntervalSeconds);
+        %timeFrequencySpectrogramAnalysisForCurrentEMpath(photocurrentResponseTimeAxis, decrementResponsesForSpectralAnalysis, stimulusRefreshIntervalSeconds);
+        %timeFrequencySpectrogramAnalysisForCurrentEMpath(photocurrentResponseTimeAxis, incrementResponsesForSpectralAnalysis, stimulusRefreshIntervalSeconds);
     end
 
     set(ax, 'YLim', [minPhotocurrentResponse maxPhotocurrentResponse]);
@@ -629,16 +629,32 @@ function hFig = analyzePhotocurrentResponses(figNo, ...
 end
 
 
-function spectrumAnalysis(timeAxis, multiChannelData)
+function spectrumAnalysis(timeAxis, multiChannelData, stimulusRefreshIntervalSeconds)
     hFig = figure(99); clf;
 
-    theWindow = kaiser(numel(timeAxis),2.5);
+    
+    nCones = size(multiChannelData,2);
+
+    idxCausal = find(timeAxis>=-2*stimulusRefreshIntervalSeconds);
+    idxNonCausal = find(timeAxis<0);
+
+    timeAxis = timeAxis(idxCausal);
+
+    numberOfTapers = 3;
 
     for iCone = 1:nCones
         singleConeResponse = squeeze(multiChannelData(:, iCone));
-        ax = subplot(2,1,1);
-        plot(timeAxis*1e3, singleConeResponse, 'k-');
+        singleConeResponseNonCausal = singleConeResponse;
+        singleConeResponseNonCausal = singleConeResponseNonCausal(1:numel(idxCausal));
+        singleConeResponseCausal = singleConeResponse(idxCausal);
+
+
+        ax = subplot(2,2,1);
+        plot(timeAxis*1e3, singleConeResponseNonCausal, 'k-', 'LineWidth', 1.5);
         hold(ax, 'on')
+        plot(timeAxis*1e3, singleConeResponseCausal, 'r--', 'LineWidth', 1.5);
+        legend({'non causal', 'all data'})
+        hold(ax, 'off');
         set(ax, 'XTick', -100:10:300, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
         xlabel(ax,'time (msec)');
         ylabel(ax, 'photocurrent (pAmps)');
@@ -646,13 +662,41 @@ function spectrumAnalysis(timeAxis, multiChannelData)
 
         dTSeconds = timeAxis(2)-timeAxis(1);
         samplingFrequencyHz = 1./dTSeconds;
-        singleConeResponse = singleConeResponse .* theWindow;
 
-        [p,f] = pspectrum(singleConeResponse, samplingFrequencyHz);
-        ax = subplot(2,1,2);
-        plot(ax, f, p, 'ko-');
+        theWindow = kaiser(numel(timeAxis),2.5);
+
+        singleConeResponseCausal = singleConeResponseCausal .* theWindow;
+        singleConeResponseNonCausal = singleConeResponseNonCausal .* theWindow;
+
+        [pxx,f] = pspectrum(singleConeResponseCausal, samplingFrequencyHz);
+        [pxxNonCausal,fNonCausal] = pspectrum(singleConeResponseNonCausal, samplingFrequencyHz);
+
+        
+        %[pxx,f] = pmtm(singleConeResponseCausal,numberOfTapers, 'Tapers','sine', 2048, samplingFrequencyHz);
+        %[pxxNonCausal,fNonCausal] = pmtm(singleConeResponseNonCausal,numberOfTapers, 'Tapers','slepian', 2048, samplingFrequencyHz);
+
+        ax = subplot(2,2,3);
+        plot(ax, fNonCausal, pxxNonCausal, 'ko-', 'LineWidth', 1.5);
+        hold(ax, 'on');
+        plot(ax, f, pxx, 'ro--', 'LineWidth', 1.5);
+        hold(ax, 'off');
+        legend({'non causal', 'all data'})
         set(ax, 'XScale', 'log', 'XLim', [1 500], 'YScale', 'log');
         grid(ax, 'on');
+
+
+        ax = subplot(2,2,2);
+        ratios(iCone,:) = pxx ./ pxxNonCausal;
+        plot(ax, f, ratios(iCone,:), 'ko-', 'LineWidth', 1.5);
+        legend({'non causal', 'all data'})
+        set(ax, 'XScale', 'log', 'XLim', [1 500], 'YScale', 'log');
+        grid(ax, 'on');
+
+        ax = subplot(2,2,4);
+        plot(ax, f, mean(ratios,1), 'ko-', 'LineWidth', 1.5);
+        set(ax, 'XScale', 'log', 'XLim', [1 500], 'YScale', 'log');
+        grid(ax, 'on');
+        ylabel('causal - non-causal ')
         pause
     end % iCone
     
@@ -667,18 +711,16 @@ function timeFrequencySpectrogramAnalysisForCurrentEMpath(timeAxis, multiChannel
     paddingFactorForFFT = 2;
     frequenciesOfInterest = [1 100];
 
-    windowSizeSeconds = 100/1000;
-    stepSizeSeconds = 2/1000;
+    windowSizeSeconds = 50/1000;
+    stepSizeSeconds = 20/1000;
     movingWindow = [windowSizeSeconds stepSizeSeconds];
 
-    halfBandWidthOfTaperHz = 10;
-    tapers(1) = windowSizeSeconds * halfBandWidthOfTaperHz;
-    tapers(2) = 5;
     
     spectrogramParams = struct(...
         'Fs', samplingFrequencyHz, ...
         'pad', paddingFactorForFFT, ...
-        'pass',frequenciesOfInterest ...
+        'pass',frequenciesOfInterest, ...
+        'tapers', [1 2] ...
         );
 
     [multiChannelSpectrogram, spectrogramTimeSupport, spectrogramSpectralSupport] = ...
@@ -701,20 +743,31 @@ function timeFrequencySpectrogramAnalysisForCurrentEMpath(timeAxis, multiChannel
     for iCone = 19:19 % 1:nCones
         ax = subplot(2,2,1);
         plot(timeAxis*1e3, multiChannelData(:, iCone), 'k-');
-        set(ax, 'XTick', -100:10:300, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
+        set(ax, 'XTick', -500:20:500, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
         xlabel(ax,'time (msec)');
         ylabel(ax, 'photocurrent (pAmps)');
         set(ax, 'FontSize', 16);
 
-        ax = subplot(2,2,3);
+        
         theSingleConeSpectrogram = squeeze(multiChannelSpectrogram(:,:,iCone));
-        idx = find(spectrogramTimeSupport < spectrogramTimeSupport(1)+stimulusRefreshIntervalSeconds)
+        idx = find((spectrogramTimeSupport < 0)&(spectrogramTimeSupport > -stimulusRefreshIntervalSeconds*10));
         theSingleConeSpectrogramAtNonCausalDelay = mean(theSingleConeSpectrogram(idx,:),1);
+        idx = find((spectrogramTimeSupport >= 0));
+        theSingleConeSpectrogramAtCausalDelay = mean(theSingleConeSpectrogram(idx,:),1);
+
         theDifferentialSingleConeSpectrogram = log10(bsxfun(@times, theSingleConeSpectrogram, 1./theSingleConeSpectrogramAtNonCausalDelay));
         
-        imagesc(spectrogramTimeSupport*1e3, spectrogramSpectralSupport, theSingleConeSpectrogram');
+        ax = subplot(2,2,2);
+        plot(spectrogramSpectralSupport, theSingleConeSpectrogramAtNonCausalDelay, 'k--', 'LineWidth', 1.5);
+        hold on;
+        plot(spectrogramSpectralSupport, theSingleConeSpectrogramAtCausalDelay, 'r-', 'LineWidth', 1.5);
+        set(ax, 'XLim', frequenciesOfInterest);
+
+
+        ax = subplot(2,2,3);
+        imagesc(ax, spectrogramTimeSupport*1e3, spectrogramSpectralSupport, theSingleConeSpectrogram');
         set(ax, 'YLim', frequenciesOfInterest);
-        set(ax, 'XTick', -100:10:300, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
+        set(ax, 'XTick', -500:20:500, 'XLim', [timeAxis(1) timeAxis(end)]*1e3);
         axis(ax, 'xy')
         xtickangle(ax, 0);
 
@@ -725,10 +778,11 @@ function timeFrequencySpectrogramAnalysisForCurrentEMpath(timeAxis, multiChannel
         title(ax,sprintf('cone: %d', iCone));
 
 
-        ax = subplot(2,2,[2 4]);
+        ax = subplot(2,2,4);
         plot(spectrogramSpectralSupport, theSingleConeSpectrogram, 'k-')
         set(ax, 'XScale', 'log', 'XLim', frequenciesOfInterest, 'YTick', [1 3 10 30 100 300 1000]);
         xlabel(ax, 'frequency (Hz)');
+        disp('here')
         pause
     end
 
@@ -1009,6 +1063,7 @@ function generateMosaicActivationVideo(theConeMosaic, ...
     singleFrameDuration = numel(retinalImageSequenceTimeAxis) * (retinalImageSequenceTimeAxis(2)-retinalImageSequenceTimeAxis(1));
     stimulusDuration = singleFrameDuration * nStimulusFramesPerTrial;
 
+    minNonCausalDelay = -singleFrameDuration;
     for iTrial = 1:nTrials
         for iTimePoint = 1:size(LconeIndicesResponses,2) 
 
@@ -1017,6 +1072,10 @@ function generateMosaicActivationVideo(theConeMosaic, ...
                 % Photocurrents, which have pre- and post-stimulus time bins
                 currentTime = responseTimeAxis(iTimePoint);
                 
+                if (currentTime < minNonCausalDelay)
+                    continue;
+                end
+
                 if (currentTime < 0) || (currentTime > stimulusDuration)
                     % show the background raster
                     inStimulusInterval = false;
@@ -1098,7 +1157,8 @@ function generateMosaicActivationVideo(theConeMosaic, ...
             end
             set(ax2, 'XColor', [0.5 0.5 0.5], 'YColor', [0.5 0.5 0.5]);
 
-            idx = 1:iTimePoint;
+            % Determined displayed time indices
+            idx = find(responseTimeAxis>=minNonCausalDelay & responseTimeAxis<=currentTime);
             
             if (strcmp(signalType, 'excitations'))
                 % Excitations
@@ -1130,7 +1190,7 @@ function generateMosaicActivationVideo(theConeMosaic, ...
 
             plot(ax3, [0 0], activationRange, 'w--', 'LineWidth', 1.5);
             hold(ax3, 'off');
-            set(ax3, 'XLim', [responseTimeAxis(1) responseTimeAxis(end)]*1000, 'XTick', -300:10:500, 'YLim', activationRange, 'YTick', -100:5:0);
+            set(ax3, 'XLim', [minNonCausalDelay responseTimeAxis(end)]*1000, 'XTick', -300:10:500, 'YLim', activationRange, 'YTick', -100:5:0);
             set(ax3, 'XColor', [0.75 0.75 0.75], 'YColor', [0.75 0.75 0.75], 'Color', 'none', 'FontSize', 16);
             grid(ax3, 'on');
             box(ax3, 'off')
