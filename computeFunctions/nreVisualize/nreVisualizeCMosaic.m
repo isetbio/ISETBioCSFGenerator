@@ -12,7 +12,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 %   This function is called from the visualize() method of a
 %   @neuralResponseEngine object whose properties are set as follows:
 %     - noiseFreeComputeFunctionHandle is set to @nreNoiseFreeCMosaic, 
-%     - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesPoisson, and 
+%     - noisyInstancesComputeFunctionHandle is set to @nreNoisyInstancesPoisson (and possibly other noise models), and 
 %     - customVisualizationFunctionHandle is set to @nreVisualizeCMmosaic
 %     - visualizeEachCompute is set to true
 %
@@ -63,7 +63,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
      responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = ...
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
-
     if (isempty(figureHandle))
         figureHandle = figure(); clf;
         set(figureHandle, 'Position', [10 10 1700 500]);
@@ -102,7 +101,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
        activationRange = activationRange(1) + [0 10*eps];
     end
 
-    
     if (visualizeResponsesAsModulations)
         activationRange = max(activationRange)*[-1 1];
     end
@@ -141,7 +139,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         % The instantaneous spatial activation
         for iPoint = 1:nTimePoints
 
-
             % Retrieve spatiotemporal response up to this time point
             [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
                 spatioTemporalResponseComponents(theConeMosaic, neuralResponses, temporalSupportSeconds, iTrial, iPoint);
@@ -178,7 +175,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 
             xlabel(axConeTimeResponses, 'time (sec)');
             ylabel(axConeTimeResponses, sprintf('cone index (%d L-cones, %d M-cones, %d S-cones', numel(theConeMosaic.lConeIndices), numel(theConeMosaic.mConeIndices), numel(theConeMosaic.sConeIndices)));
-            title(axConeTimeResponses, sprintf('spatio-temporal %s (trial %d of %d)', responseLabel, iTrial, nInstances));
+            title(axConeTimeResponses, LiteralUnderscore(sprintf('spatio-temporal %s (trial %d of %d)', responseLabel, iTrial, nInstances)));
             
             if (isempty(emPathsDegs))
                 theConeMosaic.visualize(...
@@ -187,11 +184,9 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
                     'activation', neuralResponses(iTrial, iPoint,:), ...
                     'activationRange', activationRange, ...
                     'clearAxesBeforeDrawing', clearAxesBeforeDrawing, ...
-                    'plotTitle', sprintf('%s (t: %2.1f msec)', responseLabel, temporalSupportSeconds(iPoint)*1e3));
-                
+                    'plotTitle', LiteralUnderscore(sprintf('%s (t: %2.1f msec)', responseLabel, temporalSupportSeconds(iPoint)*1e3)));
             else
                 theEMtrial = min([iTrial size(emPathsDegs,1)]);
-
                 theConeMosaic.visualize(...
                     'figureHandle', figureHandle, ...
                     'axesHandle', axCmosaicActivation, ...
@@ -200,7 +195,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
                     'currentEMposition', squeeze(emPathsDegs(theEMtrial,iPoint,:)), ...
                     'displayedEyeMovementData', struct('trial', theEMtrial, 'timePoints', 1:iPoint), ...
                     'clearAxesBeforeDrawing', clearAxesBeforeDrawing, ...
-                    'plotTitle', sprintf('%s (t: %2.1f msec, trial %d of %d)', responseLabel, temporalSupportSeconds(iPoint)*1e3, iTrial, nInstances));
+                    'plotTitle', LiteralUnderscore(sprintf('%s (t: %2.1f msec, trial %d of %d)', responseLabel, temporalSupportSeconds(iPoint)*1e3, iTrial, nInstances)));
      
             end 
 
@@ -215,7 +210,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
         videoOBJ.close();
     end
-
 end
 
 function [mosaicSpatioTemporalActivation, LconeRect, MconeRect, SconeRect] = ...
