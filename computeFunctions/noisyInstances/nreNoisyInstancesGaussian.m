@@ -190,13 +190,14 @@ function dataOut = nreNoisyInstancesGaussian(...
         rng(oldSeed);
     end
     
+
     % Check the visualizeEachCompute flag of the neuralEngineOBJ , and if set to true,
     % call the appropriate visualization function to visualize the generated 
     % spatiotemporal noisy response instances.
-    if (neuralEngineOBJ.visualizeEachCompute)
+    if (neuralEngineOBJ.visualizeEachCompute) && (~strcmp(noiseFlag, 'none'))
         % Visualize computed data
         hFig = figure(1001);
-        set(hFig, 'Position', [350 25 1650 550]);
+        set(hFig, 'Position', [350 25 1664 544]);
         neuralEngineOBJ.visualize(noisyResponseInstances, temporalSupportSeconds, ...
             'figureHandle', hFig, ...
             'responseLabel', 'noisy_response_instances_Gaussian', ...
