@@ -64,8 +64,12 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         neuralResponseEngine.parseVisualizationOptions(varargin{:});
 
     if (isempty(figureHandle))
-        figureHandle = figure(); clf;
-        set(figureHandle, 'Position', [10 10 1700 500]);
+        if (contains('responseLabel', 'free'))
+            figureHandle = figure(1000);
+        else
+            figureHandle = figure(1001);
+        end
+        set(figureHandle, 'Position', [30 20 1664 544]);
     end
     if (isempty(axesHandle))
         axCmosaicActivation = subplot(1,2,1);
@@ -121,20 +125,41 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
         XTick = temporalSupportSeconds(1);
     end
 
-    if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
-        timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
-        if (isempty(neuralPipelineID))
-            theFullVideoFileName = sprintf('%s_%s_%s.mp4',responseVideoFileName,responseLabel,timeDataInfoStr);
-        else
-            theFullVideoFileName = sprintf('%s_%s_ID_%s_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,timeDataInfoStr);
+    concatenateAllInstancesIntoASingleVideoFile = false;
+
+
+    if (concatenateAllInstancesIntoASingleVideoFile)
+        if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+            timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
+            if (isempty(neuralPipelineID))
+                theFullVideoFileName = sprintf('%s_%s_%s.mp4',responseVideoFileName,responseLabel,timeDataInfoStr);
+            else
+                theFullVideoFileName = sprintf('%s_%s_ID_%s_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,timeDataInfoStr);
+            end
+            videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
+            videoOBJ.FrameRate = 30;
+            videoOBJ.Quality = 100;
+            videoOBJ.open();
         end
-        videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
-        videoOBJ.FrameRate = 30;
-        videoOBJ.Quality = 100;
-        videoOBJ.open();
     end
 
     for iTrial = 1:min([nInstances maxVisualizedInstances])
+
+        if (~concatenateAllInstancesIntoASingleVideoFile)
+            if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+                timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
+                if (isempty(neuralPipelineID))
+                    theFullVideoFileName = sprintf('%s_%s_trial%d_%s.mp4',responseVideoFileName,responseLabel,iTrial,timeDataInfoStr);
+                else
+                    theFullVideoFileName = sprintf('%s_%s_ID_%s_trial%d_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,iTrial,timeDataInfoStr);
+                end
+                videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
+                videoOBJ.FrameRate = 30;
+                videoOBJ.Quality = 100;
+                videoOBJ.open();
+            end
+        end
+
 
         % The instantaneous spatial activation
         for iPoint = 1:nTimePoints
@@ -205,10 +230,19 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             end
 
         end % iPoint
+
+        if (~concatenateAllInstancesIntoASingleVideoFile)
+            if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+                videoOBJ.close();
+            end
+        end
+
     end % iTrial
 
-    if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
-        videoOBJ.close();
+    if (concatenateAllInstancesIntoASingleVideoFile)
+        if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
+            videoOBJ.close();
+        end
     end
 end
 
