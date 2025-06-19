@@ -128,7 +128,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     concatenateAllInstancesIntoASingleVideoFile = false;
     if (concatenateAllInstancesIntoASingleVideoFile)
         if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
-            timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
+            timeDataInfoStr = datestr(now,"yymmdd_HHMMSS");
             if (isempty(neuralPipelineID))
                 theFullVideoFileName = sprintf('%s_%s_%s.mp4',responseVideoFileName,responseLabel,timeDataInfoStr);
             else
