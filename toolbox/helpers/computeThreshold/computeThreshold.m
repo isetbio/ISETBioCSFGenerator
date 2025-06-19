@@ -227,6 +227,17 @@ else
     datasavePara.saveMRGCResponses = false;
 end
 
+% Get basename for response visualization.
+%
+% Below we append a counter for each stimulus onto this
+if (iscell(theNeuralEngine))
+    for nn = 1:length(theNeuralEngine)
+        responseVideoFileNameBase{nn} = theNeuralEngine{nn}.responseVideoFileName;
+    end
+else
+    responseVideoFileNameBase = theNeuralEngine.responseVideoFileName;
+end
+
 % Dictionary to store the measured psychometric function which is returned
 % to the user.  We also make and return containers that have the
 % trial-by-trial stimulus alternative and trial-by-trial performance for
@@ -239,6 +250,9 @@ triailByTrialWhichResponses = containers.Map();
 testCounter = 0;
 stimCounter = 0;
 while (nextFlag)
+    % Bump number of stimuli tested
+    testCounter = testCounter + 1;
+
     % Convert log contrast -> contrast
     testContrast = thresholdPara.maxParamValue*(10 ^ estimatorLogContrast);
     logContrast = log10(testContrast);
@@ -246,14 +260,37 @@ while (nextFlag)
     % Contrast label for pCorrect dictionary
     contrastLabel = sprintf('C = %2.4f%%', testContrast*100);
     if (verbose)
-        fprintf('Testing parameter value %0.4g\n',testContrast)
+        fprintf('computeThreshold: testing parameter value %0.4g\n',testContrast)
     end
     
     % Have we already built the classifier for this contrast?
     testedIndex = find(testContrast == testedContrasts);
     if (isempty(testedIndex))
-        % No. We need to train and predict.
-        % 
+        % If here, we need to both train and predict for a new stimulus
+        stimCounter = stimCounter + 1;
+
+        % Handle nre visualization as best we can
+        if (stimCounter > maxVisualizedNoisyResponseInstanceStimuli)
+            % Turn off nre detailed visualization if test counter exceeds the
+            % specified number that we want it turned on for.
+            if (iscell(theNeuralEngine))
+                for nn = 1:length(theNeuralEngine)
+                    theNeuralEngine{nn}.visualizeEachCompute = false;
+                end
+            else
+                theNeuralEngine.visualizeEachCompute = false;
+            end
+        else
+            % Append stimulus number to video base name for visualization
+            if (iscell(theNeuralEngine))
+                for nn = 1:length(theNeuralEngine)
+                    theNeuralEngine{nn}.responseVideoFileName = [responseVideoFileNameBase{nn} sprintf('_%d',stimCounter)];
+                end
+            else
+                theNeuralEngine.responseVideoFileName = [responseVideoFileNameBase sprintf('_%d',stimCounter)];
+            end
+        end
+
         % Save contrast in list
         testedContrasts(numel(testedContrasts)+1) = testContrast;
         testedIndex = find(testContrast == testedContrasts);
@@ -402,37 +439,20 @@ while (nextFlag)
             trainFixationalEMObj.emPos = [];
         end
 
-        % Bump some counters
-        testCounter = testCounter + 1;
-        stimCounter = stimCounter + 1;
+        % Finish up
         e = toc(eStart);
         if (verbose)
             fprintf('computeThreshold: Training test block %d took %0.1f secs\n',testCounter,e);
         end
-
-        % Turn off nre detailed visualization if test counter exceeds the
-        % specified number that we want it turned on for.
-        if (stimCounter > maxVisualizedNoisyResponseInstanceStimuli)
-            if (iscell(theNeuralEngine))
-                for nn = 1:length(theNeuralEngine)
-                    theNeuralEngine{nn}.visualizeEachCompute = false;
-                end
-            else
-                theNeuralEngine.visualizeEachCompute = false;
-            end
-        else
-            % Could massage the visualization name here to indicate which
-            % stimulus is being visualized.
-        end
         
-        % Copy the trained classifiers so we hae them later
+        % Copy the trained classifiers so we have them later
         eStart = tic;
         for eeTrain = 1:nTrainFixationalEMPaths
             theTrainedClassifierEngines{testedIndex}{eeTrain} = tempClassifierEngine{eeTrain};
         end
         e = toc(eStart);
         if (verbose)
-                fprintf('computeThreshold: Copying classifer took %0.1f secs\n',e);
+            fprintf('computeThreshold: Copying classifer took %0.1f secs\n',e);
         end
         
         % Now predict. Handle each of the four fixations EM cases
@@ -587,6 +607,7 @@ while (nextFlag)
         triailByTrialWhichResponses(contrastLabel) = whichResponses;
         trialByTrialPerformance(contrastLabel) = predictions';    
         if (verbose)
+            fprintf('computeThreshold: performance is %0.3f correct',mean(predictions));
             fprintf('computeThreshold: Length of psychometric function %d, test counter %d\n',...
                 length(psychometricFunction),testCounter);
         end
@@ -787,7 +808,7 @@ while (nextFlag)
             theNeuralEngine.visualizeEachCompute = savevisualizeEachCompute;
         end
 
-        testCounter = testCounter + 1;
+        % Finish up
         e = toc(eStart);
         if (verbose)
             fprintf('computeThreshold: Predicting test block %d no training took %0.1f secs\n',testCounter,e);
@@ -870,10 +891,10 @@ threshold = thresholdPara.maxParamValue*10.^estimatorLogThreshold;
 logThreshold = log10(threshold);
 
 if (verbose)
-    fprintf('Maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
+    fprintf('computeThreshold: maximum likelihood fit parameters: %0.2f, %0.2f, %0.2f, %0.2f\n', ...
             estimatorFittedPsychometricParams(1), estimatorFittedPsychometricParams(2),...
             estimatorFittedPsychometricParams(3), estimatorFittedPsychometricParams(4));
-    fprintf('Threshold (criterion proportion correct %0.4f): %0.2f (log10 units)\n', ...
+    fprintf('computeThreshold (criterion proportion correct %0.4f): %0.2f (log10 units)\n', ...
         thresholdCriterion,logThreshold);
 end
 
