@@ -420,6 +420,9 @@ while (nextFlag)
             else
                 theNeuralEngine.visualizeEachCompute = false;
             end
+        else
+            % Could massage the visualization name here to indicate which
+            % stimulus is being visualized.
         end
         
         % Copy the trained classifiers so we hae them later

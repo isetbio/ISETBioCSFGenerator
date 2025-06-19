@@ -151,6 +151,11 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
     inSampleStimResponsesCell = cell(1,nScenes);
     for n = 1:nScenes
         if (p.Results.useMetaContrast && ~isTAFC)
+            % We will only call the nre visualization function of we are testing.
+            % That simplifies the amount of stuff that gets written out.
+            saveVisualizeEachCompute = theNeuralEngine{n}.visualizeEachCompute;
+            theNeuralEngine{n}.visualizeEachCompute = false;
+
             % Noise free response for nth alternative scene sequence
             [inSampleNoiseFreeStimResponsesCell{n}, neuralResponseTemporalSupport] = theNeuralEngine{n}.computeNoiseFree(...
                 theScenes, ...
@@ -163,7 +168,14 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
                 neuralResponseTemporalSupport, ...
                 nTrain, ...
                 trainNoiseFlag);
+
+            % Put back visualization flag
+            theNeuralEngine{n}.visualizeEachCompute = saveVisualizeEachCompute;
         else
+            % We will only call the nre visualization function of we are testing.
+            % That simplifies the amount of stuff that gets written out.
+            saveVisualizeEachCompute = theNeuralEngine.visualizeEachCompute;
+            theNeuralEngine.visualizeEachCompute = false;
 
             % Noise free response for nth alternative scene sequence
             [inSampleNoiseFreeStimResponsesCell{n}, neuralResponseTemporalSupport] = theNeuralEngine.computeNoiseFree(...
@@ -177,6 +189,9 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
                 neuralResponseTemporalSupport, ...
                 nTrain, ...
                 trainNoiseFlag);
+
+            % Put back visualization flag
+            theNeuralEngine.visualizeEachCompute = saveVisualizeEachCompute;
         end
     end
 
