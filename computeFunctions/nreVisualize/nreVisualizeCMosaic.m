@@ -126,8 +126,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     end
 
     concatenateAllInstancesIntoASingleVideoFile = false;
-
-
     if (concatenateAllInstancesIntoASingleVideoFile)
         if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
             timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
@@ -144,7 +142,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
     end
 
     for iTrial = 1:min([nInstances maxVisualizedInstances])
-
         if (~concatenateAllInstancesIntoASingleVideoFile)
             if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
                 timeDataInfoStr = datestr(now,"yy-mm-dd_HH-MM-SS");
@@ -159,7 +156,6 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
                 videoOBJ.open();
             end
         end
-
 
         % The instantaneous spatial activation
         for iPoint = 1:nTimePoints
