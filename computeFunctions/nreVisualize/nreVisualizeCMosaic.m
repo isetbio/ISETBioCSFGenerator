@@ -132,7 +132,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
             if (isempty(neuralPipelineID))
                 theFullVideoFileName = sprintf('%s_%s_%s.mp4',responseVideoFileName,responseLabel,timeDataInfoStr);
             else
-                theFullVideoFileName = sprintf('%s_%s_ID_%s_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,timeDataInfoStr);
+                theFullVideoFileName = sprintf('%s_%s_ID%s_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,timeDataInfoStr);
             end
             videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
             videoOBJ.FrameRate = 30;
@@ -148,7 +148,7 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
                 if (isempty(neuralPipelineID))
                     theFullVideoFileName = sprintf('%s_%s_trial%d_%s.mp4',responseVideoFileName,responseLabel,iTrial,timeDataInfoStr);
                 else
-                    theFullVideoFileName = sprintf('%s_%s_ID_%s_trial%d_%s.mp4',responseVideoFileName, responseLabel,neuralPipelineID,iTrial,timeDataInfoStr);
+                    theFullVideoFileName = sprintf('%s_%s_ID%s_trial%d_%s.mp4',responseVideoFileName,responseLabel,neuralPipelineID,iTrial,timeDataInfoStr);
                 end
                 videoOBJ = VideoWriter(theFullVideoFileName, 'MPEG-4');  % H264format (has artifacts)
                 videoOBJ.FrameRate = 30;

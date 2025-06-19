@@ -269,7 +269,27 @@ if (nTest ~= 0)
             ' integer multiple of the number of alternative choices']);
     end
     eStart = tic;
+
+    % Get the video filename base and then append for each alternative.
+    % Get basename for response visualization.
+    %
+    % Below we append a counter for each stimulus onto this
+    if (iscell(theNeuralEngine))
+        for nn = 1:length(theNeuralEngine)
+            responseAltVideoFileNameBase{nn} = theNeuralEngine{nn}.responseVideoFileName;
+        end
+    else
+        responseAltVideoFileNameBase = theNeuralEngine.responseVideoFileName;
+    end
+
     for n = 1:nScenes
+        % Adjust visualization video filename for alternative
+        if (iscell(theNeuralEngine))
+                theNeuralEngine{n}.responseVideoFileName = [responseAltVideoFileNameBase{n} sprintf('_scene%d',n)];
+        else
+            theNeuralEngine.responseVideoFileName = [responseAltVideoFileNameBase sprintf('_scene%d',n)];
+        end
+
         if (p.Results.useMetaContrast && ~isTAFC)
             % Noise free response for nth alternative scene sequence
             [outSampleNoiseFreeStimResponsesCell{n}, neuralResponseTemporalSupport] = theNeuralEngine{n}.computeNoiseFree(...

@@ -284,10 +284,10 @@ while (nextFlag)
             % Append stimulus number to video base name for visualization
             if (iscell(theNeuralEngine))
                 for nn = 1:length(theNeuralEngine)
-                    theNeuralEngine{nn}.responseVideoFileName = [responseVideoFileNameBase{nn} sprintf('_%d',stimCounter)];
+                    theNeuralEngine{nn}.responseVideoFileName = [responseVideoFileNameBase{nn} sprintf('_stim%d',stimCounter)];
                 end
             else
-                theNeuralEngine.responseVideoFileName = [responseVideoFileNameBase sprintf('_%d',stimCounter)];
+                theNeuralEngine.responseVideoFileName = [responseVideoFileNameBase sprintf('_stim%d',stimCounter)];
             end
         end
 
@@ -334,12 +334,12 @@ while (nextFlag)
             Wl_vec = theSceneSequences{testedIndex}{theStim}{theFrame}.spectrum.wave;
             [~, index] = min(abs(Wl_vec - theWl));
             temp = theSceneSequences{testedIndex}{theStim}{theFrame}.data.photons(:,:,index);
-            fprintf('At %d nm, frame %d, test scene %d, mean, min, max: %g, %g, %g\n',...
+            fprintf('computeThreshold: at %d nm, frame %d, test scene %d, mean, min, max: %g, %g, %g\n',...
                 Wl_vec(index),theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
             theWl = 550;
             [~, index] = min(abs(Wl_vec - theWl));
             temp = theSceneSequences{testedIndex}{theStim}{theFrame}.data.photons(:,:,index);
-            fprintf('At %d nm, frame %d, test scene %d, mean, min, max: %g, %g, %g\n',...
+            fprintf('computeThreshold: at %d nm, frame %d, test scene %d, mean, min, max: %g, %g, %g\n',...
                 Wl_vec(index),theFrame,testedIndex,mean(temp(:)),min(temp(:)),max(temp(:)));
         end
         
