@@ -153,6 +153,7 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
     spatialFrequencyCPD = 10;
     temporalFrequencyHz = 8;
     stimulationDurationTemporalCycles = 5;
+
     simulationDurationSeconds = stimulationDurationTemporalCycles/temporalFrequencyHz;  
     if (fixationalEyeMovements)
         nTrials = emPathsNum;
@@ -167,6 +168,11 @@ function t_onTheFlyPhotocurrentComputationWithEyeMovements(options)
         nTrials = 1;
         stimulationDurationTemporalCycles = 4;
         simulationDurationSeconds = stimulationDurationTemporalCycles/temporalFrequencyHz;  
+    end
+
+    if (~fixationalEyeMovements)
+        % No eye movements, so just generate respnses to 2 stimulus cycles
+        stimulationDurationTemporalCycles = 2;
     end
 
     % Generate scene sequence representing a polar grating

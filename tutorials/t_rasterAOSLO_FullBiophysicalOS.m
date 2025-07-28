@@ -38,10 +38,10 @@ function t_rasterAOSLO_FullBiophysicalOS
     recomputeConeExcitations = ~true;
 
     % Visualize the stimulus and the cone excitations response
-    visualizeStimulusAndConeExcitationSequence = true;
+    visualizeStimulusAndConeExcitationSequence = ~true;
 
     % Compute photocurrent response
-    recomputePhotocurrents = ~true;
+    recomputePhotocurrents = true;
     subtractBackgroundPhotoCurrents = false;
 
     % Visualize the stimulus and the photocurrents response
@@ -2019,6 +2019,9 @@ function [photocurrentResponseTimeSeries, photocurrentResponseTimeAxis, photocur
             warmBackgroundRefeshCyclesNum, warmUpPeriodSecondsToRetain, ...
             coolDownBackgroundRefeshCyclesNum, ...
             subtractBackgroundPhotoCurrents, debugWarmUpTime)
+
+    [~, backgroundTimeBins, conesNum] = size(coneExcitationResponseBackground)
+    [nTrials, stimulusTimeBins, conesNum] = size(coneExcitationResponseTimeSeries)
 
 
     % Concatenate (pre-stimulus) warm up background
