@@ -397,7 +397,7 @@ end
 nullContrast = 0.0;
 
 %% List of spatial frequencies to be tested.
-spatialFreqs = options.spatialFreqs; [4, 8, 16, 32];
+spatialFreqs = options.spatialFreqs;
 
 %% Chromatic direction and contrast
 %
@@ -728,11 +728,14 @@ end
 %% Compute threshold for each spatial frequency
 % See toolbox/helpers for functions createGratingSceneEngine, computeThreshold,
 % computePeformance
-dataFig = figure();
+% Generate a figure with a random ID
+dataFig = figure(floor(sum(datevec(datetime('now'))*100)));
+
 for idx = 1:length(spatialFreqs)
     axLeft{idx}  = subplot(length(spatialFreqs), 2, idx * 2 - 1);
     axRight{idx} = subplot(length(spatialFreqs), 2, idx * 2);
 end
+
 
 logThreshold = zeros(1, length(spatialFreqs));
 for idx = 1:length(spatialFreqs)
