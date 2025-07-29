@@ -130,6 +130,12 @@ arguments
     %             'cones'.  Use the cone excitations (or contrast)
     options.mRGCOutputSignalType (1,:) char = 'mRGCs'
 
+    % If the neural model is mRGCMosaic, we need to specify the
+    % eccentricity and size of the prebaked mRGCmosaic (from which we can
+    % crop a submosaic, depending on the stimulus size
+    options.mRGCMosaicRawEccDegs (1,2) double = [0.0 0.0];
+    options.mRGCMosaicRawSizeDegs (1,2) double = [2.0 2.0];
+
     % Choose noise model
     %   Choices: 'Poisson'
     %                  'Gaussian'
@@ -360,7 +366,8 @@ stimOnFrameIndices = options.stimOnFrameIndices;
 % fast.
 mosaicEccDegs = options.eccDegs;
 mosaicSizeDegs = options.sizeDegs;
-mRGCRawSizeDegs = [2 2];
+mRGCRawEccDegs = options.mRGCMosaicRawEccDegs;
+mRGCRawSizeDegs = options.mRGCMosaicRawSizeDegs;
 mRGCCropSize = mosaicSizeDegs;
 
 %% Set up temporal filter if we have one.
@@ -436,10 +443,12 @@ switch (whichNoiseFreeNre)
         %
         % 1. Select one of the pre-computed mRGC mosaics by specifying its
         % eccentricity, size, and type.
-        if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1) | mosaicSizeDegs(2) > mRGCRawSizeDegs)
+        if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1)) || (mosaicSizeDegs(2) > mRGCRawSizeDegs(2))
+            mosaicSizeDegs
+            mRGCRawSizeDegs
             error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
         end
-        noiseFreeResponseParams.mRGCMosaicParams.eccDegs = mosaicEccDegs;
+        noiseFreeResponseParams.mRGCMosaicParams.eccDegs = mRGCRawEccDegs;
         noiseFreeResponseParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
         noiseFreeResponseParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
         noiseFreeResponseParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
@@ -449,7 +458,7 @@ switch (whichNoiseFreeNre)
         %    Passing [] for eccentricityDegs will crop the mosaic at its center.
         noiseFreeResponseParams.mRGCMosaicParams.cropParams = struct(...
             'sizeDegs', mRGCCropSize, ...
-            'eccentricityDegs', [] ...
+            'eccentricityDegs', mosaicEccDegs ...
             );
 
         % 3. Set the input cone mosaic integration time

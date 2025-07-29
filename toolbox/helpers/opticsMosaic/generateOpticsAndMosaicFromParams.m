@@ -25,6 +25,34 @@ if (isempty(theMosaic))
                 );
 
         case 'mRGCMosaic'
+
+            mosaicParams
+            opticsParams
+            
+            if (strcmp(opticsParams.type,'loadComputeReadyRGCMosaic'))
+                opticsParams.visualizePSFonTopOfConeMosaic = true;
+                [theMosaic, theOptics] = mRGCMosaic.loadPrebakedMosaic(mosaicParams, opticsParams);
+                theMosaic.visualize();
+            else
+                dummyOpticsParams = generateOpticsParams('loadComputeReadyRGCMosaic');
+                theMosaic = mRGCMosaic.loadPrebakedMosaic(mosaicParams, dummyOpticsParams);
+
+                opticsParams.whichOptics = 'nativeOptics'; % choose one from mRGCMosaic.validOpticsModifications
+                opticsParams.customRefractionDiopters = 0;
+
+                theOptics = theMosaic.nativeOI(...
+                    'opticsModification', opticsParams.whichOptics, ...
+                    'customRefractionDiopters', opticsParams.customRefractionDiopters, ...
+                    'visualizePSF', true, ...
+                    'visualizedWavelengths', 450:20:650);
+                theMosaic.visualize();
+            end
+
+            
+
+            pause
+            %{
+            % - - - - - - -- - OLD - - - - - -- - -
             % Generate the mRGC object
             if (strcmp(opticsParams.type,'loadComputeReadyRGCMosaic'))
                 % We were passed optics parameters that the load method knows
@@ -46,7 +74,7 @@ if (isempty(theMosaic))
                 end
 
             else
-                % We will need to override the optics.  So first we genrate
+                % We will need to override the optics.  So first we generate
                 % dummy optics parameters, generate the mRGCMosiac, then
                 % generate the optics we want below.
                 dummyOpticsParams = generateOpticsParams('loadComputeReadyRGCMosaic');
@@ -63,6 +91,9 @@ if (isempty(theMosaic))
                 % This line might be a bit fragile.
                 theOptics = generateOpticsAndMosaicFromParams(opticsParams,theMosaic.theConeMosaic,mosaicParams);
             end
+
+            %  - - - - - - - - - END OF OLD - - - - -- -
+            %}
 
         otherwise
             error('Unknown mosaic type pased in mosaicParams');
