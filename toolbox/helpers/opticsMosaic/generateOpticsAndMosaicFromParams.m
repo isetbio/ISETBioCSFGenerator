@@ -11,6 +11,8 @@ function [theOptics,theMosaic] = generateOpticsAndMosaicFromParams(opticsParams,
 % You can also just pass the mosaic in which case its parameters are
 % probably not needed.
 
+theOptics = [];
+
 % Generate theOptics
 if (isempty(theMosaic))
     switch (mosaicParams.type)
@@ -26,31 +28,17 @@ if (isempty(theMosaic))
 
         case 'mRGCMosaic'
 
-            mosaicParams
-            opticsParams
-            
             if (strcmp(opticsParams.type,'loadComputeReadyRGCMosaic'))
                 opticsParams.visualizePSFonTopOfConeMosaic = true;
                 [theMosaic, theOptics] = mRGCMosaic.loadPrebakedMosaic(mosaicParams, opticsParams);
                 theMosaic.visualize();
             else
-                dummyOpticsParams = generateOpticsParams('loadComputeReadyRGCMosaic');
-                theMosaic = mRGCMosaic.loadPrebakedMosaic(mosaicParams, dummyOpticsParams);
-
-                opticsParams.whichOptics = 'nativeOptics'; % choose one from mRGCMosaic.validOpticsModifications
-                opticsParams.customRefractionDiopters = 0;
-
-                theOptics = theMosaic.nativeOI(...
-                    'opticsModification', opticsParams.whichOptics, ...
-                    'customRefractionDiopters', opticsParams.customRefractionDiopters, ...
-                    'visualizePSF', true, ...
-                    'visualizedWavelengths', 450:20:650);
+                opticsParams.visualizePSFonTopOfConeMosaic = true;
+                [theMosaic, theOptics] = mRGCMosaic.loadPrebakedMosaic(mosaicParams, opticsParams);
                 theMosaic.visualize();
             end
 
             
-
-            pause
             %{
             % - - - - - - -- - OLD - - - - - -- - -
             % Generate the mRGC object
@@ -98,6 +86,10 @@ if (isempty(theMosaic))
         otherwise
             error('Unknown mosaic type pased in mosaicParams');
     end
+end
+
+if (~isempty(theOptics))
+    return;
 end
 
 % Generate optics
@@ -157,8 +149,6 @@ switch (opticsParams.type)
         % Set the fNumber to correspond to the pupil size
         focalLengthMM = oiGet(theOptics,'focal length')*1000;
         theOptics = oiSet(theOptics, 'optics fnumber', focalLengthMM/opticsParams.pupilDiameterMM);
-
-    case 'loadComputeReadyRGCMosaic'
 
     otherwise
         error('Unknown opticsType specified');

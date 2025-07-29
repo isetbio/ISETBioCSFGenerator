@@ -118,6 +118,9 @@ arguments
     % Use meta contrast method to speed things up?
     options.useMetaContrast (1,1) logical = true
 
+    % Optics type
+    options.opticsType (1,:) char  = 'oiEnsembleGenerate';
+
     % Choose noise free neural model
     %   Choices: 'excitationsCmosaic'
     %            'sceneAsResponses'
@@ -308,6 +311,7 @@ numberOfFrames = options.numberOfFrames;
 frameDurationSeconds = options.frameDurationSeconds;
 fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
+opticsType = options.opticsType;
 thresholdPara = options.thresholdPara;
 verbose = options.verbose;
 visualizeEachScene = options.visualizeEachScene;
@@ -485,6 +489,9 @@ switch (whichNoiseFreeNre)
                     error('Unknown mRGC output signal type specified');
             end
         end
+
+        % 4. Optics type
+        noiseFreeResponseParams.opticsParams.type = opticsType;
 
         % Handle cone contrast setting
         if (useConeContrast)

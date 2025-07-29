@@ -9,7 +9,6 @@ function opticsParams = generateOpticsParams(opticsType,oiPadMethod)
 %    presets.  If a structure is passed, it is assumed to be an actual oi
 %    structure, and is just passed through;
 
-
 if (isstruct(opticsType))
     opticsParams = opticsType;
 else
@@ -36,6 +35,18 @@ else
                 'pupilDiameterMM', 3.0 ...
                 );
 
+        case 'adaptiveOptics6MM'
+            opticsParams = struct(...
+                'type', 'adaptiveOptics6MM', ...
+                'oiPadMethod', oiPadMethod, ...
+                'ZernikeDataBase', 'Polans2015', ...
+                'subjectRankOrder', 2, ...
+                'pupilDiameterMM', 6.0, ...
+                'analyzedEye', 'right eye', ...
+                'refractiveErrorDiopters', 0.0, ...
+                'positionDegs', [] ...
+                );
+
         case 'loadComputeReadyRGCMosaic'
             % These parameters are understood by the RGCMosaic code that
             % loads precomputed things.
@@ -51,7 +62,7 @@ else
                 );
 
         otherwise
-            error('Unknown optics type specified');
+            error('Unknown optics type specified: %s', opticsType);
     end
 end
 
