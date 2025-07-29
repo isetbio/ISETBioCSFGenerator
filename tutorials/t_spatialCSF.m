@@ -118,8 +118,7 @@ arguments
     % Use meta contrast method to speed things up?
     options.useMetaContrast (1,1) logical = true
 
-    % Optics type
-    options.opticsType (1,:) char  = 'oiEnsembleGenerate';
+   
 
     % Choose noise free neural model
     %   Choices: 'excitationsCmosaic'
@@ -138,6 +137,9 @@ arguments
     % crop a submosaic, depending on the stimulus size
     options.mRGCMosaicRawEccDegs (1,2) double = [0.0 0.0];
     options.mRGCMosaicRawSizeDegs (1,2) double = [2.0 2.0];
+
+    % If the neural model is mRGCMosaic, we can specify the Optics type to use
+    options.opticsType (1,:) char  = 'loadComputeReadyRGCMosaic';
 
     % Choose noise model
     %   Choices: 'Poisson'
