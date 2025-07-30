@@ -31,6 +31,7 @@ function thresholdRet = t_spatialCSF(options)
 %                       & computePerformance.m & rcePossion.m
 %   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine phase.
 %   12/19/24  dhb   Update for new architecture.
+%   07/30/25  NPC   Numerous updates for mRGCs.
 
 % Note additional examples that use mRGC are in t_spatialCSF_mRGCExamples.
 % Split out so they get run in smaller bunches.
@@ -286,10 +287,15 @@ arguments
 
     % Computed thresholds filename
     options.thresholdsDataFileName (1,:) char = '';
+
+    options.parPoolSize (1,:) char = 'default'
 end
 
 %% Close any stray figs
 close all;
+
+%% Parpool
+AppleSiliconParPoolManager(options.parPoolSize);
 
 %% Make sure local/figures directory exists so we can write out our figures in peace
 projectBaseDir = ISETBioCSFGeneratorRootPath;
@@ -710,11 +716,14 @@ if (strcmp(presentationMode, 'static'))
     end
 
 else
+    % Non-static 
     stimulusDuration = framesNum*frameDurationSeconds;
     spatialPhaseAdvanceDegs = 360*temporalFrequencyHz/(framesNum+1);
 
     gratingSceneParams = struct( ...
         'fovDegs', stimSizeDegs, ...
+        'spatialEnvelope', 'rect', ...
+        'spatialEnvelopeRadiusDegs', stimSizeDegs, ...
         'presentationMode', presentationMode, ...
         'duration', stimulusDuration, ...
         'frameDurationSeconds', frameDurationSeconds, ...
