@@ -118,8 +118,6 @@ arguments
     % Use meta contrast method to speed things up?
     options.useMetaContrast (1,1) logical = true
 
-   
-
     % Choose noise free neural model
     %   Choices: 'excitationsCmosaic'
     %            'sceneAsResponses'
@@ -206,13 +204,18 @@ arguments
     options.nTest (1,1) double = 128
 
     % Some stimulus parameters
+    options.stimulusChroma (1,:) char = 'luminance'
     options.spatialFreqs (1,:) double = [4, 8, 16, 32]
+    options.orientationDegs (1,1) double = 90
+    options.spatialPhaseDegs (1,1) double = 90
     options.numberOfFrames double = []
     options.frameDurationSeconds (1,1) double = 0.1;
     options.temporalFrequencyHz (1,1) double = 5;
     options.stimOnFrameIndices (1,:) double = [];
     options.eccDegs (1,2) double = [0 0];
     options.sizeDegs (1,2) double = [0.5 0.5];
+
+    options.presentationMode (1,:) char = 'static';
 
    % Apply temporal filter?
     %
@@ -255,11 +258,13 @@ arguments
         'logThreshLimitHigh', 0, ...
         'logThreshLimitDelta', 0.02, ...
         'slopeRangeLow', 1/20, ...
-        'slopeRangeHigh', 50/20, ...
-        'slopeDelta', 2.5/20, ...
+        'slopeRangeHigh', 200/20, ...
+        'slopeDelta', 2.5/50, ...
         'thresholdCriterion', 0.81606, ...
         'guessRate', 1/2, ...
         'lapseRate', 0);
+
+    options.psychometricCurveSamplesNum (1,:) double = 3
 
     % Verbose?
     options.verbose (1,1) logical = true
@@ -278,6 +283,9 @@ arguments
     % Some sizes
     options.stimSizeDegs (1,1) double = 0.5;
     options.pixelsNum (1,1) double = 128;
+
+    % Computed thresholds filename
+    options.thresholdsDataFileName (1,:) char = '';
 end
 
 %% Close any stray figs
@@ -311,6 +319,7 @@ mRGCOutputSignalType = options.mRGCOutputSignalType;
 temporalFilterValues = options.temporalFilterValues;
 numberOfFrames = options.numberOfFrames;
 frameDurationSeconds = options.frameDurationSeconds;
+presentationMode = options.presentationMode;
 fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
 opticsType = options.opticsType;
@@ -323,6 +332,7 @@ maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstance
 maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseInstanceStimuli;
 stimSizeDegs = options.stimSizeDegs;
 pixelsNum = options.pixelsNum;
+thresholdsDataFileName = options.thresholdsDataFileName;
 
 %% Freeze rng for replicability and validation
 rng(1);
@@ -363,8 +373,8 @@ else
     padFramesBefore = 0;
     padFramesAfter = 0;
 end
-gratingOrientationDegs = 90;
-gratingSpatialPhase = 90;
+orientationDegs = options.orientationDegs;
+spatialPhaseDegs = options.spatialPhaseDegs;
 temporalFrequencyHz = options.temporalFrequencyHz;
 stimOnFrameIndices = options.stimOnFrameIndices;
 
@@ -413,12 +423,12 @@ nullContrast = 0.0;
 spatialFreqs = options.spatialFreqs;
 
 %% Chromatic direction and contrast
-%
+stimulusChroma = options.stimulusChroma;
+
 % Choose stimulus chromatic direction specified as a 1-by-3 vector
 % of L, M, S cone contrast.  These vectors get normalized below, so only
 % their direction matters in the specification.
-stimType = 'luminance';
-switch (stimType)
+switch (stimulusChroma)
     case 'luminance'
         chromaDir = [1.0, 1.0, 1.0]';
     case 'red-green'
@@ -434,6 +444,8 @@ end
 rmsContrast = 0.1;
 chromaDir = chromaDir / norm(chromaDir) * rmsContrast;
 assert(abs(norm(chromaDir) - rmsContrast) <= 1e-10);
+
+
 
 %% Create neural response engine
 %
@@ -652,54 +664,79 @@ end
 %
 % See t_spatialCSF.m for more on options of the two different mode of
 % operation (fixed numer of trials vs. adaptive
+psychometricCurveSamplesNum = options.psychometricCurveSamplesNum;
+
 questEnginePara = struct( ...
     'qpPF',@qpPFWeibullLog, ...
-    'minTrial', 1280, ...
-    'maxTrial', 1280, ...
+    'minTrial', nTest*psychometricCurveSamplesNum, ...
+    'maxTrial', nTest*psychometricCurveSamplesNum, ...
     'numEstimator', 1, ...
     'stopCriterion', 0.05);
 
 %% Set grating engine parameters
 %
-% DHB: I DON'T QUITE UNDERSTAND THE TWO CASES HERE.  WHY DON'T WE JUST
-% SPECIFY STATIC OR DYNAMIC AS AN OPTION?
-stimulusDuration = framesNum*frameDurationSeconds;
-if (~useFixationalEMs & isempty(temporalFilter) & framesNum == 1)
-    gratingSceneParams = struct( ...
-        'fovDegs', stimSizeDegs, ...
-        'presentationMode', 'flashedmultiframe', ...
-        'duration', stimulusDuration, ...
-        'frameDurationSeconds', stimulusDuration/framesNum, ...
-        'orientation', gratingOrientationDegs, ...
-        'spatialPhase', gratingSpatialPhase, ...
-        'pixelsNum', pixelsNum, ...
-        'filter', filter...
-        );
+
+if (strcmp(presentationMode, 'static'))
+    % DHB: I DON'T QUITE UNDERSTAND THE TWO CASES HERE.  WHY DON'T WE JUST
+    % SPECIFY STATIC OR DYNAMIC AS AN OPTION?
+    stimulusDuration = framesNum*frameDurationSeconds;
+    
+    if (~useFixationalEMs & isempty(temporalFilter) & framesNum == 1)
+        gratingSceneParams = struct( ...
+            'fovDegs', stimSizeDegs, ...
+            'presentationMode', 'flashedmultiframe', ...
+            'duration', stimulusDuration, ...
+            'frameDurationSeconds', stimulusDuration/framesNum, ...
+            'orientation', orientationDegs, ...
+            'spatialPhase', spatialPhaseDegs, ...
+            'pixelsNum', pixelsNum, ...
+            'filter', filter...
+            );
+    else
+        % Dynamic stimulus parameters
+        presentationMode = 'counterphasemodulated';
+        gratingSceneParams = struct( ...
+            'fovDegs', stimSizeDegs, ...
+            'presentationMode', presentationMode, ...
+            'duration', stimulusDuration, ...
+            'frameDurationSeconds', stimulusDuration/framesNum, ...
+            'temporalFrequencyHz', temporalFrequencyHz, ...
+            'stimOnFrameIndices', stimOnFrameIndices, ...
+            'orientation', orientationDegs, ...
+            'spatialPhase', spatialPhaseDegs, ...
+            'pixelsNum', pixelsNum, ...
+            'filter', filter ...
+            );
+    end
+
 else
-    % Dynamic stimulus parameters
-    presentationMode = 'counterphasemodulated';
+    stimulusDuration = framesNum*frameDurationSeconds;
+    spatialPhaseAdvanceDegs = 360*temporalFrequencyHz/(framesNum+1);
+
     gratingSceneParams = struct( ...
         'fovDegs', stimSizeDegs, ...
         'presentationMode', presentationMode, ...
         'duration', stimulusDuration, ...
-        'frameDurationSeconds', stimulusDuration/framesNum, ...
-        'temporalFrequencyHz', temporalFrequencyHz, ...
-        'stimOnFrameIndices', stimOnFrameIndices, ...
-        'orientation', gratingOrientationDegs, ...
-        'spatialPhase', gratingSpatialPhase, ...
-        'pixelsNum', pixelsNum, ...
-        'filter', filter ...
-        );
-
-    % Here are some other parameters that might get set for a dynamic
-    % stimulus.  And we could consider 'drifted' as mode in addition, but
-    % may need to special case 0 cpd as 'counterphasemodulated' if we do.
-    %
-    % 'spatialEnvelope', 'rect', ...
-    % 'spatialEnvelopeRadiusDegs', theStimulusSpatialEnvelopeRadiusDegs, ...
-    % 'minPixelsNumPerCycle', minPixelsNumPerCycle, ...
-    % 'spatialPhaseAdvanceDegs', 360*(frameDurationSeconds*theTemporalFrequencyHz), ...
+        'frameDurationSeconds', frameDurationSeconds, ...
+        'orientation', orientationDegs, ...
+        'spatialPhase', spatialPhaseDegs, ...
+        'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs, ...
+        'pixelsNum', pixelsNum);
 end
+
+% Thresholds filename
+if (isempty(thresholdsDataFileName))
+    thresholdsDataFileName = ...
+        sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
+        mRGCOutputSignalType, ...
+        stimulusChroma, ...
+        opticsType, ...
+        mosaicEccDegs(1), mosaicEccDegs(2), ...
+        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
+        orientationDegs, ...
+        presentationMode);
+end
+
 
 %% If we use cone contrast, we will neeed a null scene for normalization.
 %
@@ -748,10 +785,20 @@ end
 % computePeformance
 % Generate a figure with a random ID
 dataFig = figure(floor(sum(datevec(datetime('now'))*100)));
+set(dataFig, 'Position', [10 10 2000 800], 'Color', [1 1 1]);
+subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+       'rowsNum', 2, ...
+       'colsNum', length(spatialFreqs), ...
+       'heightMargin',  0.06, ...
+       'widthMargin',    0.02, ...
+       'leftMargin',     0.02, ...
+       'rightMargin',    0.00, ...
+       'bottomMargin',   0.04, ...
+       'topMargin',      0.01);
 
 for idx = 1:length(spatialFreqs)
-    axLeft{idx}  = subplot(length(spatialFreqs), 2, idx * 2 - 1);
-    axRight{idx} = subplot(length(spatialFreqs), 2, idx * 2);
+    axTop{idx}  = subplot('Position', subplotPosVectors(1,idx).v);
+    axBottom{idx} = subplot('Position', subplotPosVectors(2,idx).v);
 end
 
 
@@ -770,7 +817,7 @@ for idx = 1:length(spatialFreqs)
     if (useFixationalEMs)
         % Check that flags are OK.  
         if (useMetaContrast)
-            if (~testEMsMatchTrain | nTrainEMs > 1 | nTestEMs > 1)
+            if (~testEMsMatchTrain) || (nTrainEMs > 1) || (nTestEMs > 1)
                 error('There must be either no EMs or only one EM path total to use metaContrast method at present');
             end
         end
@@ -893,23 +940,26 @@ for idx = 1:length(spatialFreqs)
     gratingSceneEngine.visualizeStaticFrame(...
         theSceneSequence, ...
         'frameToVisualize', 1, ...
-        'axesHandle', axLeft{idx});
+        'axesHandle', axTop{idx});
     gratingSceneEngine.visualizeEachCompute = visualizeEachComputeSave;
 
     % Plot data and psychometric curve
     % with a marker size of 2.5
-    questObj.plotMLE(2.5,'para',para(idx,:), 'axesHandle', axRight{idx});
+    questObj.plotMLE(2.5,'para',para(idx,:), 'axesHandle', axBottom{idx});
     drawnow;
 end
 set(dataFig, 'Position',  [0, 0, 800, 800]);
 saveas(dataFig,[figureFileBase '_Psychometric.tiff'],'tif');
 
 % Convert returned log threshold to linear threshold
-threshold = 10 .^ logThreshold;
+thresholdContrasts = 10 .^ logThreshold;
+
+% Save thresholds
+save(thresholdsDataFileName, 'options', 'spatialFreqs', 'thresholdContrasts');
 
 %% Plot contrast sensitivity function
 theCsfFig = figure();
-loglog(spatialFreqs, 1 ./ threshold, '-ok', 'LineWidth', 2);
+loglog(spatialFreqs, 1 ./ thresholdContrasts, '-ok', 'LineWidth', 2);
 xticks(spatialFreqs); xlim([spatialFreqs(1), spatialFreqs(end)]);
 if (framesNum == 1)
     yticks([1,2,5,10,20,50]); ylim([1, 50]);
@@ -920,6 +970,7 @@ xlabel('Spatial Frequency (cyc/deg)');
 ylabel('Sensitivity');
 set(theCsfFig, 'Position',  [800, 0, 600, 800]);
 saveas(theCsfFig,[figureFileBase,'_CSF.tiff'],'tif');
+
 
 %% Do a check on the answer
 %
@@ -932,15 +983,15 @@ saveas(theCsfFig,[figureFileBase,'_CSF.tiff'],'tif');
 % sometimes.
 validationTolerance = 0.01;
 if (~isempty(validationThresholds))
-    if (any(abs(threshold-validationThresholds)./validationThresholds > validationTolerance))
-        threshold
-        validationThresholds
+    if (any(abs(thresholdContrasts-validationThresholds)./validationThresholds > validationTolerance))
+        thresholdContrasts(:)
+        validationThresholds(:)
         error(sprintf('Do not replicate validation thresholds to %d%%. Check that parameters match, or for a bug.',round(100*validationTolerance)));
     else
         fprintf('Validation regression check passes\n');
     end
 else
-    threshold
+    thresholdContrasts(:)
     fprintf('No validation thresholds, validation regression check not run\n');
 end
 

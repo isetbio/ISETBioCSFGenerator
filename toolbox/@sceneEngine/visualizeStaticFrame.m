@@ -95,6 +95,8 @@ else
     image(axesHandle,x,y,displaySettingsImage);
 end
 
+axis(axesHandle, 'image');
+
 % Cross hairs
 hold(axesHandle,'on');
 set(axesHandle, 'XTick', [], 'YTick', []);
