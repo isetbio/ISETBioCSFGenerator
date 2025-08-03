@@ -208,19 +208,21 @@ arguments
     options.mosaicEccDegs (1,2) double = [0 0];
     options.mosaicSizeDegs (1,2) double = [0.5 0.5];
 
-    % Variable stimulus parameter
-    options.spatialFreqs (1,:) double = [4, 8, 16, 32]
+    % Varied stimulus parameter
+    options.spatialFreqs (1,:) double = [4, 8, 16, 32];
     
     % Fixed stimulus parameters
     options.meanLuminanceCdPerM2 (1,1) double = 100;
     options.meanChromaticityXY (1,2) double = [0.30 0.32];
     options.stimulusChroma (1,:) char = 'luminance'
     options.orientationDegs (1,1) double = 90
-    options.spatialPhaseDegs (1,1) double = 90
+    options.spatialPhaseDegs (1,1) double = 0
+    options.stimOnFrameIndices (1,:) double = [];
     options.numberOfFrames double = []
     options.frameDurationSeconds (1,1) double = 0.1;
+    options.stimDurationTemporalCycles (1,1) double = 1
     options.temporalFrequencyHz (1,1) double = 5;
-    options.stimOnFrameIndices (1,:) double = [];
+    
 
     % Stimulus size
     options.stimSizeDegs (1,1) double = 0.5;
@@ -350,6 +352,7 @@ stimOnFrameIndices = options.stimOnFrameIndices;
 temporalFilterValues = options.temporalFilterValues;
 numberOfFrames = options.numberOfFrames;
 frameDurationSeconds = options.frameDurationSeconds;
+stimDurationTemporalCycles = options.stimDurationTemporalCycles;
 presentationMode = options.presentationMode;
 stimSizeDegs = options.stimSizeDegs;
 pixelsNum = options.pixelsNum;
@@ -533,8 +536,13 @@ if (strcmp(presentationMode, 'static'))
 
 else
     % Non-static 
-    stimulusDuration = framesNum*frameDurationSeconds;
-    spatialPhaseAdvanceDegs = 360*temporalFrequencyHz/(framesNum+1);
+    stimulusDuration = stimDurationTemporalCycles*frameDurationSeconds;
+
+    temporalModulationParams.stimOnFrameIndices = [];
+    temporalModulationParams.stimDurationFramesNum = [];
+    temporalModulationParams.phaseDirection = 1;
+    temporalModulationParams.stimDurationTemporalCycles = stimDurationTemporalCycles;
+    temporalModulationParams.temporalFrequencyHz = temporalFrequencyHz;
 
     gratingSceneParams = struct( ...
         'meanLuminanceCdPerM2', meanLuminanceCdPerM2, ...
@@ -545,11 +553,11 @@ else
         'spatialEnvelope', 'rect', ...
         'spatialEnvelopeRadiusDegs', stimSizeDegs, ...
         'orientation', orientationDegs, ...
+        'spatialPhase', spatialPhaseDegs, ...
         'presentationMode', presentationMode, ...
         'duration', stimulusDuration, ...
         'frameDurationSeconds', frameDurationSeconds, ...
-        'spatialPhase', spatialPhaseDegs, ...
-        'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs);
+        'temporalModulationParams', temporalModulationParams);
 end
 
 

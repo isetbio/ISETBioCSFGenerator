@@ -40,6 +40,9 @@ function t_isoresponseLMplaneEllipses(options)
         'useConeContrast', true);
 
 % Run with mRGCMosaic (linear response, only ON-center mosaic), dynamic stimulus
+    validationThresholds = [...
+    ];
+
     t_isoresponseLMplaneEllipses(...
         'useMetaContrast', true, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
@@ -56,7 +59,7 @@ function t_isoresponseLMplaneEllipses(options)
         'responseVisualizationFunction', @nreVisualizeMRGCmosaic, ...
         'maxVisualizedNoisyResponseInstances', 2, ...
         'maxVisualizedNoisyResponseInstanceStimuli', 2, ...
-        'opticsType', 'loadComputeReadyRGCMosaic', ...
+        'opticsType', 'adaptiveOptics6MM', ...
         'mRGCMosaicRawEccDegs', [0 0], ...
         'mRGCMosaicRawSizeDegs', [2 2], ...
         'mosaicEccDegs', [0.0 0], ...
@@ -65,14 +68,13 @@ function t_isoresponseLMplaneEllipses(options)
         'pixelsNum', 512, ...
         'spatialFrequency', 0.0, ...
         'presentationMode', 'counterphasemodulated', ...
-        'numberOfFrames', 8, ...
-        'stimOnFrameIndices', 1:8, ...
+        'stimDurationTemporalCycles', 1.0, ...
         'frameDurationSeconds', (1/2.5)/8, ...
         'temporalFrequencyHz', 2.5, ...
         'nTest', 1024, ...
         'psychometricCurveSamplesNum', 5, ...
-        'examinedDirectionsOnLMplane', 0:45:(360-45), ...
-        'validationThresholds', []);
+        'examinedDirectionsOnLMplane', 0:22.5:(360-22.5), ...
+        'validationThresholds', validationThresholds);
 
 % Run with mRGCMosaic (linear response)
      t_isoresponseLMplaneEllipses(...
@@ -243,7 +245,7 @@ arguments
     options.mosaicEccDegs (1,2) double = [0 0];
     options.mosaicSizeDegs (1,2) double = [0.5 0.5];
 
-    % Variable stimulus parameter
+    % Varied stimulus parameter
     options.examinedDirectionsOnLMplane (1,:) double = 0:45:315;
 
     % Fixed stimulus parameters
@@ -251,11 +253,13 @@ arguments
     options.meanChromaticityXY (1,2) double = [0.30 0.32];
     options.spatialFrequency(1,1) double = 0.0;
     options.orientationDegs (1,1) double = 90;
-    options.spatialPhaseDegs (1,1) double = 90
-    options.numberOfFrames double = []
-    options.frameDurationSeconds (1,1) double = 0.1;
-    options.temporalFrequencyHz (1,1) double = 5;
+    options.spatialPhaseDegs (1,1) double = 0
+    options.numberOfFrames (1,:) double = []
     options.stimOnFrameIndices (1,:) double = [];
+    options.frameDurationSeconds (1,1) double = 0.1;
+    options.stimDurationTemporalCycles (1,1) double = 1
+    options.temporalFrequencyHz (1,1) double = 5;
+
     
     % Stimulus size
     options.stimSizeDegs (1,1) double = 0.5;
@@ -376,7 +380,6 @@ mRGCCropSize = mosaicSizeDegs;
 
 meanLuminanceCdPerM2 = options.meanLuminanceCdPerM2;
 meanChromaticityXY = options.meanChromaticityXY;
-orientationDegs = options.orientationDegs;
 spatialPhaseDegs = options.spatialPhaseDegs;
 temporalFrequencyHz = options.temporalFrequencyHz;
 stimOnFrameIndices = options.stimOnFrameIndices;
@@ -385,6 +388,7 @@ stimOnFrameIndices = options.stimOnFrameIndices;
 temporalFilterValues = options.temporalFilterValues;
 numberOfFrames = options.numberOfFrames;
 frameDurationSeconds = options.frameDurationSeconds;
+stimDurationTemporalCycles = options.stimDurationTemporalCycles;
 presentationMode = options.presentationMode;
 stimSizeDegs = options.stimSizeDegs;
 pixelsNum = options.pixelsNum;
@@ -510,7 +514,7 @@ orientationDegs = options.orientationDegs;
 debugStimulusConfig = ~true;
 
 % Max RMS contrast (so as to keep stimuli within the display gamut)
-rmsLMconeContrast = 0.12;
+rmsLMconeContrast = 0.1;
 
 if (debugStimulusConfig)
     rmsLMconeContrast = 1.0;
@@ -544,8 +548,14 @@ if (strcmp(presentationMode, 'static'))
             'spatialPhase', spatialPhaseDegs);
 else
     % Non-static
-    stimulusDuration = framesNum*frameDurationSeconds;
-    spatialPhaseAdvanceDegs = 360*temporalFrequencyHz/(framesNum+1);
+    stimulusDuration = stimDurationTemporalCycles*frameDurationSeconds;
+    
+    temporalModulationParams.stimOnFrameIndices = [];
+    temporalModulationParams.stimDurationFramesNum = [];
+    temporalModulationParams.phaseDirection = 1;
+    temporalModulationParams.stimDurationTemporalCycles = stimDurationTemporalCycles;
+    temporalModulationParams.temporalFrequencyHz = temporalFrequencyHz;
+
 
     gratingSceneParams = struct( ...
         'meanLuminanceCdPerM2', meanLuminanceCdPerM2, ...
@@ -556,11 +566,11 @@ else
         'spatialEnvelope', 'rect', ...
         'spatialEnvelopeRadiusDegs', stimSizeDegs, ...
         'orientation', orientationDegs, ...
+        'spatialPhase', spatialPhaseDegs, ...
         'presentationMode', presentationMode, ...
         'duration', stimulusDuration, ...
         'frameDurationSeconds', frameDurationSeconds, ...
-        'spatialPhase', spatialPhaseDegs, ...
-        'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs);
+        'temporalModulationParams', temporalModulationParams);
 end
 
 
@@ -812,6 +822,7 @@ switch (whichNoisyInstanceNre)
         nreNoisyInstancesComputeFunction = @nreNoisyInstancesGaussian;
         nreNoisyInstancesParams = nreNoisyInstancesGaussian;
         nreNoisyInstancesParams.sigma = gaussianSigma;
+        
         if (simulateHighSaturationRegime) && (simulateHalfWaveRectification)
             error('Either select ''simulateHighSaturationRegime'' or ''simulateHalfWaveRectification'', NOT both.')
         end
@@ -845,11 +856,6 @@ end % switch (whichNoisyInstanceNre)
 if (useConeContrast) 
     nreNoiseFreeParams.nullStimulusSceneSequence = theNullSceneEngine.compute(0.0);
 end
-
-
-
-
-
 
 
 
