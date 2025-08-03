@@ -154,13 +154,19 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             deltaSpatialPhaseDegs = 360/stimDurationOneCycleFrames;
 
             % Number of frames 
-            stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
-            
+            if (~isempty(gratingParams.temporalModulationParams.stimDurationFramesNum))
+                stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
+            else
+                stimDurationFramesNum = stimDurationOneCycleFrames * gratingParams.temporalModulationParams.stimDurationTemporalCycles;
+            end
+
+
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is kept constant throughout all frames, except
                 % when stimulus is off
                 frameContrastSequence(frameIndex) = testContrast;
-                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
+                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices)) && ...
+                   (~isempty(gratingParams.temporalModulationParams.stimOnFrameIndices))
                     frameContrastSequence(frameIndex) = 0;
                 end
 
@@ -169,16 +175,24 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
             end
     
         case 'counterphasemodulated'
+
             % See the comments for case 'drifted' for the four lines below
             stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
             stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
             deltaTemporalPhaseDegs = 360/stimDurationOneCycleFrames;
-            stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
+
+            % Number of frames 
+            if (~isempty(gratingParams.temporalModulationParams.stimDurationFramesNum))
+                stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
+            else
+                stimDurationFramesNum = stimDurationOneCycleFrames * gratingParams.temporalModulationParams.stimDurationTemporalCycles;
+            end
             
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
                 frameContrastSequence(frameIndex) = testContrast * cosd((frameIndex-1)*deltaTemporalPhaseDegs) * gratingParams.temporalModulationParams.phaseDirection;
-                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
+                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices)) && ...
+                   (~isempty(gratingParams.temporalModulationParams.stimOnFrameIndices))
                     frameContrastSequence(frameIndex) = 0;
                 end
                 
