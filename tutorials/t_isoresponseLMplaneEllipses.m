@@ -74,7 +74,7 @@ function t_isoresponseLMplaneEllipses(options)
         'nTest', 1024, ...
         'psychometricCurveSamplesNum', 5, ...
         'examinedDirectionsOnLMplane', 0:22.5:(360-22.5), ...
-        'validationThresholds', validationThresholds);
+        'validationThresholds', 0:22.5:(360-22.5));
 
 % Run with mRGCMosaic (linear response)
      t_isoresponseLMplaneEllipses(...
@@ -107,50 +107,7 @@ t_isoresponseLMplaneEllipses(...
         'whichClassifierEngine', 'rceTemplateDistance', ...
         'useConeContrast', true);
 
-
 %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 arguments
     % Use meta contrast method to speed things up?
@@ -428,33 +385,10 @@ end
 close all;
 
 %% Make sure local/figures directory exists so we can write out our figures in peace
-figureFileBaseDir = setupFigureDirectory(mfilename, ...
+[figureFileBaseDir, resultsFileBaseDir] = setupFigureDirectory(mfilename, ...
     useMetaContrast, useConeContrast, useFixationalEMs, ...
     whichNoiseFreeNre, whichNoisyInstanceNre,...
     whichClassifierEngine, mRGCOutputSignalType);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 %% Parpool
 AppleSiliconParPoolManager(parPoolSize);
@@ -502,8 +436,6 @@ else
     temporalFilter = [];
 end
 
-
-
 %% List of LM angles to be tested
 examinedDirectionsOnLMplane = options.examinedDirectionsOnLMplane;
 
@@ -526,13 +458,7 @@ end
     computeLMSconeContrastDirections(rmsLMconeContrast, examinedDirectionsOnLMplane);
 
 
-
-
-
-
-
 %% Set grating engine parameters
-
 if (strcmp(presentationMode, 'static'))
     gratingSceneParams = struct( ...
             'meanLuminanceCdPerM2', meanLuminanceCdPerM2, ...
@@ -573,36 +499,12 @@ else
         'temporalModulationParams', temporalModulationParams);
 end
 
-
-% Plot all stimuli
+%% Which stimuli to skip
 skippedDirections = 0;
 if (length(examinedDirectionsOnLMplane) > 50)
     % Too many, plot every other stimulus
     skippedDirections = 2;
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 %% Configure our stimulus scene engines 
@@ -791,24 +693,6 @@ switch (whichNoiseFreeNre)
         error('Unsupported noise free neural response engine: ''%s''.', whichNoiseFreeNre);
 end  % switch (whichNoiseFreeNre)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 % Setup the noisy neural response engine
 switch (whichNoisyInstanceNre)
     case 'Poisson'
@@ -858,7 +742,6 @@ if (useConeContrast)
 end
 
 
-
 %% Create the neural engine
 theNeuralEngine = neuralResponseEngine( ...
     nreNoiseFreeComputeFunction, ...
@@ -872,7 +755,6 @@ theNeuralEngine.visualizeEachCompute = visualizeEachResponse;
 
 theNeuralEngine.customVisualizationFunctionHandle = responseVisualizationFunction;
 theNeuralEngine.maxVisualizedNoisyResponseInstances = maxVisualizedNoisyResponseInstances;
-
 
 %% If using meta contrast, set this up.
 if (useMetaContrast)
@@ -1070,7 +952,7 @@ end % iChromaDirection
 thresholdContrasts = 10 .^ logThreshold;
 
 % Save thresholds
-save(thresholdsDataFileName, 'options', 'examinedDirectionsOnLMplane', 'thresholdContrasts');
+save(fullfile(resultsFileBaseDir,thresholdsDataFileName), 'options', 'examinedDirectionsOnLMplane', 'thresholdContrasts');
 
 % Figure for plotting the thresholds on the LM plane
 % along with the stimuli
@@ -1081,7 +963,7 @@ set(hFigStimuliAndThresholds, 'HandleVisibility', 'off');
 exportFig = true;
 initializeFig = true;
 theThresholdAxes = []; 
-maxVisualizedThreshold = 0.2; % 0.05;
+maxVisualizedThreshold = 0.2;
 visualizeStimuliAndThresholdsOnLMPlane(...
             rmsLMconeContrast, ...
             examinedSpatialFrequencyCPD, gratingSceneParams, ...
@@ -1090,12 +972,33 @@ visualizeStimuliAndThresholdsOnLMPlane(...
             figureFileBaseDir, hFigStimuliAndThresholds, ...
             exportFig, initializeFig, theThresholdAxes);
 
-
-
 %% Restore handle visibility so that a future close will close the figures
 hAllFigs = findall(groot,'Type','figure');
 for i = 1:numel(hAllFigs)
     set(hAllFigs(i), 'HandleVisibility', 'on')
+end
+
+%% Do a check on the answer
+%
+% So that if we break something in the future we will have
+% a chance of knowing it. The current numbers don't quite
+% match the old version, but I think that is because of a change
+% away from iePoisson which was not freezing the rng, and also
+% other changes somewhere in stochasticity that I have not quite
+% tracked down. But this validation generally passes.  Might fail
+% sometimes.
+validationTolerance = 0.01;
+if (~isempty(validationThresholds))
+    if (any(abs(thresholdContrasts-validationThresholds)./validationThresholds > validationTolerance))
+        thresholdContrasts(:)
+        validationThresholds(:)
+        error(sprintf('Do not replicate validation thresholds to %d%%. Check that parameters match, or for a bug.',round(100*validationTolerance)));
+    else
+        fprintf('Validation regression check passes\n');
+    end
+else
+    thresholdContrasts(:)
+    fprintf('No validation thresholds, validation regression check not run\n');
 end
 
 end
@@ -1288,7 +1191,7 @@ end
 
 
 
-function figureFileBaseDir = setupFigureDirectory(theScriptName, ...
+function [figureFileBaseDir, resultsFileBaseDir] = setupFigureDirectory(theScriptName, ...
     useMetaContrast,useConeContrast,useFixationalEMs,...
     whichNoiseFreeNre,whichNoisyInstanceNre,...
     whichClassifierEngine,mRGCOutputSignalType)
@@ -1300,14 +1203,32 @@ function figureFileBaseDir = setupFigureDirectory(theScriptName, ...
         fprintf('Generated figure directory at %s\n', fullfile(projectBaseDir,'local', theScriptName, 'figures'))
     end
 
+    if (~exist(fullfile(projectBaseDir,'local', theScriptName, 'results'),'dir'))
+        mkdir(fullfile(projectBaseDir,'local', theScriptName, 'results'));
+        fprintf('Generated results directory at %s\n', fullfile(projectBaseDir,'local', theScriptName, 'figures'))
+    end
+
+
     figureFileBaseDir = fullfile(projectBaseDir,'local',mfilename,'figures', ...
         sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
         useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
         whichClassifierEngine,mRGCOutputSignalType));
+
     if (~exist(figureFileBaseDir, 'dir'))
         mkdir(figureFileBaseDir);
         fprintf('Generated figure sub-directory at %s\n', figureFileBaseDir);
     end
+
+    resultsFileBaseDir = fullfile(projectBaseDir,'local',mfilename,'results', ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+    
+    if (~exist(resultsFileBaseDir, 'dir'))
+        mkdir(resultsFileBaseDir);
+        fprintf('Generated figure sub-directory at %s\n', resultsFileBaseDir);
+    end
+
 
 
 end

@@ -300,14 +300,6 @@ arguments
 
     options.parPoolSize (1,:) char = 'default'
 
-
-
-
-
-
-
-
-
 end % arguments
 
 
@@ -373,28 +365,19 @@ maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseIn
 thresholdsDataFileName = options.thresholdsDataFileName;
 parPoolSize = options.parPoolSize;
 
-
-
-
-
-
-
 %% Freeze rng for replicability and validation
 rng(1);
 
 %% Close any stray figs
 close all;
 
-
-
-
-
-
-
 %% Make sure local/figures directory exists so we can write out our figures in peace
 projectBaseDir = ISETBioCSFGeneratorRootPath;
 if (~exist(fullfile(projectBaseDir,'local',mfilename,'figures'),'dir'))
     mkdir(fullfile(projectBaseDir,'local',mfilename,'figures'));
+end
+if (~exist(fullfile(projectBaseDir,'local',mfilename,'results'),'dir'))
+    mkdir(fullfile(projectBaseDir,'local',mfilename,'results'));
 end
 
 %% Figure output base name
@@ -409,7 +392,12 @@ else
     useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
     whichClassifierEngine,mRGCOutputSignalType));
 end
-if (~isempty(options.resultsFileBase))
+if (isempty(options.resultsFileBase))
+    resultsFileBase = fullfile(projectBaseDir,'local',mfilename,'results', ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+else
     resultsFileBase = fullfile(options.resultsFileBase, ...
         sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
         useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
@@ -645,11 +633,6 @@ switch (whichNoiseFreeNre)
         end
 
 
-
-
-
-
-
         % Handle temporal filter
         nreNoiseFreeParams.temporalFilter = temporalFilter;
 
@@ -675,34 +658,6 @@ switch (whichNoiseFreeNre)
             otherwise
                 error('Unknown mRGC signal type specified: ''%s''.', nreNoiseFreeParams.mRGCMosaicParams.inputSignalType)
         end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     case 'excitationsCmosaic'
         % Set the compute function
@@ -775,33 +730,6 @@ switch (whichNoisyInstanceNre)
     otherwise
         error('Unsupported noisy instances nre specified');
 end % switch (whichNoisyInstanceNre)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 %% If we use cone contrast, we will neeed a null scene for normalization.
 %
@@ -1096,7 +1024,7 @@ saveas(dataFig,[figureFileBase '_Psychometric.tiff'],'tif');
 thresholdContrasts = 10 .^ logThreshold;
 
 % Save thresholds
-save(thresholdsDataFileName, 'options', 'spatialFreqs', 'thresholdContrasts');
+save(fullfile(resultsFileBase,thresholdsDataFileName), 'options', 'spatialFreqs', 'thresholdContrasts');
 
 %% Plot contrast sensitivity function
 theCsfFig = figure();
