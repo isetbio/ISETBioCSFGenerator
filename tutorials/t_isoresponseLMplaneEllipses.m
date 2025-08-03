@@ -39,11 +39,28 @@ function t_isoresponseLMplaneEllipses(options)
         'whichClassifierEngine', 'rceTemplateDistance', ...
         'useConeContrast', true);
 
-% Run with mRGCMosaic (linear response, only ON-center mosaic), dynamic stimulus
+% Run with mRGCMosaic (linear response, only ON-center mosaic), counterphase modulated stimulus
     validationThresholds = [...
+    0.0163
+    0.0243
+    0.0355
+    0.0274
+    0.0176
+    0.0135
+    0.0122
+    0.0135
+    0.0161
+    0.0247
+    0.0366
+    0.0278
+    0.0178
+    0.0139
+    0.0127
+    0.0128
     ];
 
     t_isoresponseLMplaneEllipses(...
+        'parPoolSize', '3/4', ...
         'useMetaContrast', true, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
         'mRGCOutputSignalType', 'mRGCs', ...      % Select between {'cones', 'mRGCs'}
@@ -74,7 +91,7 @@ function t_isoresponseLMplaneEllipses(options)
         'nTest', 1024, ...
         'psychometricCurveSamplesNum', 5, ...
         'examinedDirectionsOnLMplane', 0:22.5:(360-22.5), ...
-        'validationThresholds', 0:22.5:(360-22.5));
+        'validationThresholds', validationThresholds);
 
 % Run with mRGCMosaic (linear response)
      t_isoresponseLMplaneEllipses(...

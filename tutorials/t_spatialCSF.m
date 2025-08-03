@@ -392,6 +392,12 @@ else
     useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
     whichClassifierEngine,mRGCOutputSignalType));
 end
+
+if (~exist(figureFileBase, 'dir'))
+    mkdir(figureFileBase);
+    fprintf('Generated figure sub-directory at %s\n', figureFileBase);
+end
+
 if (isempty(options.resultsFileBase))
     resultsFileBase = fullfile(projectBaseDir,'local',mfilename,'results', ...
         sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', mfilename, ...
@@ -403,6 +409,12 @@ else
         useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
         whichClassifierEngine,mRGCOutputSignalType));
 end
+
+if (~exist(resultsFileBase, 'dir'))
+        mkdir(resultsFileBase);
+        fprintf('Generated figure sub-directory at %s\n', resultsFileBase);
+end
+
 if (~isempty(options.responseVideoFileName)) && (ischar(options.responseVideoFileName))
     options.responseVideoFileName = fullfile(options.figureFileBase, options.responseVideoFileName);
 end
