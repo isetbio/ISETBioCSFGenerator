@@ -1,11 +1,11 @@
 function plotCSF()
 
     plotCones_vs_mRGCs(110);
-    plotPhysiologicalOptics_vs_adaptiveOptics(70);
-    plotAchromatic_vs_LMopponent(70);
-    plotAchromatic_vs_LMopponentAO(70);
-    plotFoveal_vs_Parafoveal2DegPhysioOptics(70);
-    plotFoveal_vs_Parafoveal2DegAdaptiveOptics(70);
+    %plotPhysiologicalOptics_vs_adaptiveOptics(70);
+    %plotAchromatic_vs_LMopponent(70);
+    %plotAchromatic_vs_LMopponentAO(70);
+    %plotFoveal_vs_Parafoveal2DegPhysioOptics(70);
+    %plotFoveal_vs_Parafoveal2DegAdaptiveOptics(70);
 end
 
 function plotFoveal_vs_Parafoveal2DegAdaptiveOptics(maxCSF)
@@ -26,6 +26,8 @@ function plotFoveal_vs_Parafoveal2DegAdaptiveOptics(maxCSF)
         mosaicSizeDegs(1),mosaicSizeDegs(2), ...
         orientationDegs, ...
         presentationMode);
+
+
     load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
     fovealThresholds = 1./thresholdContrasts;
 
@@ -226,10 +228,23 @@ function plotCones_vs_mRGCs(maxCSF)
     opticsType = 'loadComputeReadyRGCMosaic';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
     stimulusChroma = 'luminance';
     mosaicEccDegs = [0 0];
-    mosaicSizeDegs = [1 1];
+    mosaicSizeDegs = [2 2];
     orientationDegs = 120;
     presentationMode = 'drifted';
 
+    theScriptName = 't_spatialCSF';
+    useMetaContrast = true;
+    useConeContrast = true;
+    useFixationalEMs = false;
+    whichNoiseFreeNre = 'mRGCMosaic';
+    whichNoisyInstanceNre = 'Gaussian';
+    whichClassifierEngine = 'rceTemplateDistance';
+
+    [figureFileBaseDir, resultsFileBaseDir] = setupFigureDirectory(theScriptName, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,...
+        whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType);
+
     thresholdsDataFileName = ...
         sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
         mRGCOutputSignalType, ...
@@ -239,10 +254,15 @@ function plotCones_vs_mRGCs(maxCSF)
         mosaicSizeDegs(1),mosaicSizeDegs(2), ...
         orientationDegs, ...
         presentationMode);
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
+
+    load(fullfile(resultsFileBaseDir,thresholdsDataFileName), 'spatialFreqs', 'thresholdContrasts');
     coneThresholds = 1./thresholdContrasts;
 
     mRGCOutputSignalType = 'mRGCs';
+    [~, resultsFileBaseDir] = setupFigureDirectory(theScriptName, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,...
+        whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType);
     thresholdsDataFileName = ...
         sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
         mRGCOutputSignalType, ...
@@ -252,17 +272,19 @@ function plotCones_vs_mRGCs(maxCSF)
         mosaicSizeDegs(1),mosaicSizeDegs(2), ...
         orientationDegs, ...
         presentationMode);
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
+    load(fullfile(resultsFileBaseDir,thresholdsDataFileName), 'spatialFreqs', 'thresholdContrasts');
     mRGCThresholds = 1./thresholdContrasts;
 
     plotComparedDataSets(spatialFreqs, ...
         coneThresholds, mRGCThresholds, maxCSF, ...
-        'cones (L+M+S)', 'mRGCs (L+M+S)', 'mRGCs_vs_cones.pdf');
+        'cones (L+M+S)', 'mRGCs (L+M+S)', fullfile(figureFileBaseDir,'mRGCs_vs_cones.pdf'));
 end
 
 
-function plotComparedDataSets(spatialFreqs, thresholds1, thresholds2, maxCSF, ...
+function plotComparedDataSets(spatialFreqs, ...
+    thresholds1, thresholds2, maxCSF, ...
     legend1, legend2, pdfFileName)
+
     hFig = figure(1); clf;
     set(hFig, 'Color', [1 1 1]);
     ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
@@ -294,5 +316,46 @@ function plotComparedDataSets(spatialFreqs, thresholds1, thresholds2, maxCSF, ..
     PublicationReadyPlotLib.applyFormat(theAxes{1,1},ff);
 
     NicePlot.exportFigToPDF(pdfFileName, hFig, 300);
+
+end
+
+
+function [figureFileBaseDir, resultsFileBaseDir] = setupFigureDirectory(theScriptName, ...
+    useMetaContrast,useConeContrast,useFixationalEMs,...
+    whichNoiseFreeNre,whichNoisyInstanceNre,...
+    whichClassifierEngine,mRGCOutputSignalType)
+
+    % Make sure local/figures directory exists so we can write out our figures in peace
+    projectBaseDir = ISETBioCSFGeneratorRootPath;
+    if (~exist(fullfile(projectBaseDir,'local', theScriptName, 'figures'),'dir'))
+        mkdir(fullfile(projectBaseDir,'local', theScriptName, 'figures'));
+        fprintf('Generated figure directory at %s\n', fullfile(projectBaseDir,'local', theScriptName, 'figures'))
+    end
+
+    if (~exist(fullfile(projectBaseDir,'local', theScriptName, 'results'),'dir'))
+        mkdir(fullfile(projectBaseDir,'local', theScriptName, 'results'));
+        fprintf('Generated results directory at %s\n', fullfile(projectBaseDir,'local', theScriptName, 'figures'))
+    end
+
+
+    figureFileBaseDir = fullfile(projectBaseDir,'local',theScriptName,'figures', ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', theScriptName, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+
+    if (~exist(figureFileBaseDir, 'dir'))
+        mkdir(figureFileBaseDir);
+        fprintf('Generated figure sub-directory at %s\n', figureFileBaseDir);
+    end
+
+    resultsFileBaseDir = fullfile(projectBaseDir,'local',theScriptName,'results', ...
+        sprintf('%s_Meta_%d_ConeContrast_%d_FEMs_%d_%s_%s_%s_%s', theScriptName, ...
+        useMetaContrast,useConeContrast,useFixationalEMs,whichNoiseFreeNre,whichNoisyInstanceNre,...
+        whichClassifierEngine,mRGCOutputSignalType));
+    
+    if (~exist(resultsFileBaseDir, 'dir'))
+        mkdir(resultsFileBaseDir);
+        fprintf('Generated figure sub-directory at %s\n', resultsFileBaseDir);
+    end
 
 end
