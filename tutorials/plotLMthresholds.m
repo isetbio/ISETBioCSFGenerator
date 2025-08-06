@@ -1,5 +1,5 @@
 function plotLMthresholds()
-    maxThreshold = 0.05;
+    maxThreshold = 0.0401;
     theScriptName = 't_isoResponseLMplaneEllipses';
     plotCones_vs_mRGCs(maxThreshold, theScriptName);
 end
@@ -36,7 +36,7 @@ function plotCones_vs_mRGCs(maxVisualizedThreshold, theScriptName)
         presentationMode);
 
     load(fullfile(resultsFileBaseDir,thresholdsDataFileName), 'examinedDirectionsOnLMplane', 'thresholdContrasts');
-    coneThresholds = thresholdContrasts
+    coneThresholds = thresholdContrasts;
 
     mRGCOutputSignalType = 'mRGCs';
     [~, resultsFileBaseDir] = setupFigureDirectory(theScriptName, ...
@@ -72,7 +72,7 @@ function  visualizeStimuliAndThresholdsOnLMPlane(...
             thresholds1, thresholds2, ...
             legend1, legend2, ...
             maxVisualizedThreshold,  ...
-            figureFileBaseDir)
+            pdfFileName)
 
     hFig = figure(2); clf;
     set(hFig, 'Color', [1 1 1]);
@@ -109,7 +109,7 @@ function  visualizeStimuliAndThresholdsOnLMPlane(...
 
         % PLot the ellipse points
         plot(theAxes{1,1}, X(1,:), X(2,:), 'k-', 'LineWidth', 6.0);
-        plot(theAxes{1,1}, X(1,:), X(2,:), 'c-', 'LineWidth',2.0);
+        plot(theAxes{1,1}, X(1,:), X(2,:), 'c-', 'Color', [1 0.5 0.7], 'LineWidth',2.0);
 
 
         [z, a, b, rotationRadians] = fitEllipseToXYpoints(...
@@ -129,14 +129,14 @@ function  visualizeStimuliAndThresholdsOnLMPlane(...
 
         % PLot the ellipse points
         plot(theAxes{1,1}, X(1,:), X(2,:), 'k-', 'LineWidth', 6.0);
-        plot(theAxes{1,1}, X(1,:), X(2,:), 'c-', 'LineWidth',2.0);
+        plot(theAxes{1,1}, X(1,:), X(2,:), 'c-', 'Color', [0.5 1 0.85], 'LineWidth',2.0);
 
     end
 
      % LM plane thresholds-1
     
     p1 = scatter(theAxes{1,1}, x1,y1, 300, ...
-        'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerEdgeColor', [1 0 0], ...
+        'MarkerFaceColor', [[1 0.5 0.7]], 'MarkerEdgeColor', [1 0.5 0.7]*0.5, ...
         'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
     hold(theAxes{1,1}, 'on');
 
@@ -144,19 +144,26 @@ function  visualizeStimuliAndThresholdsOnLMPlane(...
     % LM plane thresholds-2
     
     p2 = scatter(theAxes{1,1}, x2,y2, 300, ...
-        'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerEdgeColor', [1 0 0], ...
+        'MarkerFaceColor', [0.5 1 0.85], 'MarkerEdgeColor', [0.5 1 0.85]*0.5, ...
         'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
 
    
 
-
+    xLims = maxVisualizedThreshold*[-1 1];
+    yLims = maxVisualizedThreshold*[-1 1];
     hold(theAxes{1,1}, 'off');
     set(theAxes{1,1}, 'XLim', maxVisualizedThreshold*[-1 1], 'YLim', maxVisualizedThreshold*[-1 1]);
     axis(theAxes{1,1}, 'square');
     box(theAxes{1,1}, 'off');
     set(theAxes{1,1}, 'Color', 'none', 'Box', 'off', 'XColor', [0.1 0.1 0.1], 'YColor', [0.1 0.1 0.1]);
-    xlabel(theAxes{1,1}, 'threshold contrast (L-cone)');
-    ylabel(theAxes{1,1}, 'threshold contrast (M-cone)');
+    set(theAxes{1,1}, 'XTick', -.1:0.02:0.1, 'XTickLabel', {'-.1', '-.08', '-.06', '-.04', '-.02', '0', '+.02', '+.04', '+.06', '+.08', '+.1'})
+    set(theAxes{1,1}, 'YTick', -.1:0.02:0.1, 'YTickLabel', {'-.1', '-.08', '-.06', '-.04', '-.02', '0', '+.02', '+.04', '+.06', '+.08', '+.1'})
+    
+    %PublicationReadyPlotLib.offsetAxes(theAxes{1,1},ff, xLims, yLims);
+    PublicationReadyPlotLib.labelAxes(theAxes{1,1},ff, 'threshold contrast (L-cone)', 'threshold contrast (M-cone)');
+    PublicationReadyPlotLib.applyFormat(theAxes{1,1},ff);
+    NicePlot.exportFigToPDF(pdfFileName, hFig, 300);
+
     %set(theThresholdAxes, 'FontSize', 24);
 
 end
