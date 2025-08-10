@@ -202,6 +202,97 @@ t_isoresponseLMplaneEllipses(...
         'examinedDirectionsOnLMplane', 0:22.5:(360-22.5), ...
         'validationThresholds', validationThresholds);
 
+validationThresholds = [...
+ 0.0073
+    0.0080
+    0.0087
+    0.0096
+    0.0104
+    0.0099
+    0.0082
+    0.0081
+    0.0073
+    0.0078
+    0.0087
+    0.0101
+    0.0110
+    0.0091
+    0.0086
+    0.0079
+];
+
+t_isoresponseLMplaneEllipses(...
+        'parPoolSize', '3/4', ...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'mRGCOutputSignalType', 'cones', ...      % Select between {'cones', 'mRGCs'}
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'gaussianSigma', 0.1, ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', true, ...
+        'useFixationalEMs', false, ...
+        'temporalFilterValues', [], ...
+        'oiPadMethod', 'zero', ...
+        'visualizeEachScene', false, ...
+        'visualizeEachResponse', ~true, ...
+        'responseVisualizationFunction', @nreVisualizeMRGCmosaic, ...
+        'maxVisualizedNoisyResponseInstances', 2, ...
+        'maxVisualizedNoisyResponseInstanceStimuli', 2, ...
+        'opticsType', 'loadComputeReadyRGCMosaic', ...
+        'employMosaicSpecificConeFundamentals', true, ...
+        'mRGCMosaicRawEccDegs', [0 0], ...
+        'mRGCMosaicRawSizeDegs', [2 2], ...
+        'mosaicEccDegs', [0.0 0], ...
+        'mosaicSizeDegs', [1 1], ...
+        'stimSizeDegs', 1.2, ...
+        'pixelsNum', 512, ...
+        'spatialFrequency', 0.0, ...
+        'presentationMode', 'counterphasemodulated', ...
+        'stimDurationTemporalCycles', 1.0, ...
+        'frameDurationSeconds', (1/2.5)/8, ...
+        'temporalFrequencyHz', 2.5, ...
+        'nTest', 1024, ...
+        'psychometricCurveSamplesNum', 5, ...
+        'examinedDirectionsOnLMplane', 0:22.5:(360-22.5), ...
+        'validationThresholds', validationThresholds);
+
+validationThresholds = [...
+];
+
+t_isoresponseLMplaneEllipses(...
+        'parPoolSize', '3/4', ...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'mRGCOutputSignalType', 'cones', ...      % Select between {'cones', 'mRGCs'}
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'gaussianSigma', 0.1, ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', true, ...
+        'useFixationalEMs', false, ...
+        'temporalFilterValues', [], ...
+        'oiPadMethod', 'zero', ...
+        'visualizeEachScene', false, ...
+        'visualizeEachResponse', ~true, ...
+        'responseVisualizationFunction', @nreVisualizeMRGCmosaic, ...
+        'maxVisualizedNoisyResponseInstances', 2, ...
+        'maxVisualizedNoisyResponseInstanceStimuli', 2, ...
+        'opticsType', 'loadComputeReadyRGCMosaic', ...
+        'employMosaicSpecificConeFundamentals', true, ...
+        'mRGCMosaicRawEccDegs', [-4 0], ...
+        'mRGCMosaicRawSizeDegs', [3 3], ...
+        'mosaicEccDegs', [-4.0 0], ...
+        'mosaicSizeDegs', [2 2], ...
+        'stimSizeDegs', 2.2, ...
+        'pixelsNum', 512, ...
+        'spatialFrequency', 0.0, ...
+        'presentationMode', 'counterphasemodulated', ...
+        'stimDurationTemporalCycles', 1.0, ...
+        'frameDurationSeconds', (1/2.5)/8, ...
+        'temporalFrequencyHz', 2.5, ...
+        'nTest', 1024, ...
+        'psychometricCurveSamplesNum', 5, ...
+        'examinedDirectionsOnLMplane', 0:22.5:(360-22.5), ...
+        'validationThresholds', validationThresholds);
 
 % Run with mRGCMosaic (linear response)
      t_isoresponseLMplaneEllipses(...
@@ -333,6 +424,7 @@ arguments
     options.examinedDirectionsOnLMplane (1,:) double = 0:45:315;
 
     % Fixed stimulus parameters
+    options.employMosaicSpecificConeFundamentals (1,1) logical = true;
     options.meanLuminanceCdPerM2 (1,1) double = 100;
     options.meanChromaticityXY (1,2) double = [0.30 0.32];
     options.spatialFrequency(1,1) double = 0.0;
@@ -461,6 +553,7 @@ mosaicSizeDegs = options.mosaicSizeDegs;
 mRGCRawEccDegs = options.mRGCMosaicRawEccDegs;
 mRGCRawSizeDegs = options.mRGCMosaicRawSizeDegs;
 mRGCCropSize = mosaicSizeDegs;
+employMosaicSpecificConeFundamentals = options.employMosaicSpecificConeFundamentals;
 
 meanLuminanceCdPerM2 = options.meanLuminanceCdPerM2;
 meanChromaticityXY = options.meanChromaticityXY;
@@ -572,6 +665,21 @@ orientationDegs = options.orientationDegs;
 
 debugStimulusConfig = ~true;
 
+
+
+%% Thresholds filename
+if (isempty(thresholdsDataFileName))
+    thresholdsDataFileName = ...
+        sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
+        mRGCOutputSignalType, ...
+        examinedSpatialFrequencyCPD, ...
+        opticsType, ...
+        mosaicEccDegs(1), mosaicEccDegs(2), ...
+        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
+        orientationDegs, ...
+        presentationMode);
+end
+
 % Max RMS contrast (so as to keep stimuli within the display gamut)
 rmsLMconeContrast = 0.1;
 
@@ -597,7 +705,8 @@ if (strcmp(presentationMode, 'static'))
             'spatialEnvelopeRadiusDegs', stimSizeDegs, ...
             'orientation', orientationDegs, ...
             'presentationMode', 'flashed', ... 
-            'duration', 50/1000, ...
+            'duration', frameDurationSeconds, ...
+            'frameDurationSeconds', frameDurationSeconds, ...
             'spatialPhase', spatialPhaseDegs);
 else
     % Non-static
@@ -608,7 +717,6 @@ else
     temporalModulationParams.phaseDirection = 1;
     temporalModulationParams.stimDurationTemporalCycles = stimDurationTemporalCycles;
     temporalModulationParams.temporalFrequencyHz = temporalFrequencyHz;
-
 
     gratingSceneParams = struct( ...
         'meanLuminanceCdPerM2', meanLuminanceCdPerM2, ...
@@ -634,191 +742,210 @@ if (length(examinedDirectionsOnLMplane) > 50)
 end
 
 
-%% Configure our stimulus scene engines 
-[theNullSceneEngine, theTestSceneEngines] = configureStimulusSceneEngines(...
-    theLMSconeContrastDirections, examinedSpatialFrequencyCPD, gratingSceneParams);
 
-%% Thresholds filename
-if (isempty(thresholdsDataFileName))
-    thresholdsDataFileName = ...
-        sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
-        mRGCOutputSignalType, ...
-        examinedSpatialFrequencyCPD, ...
-        opticsType, ...
-        mosaicEccDegs(1), mosaicEccDegs(2), ...
-        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
-        orientationDegs, ...
-        presentationMode);
+
+if (employMosaicSpecificConeFundamentals)
+    setupStepsRequired = 2;
+else
+    setupStepsRequired = 1;
 end
 
+for iStep = 1:setupStepsRequired
 
-%% Neural response engines
-%
-% Setup the noise-free neural response engine
-switch (whichNoiseFreeNre)
+    %% Configure our stimulus scene engines 
+    [theNullSceneEngine, theTestSceneEngines] = configureStimulusSceneEngines(...
+        theLMSconeContrastDirections, examinedSpatialFrequencyCPD, gratingSceneParams);
+
+    if ((employMosaicSpecificConeFundamentals) && (iStep == setupStepsRequired))
+        % Do not redo the neural engine installation. Just the stimulus
+        % scene engines above (with the customConeFundamentals, the second
+        % time around)
+        continue;
+    end
+
+        
+    %% Neural response engines
+    %
+    % Setup the noise-free neural response engine
+    switch (whichNoiseFreeNre)
+        
+        case 'mRGCMosaic'
+            % Set the compute function
+            nreNoiseFreeComputeFunction = @nreNoiseFreeMidgetRGCMosaic;
     
-    case 'mRGCMosaic'
-        % Set the compute function
-        nreNoiseFreeComputeFunction = @nreNoiseFreeMidgetRGCMosaic;
-
-        % Get default params struct
-        nreNoiseFreeParams = nreNoiseFreeMidgetRGCMosaic([],[],[],[], ...
-            'oiPadMethod',oiPadMethod);
-        
-        % Modify certain parameters of interest
-        %
-        % 1. Select one of the pre-computed mRGC mosaics by specifying its
-        % eccentricity, size, and type.
-        if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1)) || (mosaicSizeDegs(2) > mRGCRawSizeDegs(2))
-            mosaicSizeDegs
-            mRGCRawSizeDegs
-            error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
-        end
-        nreNoiseFreeParams.mRGCMosaicParams.eccDegs = mRGCRawEccDegs;
-        nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
-        nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
-
-        % 2. We can crop the mRGCmosaic to some desired size.
-        %    Passing [] for sizeDegs will not crop.
-        %    Passing [] for eccentricityDegs will crop the mosaic at its center.
-        nreNoiseFreeParams.mRGCMosaicParams.cropParams = struct(...
-            'sizeDegs', mRGCCropSize, ...
-            'eccentricityDegs', mosaicEccDegs ...
-            );
-
-        % 3. Set the input cone mosaic integration time to match the stimulus frame duration
-        nreNoiseFreeParams.mRGCMosaicParams.coneIntegrationTimeSeconds = gratingSceneParams.frameDurationSeconds;
-
-        % 4. Set the noise level.
-        %
-        % Post-cone summation noise is additive Gaussian noise with a desired
-        % sigma. When the input is raw cone excitations, the sigma should be
-        % expressed in terms of cone excitations/integration time. When the input
-        % to mRGCs is cone modulations with respect to the background, which have a
-        % max amplitude of 1.0, the sigma should be scaled appropriately.
-        % So if your mRGC mosiac were operating directly on cone excitations, a
-        % different value more like 100 or 1000 would be reasonable, depending on
-        % light level.
-        nreNoiseFreeParams.mRGCMosaicParams.outputSignalType = mRGCOutputSignalType;
-        if (isempty(gaussianSigma))
-            switch (mRGCOutputSignalType)
-                case 'mRGCs'
-                    gaussianSigma = 0.003;
-                case 'cones'
-                    gaussianSigma = 50;
-                otherwise
-                    error('Unknown mRGC output signal type specified');
+            % Get default params struct
+            nreNoiseFreeParams = nreNoiseFreeMidgetRGCMosaic([],[],[],[], ...
+                'oiPadMethod',oiPadMethod);
+            
+            % Modify certain parameters of interest
+            %
+            % 1. Select one of the pre-computed mRGC mosaics by specifying its
+            % eccentricity, size, and type.
+            if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1)) || (mosaicSizeDegs(2) > mRGCRawSizeDegs(2))
+                mosaicSizeDegs
+                mRGCRawSizeDegs
+                error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
             end
-        end
-
-        % 5. Optics type
-        nreNoiseFreeParams.opticsParams.type = opticsType;
-
-        % Handle cone contrast setting
-        if (useConeContrast)
-            nreNoiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
-        else
-            nreNoiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
-        end
-
-        if (useConeContrast) || (ischar(temporalFilterValues))
-            % Since we specified that mRGCs will operate on cone-contrast responses,
-            % will need a null scene for normalization
-            nreNoiseFreeParams.nullStimulusSceneSequence = theNullSceneEngine.compute(0.0);
-        end
-
-        % Handle temporal filter
-        nreNoiseFreeParams.temporalFilter = temporalFilter;
-
-        % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
-        % the specified noiseFreeParams.mRGCMosaicParams.inputSignalType
-        switch (nreNoiseFreeParams.mRGCMosaicParams.inputSignalType)
-            case 'coneContrast'
-                % Cone contrast is in the range of [-1 1]
-                if (gaussianSigma > 1)
-                    error('Gaussian noise sigma (%f) seems too large when operating on ''%s''.', ...
-                        gaussianSigma, ...
-                        nreNoiseFreeParams.mRGCMosaicParams.inputSignalType);
+            nreNoiseFreeParams.mRGCMosaicParams.eccDegs = mRGCRawEccDegs;
+            nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
+            nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
+    
+            % 2. We can crop the mRGCmosaic to some desired size.
+            %    Passing [] for sizeDegs will not crop.
+            %    Passing [] for eccentricityDegs will crop the mosaic at its center.
+            nreNoiseFreeParams.mRGCMosaicParams.cropParams = struct(...
+                'sizeDegs', mRGCCropSize, ...
+                'eccentricityDegs', mosaicEccDegs ...
+                );
+    
+            % 3. Set the input cone mosaic integration time to match the stimulus frame duration
+            nreNoiseFreeParams.mRGCMosaicParams.coneIntegrationTimeSeconds = gratingSceneParams.frameDurationSeconds;
+    
+            % 4. Set the noise level.
+            %
+            % Post-cone summation noise is additive Gaussian noise with a desired
+            % sigma. When the input is raw cone excitations, the sigma should be
+            % expressed in terms of cone excitations/integration time. When the input
+            % to mRGCs is cone modulations with respect to the background, which have a
+            % max amplitude of 1.0, the sigma should be scaled appropriately.
+            % So if your mRGC mosiac were operating directly on cone excitations, a
+            % different value more like 100 or 1000 would be reasonable, depending on
+            % light level.
+            nreNoiseFreeParams.mRGCMosaicParams.outputSignalType = mRGCOutputSignalType;
+            if (isempty(gaussianSigma))
+                switch (mRGCOutputSignalType)
+                    case 'mRGCs'
+                        gaussianSigma = 0.003;
+                    case 'cones'
+                        gaussianSigma = 50;
+                    otherwise
+                        error('Unknown mRGC output signal type specified');
                 end
-
-            case 'coneExcitations'
-                % Excitations are unlikely to be of order 1.
-                if (gaussianSigma < 1)
-                    error('Gaussian noise sigma (%f) seems too small when operating on ''%s''.', ...
-                        gaussianSigma, ...I
-                        nreNoiseFreeParams.mRGCMosaicParams.inputSignalType);
-                end
-
-            otherwise
-                error('Unknown mRGC signal type specified: ''%s''.', nreNoiseFreeParams.mRGCMosaicParams.inputSignalType)
-        end
-
-
-        % NON-LINEARITY HACKS
-        % Simulate incomplete background adaptation - puts mosaic in
-        % saturation regime of the activation function
-
-        nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.0;
-        theVisualizedConeContrastOffset = [0.0 0.0];
-
-        if (simulateHighSaturationRegime)
-            % Push responses into high saturation regime
-            nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.03;
-        
+            end
+    
+            % 5. Optics type
+            nreNoiseFreeParams.opticsParams.type = opticsType;
+    
+            % Handle cone contrast setting
+            if (useConeContrast)
+                nreNoiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneContrast';
+            else
+                nreNoiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
+            end
+   
+    
+            % Handle temporal filter
+            nreNoiseFreeParams.temporalFilter = temporalFilter;
+    
+            % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
+            % the specified noiseFreeParams.mRGCMosaicParams.inputSignalType
+            switch (nreNoiseFreeParams.mRGCMosaicParams.inputSignalType)
+                case 'coneContrast'
+                    % Cone contrast is in the range of [-1 1]
+                    if (gaussianSigma > 1)
+                        error('Gaussian noise sigma (%f) seems too large when operating on ''%s''.', ...
+                            gaussianSigma, ...
+                            nreNoiseFreeParams.mRGCMosaicParams.inputSignalType);
+                    end
+    
+                case 'coneExcitations'
+                    % Excitations are unlikely to be of order 1.
+                    if (gaussianSigma < 1)
+                        error('Gaussian noise sigma (%f) seems too small when operating on ''%s''.', ...
+                            gaussianSigma, ...I
+                            nreNoiseFreeParams.mRGCMosaicParams.inputSignalType);
+                    end
+    
+                otherwise
+                    error('Unknown mRGC signal type specified: ''%s''.', nreNoiseFreeParams.mRGCMosaicParams.inputSignalType)
+            end
+    
+    
+            % NON-LINEARITY HACKS
+            % Simulate incomplete background adaptation - puts mosaic in
+            % saturation regime of the activation function
+    
+            nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.0;
+            theVisualizedConeContrastOffset = [0.0 0.0];
+    
+            if (simulateHighSaturationRegime)
+                % Push responses into high saturation regime
+                nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.03;
+            
+                % This simply translates the visualized ellipse on the LM plane 
+                % (simulating a non-adapted simulation)
+                theVisualizedConeContrastOffset = [0.1 0.1];
+            end
+    
+            if (simulateHalfWaveRectification)
+                % Push responses to the subthreshold regime
+                nreNoiseFreeParams.mRGCMosaicParams.responseBias = -0.05;
+            end
+    
+            % Simulate ON-OFF mosaic
+            % All odd-indexes mRGCs will be treated as OFF-center, by inverting their 
+            % noise-free responses polarity in nreNoiseFreeMidgetRGCMosaic()
+            nreNoiseFreeParams.mRGCMosaicParams.simulateONOFFmosaic = simulateONOFFmosaic;
+    
+    
+        case 'excitationsCmosaic'
+            % Set the compute function
+            nreNoiseFreeComputeFunction = @nreNoiseFreeCMosaic;
+    
+            % Get default params struct
+            nreNoiseFreeParams = nreNoiseFreeCMosaic([],[],[],[], ...
+                'oiPadMethod',oiPadMethod);
+    
+            % Modify certain parameters of interest
+            nreNoiseFreeParams.coneMosaicParams.sizeDegs = mosaicSizeDegs;
+            nreNoiseFreeParams.coneMosaicParams.eccDegs = mosaicEccDegs;
+    
+            % Set the cone mosaic integration time to match the stimulus frame duration
+            nreNoiseFreeParams.coneMosaicParams.timeIntegrationSeconds = gratingSceneParams.frameDurationSeconds;
+    
+            % Handle cone contrast setting
+            if (useConeContrast)
+                nreNoiseFreeParams.coneMosaicParams.outputSignalType = 'coneContrast';
+            else
+                nreNoiseFreeParams.coneMosaicParams.outputSignalType = 'coneExcitations';
+            end
+    
+            % No temporal filter
+            nreNoiseFreeParams.temporalFilter = temporalFilter;
+    
+            % Set Gaussian sigma in case we're using Gaussian noise below.
+            if (isempty(gaussianSigma))
+                gaussianSigma = 50;
+            end
+    
+            % NON-LINEARITY HACKS
             % This simply translates the visualized ellipse on the LM plane 
             % (simulating a non-adapted simulation)
-            theVisualizedConeContrastOffset = [0.1 0.1];
-        end
+            theVisualizedConeContrastOffset = [0.0 0.0];
+    
+        otherwise
+            error('Unsupported noise free neural response engine: ''%s''.', whichNoiseFreeNre);
+    end  % switch (whichNoiseFreeNre)
 
-        if (simulateHalfWaveRectification)
-            % Push responses to the subthreshold regime
-            nreNoiseFreeParams.mRGCMosaicParams.responseBias = -0.05;
-        end
+   
+    if (employMosaicSpecificConeFundamentals) 
+        % For this computation we need the input cone mosaic and the optics that
+        % will be used for the rest of the computation
+        [theOI,theMRGCMosaic] = generateOpticsAndMosaicFromParams(...
+            nreNoiseFreeParams.opticsParams, ...
+            [], ...
+            nreNoiseFreeParams.mRGCMosaicParams);
 
-        % Simulate ON-OFF mosaic
-        % All odd-indexes mRGCs will be treated as OFF-center, by inverting their 
-        % noise-free responses polarity in nreNoiseFreeMidgetRGCMosaic()
-        nreNoiseFreeParams.mRGCMosaicParams.simulateONOFFmosaic = simulateONOFFmosaic;
+        % Compute the custom cone fundamentals and store them in gratingSceneParams
+        % so in the next pass, we can generate the desired scene
+        maxConesNumForAveraging = 3;
+        gratingSceneParams.customConeFundamentals = visualStimulusGenerator.coneFundamentalsForPositionWithinConeMosaic(...
+            theMRGCMosaic.inputConeMosaic, theOI, ...
+            mosaicEccDegs, gratingSceneParams.fovDegs, maxConesNumForAveraging);
+    end
 
+end %for iStep = 1:setupStepsRequired
 
-    case 'excitationsCmosaic'
-        % Set the compute function
-        nreNoiseFreeComputeFunction = @nreNoiseFreeCMosaic;
-
-        % Get default params struct
-        nreNoiseFreeParams = nreNoiseFreeCMosaic([],[],[],[], ...
-            'oiPadMethod',oiPadMethod);
-
-        % Modify certain parameters of interest
-        nreNoiseFreeParams.coneMosaicParams.sizeDegs = mosaicSizeDegs;
-        nreNoiseFreeParams.coneMosaicParams.eccDegs = mosaicEccDegs;
-
-        % Set the cone mosaic integration time to match the stimulus frame duration
-        nreNoiseFreeParams.coneMosaicParams.timeIntegrationSeconds = gratingSceneParams.frameDurationSeconds;
-
-        % Handle cone contrast setting
-        if (useConeContrast)
-            nreNoiseFreeParams.coneMosaicParams.outputSignalType = 'coneContrast';
-        else
-            nreNoiseFreeParams.coneMosaicParams.outputSignalType = 'coneExcitations';
-        end
-
-        % No temporal filter
-        nreNoiseFreeParams.temporalFilter = temporalFilter;
-
-        % Set Gaussian sigma in case we're using Gaussian noise below.
-        if (isempty(gaussianSigma))
-            gaussianSigma = 50;
-        end
-
-        % NON-LINEARITY HACKS
-        % This simply translates the visualized ellipse on the LM plane 
-        % (simulating a non-adapted simulation)
-        theVisualizedConeContrastOffset = [0.0 0.0];
-
-    otherwise
-        error('Unsupported noise free neural response engine: ''%s''.', whichNoiseFreeNre);
-end  % switch (whichNoiseFreeNre)
 
 % Setup the noisy neural response engine
 switch (whichNoisyInstanceNre)
@@ -864,10 +991,9 @@ end % switch (whichNoisyInstanceNre)
 
 
 %% If we use cone contrast, we will neeed a null scene for normalization.
-if (useConeContrast) 
-    nreNoiseFreeParams.nullStimulusSceneSequence = theNullSceneEngine.compute(0.0);
+if (useConeContrast) || (ischar(temporalFilterValues))
+   nreNoiseFreeParams.nullStimulusSceneSequence = theNullSceneEngine.compute(0.0);
 end
-
 
 %% Create the neural engine
 theNeuralEngine = neuralResponseEngine( ...
@@ -876,6 +1002,7 @@ theNeuralEngine = neuralResponseEngine( ...
     nreNoiseFreeParams, ...
     nreNoisyInstancesParams ...
     );
+
 
 % Set the neuralEngine's various visualization properties
 theNeuralEngine.visualizeEachCompute = visualizeEachResponse;
@@ -1297,6 +1424,7 @@ end
 
 function [theNullSceneEngine, theTestSceneEngines] = configureStimulusSceneEngines(...
     theLMSconeContrastDirections, examinedSpatialFrequencyCPD, gratingSceneParams)
+ 
 
     % Create the background scene engine
     theNullSceneEngine = createGratingSceneEngine(...

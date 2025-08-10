@@ -233,13 +233,52 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
     end
 end
 
-function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
-    % Compute the color transformation matrices for this display
-    displayLinearRGBToLMS = displayGet(presentationDisplay, 'rgb2lms');
-    displayLMSToLinearRGB = inv(displayLinearRGBToLMS);
+function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(...
+    presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
+
+    if (isfield(gratingParams, 'customConeFundamentals')) && (~isempty(gratingParams.customConeFundamentals))
+        customConeFundamentals = gratingParams.customConeFundamentals;
+        assert(isfield(customConeFundamentals, 'wavelengthSupport'), ...
+                'customConeFundamentals does not contain wavelength support info');
+        assert(isfield(customConeFundamentals, 'quantalExcitationSpectra'), ...
+                'customConeFundamentals does not contain quantalExcitationSpectra info');
+        assert(size(customConeFundamentals.quantalExcitationSpectra,2) == 3, ...
+                'customConeFundamentals.spd is not an Nx3 matrix');
+        assert(size(customConeFundamentals.quantalExcitationSpectra,1) == numel(customConeFundamentals.wavelengthSupport), ...
+                'customConeFundamentals.spf does not have the same dimensionality as customConeFundamentals.wavelengthSupport');
+    
+        % Match customConeFundamentals
+        displayWavelengths = displayGet(presentationDisplay, 'wave');
+        if (~isequal(displayWavelengths, customConeFundamentals.wavelengthSupport)) || ...
+           ((isequal(displayWavelengths, customConeFundamentals.wavelengthSupport))&&(~all(displayWavelengths==customConeFundamentals.wavelengthSupport)))
+            % Resample customConeFundamentals.spd to wavelength support matching the display
+            resampledCustomConeFundamantals = displayWavelengths*0;
+            for iChannel = 1:size(customConeFundamentals.quantalExcitationSpectra,2)
+                resampledCustomConeFundamantals(:,iChannel) = interp1(...
+                    customConeFundamentals.wavelengthSupport, customConeFundamentals.quantalExcitationSpectra(:,iChannel), ...
+                    displayWavelengths, 'linear','extrap');
+            end
+            customConeFundamentals.quantalExcitationSpectra = resampledCustomConeFundamantals;
+            customConeFundamentals.wavelengthSupport = displayWavelengths;
+        end
+
+        coneFundamentals = customConeFundamentals.quantalExcitationSpectra/max(customConeFundamentals.quantalExcitationSpectra(:));
+
+        % Compute the displayRGCtoLMS matrix
+        displayLinearRGBToLMS = (coneFundamentals' * displayGet(presentationDisplay, 'spd', displayWavelengths))';
+        displayLMSToLinearRGB = inv(displayLinearRGBToLMS);
+    else
+
+        % Compute the RGC to LMS color transformation matrices for this display
+        % using the default (i.e. foveal) cone fundamentals
+        displayLinearRGBToLMS = displayGet(presentationDisplay, 'rgb2lms');
+        displayLMSToLinearRGB = inv(displayLinearRGBToLMS);
+    end
+
+    % RGB to XYZ color transformation transformation matrix
     displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
-    
+
     % Background chromaticity and mean luminance vector
     xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.displayParams.meanLuminanceCdPerM2];
     
@@ -479,6 +518,7 @@ function p = generateDefaultParams()
         'filter',struct(...                             % spatial: apply a filter in front of the display 
             'spectralSupport',[],...                    %   A vector containing the wavelengths (nm) at which the filter's transmission properties are defined 
             'transmission',[]),...                      %   A corresponding vector of transmission values (ranging from 0 - 1) for each wavelength specified in 'spectralSupport'  
+        'customConeFundamentals', [], ...               % struct with fields {'wavelengthSupport', 'quantalExcitationSpectra'}, specifying a set of custom cone fundamentals to use (instead of the default SS2)
         'meanLuminanceCdPerM2', stimMeanLuminanceCdPerM2, ...  % background: background mean luminance, in candellas per meter squared
         'meanChromaticityXY', [0.3 0.32], ...           % background: background mean chromaticity'
         'coneContrastModulation', [0.09 -0.09 0.0], ... % chromatic direction: LMS cone contrasts

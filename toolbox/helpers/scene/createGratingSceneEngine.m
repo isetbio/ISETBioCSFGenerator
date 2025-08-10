@@ -44,6 +44,7 @@ function [gratingSceneEngine] = createGratingSceneEngine(chromaticDir, spatialFr
 % Set up parameters with defaults
 p = inputParser;
 varargin = ieParamFormat(varargin);
+p.addParameter('customConeFundamentals', [], @(x)(isempty(x)||isstruct(x)));
 p.addParameter('meanLuminanceCdPerM2', 40, @isscalar);
 p.addParameter('meanChromaticityXY', [0.3 0.32], @(x)(isnumeric(x) && numel(x) == 2));
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
@@ -79,6 +80,7 @@ gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 % Configure those parameters that we adjust through key/value pairs.
 % chromatic direction and and spatial frequency of the grating
 % with a 90 deg orientation, and a cosine spatial phase
+gratingParams.customConeFundamentals = p.Results.customConeFundamentals;
 gratingParams.meanLuminanceCdPerM2 = p.Results.meanLuminanceCdPerM2;
 gratingParams.meanChromaticityXY = p.Results.meanChromaticityXY;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
