@@ -1,28 +1,63 @@
 function plotLMthresholds()
-    maxThreshold = 0.0401;
+    maxThreshold = 0.041;
+    maxThreshold = 0.175;
     theScriptName = 't_isoResponseLMplaneEllipses';
     
     mosaicEccDegs = [0 0];
-    mosaicSizeDegs = [1 1];
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs);
+    mosaicSizeDegs = [0.59 0.59];
+    mRGCsNum = 4628;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
     mosaicEccDegs = [-4 0];
-    mosaicSizeDegs = [2 2];
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs);
+    mosaicSizeDegs = [2.1 2.1];
+    mRGCsNum = 4633;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
-    mosaicEccDegs = [-4 0];
-    mosaicSizeDegs = [2 2];
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs);
 
-    mosaicEccDegs = [-7.5 0];
-    mosaicSizeDegs = [3 3];
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs);
+    
+    mosaicEccDegs = [-7.0 0];
+    mosaicSizeDegs = [3.2 3.2];
+    mRGCsNum = 4680;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+
+
+    mosaicEccDegs = [-10.0 0];
+    mosaicSizeDegs = [2.9 2.9];
+    mRGCsNum = 2155;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+
+
+    %maxThreshold = 0.041  * 4680/2195;
+    mosaicEccDegs = [-14.0 0];
+    mosaicSizeDegs = [4.1 4.1];
+    mRGCsNum = 2195;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+
+
+
+    mosaicEccDegs = [-19.0 0];
+    mosaicSizeDegs = [6 6];
+    mRGCsNum = 2146;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+
+
+    mosaicEccDegs = [-25.0 0];
+    mosaicSizeDegs = [5.8 5.8];
+    mRGCsNum = 1069;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+
+
+
+    mosaicEccDegs = [-32.0 0];
+    mosaicSizeDegs = [9 9];
+    mRGCsNum = 1090;
+    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
 end
 
 
-function plotCones_vs_mRGCs(maxVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs)
+function plotCones_vs_mRGCs(maxVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum)
     
     % Common params
     opticsType = 'loadComputeReadyRGCMosaic';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
@@ -82,7 +117,7 @@ function plotCones_vs_mRGCs(maxVisualizedThreshold, theScriptName, mosaicEccDegs
             examinedDirectionsOnLMplane, ...
             coneThresholds, mRGCThresholds, ...
             'cones (L+M+S)', 'mRGCs (L+M+S)', ...
-            maxVisualizedThreshold,  ...
+            maxVisualizedThreshold, mosaicSizeDegs, mRGCsNum, ...
             fullfile(figureFileBaseDir, sprintf('mRGCs_vs_cones_ecc_%2.0f_degs.pdf', mosaicEccDegs(1))));
 
  end
@@ -92,8 +127,15 @@ function  visualizeComparedLMplaneThresholds(...
             examinedDirectionsOnLMplane, ...
             thresholds1, thresholds2, ...
             legend1, legend2, ...
-            maxVisualizedThreshold,  ...
+            maxVisualizedThreshold, mosaicSizeDegs, mRGCsNum, ...
             pdfFileName)
+
+    if (isempty(maxVisualizedThreshold))
+        maxVisualizedThreshold = 1.05*max([max(thresholds1) max(thresholds2)]);
+        if (maxVisualizedThreshold < 0.055)
+            maxVisualizedThreshold = 0.055;
+        end
+    end
 
     hFig = figure(2); clf;
     set(hFig, 'Color', [1 1 1]);
@@ -156,7 +198,7 @@ function  visualizeComparedLMplaneThresholds(...
 
     % LM plane thresholds-1
     
-    p1 = scatter(theAxes{1,1}, x1,y1, 300, ...
+    p1 = scatter(theAxes{1,1}, x1,y1, 10^2, ...
         'MarkerFaceColor', [1 0.5 0.7], 'MarkerEdgeColor', [1 0.5 0.7]*0.5, ...
         'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
     hold(theAxes{1,1}, 'on');
@@ -164,7 +206,7 @@ function  visualizeComparedLMplaneThresholds(...
 
     % LM plane thresholds-2
     
-    p2 = scatter(theAxes{1,1}, x2,y2, 300, ...
+    p2 = scatter(theAxes{1,1}, x2,y2, 20^2, ...
         'MarkerFaceColor', [0.5 1 0.85], 'MarkerEdgeColor', [0.5 1 0.85]*0.5, ...
         'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
 
@@ -177,9 +219,9 @@ function  visualizeComparedLMplaneThresholds(...
     axis(theAxes{1,1}, 'square');
     box(theAxes{1,1}, 'off');
     set(theAxes{1,1}, 'Color', 'none', 'Box', 'off', 'XColor', [0.1 0.1 0.1], 'YColor', [0.1 0.1 0.1]);
-    set(theAxes{1,1}, 'XTick', -.1:0.02:0.1, 'XTickLabel', {'-.1', '-.08', '-.06', '-.04', '-.02', '0', '+.02', '+.04', '+.06', '+.08', '+.1'})
-    set(theAxes{1,1}, 'YTick', -.1:0.02:0.1, 'YTickLabel', {'-.1', '-.08', '-.06', '-.04', '-.02', '0', '+.02', '+.04', '+.06', '+.08', '+.1'})
-    legend(theAxes{1,1}, [p1 p2], {'cones', 'mRGCs'}, 'Location', 'NorthOutside', 'NumColumns', 2)
+    set(theAxes{1,1}, 'XTick', -.20:0.05:0.20, 'XTickLabel', {'-.20', '-.15', '-.10', '-.05',  '0', '+.05', '+.10', '+.15', '+.20'})
+    set(theAxes{1,1}, 'YTick', -.20:0.05:0.20, 'YTickLabel', {'-.20', '-.15', '-.10', '-.05',  '0', '+.05', '+.10', '+.15', '+.20'})
+    legend(theAxes{1,1}, [p1 p2], {'input cone mosaic', sprintf('mRGC mosaic (%2.1f^o\\times%2.1f^o, N=%d)', mosaicSizeDegs(1), mosaicSizeDegs(2), mRGCsNum)}, 'Location', 'NorthOutside', 'NumColumns', 2)
     %PublicationReadyPlotLib.offsetAxes(theAxes{1,1},ff, xLims, yLims);
     PublicationReadyPlotLib.labelAxes(theAxes{1,1},ff, 'threshold contrast (L-cone)', 'threshold contrast (M-cone)');
     PublicationReadyPlotLib.applyFormat(theAxes{1,1},ff);
