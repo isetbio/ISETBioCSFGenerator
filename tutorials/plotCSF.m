@@ -1,13 +1,24 @@
 function plotCSF()
 
     if (1==1)
-        maxCSFvisualized = 70;
+        maxCSFvisualized = 90;
+        maxSFvisualizedCones = 90;
         mosaicEccDegs = [0 0];
         mosaicSizeDegs = [0.6 0.6];
         maxSFvisualized = 100;
         color1 = [1 0.5 0.7];
         color2 = [0.5 1 0.85];
-        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    
+        mosaicEccDegs = [-4 0];
+        mosaicSizeDegs = [2.1 2.1];
+        maxSFvisualized = 40;
+        maxSFvisualizedCones = 50;
+        color1 = [1 0.5 0.7];
+        color2 = [0.5 1 0.85];
+        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    
+
     else
 
         mosaicEccDegs = [0 0];
@@ -21,7 +32,7 @@ function plotCSF()
         color2 = [0.5 1 0.85];
     
         
-        plotCones_vs_mRGCs(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+        plotCones_vs_mRGCs(200, maxSFvisualized, [], mosaicEccDegs, mosaicSizeDegs, color1, color2);
         plotAchromatic_vs_LMopponent(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
         
         
@@ -94,7 +105,7 @@ function plotAchromatic_vs_LMopponent(maxCSF, maxSFvisualized, mosaicEccDegs, mo
 end
 
 
-function plotCones_vs_mRGCs(maxCSF, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2)
+function plotCones_vs_mRGCs(maxCSF, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2)
     mRGCOutputSignalType = 'cones';             % {'cones', 'mRGCs'}
     opticsType = 'loadComputeReadyRGCMosaic';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
     stimulusChroma = 'luminance';
@@ -145,7 +156,7 @@ function plotCones_vs_mRGCs(maxCSF, maxSFvisualized, mosaicEccDegs, mosaicSizeDe
     mRGCThresholds = 1./thresholdContrasts;
 
     plotComparedDataSets(spatialFreqs, ...
-        coneThresholds, mRGCThresholds, maxCSF, maxSFvisualized, [], ...
+        coneThresholds, mRGCThresholds, maxCSF, maxSFvisualizedCones, maxSFvisualized, ...
         'cones (L+M+S)', 'mRGCs (L+M+S)', ...
         color1, color2, ...
         fullfile(figureFileBaseDir,'mRGCs_vs_cones.pdf'));
@@ -355,7 +366,12 @@ function plotComparedDataSets(spatialFreqs, ...
 
 
     % CSF-1
-    idx = find(spatialFreqs <= maxSFvisualized);
+    if (~isempty(maxSFvisualized))
+        idx = find(spatialFreqs <= maxSFvisualized);
+    else
+        idx = 1:numel(spatialFreqs);
+    end
+
     plot(theAxes{1,1}, spatialFreqs(idx), thresholds1(idx), '-', 'LineWidth', 3, 'Color', color1*0.5);
     plot(theAxes{1,1}, spatialFreqs(idx), thresholds1(idx), '-', 'LineWidth', 1.5, 'Color', color1);
 
@@ -368,6 +384,8 @@ function plotComparedDataSets(spatialFreqs, ...
     % CSF-2
     if (~isempty(maxSFvisualizedHigh))
         idx = find(spatialFreqs <= maxSFvisualizedHigh);
+    else
+        idx = 1:numel(spatialFreqs);
     end
 
     plot(theAxes{1,1}, spatialFreqs(idx), thresholds2(idx), '-', 'LineWidth', 3, 'Color', color2*0.5);
