@@ -1,27 +1,36 @@
 function plotCSF()
 
-    mosaicEccDegs = [0 0];
-    mosaicSizeDegs = [2 2];
+    if (1==1)
+        maxCSFvisualized = 70;
+        mosaicEccDegs = [0 0];
+        mosaicSizeDegs = [0.6 0.6];
+        maxSFvisualized = 100;
+        color1 = [1 0.5 0.7];
+        color2 = [0.5 1 0.85];
+        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    else
 
-    maxSFvisualized = 100;
-    maxSFvisualizedAO = 200;
-
-
-    color1 = [1 0.5 0.7];
-    color2 = [0.5 1 0.85];
-
+        mosaicEccDegs = [0 0];
+        mosaicSizeDegs = [2 2];
     
-    plotCones_vs_mRGCs(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
-    plotAchromatic_vs_LMopponent(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+        maxSFvisualized = 100;
+        maxSFvisualizedAO = 200;
     
-
     
-    stimulusChroma = 'luminance';
-    plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+        color1 = [1 0.5 0.7];
+        color2 = [0.5 1 0.85];
     
-    stimulusChroma = 'red-green';
-    plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
-    
+        
+        plotCones_vs_mRGCs(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+        plotAchromatic_vs_LMopponent(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+        
+        
+        stimulusChroma = 'luminance';
+        plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+        
+        stimulusChroma = 'red-green';
+        plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    end 
 
     %plotAchromatic_vs_LMopponentAO(70);
     %plotFoveal_vs_Parafoveal2DegPhysioOptics(70);
