@@ -4,16 +4,25 @@ function plotCSF()
     mosaicSizeDegs = [2 2];
 
     maxSFvisualized = 100;
-
+    maxSFvisualizedAO = 200;
 
 
     color1 = [1 0.5 0.7];
     color2 = [0.5 1 0.85];
 
+    
     plotCones_vs_mRGCs(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
     plotAchromatic_vs_LMopponent(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
-    plotPhysiologicalOptics_vs_adaptiveOptics(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
     
+
+    
+    stimulusChroma = 'luminance';
+    plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    
+    stimulusChroma = 'red-green';
+    plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    
+
     %plotAchromatic_vs_LMopponentAO(70);
     %plotFoveal_vs_Parafoveal2DegPhysioOptics(70);
     %plotFoveal_vs_Parafoveal2DegAdaptiveOptics(70);
@@ -69,7 +78,7 @@ function plotAchromatic_vs_LMopponent(maxCSF, maxSFvisualized, mosaicEccDegs, mo
     lmOpponentThresholds = lmOpponentThresholds / normFactor;
 
     plotComparedDataSets(spatialFreqs, ...
-        lmOpponentThresholds, luminanceThresholds, maxCSF, maxSFvisualized, ...
+        lmOpponentThresholds, luminanceThresholds, maxCSF, maxSFvisualized, [], ...
         'mRGCs (L-M)', 'mRGCs (L+M+S)',  ...
         color1, color2, ...
         fullfile(figureFileBaseDir,'luma_vs_red_green.pdf'));
@@ -127,7 +136,7 @@ function plotCones_vs_mRGCs(maxCSF, maxSFvisualized, mosaicEccDegs, mosaicSizeDe
     mRGCThresholds = 1./thresholdContrasts;
 
     plotComparedDataSets(spatialFreqs, ...
-        coneThresholds, mRGCThresholds, maxCSF, maxSFvisualized, ...
+        coneThresholds, mRGCThresholds, maxCSF, maxSFvisualized, [], ...
         'cones (L+M+S)', 'mRGCs (L+M+S)', ...
         color1, color2, ...
         fullfile(figureFileBaseDir,'mRGCs_vs_cones.pdf'));
@@ -135,10 +144,10 @@ end
 
 
 
-function plotPhysiologicalOptics_vs_adaptiveOptics(maxCSF, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2)
+function plotPhysiologicalOptics_vs_adaptiveOptics(maxCSF, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2)
     mRGCOutputSignalType = 'mRGCs';
     opticsType = 'adaptiveOptics6MM';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
-    stimulusChroma = 'luminance';
+   
     orientationDegs = 120;
     presentationMode = 'drifted';
 
@@ -182,10 +191,10 @@ function plotPhysiologicalOptics_vs_adaptiveOptics(maxCSF, maxSFvisualized, mosa
     physiologicalOpticsThresholds = 1./thresholdContrasts;
 
     plotComparedDataSets(spatialFreqs, ...
-        adaptiveOpticsThresholds, physiologicalOpticsThresholds, maxCSF, maxSFvisualized, ...
-        'adaptive optics', 'physiological optics', ...
-        color1, color2, ...
-        fullfile(figureFileBaseDir,'physio_vs_adaptiveOptics.pdf'));
+        physiologicalOpticsThresholds, adaptiveOpticsThresholds, maxCSF, maxSFvisualized, maxSFvisualizedAO, ...
+        'physiological optics', 'adaptive optics', ...
+        color2, color1, ...
+        fullfile(figureFileBaseDir, sprintf('physio_vs_adaptiveOptics_%s.pdf', stimulusChroma)));
 end
 
 
@@ -325,7 +334,7 @@ end
 
 
 function plotComparedDataSets(spatialFreqs, ...
-    thresholds1, thresholds2, maxCSFvisualized, maxSFvisualized, ...
+    thresholds1, thresholds2, maxCSFvisualized, maxSFvisualized, maxSFvisualizedHigh, ...
     legend1, legend2, color1, color2, pdfFileName)
 
     hFig = figure(1); clf;
@@ -333,17 +342,40 @@ function plotComparedDataSets(spatialFreqs, ...
     ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
 
-
-    % CSF-1
-    p1 = scatter(theAxes{1,1}, spatialFreqs, thresholds1, 300, ...
-        'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerEdgeColor', color1*0.5, ...
-        'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
     hold(theAxes{1,1}, 'on');
 
+
+    % CSF-1
+    idx = find(spatialFreqs <= maxSFvisualized);
+    plot(theAxes{1,1}, spatialFreqs(idx), thresholds1(idx), '-', 'LineWidth', 3, 'Color', color1*0.5);
+    plot(theAxes{1,1}, spatialFreqs(idx), thresholds1(idx), '-', 'LineWidth', 1.5, 'Color', color1);
+
+    p1 = scatter(theAxes{1,1}, spatialFreqs(idx), thresholds1(idx), 300, ...
+        'MarkerFaceColor', color1, 'MarkerEdgeColor', color1*0.5, ...
+        'MarkerFaceAlpha', 1.0, 'LineWidth', 1.5);
+
+    idx0 = idx;
+
     % CSF-2
-    p2 = scatter(theAxes{1,1}, spatialFreqs,  thresholds2, 300, ...
+    if (~isempty(maxSFvisualizedHigh))
+        idx = find(spatialFreqs <= maxSFvisualizedHigh);
+    end
+
+    plot(theAxes{1,1}, spatialFreqs(idx), thresholds2(idx), '-', 'LineWidth', 3, 'Color', color2*0.5);
+    plot(theAxes{1,1}, spatialFreqs(idx), thresholds2(idx), '-', 'LineWidth', 1.5, 'Color', color2);
+
+
+    p2 = scatter(theAxes{1,1}, spatialFreqs(idx),  thresholds2(idx), 300, ...
         'MarkerFaceColor', color2, 'MarkerEdgeColor', color2*0.5, ...
-        'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
+        'MarkerFaceAlpha', 1.0, 'LineWidth', 1.5);
+
+    scatter(theAxes{1,1}, spatialFreqs(idx0), thresholds1(idx0), 300, ...
+        'MarkerFaceColor', color1, 'MarkerEdgeColor', color1*0.5, ...
+        'MarkerFaceAlpha', 0.5, 'LineWidth', 1.5);
+
+    scatter(theAxes{1,1}, spatialFreqs(idx),  thresholds2(idx), 300, ...
+        'MarkerFaceColor', color2, 'MarkerEdgeColor', color2*0.5, ...
+        'MarkerFaceAlpha', 0.5, 'LineWidth', 1.5);
 
     legend(theAxes{1,1}, [p1, p2], {legend1, legend2})
     % Axes scaling and ticks
@@ -351,7 +383,8 @@ function plotComparedDataSets(spatialFreqs, ...
     set(theAxes{1,1}, 'YTick', 0:10:200);
 
     % Finalize figure using the Publication-Ready format
-    xLims = [0.15 maxSFvisualized]; 
+    xLims = [0.15 200]; 
+
     yLims = [1 maxCSFvisualized];
     set(theAxes{1,1}, 'XScale', 'log', 'YScale', 'log', 'YTick', [1 3 10 30 100]);
     set(theAxes{1,1}, 'XLim', xLims, 'YLim', yLims);
