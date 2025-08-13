@@ -1,7 +1,7 @@
 function plotCSF()
 
     if (1==1)
-        maxCSFvisualized = 90;
+        maxCSFvisualized = 125;
         maxSFvisualizedCones = 90;
         mosaicEccDegs = [0 0];
         mosaicSizeDegs = [0.6 0.6];
@@ -18,6 +18,16 @@ function plotCSF()
         color2 = [0.5 1 0.85];
         plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2);
     
+
+        mosaicEccDegs = [-7 0];
+        mosaicSizeDegs = [3.2 3.2];
+        maxSFvisualized = 25;
+        maxSFvisualizedCones = 50;
+        color1 = [1 0.5 0.7];
+        color2 = [0.5 1 0.85];
+        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    
+
 
     else
 
@@ -159,7 +169,7 @@ function plotCones_vs_mRGCs(maxCSF, maxSFvisualized, maxSFvisualizedCones, mosai
         coneThresholds, mRGCThresholds, maxCSF, maxSFvisualizedCones, maxSFvisualized, ...
         'cones (L+M+S)', 'mRGCs (L+M+S)', ...
         color1, color2, ...
-        fullfile(figureFileBaseDir,'mRGCs_vs_cones.pdf'));
+        fullfile(figureFileBaseDir, sprintf('mRGCs_vs_cones_eccDegs_%2.1f.pdf', mosaicEccDegs(1))));
 end
 
 
@@ -410,7 +420,7 @@ function plotComparedDataSets(spatialFreqs, ...
     set(theAxes{1,1}, 'YTick', 0:10:200);
 
     % Finalize figure using the Publication-Ready format
-    xLims = [0.15 200]; 
+    xLims = [0.05 200]; 
 
     yLims = [1 maxCSFvisualized];
     set(theAxes{1,1}, 'XScale', 'log', 'YScale', 'log', 'YTick', [1 3 10 30 100]);
