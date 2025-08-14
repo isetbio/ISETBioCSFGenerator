@@ -212,9 +212,11 @@ arguments
     options.spatialFreqs (1,:) double = [4, 8, 16, 32];
     
     % Fixed stimulus parameters
+    options.employMosaicSpecificConeFundamentals (1,1) logical = true;
     options.meanLuminanceCdPerM2 (1,1) double = 100;
     options.meanChromaticityXY (1,2) double = [0.30 0.32];
     options.stimulusChroma (1,:) char = 'luminance'
+
     options.orientationDegs (1,1) double = 90
     options.spatialPhaseDegs (1,1) double = 0
     options.stimOnFrameIndices (1,:) double = [];
@@ -333,19 +335,23 @@ mRGCRawEccDegs = options.mRGCMosaicRawEccDegs;
 mRGCRawSizeDegs = options.mRGCMosaicRawSizeDegs;
 mRGCCropSize = mosaicSizeDegs;
 
+% Stimulus params
+employMosaicSpecificConeFundamentals = options.employMosaicSpecificConeFundamentals;
 meanLuminanceCdPerM2 = options.meanLuminanceCdPerM2;
 meanChromaticityXY = options.meanChromaticityXY;
 orientationDegs = options.orientationDegs;
 spatialPhaseDegs = options.spatialPhaseDegs;
+
+% Temporal params
 temporalFrequencyHz = options.temporalFrequencyHz;
 stimOnFrameIndices = options.stimOnFrameIndices;
-
-
 temporalFilterValues = options.temporalFilterValues;
 numberOfFrames = options.numberOfFrames;
 frameDurationSeconds = options.frameDurationSeconds;
 stimDurationTemporalCycles = options.stimDurationTemporalCycles;
 presentationMode = options.presentationMode;
+
+% Size params
 stimSizeDegs = options.stimSizeDegs;
 pixelsNum = options.pixelsNum;
 
@@ -742,6 +748,26 @@ switch (whichNoisyInstanceNre)
     otherwise
         error('Unsupported noisy instances nre specified');
 end % switch (whichNoisyInstanceNre)
+
+
+
+if (employMosaicSpecificConeFundamentals) 
+   % For this computation we need the input cone mosaic and the optics that
+   % will be used for the rest of the computation
+   [theOI,theMRGCMosaic] = generateOpticsAndMosaicFromParams(...
+            nreNoiseFreeParams.opticsParams, ...
+            [], ...
+            nreNoiseFreeParams.mRGCMosaicParams);
+
+    % Compute the custom cone fundamentals and store them in gratingSceneParams
+    % so in the next pass, we can generate the desired scene
+    maxConesNumForAveraging = 3;
+    gratingSceneParams.customConeFundamentals = visualStimulusGenerator.coneFundamentalsForPositionWithinConeMosaic(...
+            theMRGCMosaic.inputConeMosaic, theOI, ...
+            mosaicEccDegs, gratingSceneParams.fovDegs, maxConesNumForAveraging);
+end
+
+
 
 %% If we use cone contrast, we will neeed a null scene for normalization.
 %

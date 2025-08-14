@@ -1201,20 +1201,23 @@ mosaicSizeDegs = options.mosaicSizeDegs;
 mRGCRawEccDegs = options.mRGCMosaicRawEccDegs;
 mRGCRawSizeDegs = options.mRGCMosaicRawSizeDegs;
 mRGCCropSize = mosaicSizeDegs;
-employMosaicSpecificConeFundamentals = options.employMosaicSpecificConeFundamentals;
 
+% Stimulus params
+employMosaicSpecificConeFundamentals = options.employMosaicSpecificConeFundamentals;
 meanLuminanceCdPerM2 = options.meanLuminanceCdPerM2;
 meanChromaticityXY = options.meanChromaticityXY;
 spatialPhaseDegs = options.spatialPhaseDegs;
+
+% Temporal params
 temporalFrequencyHz = options.temporalFrequencyHz;
 stimOnFrameIndices = options.stimOnFrameIndices;
-
-
 temporalFilterValues = options.temporalFilterValues;
 numberOfFrames = options.numberOfFrames;
 frameDurationSeconds = options.frameDurationSeconds;
 stimDurationTemporalCycles = options.stimDurationTemporalCycles;
 presentationMode = options.presentationMode;
+
+% Size params
 stimSizeDegs = options.stimSizeDegs;
 pixelsNum = options.pixelsNum;
 
