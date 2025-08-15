@@ -1,97 +1,103 @@
-function plotCSF()
+function compareCSFs()
 
-    if (1==1)
+    % Colors
+    colorCones = [1 0.5 0.7];
+    colorMRGCPhysiologicalOpticsLuminance = [0.5 1 0.85];
+    colorMRGCPhysiologicalOpticsRedGreen = [1 0.0 0.7];
+    colorMRGCAdaptiveOpticsLuminance = 0.5*colorMRGCPhysiologicalOpticsLuminance;
+    colorMRGCAdaptiveOpticsRedGreen = 0.5*colorMRGCPhysiologicalOpticsRedGreen;
 
-        mosaicEccDegs = [0 0];
-        mosaicSizeDegs = [0.6 0.6];
-
-        maxCSFvisualized = 100;
-        maxSFvisualizedCones = 90;
-        maxSFvisualizedAO = 200;
-
-        
-        colorCones = [1 0.5 0.7];
-        colorMRGCPhysiologicalOpticsLuminance = [0.5 1 0.85];
-        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance);
-
-        colorMRGCPhysiologicalOpticsRedGreen = [1 0.0 0.7];
-        opticsType = 'loadComputeReadyRGCMosaic'; 
-        plotAchromatic_vs_LMopponent(maxCSFvisualized, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen);
-        
-        
-        colorMRGCAdaptiveOpticsLuminance = 0.5*colorMRGCPhysiologicalOpticsLuminance;
-        colorMRGCAdaptiveOpticsRedGreen = 0.5*colorMRGCPhysiologicalOpticsRedGreen;
-        opticsType = 'adaptiveOptics6MM';
-        plotAchromatic_vs_LMopponent(maxCSFvisualized, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen);
-        
-
-
-        stimulusChroma = 'luminance';
-        plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCAdaptiveOpticsLuminance);
-        
-        color2 = [1 0.0 0.0];
-        color1 = [0.5 1 0.85];
-        stimulusChroma = 'red-green';
-        plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, colorMRGCPhysiologicalOpticsRedGreen, colorMRGCAdaptiveOpticsRedGreen);
-        
-
-        pause;
-
-        mosaicEccDegs = [-4 0];
-        mosaicSizeDegs = [2.1 2.1];
-        maxSFvisualized = 40;
-        maxSFvisualizedCones = 50;
-        color1 = [1 0.5 0.7];
-        color2 = [0.5 1 0.85];
-        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2);
     
+    % FOVEAL MOSAIC
+    psfOrientationDegs = 120;
+    mosaicEccDegs = [0 0];
+    mosaicSizeDegs = [0.6 0.6];
 
-        
+    maxCSFvisualized = 100;
+    maxSFvisualized = 80;
+    maxSFvisualizedCones = 90;
+    maxSFvisualizedAO = 200;
 
-        mosaicEccDegs = [-7 0];
-        mosaicSizeDegs = [3.2 3.2];
-        maxSFvisualized = 25;
-        maxSFvisualizedCones = 50;
-        color1 = [1 0.5 0.7];
-        color2 = [0.5 1 0.85];
-        plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2);
+    % input cone mosaic- vs. mRGC mosaic- CSF
+    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance);
+
+    % L+M+S vs. L-M (physiological optics)
+    opticsType = 'loadComputeReadyRGCMosaic'; 
+    plotAchromatic_vs_LMopponent(maxCSFvisualized, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen);
     
+    % L+M+S vs. L-M (adaptive optics)
+    opticsType = 'adaptiveOptics6MM';
+    plotAchromatic_vs_LMopponent(maxCSFvisualized, maxSFvisualizedAO, opticsType, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen);
+    
+    % physiological vs. adaptive optics (L+M+S)
+    stimulusChroma = 'luminance';
+    plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCAdaptiveOpticsLuminance);
+    
+    % physiological vs. adaptive optics (L-M)
+    stimulusChroma = 'red-green';
+    plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsRedGreen, colorMRGCAdaptiveOpticsRedGreen);
 
 
-    else
 
-        mosaicEccDegs = [0 0];
-        mosaicSizeDegs = [2 2];
-    
-        maxSFvisualized = 100;
-        maxSFvisualizedAO = 200;
-    
-    
-        color1 = [1 0.5 0.7];
-        color2 = [0.5 1 0.85];
-    
-        
-        plotCones_vs_mRGCs(200, maxSFvisualized, [], mosaicEccDegs, mosaicSizeDegs, color1, color2);
-        plotAchromatic_vs_LMopponent(200, maxSFvisualized, mosaicEccDegs, mosaicSizeDegs, color1, color2);
-        
-        
-        stimulusChroma = 'luminance';
-        plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
-        
-        stimulusChroma = 'red-green';
-        plotPhysiologicalOptics_vs_adaptiveOptics(200, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2);
-    end 
+    % PARAFOVEAL MOSAIC (4 degs)
+    psfOrientationDegs = 45;
+    mosaicEccDegs = [-4 0];
+    mosaicSizeDegs = [2.1 2.1];
+    maxSFvisualized = 80;
+    maxSFvisualizedCones = 80;
 
-    %plotAchromatic_vs_LMopponentAO(70);
-    %plotFoveal_vs_Parafoveal2DegPhysioOptics(70);
-    %plotFoveal_vs_Parafoveal2DegAdaptiveOptics(70);
+    % input cone mosaic- vs. mRGC mosaic- CSF
+    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance);
+
+    % L+M+S vs. L-M (physiological optics)
+    opticsType = 'loadComputeReadyRGCMosaic'; 
+    plotAchromatic_vs_LMopponent(maxCSFvisualized, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen);
+    
+    % L+M+S vs. L-M (adaptive optics)
+    opticsType = 'adaptiveOptics6MM';
+    plotAchromatic_vs_LMopponent(maxCSFvisualized, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen);
+    
+    % physiological vs. adaptive optics (L+M+S)
+    stimulusChroma = 'luminance';
+    plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCAdaptiveOpticsLuminance);
+    
+    % physiological vs. adaptive optics (L-M)
+    stimulusChroma = 'red-green';
+    plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsRedGreen, colorMRGCAdaptiveOpticsRedGreen);
+  
+
+
+    % PARAFOVEAL MOSAIC (7 degs)
+    maxCSFvisualized = 150;
+    psfOrientationDegs = 30;
+    mosaicEccDegs = [-7 0];
+    mosaicSizeDegs = [3.2 3.2];
+
+    % input cone mosaic- vs. mRGC mosaic- CSF
+    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance);
+
+    % L+M+S vs. L-M (physiological optics)
+    opticsType = 'loadComputeReadyRGCMosaic'; 
+    plotAchromatic_vs_LMopponent(maxCSFvisualized, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen);
+    
+    
+    % physiological vs. adaptive optics (L+M+S)
+    stimulusChroma = 'luminance';
+    plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsLuminance, colorMRGCAdaptiveOpticsLuminance);
+    
+    % physiological vs. adaptive optics (L-M)
+    stimulusChroma = 'red-green';
+    plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsRedGreen, colorMRGCAdaptiveOpticsRedGreen);
+  
+
+ 
+
 end
 
-function plotAchromatic_vs_LMopponent(maxCSF, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, color1, color2)
+function plotAchromatic_vs_LMopponent(maxCSF, maxSFvisualized, opticsType, mosaicEccDegs, mosaicSizeDegs, orientationDegs, color1, color2)
     mRGCOutputSignalType = 'mRGCs';
      
     stimulusChroma = 'luminance';
-    orientationDegs = 120;
     presentationMode = 'drifted';
 
     theScriptName = 't_spatialCSF';
@@ -144,11 +150,10 @@ function plotAchromatic_vs_LMopponent(maxCSF, maxSFvisualized, opticsType, mosai
 end
 
 
-function plotCones_vs_mRGCs(maxCSF, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, color1, color2)
+function plotCones_vs_mRGCs(maxCSF, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, orientationDegs, color1, color2)
     mRGCOutputSignalType = 'cones';             % {'cones', 'mRGCs'}
     opticsType = 'loadComputeReadyRGCMosaic';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
     stimulusChroma = 'luminance';
-    orientationDegs = 120;
     presentationMode = 'drifted';
 
     theScriptName = 't_spatialCSF';
@@ -203,11 +208,10 @@ end
 
 
 
-function plotPhysiologicalOptics_vs_adaptiveOptics(maxCSF, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, color1, color2)
+function plotPhysiologicalOptics_vs_adaptiveOptics(maxCSF, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, orientationDegs, color1, color2)
     mRGCOutputSignalType = 'mRGCs';
     opticsType = 'adaptiveOptics6MM';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
    
-    orientationDegs = 120;
     presentationMode = 'drifted';
 
     theScriptName = 't_spatialCSF';
@@ -267,142 +271,8 @@ function plotPhysiologicalOptics_vs_adaptiveOptics(maxCSF, stimulusChroma, maxSF
     plotComparedDataSets(spatialFreqs, ...
         physiologicalOpticsThresholds, adaptiveOpticsThresholds, maxCSF, maxSFvisualized, maxSFvisualizedAO, ...
         'physiological optics', 'adaptive optics', ...
-        color1, color2, ...
-        fullfile(figureFileBaseDir, sprintf('physio_vs_adaptiveOptics_%s.pdf', stimulusChroma)));
+        color1, color2, fullfile(figureFileBaseDir, sprintf('physio_vs_adaptiveOptics_%s_eccDegs_%2.1f.pdf', stimulusChroma, mosaicEccDegs(1))));
 end
-
-
-function plotFoveal_vs_Parafoveal2DegAdaptiveOptics(maxCSF)
-    mRGCOutputSignalType = 'mRGCs';
-    opticsType = 'adaptiveOptics6MM';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
-    stimulusChroma = 'luminance';
-    mosaicEccDegs = [0 0];
-    mosaicSizeDegs = [1 1];
-    orientationDegs = 120;
-    presentationMode = 'drifted';
-
-    thresholdsDataFileName = ...
-        sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
-        mRGCOutputSignalType, ...
-        stimulusChroma, ...
-        opticsType, ...
-        mosaicEccDegs(1), mosaicEccDegs(2), ...
-        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
-        orientationDegs, ...
-        presentationMode);
-
-
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
-    fovealThresholds = 1./thresholdContrasts;
-
-
-    mosaicEccDegs = [-2 0];
-    thresholdsDataFileName = ...
-        sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
-        mRGCOutputSignalType, ...
-        stimulusChroma, ...
-        opticsType, ...
-        mosaicEccDegs(1), mosaicEccDegs(2), ...
-        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
-        orientationDegs, ...
-        presentationMode);
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
-    parafovealThresholds = 1./thresholdContrasts;
-
-    plotComparedDataSets(spatialFreqs, ...
-        fovealThresholds, parafovealThresholds, maxCSF, ...
-        'foveal mosaic, AO', 'parafoveal (2 deg) mosaic, AO', 'foveal_vs_parafoveal_AO.pdf');
-
-end
-
-
-function plotFoveal_vs_Parafoveal2DegPhysioOptics(maxCSF)
-    mRGCOutputSignalType = 'mRGCs';
-    opticsType = 'loadComputeReadyRGCMosaic';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
-    stimulusChroma = 'luminance';
-    mosaicEccDegs = [0 0];
-    mosaicSizeDegs = [1 1];
-    orientationDegs = 120;
-    presentationMode = 'drifted';
-
-    thresholdsDataFileName = ...
-        sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
-        mRGCOutputSignalType, ...
-        stimulusChroma, ...
-        opticsType, ...
-        mosaicEccDegs(1), mosaicEccDegs(2), ...
-        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
-        orientationDegs, ...
-        presentationMode);
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
-    fovealThresholds = 1./thresholdContrasts;
-
-
-    mosaicEccDegs = [-2 0];
-    thresholdsDataFileName = ...
-        sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
-        mRGCOutputSignalType, ...
-        stimulusChroma, ...
-        opticsType, ...
-        mosaicEccDegs(1), mosaicEccDegs(2), ...
-        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
-        orientationDegs, ...
-        presentationMode);
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
-    parafovealThresholds = 1./thresholdContrasts;
-
-    plotComparedDataSets(spatialFreqs, ...
-        fovealThresholds, parafovealThresholds, maxCSF, ...
-        'foveal mosaic & optics', 'parafoveal (2 deg) mosaic & optics', 'foveal_vs_parafoveal.pdf');
-
-end
-
-
-function plotAchromatic_vs_LMopponentAO(maxCSF)
-    mRGCOutputSignalType = 'mRGCs';
-    opticsType = 'adaptiveOptics6MM';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
-    stimulusChroma = 'luminance';
-    mosaicEccDegs = [0 0];
-    mosaicSizeDegs = [1 1];
-    orientationDegs = 120;
-    presentationMode = 'drifted';
-
-    thresholdsDataFileName = ...
-        sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
-        mRGCOutputSignalType, ...
-        stimulusChroma, ...
-        opticsType, ...
-        mosaicEccDegs(1), mosaicEccDegs(2), ...
-        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
-        orientationDegs, ...
-        presentationMode);
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
-    luminanceThresholds = 1./thresholdContrasts;
-
-    stimulusChroma = 'red-green';
-    thresholdsDataFileName = ...
-        sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
-        mRGCOutputSignalType, ...
-        stimulusChroma, ...
-        opticsType, ...
-        mosaicEccDegs(1), mosaicEccDegs(2), ...
-        mosaicSizeDegs(1),mosaicSizeDegs(2), ...
-        orientationDegs, ...
-        presentationMode);
-    load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
-    lmOpponentThresholds = 1./thresholdContrasts;
-
-    lumDir = [1 1 1]';
-    redgreenDir = [1 -1 0]';
-    normFactor = norm(lumDir)/norm(redgreenDir);
-    lmOpponentThresholds = lmOpponentThresholds / normFactor;
-
-    plotComparedDataSets(spatialFreqs, ...
-        luminanceThresholds, lmOpponentThresholds, maxCSF, ...
-        'physiological optics (L+M+S), AO', 'physiological optics (L-M), AO', 'luma_vs_red_green_AO.pdf');
-end
-
-
 
 
 
