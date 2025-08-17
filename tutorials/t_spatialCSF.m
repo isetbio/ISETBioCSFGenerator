@@ -607,6 +607,17 @@ switch (whichNoiseFreeNre)
         nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
         nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
 
+        % Adjust surround optimization substring
+        if (nreNoiseFreeParams.mRGCMosaicParams.eccDegs(1) < -20)
+            nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString = strrep(...
+                nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString, ...
+                'PackerDacey2002H1freeLowH1params', 'PackerDacey2002H1freeUpperH1params');
+        elseif (nreNoiseFreeParams.mRGCMosaicParams.eccDegs(1) < -16)
+            nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString = strrep(...
+                nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString, ...
+                'PackerDacey2002H1freeLowH1params', 'PackerDacey2002H1freeMidH1params');
+        end
+
         % 2. We can crop the mRGCmosaic to some desired size.
         %    Passing [] for sizeDegs will not crop.
         %    Passing [] for eccentricityDegs will crop the mosaic at its center.

@@ -1441,7 +1441,7 @@ for iStep = 1:setupStepsRequired
             nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
             nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
     
-
+            % Adjust surround optimization substring
             if (nreNoiseFreeParams.mRGCMosaicParams.eccDegs(1) < -20)
                 nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString = strrep(...
                     nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString, ...
@@ -1451,9 +1451,6 @@ for iStep = 1:setupStepsRequired
                     nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString, ...
                     'PackerDacey2002H1freeLowH1params', 'PackerDacey2002H1freeMidH1params');
             end
-
-            
-
 
             % 2. We can crop the mRGCmosaic to some desired size.
             %    Passing [] for sizeDegs will not crop.
