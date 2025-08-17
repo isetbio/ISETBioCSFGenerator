@@ -14,7 +14,7 @@ function compareCSFs()
     mosaicEccDegs = [0 0];
     mosaicSizeDegs = [0.6 0.6];
 
-    maxCSFvisualized = 100;
+    maxCSFvisualized = 150;
     maxSFvisualized = 90;
     maxSFvisualizedCones = 90;
     maxSFvisualizedAO = 200;
@@ -86,7 +86,8 @@ function compareCSFs()
     mosaicEccDegs = [-4 0];
     mosaicSizeDegs = [2.1 2.1];
     maxSFvisualized = 80;
-    maxSFvisualizedCones = 80;
+    maxSFvisualizedCones = 90;
+    maxSFvisualizedAO = 120;
 
     % input cone mosaic- vs. mRGC mosaic- CSF
     plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance, backgroundColor);
@@ -114,7 +115,6 @@ function compareCSFs()
         colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen, backgroundColor);
     
 
-    pause
     % L+M+S vs. L-M (adaptive optics)
     opticsType = 'adaptiveOptics6MM';
     mRGCOutputSignalType = 'mRGCs';
@@ -136,6 +136,7 @@ function compareCSFs()
         colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen, backgroundColor);
    
 
+    
 
     % physiological vs. adaptive optics (L+M+S)
     stimulusChroma = 'luminance';
@@ -146,7 +147,112 @@ function compareCSFs()
     plotPhysiologicalOptics_vs_adaptiveOptics(maxCSFvisualized, stimulusChroma, maxSFvisualized, maxSFvisualizedAO, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorMRGCPhysiologicalOpticsRedGreen, colorMRGCAdaptiveOpticsRedGreen, backgroundColor);
   
 
+    % PARAFOVEAL MOSAIC (14 degs)
+    maxCSFvisualized = 150;
+    psfOrientationDegs = 15;
+    mosaicEccDegs = [-14 0];
+    mosaicSizeDegs = [4.1 4.1];
 
+    % input cone mosaic- vs. mRGC mosaic- CSF
+    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance, backgroundColor);
+
+
+    % L+M+S vs. L-M (physiological optics)
+    opticsType = 'loadComputeReadyRGCMosaic'; 
+    mRGCOutputSignalType = 'mRGCs';
+    finalizePlotWithLegends = '';
+    hFig = [];
+    ax = [];
+    p0 = [];
+    p00 = [];
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen, backgroundColor);
+    
+    finalizePlotWithLegends = {' mRGCs (L+M+S)',  ' mRGCs (L-M)', ' cones (L+M+S)', ' cones (L-M)'};
+    mRGCOutputSignalType = 'cones';
+    plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends , ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen, backgroundColor);
+  
+
+
+    % L+M+S vs. L-M (adaptive optics)
+    opticsType = 'adaptiveOptics6MM';
+    mRGCOutputSignalType = 'mRGCs';
+    finalizePlotWithLegends = '';
+    hFig = [];
+    ax = [];
+    p0 = [];
+    p00 = [];
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualizedAO, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen, backgroundColor);
+
+    finalizePlotWithLegends = {' mRGCs (L+M+S)',  ' mRGCs (L-M)', ' cones (L+M+S)', ' cones (L-M)'};
+    mRGCOutputSignalType = 'cones';
+    plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends , ...
+        maxCSFvisualized, maxSFvisualizedAO, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen, backgroundColor);
+   
+
+    % PARAFOVEAL MOSAIC (25 degs)
+    maxCSFvisualized = 150;
+    psfOrientationDegs = 0;
+    mosaicEccDegs = [-25 0];
+    mosaicSizeDegs = [7 7];
+
+    % input cone mosaic- vs. mRGC mosaic- CSF
+    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance, backgroundColor);
+
+    % L+M+S vs. L-M (physiological optics)
+    opticsType = 'loadComputeReadyRGCMosaic'; 
+    mRGCOutputSignalType = 'mRGCs';
+    finalizePlotWithLegends = '';
+    hFig = [];
+    ax = [];
+    p0 = [];
+    p00 = [];
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen, backgroundColor);
+    
+    finalizePlotWithLegends = {' mRGCs (L+M+S)',  ' mRGCs (L-M)', ' cones (L+M+S)', ' cones (L-M)'};
+    mRGCOutputSignalType = 'cones';
+    plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends , ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen, backgroundColor);
+  
+
+
+    % L+M+S vs. L-M (adaptive optics)
+    opticsType = 'adaptiveOptics6MM';
+    mRGCOutputSignalType = 'mRGCs';
+    finalizePlotWithLegends = '';
+    hFig = [];
+    ax = [];
+    p0 = [];
+    p00 = [];
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualizedAO, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen, backgroundColor);
+
+    finalizePlotWithLegends = {' mRGCs (L+M+S)',  ' mRGCs (L-M)', ' cones (L+M+S)', ' cones (L-M)'};
+    mRGCOutputSignalType = 'cones';
+    plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends , ...
+        maxCSFvisualized, maxSFvisualizedAO, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen, backgroundColor);
+   
+
+    pause
     % PARAFOVEAL MOSAIC (7 degs)
     maxCSFvisualized = 150;
     psfOrientationDegs = 30;
