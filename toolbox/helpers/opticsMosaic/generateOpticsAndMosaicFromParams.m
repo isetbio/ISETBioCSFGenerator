@@ -27,61 +27,12 @@ if (isempty(theMosaic))
                 );
 
         case 'mRGCMosaic'
-
-            if (strcmp(opticsParams.type,'loadComputeReadyRGCMosaic'))
-                opticsParams.visualizePSFonTopOfConeMosaic = true;
-                [theMosaic, theOptics] = mRGCMosaic.loadPrebakedMosaic(mosaicParams, opticsParams);
-                theMosaic.visualize();
-            else
-                opticsParams.visualizePSFonTopOfConeMosaic = true;
-                [theMosaic, theOptics] = mRGCMosaic.loadPrebakedMosaic(mosaicParams, opticsParams);
-                theMosaic.visualize();
-            end
-
-            
-            %{
-            % - - - - - - -- - OLD - - - - - -- - -
-            % Generate the mRGC object
-            if (strcmp(opticsParams.type,'loadComputeReadyRGCMosaic'))
-                % We were passed optics parameters that the load method knows
-                % about.  Use them.
-                theMosaic = mRGCMosaic.loadComputeReadyRGCMosaic(...
-                    mosaicParams, ...
-                    opticsParams, ...
-                    mosaicParams.retinalRFmodelParams);
-
-                % Retrieve the optics that were used to optimize
-                % theMRGCmosaic we loaded, as the parameters say this is
-                % what we want here.
-                if (~isempty(theMosaic.theNativeOptics))
-                    theOptics = theMosaic.theNativeOptics;
-                elseif (~isempty(theMosaic.theCustomOptics))
-                    error('Not expecting to use theCustomOptics field here');
-                else
-                    error('No optics found in the mRGCMosaic object!')
-                end
-
-            else
-                % We will need to override the optics.  So first we generate
-                % dummy optics parameters, generate the mRGCMosiac, then
-                % generate the optics we want below.
-                dummyOpticsParams = generateOpticsParams('loadComputeReadyRGCMosaic');
-                theMosaic = mRGCMosaic.loadComputeReadyRGCMosaic(...
-                    mosaicParams, ...
-                    dummyOpticsParams, ...
-                    mosaicParams.retinalRFmodelParams);
-
-                % We pass a cone mosaic so we can use it if needed. The
-                % only parameters we need from the mosaicParams are the
-                % eccDegs field, and these exist both for cMosaic and mRGC
-                % types so we're good.  
-                %
-                % This line might be a bit fragile.
-                theOptics = generateOpticsAndMosaicFromParams(opticsParams,theMosaic.theConeMosaic,mosaicParams);
-            end
-
-            %  - - - - - - - - - END OF OLD - - - - -- -
-            %}
+            opticsParams.visualizePSFonTopOfConeMosaic = true;
+            [theMosaic, theOptics] = mRGCMosaic.loadPrebakedMosaic(mosaicParams, opticsParams);
+            theMosaic.visualize(...
+                'identifyPooledCones', true, ...
+                'identifyInputCones', true, ...
+                'plotTitle', sprintf('%d mRGCs', theMosaic.rgcsNum));
 
         otherwise
             error('Unknown mosaic type pased in mosaicParams');
@@ -92,7 +43,7 @@ if (~isempty(theOptics))
     return;
 end
 
-% Generate optics
+% Generate optics if we loaded a cMosaic, and not  an mRGCMosaic
 switch (opticsParams.type)
     case 'opticalimage'
         % It is already and optical image, we just pass it on through.
