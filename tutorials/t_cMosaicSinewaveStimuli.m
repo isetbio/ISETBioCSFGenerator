@@ -119,7 +119,6 @@ function visualizeResults(cm, thePSFData, noiseFreeConeMosaicTestStimulusActivat
     domainVisualizationLimsInset(3:4) = cm.eccentricityDegs(2) + visualizedFraction*w/2*[-1 1];
     domainVisualizationTicks = struct('x',  [nan], 'y', [nan]);
     
-
     % Visualize the entire mosaic
     ax = axes('Position',[0.08 0.57 0.92 0.4]);
     cm.visualize('figureHandle', hFig, ...
@@ -207,7 +206,7 @@ function [cm, thePSFData, noiseFreeConeMosaicTestStimulusActivation, ...
  
     % Compute the test and null stimulus scenes
     [stimulusSceneSequence, theNullStimulusScene, statusReport] = ...
-        CSFGeneratorApp.generate.gratingSceneEngine(sParams, []);
+        gratingSceneEngine(sParams, []);
     theTestStimulusScene = stimulusSceneSequence{1};
     
     if (isempty(cm))

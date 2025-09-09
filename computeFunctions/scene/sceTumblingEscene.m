@@ -31,11 +31,16 @@ function dataOut = sceTumblingEscene(sceneEngineOBJ, testEsizeDegs, sceneParams)
         presentationDisplay = displaySet(presentationDisplay, 'viewing distance', desiredViewingDistance);    
     end
 
-
     % Generate the E scene with 0 deg rotation
     theTestScene = generateTumblingEscene(...
         presentationDisplay, 'E', sceneParams, ...
         'visualizeScene', sceneParams.visualizeScene);
+
+    % Check the visualizeEachCompute flag of the sceneEngineOBJ, and if set to true,
+    % call its visualizeSceneSequence() method to visualize the generate scene sequence.
+    if (sceneEngineOBJ.visualizeEachCompute)
+        sceneEngineOBJ.visualizeSceneSequence(theTestScene, temporalSupportSeconds);
+    end
 
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence{1} = theTestScene;
@@ -116,8 +121,8 @@ function presentationDisplay = generatePresentationDisplay(...
     ambientSPD = ambientSPD/ (ambientWave(2)-ambientWave(1));
     
     % Load the RGB SPDs
-    fprintf('Loading SPDs from %s\n', fullfile(getpref('ISETBioJandJ','dataDir'),spdDataFile));
-    load(fullfile(getpref('ISETBioJandJ','dataDir'),spdDataFile), 'spd');
+    fprintf('Loading SPDs from %s\n', fullfile(projectBaseDir,'sampledata',spdDataFile));
+    load(fullfile(projectBaseDir,'sampledata',spdDataFile), 'spd');
     
     % Check data consistency
     assert(size(spd, 2) == 4, 'The SPD matrix must be an N x 4 matrix, with the first column being the spectral support');

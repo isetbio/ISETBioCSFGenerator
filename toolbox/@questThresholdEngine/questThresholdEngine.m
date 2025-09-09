@@ -7,7 +7,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     % trials, or maximum number of trials is reached.
     %
     % Usage:
-    %   See t_thresholdEngine.m
+    %   See t_spatialCSF.m
     %   Also see base class contrastThresholdEngine
     %
     %   Note. The interpretation of the stimulus units is handled by the
@@ -76,7 +76,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %                       when this is empty.  Indeed, setting to empty
     %                       means that S.E. across estimators is not used
     %                       as a stopping criterion. See
-    %                       t_thresholdEngine for elaboration on stopping.
+    %                       t_spatialCSF for elaboration on stopping.
     %
     %   'slopeRange'       - Array. An array of all possible slope for the
     %                        psychometric curve
@@ -107,7 +107,7 @@ classdef questThresholdEngine < contrastThresholdEngine
     %                    Default: @qpPFWeibull.  Other options are
     %                    qpPFWeibullLog and qpPFStandardWeibull.
     %
-    %    See also t_thresholdEngine, contrastThresholdEngine, mQUESTPlus
+    %    See also t_spatialCSF, contrastThresholdEngine, mQUESTPlus
 
     % History:
     %   04/22/23  dhb  Change sign of what happens from true to false for
@@ -289,10 +289,11 @@ classdef questThresholdEngine < contrastThresholdEngine
         function plotMLE(this, baseMarkerSize, varargin)
             p = inputParser;
             p.addParameter('newFigure', false);
+            p.addParameter('axesHandle', []);
             p.addParameter('para', []);
             parse(p, varargin{:});
             this.thresholdMLE('showPlot', true, 'newFigure', p.Results.newFigure, ...
-                'para', p.Results.para, 'pointSize', baseMarkerSize);
+                'para', p.Results.para, 'axesHandle', p.Results.axesHandle, 'pointSize', baseMarkerSize);
         end
     end   
 end

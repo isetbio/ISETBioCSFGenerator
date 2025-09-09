@@ -6,13 +6,7 @@ function t_neuralResponseCompute
 %
 % Description:
 %    Demonstrates how to generate a stimulus sequence using a
-%    @sceneEngine object and a neural compute function. The neural pipeline defined
-%    by the 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements' compute function represents
-%    the cone excitations in the absence of fixational eye movements. Here we are
-%    passing a custom neural response params struct during instantiation of the
-%    @neuralResponseEngine object. If no neural response params struct were passed, 
-%    the default neural response params defined in the 'nrePhotopigmentExcitationsConeMosaicHexWithNoEyeMovements' 
-%    compute function would be used.
+%    @sceneEngine object and a neural compute function.
 %
 % Inputs:
 %    None.
@@ -23,7 +17,7 @@ function t_neuralResponseCompute
 % Optional key/value pairs:
 %    None.
 %
-% See also: t_thresholdEngine, t_sceneGeneration, t_responseClassifier
+% See also:  t_sceneGeneration, t_spatialCSF
 %
 
 % History:
@@ -38,21 +32,23 @@ function t_neuralResponseCompute
     sceneParams = sceUniformFieldTemporalModulation;
     theSceneEngine = sceneEngine(sceneComputeFunction,sceneParams);
     
-    % Configure the function handle and the params for the @neuralResponseEngine
-    % This is a function that the USER has to specify, and write if they are not using
-    % one of our provided ones.
-    neuralComputeFunction = @nrePhotopigmentExcitationsCmosaic;
-    
-    % Custom neural response params struct. The form of this structure is
-    % defined by and is specific to the
-    % nrePhotopigmentExcitationsCmosaic compute function.  Need to match
-    % integration time to the scene.
-    customNeuralResponseParams = nrePhotopigmentExcitationsCmosaic;
-    customNeuralResponseParams.opticsParams.pupilDiameterMM = 2.0;
-    customNeuralResponseParams.coneMosaicParams.timeIntegrationSeconds = sceneParams.frameDurationSeconds;
-
-    % Instantiate a neuralResponseEngine with the custom neural response params
-    theNeuralEngine = neuralResponseEngine(neuralComputeFunction, customNeuralResponseParams);
+    % Configure the function handles and the params for the @neuralResponseEngine
+    % These are functions that the user has to specify, and write if they are not using
+    % one of our provided ones.  One funciton computes the noise free
+    % responses, while the other adds noise.
+    %
+    % We illustrate overriding some but not all of the default response
+    % parameters in the code below.
+    noiseFreeResponseParams = nreNoiseFreeCMosaic;
+    noiseFreeResponseParams.opticsParams.pupilDiameterMM = 2.0;
+    noiseFreeResponseParams.coneMosaicParams.sizeDegs = [0.25 0.25];
+    noiseFreeResponseParams.coneMosaicParams.timeIntegrationSeconds = sceneParams.frameDurationSeconds;
+    noisyInstancesParams = nreNoisyInstancesPoisson;
+    theNeuralEngine = neuralResponseEngine( ...
+        @nreNoiseFreeCMosaic, ...
+        @nreNoisyInstancesPoisson, ...
+        noiseFreeResponseParams, ...
+        noisyInstancesParams);
     
     % Specify a pedestal luminance with 70% contrast
     testContrast = 0.7;
@@ -72,52 +68,57 @@ function t_neuralResponseCompute
     % compute function should restore the rng to its current state if this
     % is passed, but not otherwise.
     instancesNum = 8;
-    noiseFlags = {'random', 'none'};
-    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
+    [noiseFreeResponse, theResponseTemporalSupportSeconds] = theNeuralEngine.computeNoiseFree(...
             theSceneSequence, ...
-            theSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags, ...
-            'rngSeed', [] ...
+            theSceneTemporalSupportSeconds ...
             );
-        
-    % The responses come back as a Matlab container, with one container
-    % entry per noise flag passed.  Extract the response matrix from the
-    % container by indexing it with the noise flag.   These are arranged as
-    % an instancesNum x nDim x nTimepoints matrix, where nDim is the
-    % dimension of the neural response at a single time point and
-    % nTimespoints is the number of time points in the sequence.
-    noiseFreeResponses = theResponses('none');
-    
-    % The noisy ('random') responses instances also comeback in the
-    % container.  These are arranged as an instancesNum x nTimepoints x nDim 
-    % matrix, where nDim is the dimension of the neural response at a
-    % single time point and nTimespoints is the number of time points in
-    % the sequence.
-    noisyInstances = theResponses('random');
+   [noisyInstances, ~] = theNeuralEngine.computeNoisyInstances(...
+            noiseFreeResponse, ...
+            theResponseTemporalSupportSeconds, ...
+            instancesNum, ...
+            'random' ...
+            );
+
     assert(size(noisyInstances,1) == instancesNum);
-    assert(size(noisyInstances,2) == length(theResponseTemporalSupportSeconds));
+    assert(size(noisyInstances,3) == length(theResponseTemporalSupportSeconds));
         
-    % Visualize all responses computes (different figures for different
-    % noise flags)
+    % Visualize responses 
     debugNeuralResponseGeneration = true;
     if (debugNeuralResponseGeneration)
-        for idx = 1:length(noiseFlags)
-            renderNeuralResponseSequence(idx, theResponses(noiseFlags{idx}), theResponseTemporalSupportSeconds, noiseFlags{idx});
-        end
+        renderNeuralResponseSequence(1, noiseFreeResponse, theResponseTemporalSupportSeconds,'noise free');
+        renderNeuralResponseSequence(2, noisyInstances, theResponseTemporalSupportSeconds,'noisy instances');
     end
     
-    % Generate 1 noisy instance with a specified rng seed
+    % Generate 1 noisy instance with a specified rng seed.  We do this
+    % a few times to verify that things work as they should
     instancesNum = 1;
-    % the noise flag must contain the 'rngSeed' substring
-    noiseFlags = {'rngSeed whatever'};
-    [theResponses, theResponseTemporalSupportSeconds] = theNeuralEngine.compute(...
-            theSceneSequence, ...
-            theSceneTemporalSupportSeconds, ...
-            instancesNum, ...
-            'noiseFlags', noiseFlags, ...
-            'rngSeed', 123456 ...
-            );
+    [noisyInstancesFixedSeed1, ~] = theNeuralEngine.computeNoisyInstances(...
+        noiseFreeResponse, ...
+        theResponseTemporalSupportSeconds, ...
+        instancesNum, ...
+        'random', ...
+        'rngSeed', 10 ...
+        );
+    [noisyInstancesFixedSeed2, ~] = theNeuralEngine.computeNoisyInstances(...
+        noiseFreeResponse, ...
+        theResponseTemporalSupportSeconds, ...
+        instancesNum, ...
+        'random', ...
+        'rngSeed', 10 ...
+        );
+    [noisyInstancesFixedSeed3, ~] = theNeuralEngine.computeNoisyInstances(...
+        noiseFreeResponse, ...
+        theResponseTemporalSupportSeconds, ...
+        instancesNum, ...
+        'random', ...
+        'rngSeed', 11 ...
+        );
+    if (any(noisyInstancesFixedSeed2 ~= noisyInstancesFixedSeed1))
+        error('Fixing seed does not result in identical noisy response');
+    end
+      if (all(noisyInstancesFixedSeed3 == noisyInstancesFixedSeed1))
+        error('Changing seed does not change noisy response');
+    end
 end
 
 function renderNeuralResponseSequence(figNo, theResponseSequence, theResponseTemporalSupportSeconds, titleLabel)

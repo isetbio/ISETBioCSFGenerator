@@ -3,95 +3,198 @@ classdef neuralResponseEngine < handle
 %
 % Syntax:
 %   theNeuralResponseEngine =
-%      neuralResponseEngine(neuralComputeFunctionHandle, neuralResponseParamsStruct)
+%      neuralResponseEngine(noiseFreeComputeFunctionHandle, noisyInstancesComputeFunctionHandle, ...
+%       noiseFreeComputeParams, noisyInstancesComputeParams)
 %
 % Description:
-%    The neuralResponseEngine stores the optics and coneMosaic returned by
-%    its computeFunction (whenever they are returned), so that they can be
-%    reused in subsequent calls of its computeFunction.
-%
-%
+%    The neuralResponseEngine computes neural responses according to the
+%    passed compute functions. It is the compute functions that determine
+%    the semantics of the computation. As described below, one compute
+%    function computes a noise free response instance, while the other
+%    produces noisy instances from the noise free response. 
+%    The neuralResponseEngine contains a default visualization function
+%    which will plot the computed neural responses as a function of time.
+%    This visualization does not include the spatial position of the
+%    underlying neural mosaic, it just displays each neuron's response at a
+%    different y-coordinate. Users can supply function handles to specialized
+%    visualization functions. When this is done, the user's visualization function
+%    will be used instead of the default visualization function, each time
+%    neuralResponseEngine.visualize() is called
+%    
 % Inputs:
-%    neuralComputeFunctionHandle     - Function handle to the computeFunction that defines the
+%    noiseFreeComputeFunctionHandle     - Function handle to the noiseFreeComputeFunction that defines the
 %                                       operation of the employed neural response pipeline
 %
-%    neuralResponseParamsStruct      - Struct with parameters specific to the computeFunction. 
+%    noiseFreeResponseParams           - Struct with parameters specific to the noiseFreeComputeFunction. 
 %                                      Optional. If not defined, the default params
-%                                      defined in the computeFunction are used
+%                                      defined by the computeFunction are used
+%
+%    noisyInstancesComputeFunctionHandle - Function handle to the noisyInstancesComputeFunction that defines the
+%                                       operation of the employed neural response pipeline
+%
+%    noisyInstancesResponseParams      - Struct with parameters specific to the noisyInstancesComputeFunction. 
+%                                      Optional. If not defined, the default params
+%                                      defined by the computeFunction are used
+%
 % Outputs:
 %    The created neuralResponseEngine object.
 %
-% Optional key/value pairs: None
-%
+% Optional key/value pairs:
+%    None
 %
 % See Also:
 %    t_neuralResponseCompute.m
-%
 
 % History:
-%    9/20/2020  NPC Wrote it
+%    9/20/2020   NPC Wrote it
+%    12/18/2024 DHB Major updates
 
     %% Public properties
     properties
 
+        % User-settable flag for computing and storing visualization metadata even if
+        % there is no custom visualization function call. If this is set to
+        % true, or if a customVisualizationFunction has been passed,
+        % the compute method will store any computed visualization metadata
+        % in the read-only property obj.visualizationMetaData
+        computeVisualizationMetaData  = false;
+
+        % User-settable flag for visualizing the output of each compute() call
+        visualizeEachCompute = false;
+
+        % User-settable parameter speficying that we want to generate a
+        % video of the response, if it is not [], and the filename of the
+        % video to be generated
+        responseVideoFileName = [];
+
+        % User-settable ID (just a string) to label the condition that this
+        % neuralResponseEngine corresponds to. Used when saving videos of
+        % responses but could be used also for figures etc
+        ID = '';
+
+        % User-settable visualization function handle
+        % If set, the default visualization function is by passed and the
+        % function pointed to by this handle is executed instead
+        customVisualizationFunctionHandle = [];
+
+        % User-settable max no of visualized noisy response instances
+        maxVisualizedNoisyResponseInstances = 1;
     end
     
     %% Private properties
     properties (SetAccess=private)        
-        % User-supplied compute function handle to the neural computation routine
-        neuralComputeFunction
+        % User-supplied compute function handles for the neural computation routine
+        noiseFreeComputeFunction
+        noisyInstancesComputeFunction
 
         % User-supplied struct with all neural computation params
-        neuralParams
+        noiseFreeComputeParams
+        noisyInstancesComputeParams
         
         % The neural pipeline struct  - generated by the user-supplied compute function
         neuralPipeline
-        
-        % Valid noise flags
-        validNoiseFlags = {'none', 'random'};
+
+        % Any computed visualization metadata
+        visualizationMetaData = [];
     end
     
     % Public methods
     methods
         % Constructor
-        function obj = neuralResponseEngine(neuralComputeFunctionHandle, neuralResponseParamsStruct)
+        function obj = neuralResponseEngine(noiseFreeComputeFunctionHandle, noisyInstancesComputeFunctionHandle, noiseFreeComputeParams, noisyInstancesComputeParams)
             % Validate and set the scene compute function handle
-            obj.validateAndSetComputeFunctionHandle(neuralComputeFunctionHandle);
+            obj.validateAndSetComputeFunctionHandle(noiseFreeComputeFunctionHandle,noisyInstancesComputeFunctionHandle);
             
             % If we dont receice a paramsStruct as the second argument use
             % the default params returned by the neuralComputeFunctionHandle
-            if (nargin == 1)
-                neuralResponseParamsStruct = obj.neuralComputeFunction();
+            if (nargin == 2)
+                noiseFreeComputeParams = obj.noiseFreeComputeFunction();
+                noisyInstancesComputeParams = obj.noiseFreeComputeFunction();
+            elseif (nargin ~= 4)
+                error('Must pass either two or four arguments to nre constructor');
             end
-             
-            % Validate and set the scene params struct
-            obj.validateAndSetParamsStruct(neuralResponseParamsStruct);
+
+            % Set the parameter structures
+            obj.validateAndSetParamsStruct(noiseFreeComputeParams, noisyInstancesComputeParams);
+
         end
         
-        % Method to set a custom neural pipeline
-        function customNeuralPipeline(obj, thePipeline)
-            obj.neuralPipeline = thePipeline;
+        % Method to set a custom neural pipeline.
+        %
+        % This lets you stick anything you want into the neuralPipeline
+        % field of the object. With great power comes great responsibility.
+        % We enforce little structure on what you do here, so you need to make
+        % sure that your compute methods are compatible with whatever you
+        % put here.
+        function customNeuralPipeline(obj, noiseFreeResponsePipeline,noisyInstancesPipeline)
+            if (~isempty(noiseFreeResponsePipeline))
+                obj.neuralPipeline.noiseFreeResponse = noiseFreeResponsePipeline;
+            end
+            if (~isempty(noisyInstancesPipeline))
+                obj.neuralPipeline.noisInstances = noisyInstancesPipeline;
+            end
         end
         
-        % Compute method
-        [neuralResponses, temporalSupportSeconds] = compute(obj, ...
-                theSceneSequence, theSceneTemporalSupportSeconds, instancesNum, varargin);
+        % Compute method for noise free response
+        [noiseFreeResponses, temporalSupportSeconds] = computeNoiseFree(obj, ...
+                theSceneSequence, temporalSupportSeconds, varargin);
+
+        % Compute method for noisy instances
+        [noisyResponseInstances, temporalSupportSeconds] = computeNoisyInstances(obj, ...
+                noiseFreeResponses, temporalSupportSeconds, instancesNum, varargin);
         
-        function updateParamsStruct(obj, paramsStruct)
-            % Set the neural params
-            obj.neuralParams = paramsStruct;
+        function updataVisualizationMetadata(obj, visualizationMetaData)
+            obj.visualizationMetaData = visualizationMetaData;
+        end
+        
+        % Response visualization method. This is a gateway function.
+        % If the obj.customVisualizationFunctionHandle is not set by the user,
+        % the default visualization function is used.
+        % If it is set, the default visualization is bypassed and the
+        % user's visualization function is used instead. 
+        visualize(obj, neuralResponses, temporalSupportSeconds, varargin);
+
+        function updateParamsStruct(obj, noiseFreeComputeParams, noisyInstancesComputeParams)
+            % Set the compute params
+            obj.validateAndSetParamsStruct(noiseFreeComputeParams, noisyInstancesComputeParams);
+        end
+   
+    
+        % Setter for custom visualization function handle
+        function set.customVisualizationFunctionHandle(obj, val)
+           if (isempty(val))
+               obj.customVisualizationFunctionHandle = [];
+           else
+               % Make sure that the visualization function handle is valid
+               fh = functions(val);
+               if (~isempty(fh.file))
+                   obj.customVisualizationFunctionHandle = val;
+               else
+                   warning('neuralResponseEngine:setCustomVisualizationFunctionHandle', 'visualization function ''%s'' was not found. Will use the default nre.visualize() method', fh.function);
+                   obj.customVisualizationFunctionHandle = [];
+               end
+            end
         end
 
-        % Method to validate the passed noiseFlags
-        validateNoiseFlags(obj,noiseFlags);
-    end
-    
+    end  % Public methods
+
+
     % Private methods
     methods (Access = private)
         % Method to validate and set the scene compute function handle
-        validateAndSetComputeFunctionHandle(obj,sceneComputeFunctionHandle);
+        validateAndSetComputeFunctionHandle(obj,computeNoiseFreeFunctionHandle,computeNoisyInstancesFunctionHandle);
+
         % Method to validate and set the scene params struct
-        validateAndSetParamsStruct(obj,sceneParamsStruct);
+        validateAndSetParamsStruct(obj,computeNoiseFreeParamsStruct,computeNoisyInstancesParamsStruct);
     end
     
+    % Public static methods.  These are useful functions that can be called
+	% without having to instantiate a @nre object first
+	methods (Static)
+        theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, ...
+            theNoisyResponseInstances, activationFunctionParams);
+        [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ...
+            responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = parseVisualizationOptions(options);
+    end % static methods
+
 end

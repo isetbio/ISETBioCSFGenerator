@@ -6,8 +6,8 @@ function t_tumblingESceneEngine()
     % Make sure figures and results directories exist so that output writes
     % don't fail
     rootPath = ISETBioCSFGeneratorRootPath;
-    if (~exist(fullfile(rootPath,'local','figures'),'dir'))
-        mkdir(fullfile(rootPath,'local','figures'));
+    if (~exist(fullfile(rootPath,'local',mfilename,'figures'),'dir'))
+        mkdir(fullfile(rootPath,'local',mfilename,'figures'));
     end
 
     % Obtain the default params for the tumblingEscene engine
@@ -132,7 +132,7 @@ function t_tumblingESceneEngine()
             );
 
     projectBaseDir = ISETBioCSFGeneratorRootPath;
-    pdfFile = fullfile(projectBaseDir,'local','figures','t_tumblingESceneEngine_stimuli.pdf');
+    pdfFile = fullfile(projectBaseDir,'local',mfilename,'figures','t_tumblingESceneEngine_stimuli.pdf');
     NicePlot.exportFigToPDF(pdfFile,hFig, 300);
 end
 

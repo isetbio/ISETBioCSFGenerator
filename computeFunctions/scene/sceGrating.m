@@ -9,6 +9,7 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %    Compute function to be used as a computeFunctionHandle for a @sceneEngine
 %    object. There are 2 ways to use this function.
 %
+%       [1] If called wihtout arguments, itt does not compute anything and
 %           it does not compute anything and simply returns a struct with the 
 %           defaultParams that define the scene.
 %
@@ -19,6 +20,15 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %
 %    All scene functions used with the sceneEngine class must conform to
 %    this API.
+%
+%    In addition to computing, this function checks the
+%    `visualizeEachCompute` flag of the sceneEngineOBJ and, if it is set,
+%    calls its visualizeSceneSequence() method of the sceneEngineOBJ. This
+%    causes figures to appear that visualize the generated scene sequence,
+%    which is helpful for debugging. Note that everything runs much more
+%    slowly in this case.  You can also call the visualizeSceneSequence
+%    method directly if you want to see the scene sequence at some
+%    particular point in your code.  See computeThreshold, for example.
 %
 % Inputs:
 %    sceneEngineOBJ              - Calling @sceneEngine object.  This is
@@ -33,6 +43,11 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %                                  As noted above, execute sceGrating at
 %                                  the command line to see the structure's
 %                                  fields and default values.
+% 
+%                                  The fields and their meanings are
+%                                  provided in the function that generates
+%                                  the default parameters at the end of
+%                                  this source file.
 %
 % Outputs:
 %    dataOut  - A struct that depends on the input arguments. 
@@ -52,7 +67,7 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 %    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration, t_thresholdEngine
+%     t_sceneGeneration, t_spatialCSF, createGratingSceneEngine.
 
 % History:
 %    10/05/2020  NPC  Wrote it.
@@ -87,11 +102,18 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
     validateParams(gratingParams);
     
     % Generate the display on which the gratings are rendered
-    presentationDisplay = generatePresentationDisplay(gratingParams);
+    gratingParams.displayParams.spectralSupport = gratingParams.spectralSupport;
+    presentationDisplay = generateConventionalxyYDisplay(gratingParams.displayParams);
     
     % Generate ths scene sequence depicting frames of the modulated grating
     [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast);
-    
+
+    % Check the visualizeEachCompute flag of the sceneEngineOBJ, and if set to true,
+    % call its visualizeSceneSequence() method to visualize the generate scene sequence.
+    if (sceneEngineOBJ.visualizeEachCompute)
+        sceneEngineOBJ.visualizeSceneSequence(theSceneSequence, temporalSupportSeconds);
+    end
+
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence = theSceneSequence;
     dataOut.temporalSupport = temporalSupportSeconds;
@@ -102,7 +124,7 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
 end
 
 function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast)
-
+  
     switch (gratingParams.temporalModulation)
         case 'flashed'
             for frameIndex = 1:gratingParams.temporalModulationParams.stimDurationFramesNum
@@ -113,7 +135,8 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
                 % Initially we set the stimulus contrast of all the frames
                 % to testContrast
                 frameContrastSequence(frameIndex) = testContrast;
-                % if the stimulus should disappear in any given frame, then
+
+                % If the stimulus should disappear in any given frame, then
                 % the contrast is reset to 0
                 if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
                     frameContrastSequence(frameIndex) = 0;
@@ -123,32 +146,42 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
         case 'drifted'
             % Compute the time (in sec) needed to complete 1 cycle
             stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
+
             % Compute the time (in frame) needed to compute 1 cycle
             stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
+
             % Compute the phase needed to shift for each frame
             deltaSpatialPhaseDegs = 360/stimDurationOneCycleFrames;
-            % Compute the total number of frames 
-            % = total drifting cycles x number of frames needed for 1 cycle
-            stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
+
+            % Number of frames 
+            stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
             
             for frameIndex = 1:stimDurationFramesNum
-                % Contrast is kept constant throughout all frames
+                % Contrast is kept constant throughout all frames, except
+                % when stimulus is off
                 frameContrastSequence(frameIndex) = testContrast;
+                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
+                    frameContrastSequence(frameIndex) = 0;
+                end
+
                 % Spatial phase is advanced
-                frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs;
+                frameSpatialPhaseSequence(frameIndex) = (frameIndex-1)*deltaSpatialPhaseDegs * gratingParams.temporalModulationParams.phaseDirection;
             end
     
-    
-        case 'counter phase modulated'
+        case 'counterphasemodulated'
             % See the comments for case 'drifted' for the four lines below
             stimDurationOneCycleSeconds = 1.0/gratingParams.temporalModulationParams.temporalFrequencyHz;
             stimDurationOneCycleFrames = stimDurationOneCycleSeconds / gratingParams.frameDurationSeconds;
             deltaTemporalPhaseDegs = 360/stimDurationOneCycleFrames;
-            stimDurationFramesNum = ceil(gratingParams.temporalModulationParams.stimDurationTemporalCycles * stimDurationOneCycleFrames);
-
+            stimDurationFramesNum = gratingParams.temporalModulationParams.stimDurationFramesNum;
+            
             for frameIndex = 1:stimDurationFramesNum
                 % Contrast is modulated sinusoidally 
-                frameContrastSequence(frameIndex) = testContrast * sind((frameIndex-1)*deltaTemporalPhaseDegs);
+                frameContrastSequence(frameIndex) = testContrast * cosd((frameIndex-1)*deltaTemporalPhaseDegs) * gratingParams.temporalModulationParams.phaseDirection;
+                if (~ismember(frameIndex, gratingParams.temporalModulationParams.stimOnFrameIndices))
+                    frameContrastSequence(frameIndex) = 0;
+                end
+                
                 % Spatial pahse is kept constant throughout the frames
                 frameSpatialPhaseSequence(frameIndex) = gratingParams.spatialPhaseDegs;
             end
@@ -156,29 +189,22 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
         otherwise
             error('Unknown temporal modulation: ''%s''.\n', gratingParams.temporalModulation);
     end
-
-    displayProgressBar = false; % getpref('ISET','waitbar');
-    if (displayProgressBar)
-        % Open progress bar
-        hProgressBar = waitbar(0,'Generating scene sequence...');
-    end
     
+    % Setup
     theSceneSequence = cell(1, numel(frameContrastSequence));
     temporalSupportSeconds = zeros(1, numel(frameContrastSequence));
     outOfGamutFlag = zeros(1, numel(frameContrastSequence));
     
     % Generate each frame
     for frameIndex = 1:numel(frameContrastSequence)
-        % Update progress bar
-        if (displayProgressBar)
-            waitbar(frameIndex/numel(frameContrastSequence),hProgressBar,...
-                sprintf('Calculating scene frame %d of %d', frameIndex, numel(frameContrastSequence)));
-        end
-        
         % Generate the scene frame
         [theSceneFrame, outOfGamutFlag(frameIndex)] = generateGratingSequenceFrame(presentationDisplay, gratingParams, ...
             frameContrastSequence(frameIndex), frameSpatialPhaseSequence(frameIndex));
         
+        % Name the scene frame
+        theSceneFrameLabel = sprintf('''%s'' - frame %d with contrast: %g', gratingParams.temporalModulation, frameIndex, frameContrastSequence(frameIndex));
+        theSceneFrame = sceneSet(theSceneFrame, 'name', theSceneFrameLabel);
+
         % Store the scene frame
         theSceneSequence{frameIndex} = theSceneFrame;
         % Store the timestamp of the scene frame
@@ -191,11 +217,6 @@ function [theSceneSequence, temporalSupportSeconds, statusReport] = generateGrat
     else
         statusReport = struct();
     end
-
-    if (displayProgressBar)
-        % Close progress bar
-        close(hProgressBar);
-    end
 end
 
 function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presentationDisplay, gratingParams, frameContrast, frameSpatialPhaseDegs)
@@ -206,7 +227,7 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(presenta
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
     
     % Background chromaticity and mean luminance vector
-    xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.meanLuminanceCdPerM2];
+    xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.displayParams.meanLuminanceCdPerM2];
     
     % Background XYZ tri-stimulus values
     backgroundXYZ = (xyYToXYZ(xyY(:)))';
@@ -396,40 +417,6 @@ function contrastPattern = generateSpatialModulationPattern(gratingParams, frame
     contrastPattern = contrastPattern .* envelope;
 end
 
-function presentationDisplay = generatePresentationDisplay(gratingParams)
-    % Generic LCD display
-    presentationDisplay = displayCreate(gratingParams.screenDisplay, ...
-        'viewing distance', gratingParams.viewingDistanceMeters, ...
-        'wave', gratingParams.spectralSupport ...        % Custom spectral support
-        );
-
-    % Custom LUT and bit depth
-    if (gratingParams.gammaTableExponent == 1)
-        % Linear LUT
-        N = 2^gratingParams.bitDepth;
-        gTable = repmat(linspace(0, 1, N), 3, 1)';
-    else
-        x = linspace(0,1,2^gratingParams.bitDepth);
-        gTable = x(:).^gratingParams.gammaTableExponent;
-        gTable = repmat(gTable, [1,3]);
-    end
-    % Set the gamma table
-    presentationDisplay = displaySet(presentationDisplay, 'gTable', gTable);
-    
-    % Adjust display SPDs so we can generate desired mean luminance.
-    %
-    % Why the factor of 2.1 here?  What we (DHB/FH) think is that this
-    % means is that when the mean luminance is set, we can present a 100%
-    % contrast luminance grating in gamut, with a little headroom.  To put
-    % it another way, you need the factor of 2, and the factor of 2.1
-    % provides a little bit of safety margin.
-    desiredPeakLuminance = gratingParams.meanLuminanceCdPerM2 * 2.1;
-    peakLuminance = displayGet(presentationDisplay, 'peak luminance');
-    scalingFactor = desiredPeakLuminance / peakLuminance;
-    spds = displayGet(presentationDisplay, 'spd primaries');
-    presentationDisplay = displaySet(presentationDisplay, 'spd primaries', spds*scalingFactor);
-end
-
 function validateParams(gratingParamsStruct)
     defaultParamsStruct = generateDefaultParams();
     defaultFieldNames = fieldnames(defaultParamsStruct);
@@ -444,6 +431,7 @@ function validateParams(gratingParamsStruct)
     end
     
     % Further validations
+    %
     % spatialEnvelope
     if (isfield(gratingParamsStruct, 'spatialEnvelope'))
         assert(ismember(gratingParamsStruct.spatialEnvelope, {'none', 'disk', 'rect', 'soft','halfcos'}), ...
@@ -460,25 +448,25 @@ function validateParams(gratingParamsStruct)
     
     % temporalModulationParams
     if (isfield(gratingParamsStruct, 'temporalModulation'))
-        assert(ismember(gratingParamsStruct.temporalModulation, {'flashed', 'drifted', 'counter phase modulated'}), ...
+        assert(ismember(gratingParamsStruct.temporalModulation, {'flashed', 'drifted', 'counterphasemodulated'}), ...
             sprintf('>> Invalid value for temporalModulation: ''%s''.\n>> Inspect the generateDefaultParams() function of %s.m for valid parameter values.', ...
             gratingParamsStruct.temporalModulation, mfilename()));
     end
 end
 
 function p = generateDefaultParams()
+    stimMeanLuminanceCdPerM2 = 40;
+    displayParams = generateConventionalxyYDisplayDefaultParams;
+    displayParams.meanLuminanceCdPerM2 = stimMeanLuminanceCdPerM2;
 
     p = struct(...
-        'screenDisplay', 'LCD-Apple',...                % display: the screen display type
+        'spectralSupport', 400:10:750, ...              % spectral support for the computations
+        'displayParams', displayParams, ...
         'filter',struct(...                             % spatial: apply a filter in front of the display 
             'spectralSupport',[],...                    %   A vector containing the wavelengths (nm) at which the filter's transmission properties are defined 
-            'transmission',[]),...                      %   A corresponding vector of transmission values (ranging from 0 - 1) for each wavelength specified in 'spectralSupport' 
-        'viewingDistanceMeters', 0.57, ...              % display: viewing distance
-        'bitDepth', 20, ...                             % display: length of LUT
-        'gammaTableExponent', 2.0, ...                  % display: shape of LUT, 1 = Linear
-        'spectralSupport', 400:10:750, ...              % display: spectral support of the primary SPDs, in nanometers
-        'meanLuminanceCdPerM2', 40, ...                 % background: mean luminance, in candellas per meter squared
-        'meanChromaticityXY', [0.3 0.32], ...           % background: neutral mean chromaticity
+            'transmission',[]),...                      %   A corresponding vector of transmission values (ranging from 0 - 1) for each wavelength specified in 'spectralSupport'  
+        'meanLuminanceCdPerM2', stimMeanLuminanceCdPerM2, ...  % background: background mean luminance, in candellas per meter squared
+        'meanChromaticityXY', [0.3 0.32], ...           % background: background mean chromaticity'
         'coneContrastModulation', [0.09 -0.09 0.0], ... % chromatic direction: LMS cone contrasts
         'warningInsteadOfErrorOnOutOfGamut', false, ... % chromatic: whether to throw an error or a warning if out-of-gamut pixels are generated
         'fovDegs', 1.0, ...                             % spatial: field of view, in degrees
@@ -492,13 +480,13 @@ function p = generateDefaultParams()
         'spatialModulationDomain', 'cartesian', ...     % spatial: domain of spatial modulation - choose between {'cartesian', 'polar'}
         'spatialEnvelope', 'soft', ...                  % spatial: envelope - choose between {'disk', 'rect', 'soft'}
         'spatialEnvelopeRadiusDegs', 0.15, ...          % spatial: radius of the spatial envelope, in degs    
-        'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed', 'drifted', 'counter phase modulated'}
+        'temporalModulation', 'flashed', ...            % temporal modulation mode: choose between {'flashed', 'drifted', 'counterphasemodulated'}
         'temporalModulationParams', struct(...          % temporal: modulation params struct
+            'phaseDirection', 1, ...                    %   increase or decrease phase
             'stimOnFrameIndices', [2 3], ...            %   params relevant to the temporalModulationMode
             'stimDurationFramesNum', 4), ...            %   params relevant to the temporalModulationMode
-        'frameDurationSeconds', 20/1000 ...            % temporal: frame duration, in seconds
+        'frameDurationSeconds', 20/1000 ...             % temporal: frame duration, in seconds
     );
-
 end
 
 function RGBimage = tonemap(RGBimage)

@@ -28,9 +28,9 @@ function t_cMosaicSpatioTemporalStimulation
     mosaicSizeDegs = [1 1]*0.5;
     mosaicEcc = [0 0];
     
-    
     % Stimulus params
     meanLuminancdCdPerM2 = 100;
+    
     % This mean chromaticity maximizes the achievable acrhomatic contrast
     meanChromaticityXY = [0.31 0.34];
     chromaDir = [1 1 1];
@@ -42,9 +42,10 @@ function t_cMosaicSpatioTemporalStimulation
     % The stimulus presentation mode            
     presentationMode = 'drifted';
 
-    % Frame duration for each spatial phase (20 msec)
-    % The cone mosaic integration time has to be smaller or equal to this
-    displayFrameDurationSeconds = 25/1000;
+    % Frame duration
+    %
+    % The cone mosaic integration time has to be equal to this
+    displayFrameDurationSeconds = 100/1000;
 
     % Spatial frequency in c/deg
     spatialFrequency = 10;
@@ -59,10 +60,11 @@ function t_cMosaicSpatioTemporalStimulation
     spatialPhaseAdvanceDegs = 360 * displayFrameDurationSeconds * temporalFrequencyHz;
 
     % Instantiate a scene engine for drifting gratings
-    driftingGratingSceneEngine = createGratingScene(chromaDir(:), spatialFrequency, ...
+    driftingGratingSceneEngine = createGratingSceneEngine(chromaDir(:), spatialFrequency, ...
                     'meanLuminanceCdPerM2', meanLuminancdCdPerM2, ...
                     'meanChromaticityXY', meanChromaticityXY, ...
                     'duration', stimulusDurationSeconds, ...
+                    'frameDurationSeconds', displayFrameDurationSeconds, ...
                     'temporalFrequencyHz', temporalFrequencyHz, ...
                     'spatialPhaseAdvanceDegs', spatialPhaseAdvanceDegs, ...
                     'fovDegs', stimFOVdegs, ...
@@ -78,12 +80,10 @@ function t_cMosaicSpatioTemporalStimulation
     [theDriftingGratingSequence, theStimulusTemporalSupportSeconds] = ...
         driftingGratingSceneEngine.compute(stimContrast);
 
-
     % Visualize the stimulus
     driftingGratingSceneEngine.visualizeSceneSequence(...
             theDriftingGratingSequence, theStimulusTemporalSupportSeconds);
   
-
     % Generate mosaic centered at target eccentricity
     fprintf('\t Computing mosaic\n');
     theConeMosaic = cMosaic(...
@@ -92,8 +92,7 @@ function t_cMosaicSpatioTemporalStimulation
                 'opticalImagePositionDegs', 'mosaic-centered', ...
                 'integrationTime', displayFrameDurationSeconds ...
                 );
-
-    
+  
     fprintf('\t Computing optics\n');
     % Select ranking of displayed subject
     rankedSujectIDs = PolansOptics.constants.subjectRanking;
@@ -112,19 +111,17 @@ function t_cMosaicSpatioTemporalStimulation
     % Extract the optics
     theOptics = oiEnsemble{1};
    
-
     % Compute the sequence of optical images corresponding to the drifting grating
     fprintf('Computing the optical image sequence');
-    
     framesNum = numel(theDriftingGratingSequence);
     theListOfOpticalImages = cell(1, framesNum);
     for frame = 1:framesNum
         theListOfOpticalImages{frame} = ...
             oiCompute(theOptics, theDriftingGratingSequence{frame}, 'pad value', 'mean');
     end
+
     % Generate an @oiSequence object from the list of computed optical images
     theOIsequence = oiArbitrarySequence(theListOfOpticalImages, theStimulusTemporalSupportSeconds);
-
 
     % Compute the spatiotemporal cone-mosaic activation (mean response + 4
     % noisy response instances)

@@ -13,10 +13,11 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %    routine, so a struct with an unintersting field is returned just to
 %    keep the calling machinery happy.
 %
-%    When called from a parent @responseClassifierEngine object with operationMode set to 'predict', it
-%    sets up the Poission log-likehood ratio (LL) for the decision, using
-%    the mean of the passed N responses as a template.  Pass
-%    noise free responses to get the signal known exactly version.
+%    When called from a parent @responseClassifierEngine object with
+%    operationMode set to 'train', it sets up the Poission log-likehood
+%    ratio (LL) for the decision, using the mean of the passed N responses
+%    as a template.  Pass noise free responses to get the signal known
+%    exactly version.
 %
 %    When this is called from a parent @responseClassifierEngine object
 %    with operationMode set to 'predict', it makes correct/incorrect
@@ -26,6 +27,10 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %    This function models an N-way forced choice task with one stimulus
 %    presented per trial, so that each trial is has responses to be one of the
 %    N possible alternatives.
+%
+%    It can be used to handle TAFC if you stack the two alternatives into
+%    one long response, which is done (e.g.) in computePerformance when the
+%    TAFC flag is set.
 %
 %    Typically, training will be with one noise free instances of each of
 %    the N alternatives, while testing will be on noisy instances.  For
@@ -50,7 +55,8 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %                    theResponses   - an N-dimensional cell array, with each entry
 %                                     a [mInstances x nDims x tTimePoints] matrix
 %                                     of responses for one of the N alternatives.
-%                    whichAlternatives - Not used. 
+%                    whichAlternatives - Optional. Not used and can be
+%                                     omitted or passed as empty.
 %
 %               In 'predict' mode:  
 %                    theResponses   - an [mTrials x nDims x nTimePoints]
@@ -58,6 +64,11 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %                    whichAlternatives - Vector of dimension mTrials whose
 %                                     entries are integers in the range [1,N] and which
 %                                     specify the alternative presented on each trial.
+%                                     If this is omitted or passed as
+%                                     empty, the routine still predicts the
+%                                     alternative presented on each trial,
+%                                     but returns responses and pCorrect
+%                                     fields below as NaN.
 %
 % Outputs:
 %    dataOut                  - If function called with no input arguments,
@@ -77,7 +88,7 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %                                   templates to be used by classifier to
 %                                   predict.
 %             
-%                              For 'predict', the struct has two fields as
+%                               For 'predict', the struct has two fields as
 %                               required by responseClassifierEngine
 %                               objects.
 %                                 .trialPredictions : Vector with trial-by-trial
@@ -87,14 +98,18 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 %                                 .pCorrect         : Probability correct, which is
 %                                                     just the mean of the trialPredictions
 %                                                     field.
+%                                 .whichAlternativesPredicted : Vector with
+%                                                   trial-by-trial alternative predicted.
+%                                The trialPredictions and pCorrect fields
+%                                come back as NaN if whichAlternatives is
+%                                not passed, or passed as empty.
 %
 % Optional key/value pairs:
 %   None.
 %
-% See also: t_thresholdEngine, t_responseClassifer,
+% See also: t_spatialCSF, computePerformance
 %           PoissonDecisionLogLikelihood,
-%           PoissonIdealObserverNAlternativeFC.
-%            
+%           PoissonIdealObserverNAlternativeFC.           
 
 % History:
 %   12/03/21  dhb  Started on this.
@@ -106,6 +121,8 @@ function dataOut = rcePoisson(obj, operationMode, classifierParamsStruct, theRes
 if (nargin == 0)
     dataOut = struct('Classifier', 'Poisson Forced Choice Ideal Observer');
     return;
+elseif (nargin < 5 | isempty(whichAlternatives))
+    whichAlternatives = [];
 end
 
 % Check operation mode
@@ -115,6 +132,12 @@ end
     
 if (strcmp(operationMode, 'train'))  
     % No noise response template for each alternative stimulus 
+    %
+    % This code stretches the responses x time out along the columns,
+    % with each instances a row, and then takes the mean over rows.
+    %
+    % Usually we just pass one instance, but if you have lots of noisy
+    % instances you can get the template as the mean of all of them.
     for ii = 1:length(theResponses)
         theTemplates{ii} = mean(theResponses{ii}(:, :), 1);
         theTemplates{ii}(theTemplates{ii} == 0) = 1e-6;
@@ -131,11 +154,14 @@ if (strcmp(operationMode, 'predict'))
     
     % Make sure number of instances matches across passed responses.
     nTrials = size(theResponses, 1);
-    assert(nTrials == length(whichAlternatives));
+    if (~isempty(whichAlternatives))
+        assert(nTrials == length(whichAlternatives));
+    end
     
     % Compute response finding which of the possible alternatives has the
     % highest likelihood.
     response = zeros(1, nTrials);
+    whichAlternativesPredicted = zeros(1, nTrials);
     nAlternatives = length(theTemplates);
     trialDecisionLikelihoods = zeros(nTrials,nAlternatives);
     for tt = 1:nTrials
@@ -146,19 +172,24 @@ if (strcmp(operationMode, 'predict'))
 
         % Pick the winner
         [~,whichAlternativeList] = max(trialDecisionLikelihoods(tt,:));
-        whichAlternative = whichAlternativeList(1);
+        whichAlternativesPredicted(tt) = whichAlternativeList(1);
 
         % See if it was correct
-        if (whichAlternative == whichAlternatives(tt))
-            response(tt) = 1;
+        if (~isempty(whichAlternatives))
+            if (whichAlternativesPredicted(tt) == whichAlternatives(tt))
+                response(tt) = 1;
+            else
+                response(tt) = 0;
+            end
         else
-            response(tt) = 0;
+            response(tt) = NaN;
         end
     end
     
     % Set up return
     dataOut.trialPredictions = response;
     dataOut.pCorrect = mean(response);
+    dataOut.whichAlternativePredicted = whichAlternativesPredicted;
     
     return;
 end

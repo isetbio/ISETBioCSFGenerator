@@ -24,6 +24,12 @@ function dataOut = sceMetaContrast(sceneEngineOBJ,testContrast,sceneParamsStruct
 %    All scene functions used with the sceneEngine class must conform to
 %    this API.
 %
+%    If you want to visualize scene sequences that this genreates using the
+%    'visualizeEachCompute' property of scene engines, you want to set that
+%    property on the scene engine that this calls.  That will still only
+%    give you the two contrasts that it computes for, but that is probably
+%    enough.
+%
 % Inputs:
 %    sceneEngineOBJ             - Calling @sceneEngine object.  This is
 %                                  currently unused, but passing it allows us
@@ -57,7 +63,7 @@ function dataOut = sceMetaContrast(sceneEngineOBJ,testContrast,sceneParamsStruct
 %    The source code contains examples.
 %
 % See Also:
-%     t_sceneGeneration, t_thresholdEngine
+%     t_sceneGeneration, t_spatialCSF
 
 % History:
 %    08/09/2024  dhb  Wrote it.

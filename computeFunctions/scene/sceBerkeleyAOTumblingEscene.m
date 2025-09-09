@@ -1,4 +1,73 @@
 function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sceneParams)
+% Compute function for generating a sequence of scenes depicting a
+% scene sequence of tumbling E's.
+%
+% Syntax:
+%   dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sceneParams)
+%
+% Description:
+%    Compute function to be used as a computeFunctionHandle for a @sceneEngine
+%    object. There are 2 ways to use this function.
+%
+%       [1] If called wihtout arguments, itt does not compute anything and
+%           it does not compute anything and simply returns a struct with the 
+%           defaultParams that define the scene.
+%
+%       [2] If called with arguments, as it is from a parent @sceneEngine object,
+%           it computes a cell array of scenes defining the frames of a
+%           stimulus and the temporal support of the frames. These are
+%           returned as named fields of the returned dataOut struct.
+%
+%    All scene functions used with the sceneEngine class must conform to
+%    this API.
+%
+%    In addition to computing, this function checks the
+%    `visualizeEachCompute` flag of the sceneEngineOBJ and, if it is set,
+%    calls its visualizeSceneSequence() method of the sceneEngineOBJ. This
+%    causes figures to appear that visualize the generated scene sequence,
+%    which is helpful for debugging. Note that everything runs much more
+%    slowly in this case.  You can also call the visualizeSceneSequence
+%    method directly if you want to see the scene sequence at some
+%    particular point in your code.  See computeThreshold, for example.
+%
+% Inputs:
+%    sceneEngineOBJ              - Calling @sceneEngine object.  This is
+%                                  currently unused, but passing it allows us
+%                                  flexibility in the future and matches
+%                                  conventions for the other classes in
+%                                  this toolbox.
+%    testESizeDegs               - Scalar providing the size of the test E in degrees.                          
+%    sceneParamsStruct           - Struct containing properties of the
+%                                  scene understood by this function.
+%                                  As noted above, execute sceGrating at
+%                                  the command line to see the structure's
+%                                  fields and default values.
+% 
+%                                  The fields and their meanings are
+%                                  provided in the function that generates
+%                                  the default parameters at the end of
+%                                  this source file.
+%
+% Outputs:
+%    dataOut  - A struct that depends on the input arguments. 
+%
+%               If called directly with no input arguments, the returned struct contains
+%               the defaultParams that define the grating scene
+%
+%             - If called from a parent @sceneEngine, the returned
+%               struct is organized as follows:
+%                 .sceneSequence : a cell array of scenes defining the frames of the generated grating scene sequence                            
+%                 .temporalSupport : the temporal support of the frames of the generated grating scene sequence, in seconds            
+%
+% Optional key/value input arguments:
+%     None.
+%
+% See Also:
+%     t_sceneGeneration, t_spatialCSF, createGratingSceneEngine.
+
+% History:
+%  01/12/24  dhb  Added comments and started work on generalizing
+
     % Check input arguments. If called with zero input arguments, just return the default params struct
     if (nargin == 0)
         dataOut = generateDefaultParams();
@@ -6,17 +75,14 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     end
 
     % Validate params
-    assert(rem(sceneParams.displayPixelSize,2) == 0, 'display assumed to have even number of pixels');
+    assert(rem(sceneParams.displayParams.displayPixelSize,2) == 0, 'display assumed to have even number of pixels');
     assert(rem(sceneParams.letterHeightPixels,2) == 0, 'letterHeight must be an even number of pixels');
     assert(rem(sceneParams.letterWidthPixels,2) == 0, 'letterWidth must be an even number of pixels');
     assert(ismember(sceneParams.letterRotationDegs, [0 90 180 270]), 'letterRotationDegs must be in 0, 90, 180, or 270');
 
-    % Assign passed sceneParams to struct paramsForTextRendering, to avoid
-    % confusion.  We will then add fields to the latter and pass it on.
-    paramsForTextRendering = sceneParams;
-
     % Generate the display on which the tumbing E scenes are presented
-    presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams);
+    sceneParams.displayParams.spectralSupport = sceneParams.spectralSupport;
+    presentationDisplay = generateBerkeleyAODisplay(sceneParams.displayParams);
 
     % Decide bitmap to use.  Here we define a custom E bitmap in a function
     % at the bottom of this script, that returns a 15 by 15 pixel square E.
@@ -37,28 +103,34 @@ function dataOut = sceBerkeleyAOTumblingEscene(sceneEngineOBJ, testESizeDeg, sce
     % Allowing this was an idea we had, but because the bitmapped letter
     % gets scaled below, quite what values we want may depend on the letter
     % size.
-    paramsForTextRendering.yOffset = 0; % shift up (negative) or down (positive)
-    paramsForTextRendering.xOffset = 0; % shift left (negative) or right (positive)
+    sceneParams.yOffset = 0; % shift up (negative) or down (positive)
+    sceneParams.xOffset = 0; % shift left (negative) or right (positive)
 
     % Figure out how many rows and columns we want the E bitmap to be
     testESizeMin = testESizeDeg*60;
-    letterHeightUnquantizedPixels = sizeScalingFactor*((testESizeMin/60)/(paramsForTextRendering.displayFOVDeg))*paramsForTextRendering.displayPixelSize;
-    paramsForTextRendering.letterHeightPixels = 2*round(letterHeightUnquantizedPixels/2);
-    paramsForTextRendering.letterWidthPixels = 2*round(letterHeightUnquantizedPixels*(letterPixelAspectRatio)/2);
-    paramsForTextRendering.yPixelsNumMargin = (paramsForTextRendering.displayPixelSize-paramsForTextRendering.letterHeightPixels)/2;
-    paramsForTextRendering.xPixelsNumMargin =  (paramsForTextRendering.displayPixelSize-paramsForTextRendering.letterWidthPixels)/2;
-    paramsForTextRendering.upSampleFactor = uint8(1);
+    letterHeightUnquantizedPixels = sizeScalingFactor*((testESizeMin/60)/(sceneParams.displayParams.displayFOVDeg))*sceneParams.displayParams.displayPixelSize;
+    sceneParams.letterHeightPixels = 2*round(letterHeightUnquantizedPixels/2);
+    sceneParams.letterWidthPixels = 2*round(letterHeightUnquantizedPixels*(letterPixelAspectRatio)/2);
+    sceneParams.yPixelsNumMargin = (sceneParams.displayParams.displayPixelSize-sceneParams.letterHeightPixels)/2;
+    sceneParams.xPixelsNumMargin =  (sceneParams.displayParams.displayPixelSize-sceneParams.letterWidthPixels)/2;
+    sceneParams.upSampleFactor = uint8(1);
 
     % Check pixel consistency
-    rowsNum = paramsForTextRendering.letterHeightPixels + paramsForTextRendering.yPixelsNumMargin*2;
-    colsNum = paramsForTextRendering.letterWidthPixels + paramsForTextRendering.xPixelsNumMargin*2;
-    if (rowsNum ~= paramsForTextRendering.displayPixelSize || colsNum ~= paramsForTextRendering.displayPixelSize)
+    rowsNum = sceneParams.letterHeightPixels + sceneParams.yPixelsNumMargin*2;
+    colsNum = sceneParams.letterWidthPixels + sceneParams.xPixelsNumMargin*2;
+    if (rowsNum ~= sceneParams.displayParams.displayPixelSize || colsNum ~= sceneParams.displayParams.displayPixelSize)
         error('Have not computed rowsNum and colsNum or some other parameter consistently.');
     end
 
     [theTestSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequence(...
-        presentationDisplay, theCustomBitMap, paramsForTextRendering, ...
-        'visualizeScene', paramsForTextRendering.visualizeScene);
+        presentationDisplay, theCustomBitMap, sceneParams, ...
+        'visualizeScene', sceneParams.visualizeScene);
+
+    % Check the visualizeEachCompute flag of the sceneEngineOBJ, and if set to true,
+    % call its visualizeSceneSequence() method to visualize the generate scene sequence.
+    if (sceneEngineOBJ.visualizeEachCompute)
+        sceneEngineOBJ.visualizeSceneSequence(theSceneSequence, temporalSupportSeconds);
+    end
 
     % Assemble dataOut struct - required fields
     dataOut.sceneSequence = theTestSceneSequence;
@@ -85,18 +157,21 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
         numFrames = 1;
         xShiftPerFrame = 0;
         yShiftPerFrame = 0;
+        stimOnFrames = 1;
     else
         frameRateHz = paramsForTextRendering.temporalModulationParams.frameRateHz;
         numFrames = paramsForTextRendering.temporalModulationParams.numFrames;
         xShiftDegrees = paramsForTextRendering.temporalModulationParams.xShiftPerFrame;
         yShiftDegrees = paramsForTextRendering.temporalModulationParams.yShiftPerFrame;
         backgroundRGBPerFrame = paramsForTextRendering.temporalModulationParams.backgroundRGBPerFrame;
+        foregroundRGBPerFrame = paramsForTextRendering.temporalModulationParams.foregroundRGBPerFrame;
+        stimOnFrames = paramsForTextRendering.temporalModulationParams.stimOnFrames;
     end
     frameDurationSec = 1 / frameRateHz;
 
     % Calculate degrees per pixel
-    displayFOVDeg = paramsForTextRendering.displayFOVDeg;
-    displayPixelSize = paramsForTextRendering.displayPixelSize;
+    displayFOVDeg = paramsForTextRendering.displayParams.displayFOVDeg;
+    displayPixelSize = paramsForTextRendering.displayParams.displayPixelSize;
     degreesPerPixel = displayFOVDeg / displayPixelSize;
 
     % Convert shifts from degrees to pixels
@@ -110,6 +185,10 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
     xPixelsNumMargin0 = paramsForTextRendering.xPixelsNumMargin;
     yPixelsNumMargin0 = paramsForTextRendering.yPixelsNumMargin;
 
+    % Save actual foregroundRGB
+    foregroundRGB = paramsForTextRendering.chromaSpecification.foregroundRGB;
+
+
     % Generate each frame
     for frameIndex = 1:numFrames
         % Update scene parameters for current frame.  This handles the
@@ -117,8 +196,21 @@ function [theSceneSequence, temporalSupportSeconds] = generateTumblingEsceneSequ
         paramsForTextRendering.xPixelsNumMargin = xPixelsNumMargin0 + xShiftPixels(frameIndex) + paramsForTextRendering.xOffset;
         paramsForTextRendering.yPixelsNumMargin = yPixelsNumMargin0  + yShiftPixels(frameIndex) + paramsForTextRendering.yOffset;
 
-        % change background for each frame
-        paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
+        if (~isempty(foregroundRGBPerFrame))
+             % change BOTH the foreground & background for each frame so we
+             % can model both increments and decrements E
+             paramsForTextRendering.chromaSpecification.foregroundRGB = foregroundRGBPerFrame(frameIndex, :);
+             paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
+        else
+            % ONLY change background for each frame - previous behavior
+            % where we modeled only the decrements E
+            paramsForTextRendering.chromaSpecification.backgroundRGB = backgroundRGBPerFrame(frameIndex, :);
+            if (stimOnFrames(frameIndex))
+                paramsForTextRendering.chromaSpecification.foregroundRGB = foregroundRGB;
+            else
+                paramsForTextRendering.chromaSpecification.foregroundRGB = backgroundRGBPerFrame(frameIndex, :);
+            end
+        end
 
         % Generate the scene frame
         theSceneFrame = generateTumblingEscene(presentationDisplay, theChar, paramsForTextRendering, 'visualizeScene', visualizeScene);
@@ -144,8 +236,8 @@ function theScene = generateTumblingEscene(...
     textSceneParams = struct(...
         'textString', theChar, ...                                                         % Text to display, can be letter or bitmap. 
         'textRotation', paramsForTextRendering.letterRotationDegs, ...                     % Rotation (0,90,180,270 only)
-        'rowsNum', paramsForTextRendering.displayPixelSize, ...                            % Pixels along the vertical (y) dimension
-        'colsNum', paramsForTextRendering.displayPixelSize, ...                            % Pixels along the horizontal (x) dimension
+        'rowsNum', paramsForTextRendering.displayParams.displayPixelSize, ...                            % Pixels along the vertical (y) dimension
+        'colsNum', paramsForTextRendering.displayParams.displayPixelSize, ...                            % Pixels along the horizontal (x) dimension
         'textBitMapRescaledRowsCols', [paramsForTextRendering.letterHeightPixels paramsForTextRendering.letterWidthPixels], ...
         'targetRow', paramsForTextRendering.yPixelsNumMargin, ...                          % Y-pixel offset 
         'targetCol', paramsForTextRendering.xPixelsNumMargin, ...                          % X-pixel offset 
@@ -162,10 +254,10 @@ end
 %% Return a structure with the fields and default parameters for this scene engine
 function p = generateDefaultParams()
 
+    displayParams = generateBerkeleyAODisplayDefaultParams;
+
     p = struct(...
-        'displayPixelSize', 512, ...            % Linear display pixel size
-        'displayFOVDeg', 1.413, ...             % Linear field size in degrees
-        'viewingDistanceMeters', 3, ...         % Far enough away to be in good focus
+        'displayParams', displayParams, ...     % Display parameters
         'letterRotationDegs', 0, ...            % Letter rotation (0,90,180,270 only)
         'letterHeightPixels', 20, ...           % Letter height in pixels - must be 20
         'letterWidthPixels', 18, ...            % Letter width in pixels - must be 18
@@ -181,8 +273,9 @@ function p = generateDefaultParams()
                 'numFrames', 1, ...                 % number of frames we want the E on for
                 'xShiftPerFrame', 0, ...            % shift E in the x dimension in each frame in degree
                 'yShiftPerFrame', 0, ...
+                'foregroundRGBPerFrame', [], ...
                 'backgroundRGBPerFrame', [1 0 0]), ...           % shift E in the y dimension in each frame in degree
-        'wave', (400:10:860)', ...              % Wavelength sampling for primaries
+        'spectralSupport', (400:10:860)', ...   % Wavelength sampling for primaries
         'AOPrimaryWls', [840 650 540], ...      % Display spd center wavelengths
         'AOPrimaryFWHM', [10 10 10], ...        % Display spd FWHM in nm
         'AOAOCornealPowersUW', [141.4 0 0], ... % Display spd power full on
@@ -191,28 +284,6 @@ function p = generateDefaultParams()
         'visualizeScene', false, ...            % Whether to visualize the generated scene
         'plotDisplayCharacteristics', false ... % Whether to visualize the display characteristics
        );
-end
-
-%% Generate a display that mimics the Berkeley AO system
-function presentationDisplay = generateBerkeleyAOPresentationDisplay(sceneParams)
-
-   % We know the dispaly FOV and number of pixels.  We choose a distance
-   % far enough way and compute DPI to make it work out.
-   inchesPerMeter = 39.3701;
-   displaySizeMeters = 2*sceneParams.viewingDistanceMeters*tand(sceneParams.displayFOVDeg/2);
-   displayDotsPerMeter = sceneParams.displayPixelSize/displaySizeMeters;
-   displayDPI = displayDotsPerMeter/inchesPerMeter;
-
-   % Now build the display given all the wonderful things we know about it.
-   presentationDisplay = generateCustomDisplay(...
-       'viewingDistanceMeters', sceneParams.viewingDistanceMeters, ...
-       'dotsPerInch', displayDPI, ...
-       'wavelengthSupportNanoMeters', sceneParams.wave, ...
-       'spectralPowerDistributionWattsPerSteradianM2NanoMeter', sceneParams.spd, ...
-       'ambientSPDWattsPerSteradianM2NanoMeter', sceneParams.ambientSpd, ...
-       'gammaTable', repmat((linspace(0,1,1024)').^2, [1 3]), ...
-       'plotCharacteristics', sceneParams.plotDisplayCharacteristics);
-    
 end
 
 function TxtIm = textToCustomBitmap(text)

@@ -5,11 +5,15 @@ p = inputParser;
 p.addParameter('skipOutOfGamutCheck', false, @islogical);
 p.addParameter('frameToVisualize', 1, @isscalar);
 p.addParameter('opticalImageInsteadOfScene', []);
+p.addParameter('sRGBforSceneVisualization', false, @islogical);
+p.addParameter('axesHandle', [], @(x)(isempty(x)||(ishandle(x))));
 
 p.parse(varargin{:});
 skipOutOfGamutCheck = p.Results.skipOutOfGamutCheck;
 frameIndex = p.Results.frameToVisualize;
 theOI = p.Results.opticalImageInsteadOfScene;
+axesHandle = p.Results.axesHandle;
+sRGBforSceneVisualization = p.Results.sRGBforSceneVisualization;
 
 % Get the scene at the frame index
 theScene = sceneSequence{frameIndex};
@@ -81,10 +85,19 @@ else
 end
 
 % Render image
-image(x,y,displaySettingsImage);
+if (isempty(axesHandle))
+    axesHandle = gca;
+end
+
+if (sRGBforSceneVisualization)
+    image(axesHandle,x,y,lrgb2srgb(displaySettingsImage));
+else
+    image(axesHandle,x,y,displaySettingsImage);
+end
+
 % Cross hairs
-hold on;
-set(gca, 'XTick', [], 'YTick', []);
+hold(axesHandle,'on');
+set(axesHandle, 'XTick', [], 'YTick', []);
 drawnow;
 
 end
