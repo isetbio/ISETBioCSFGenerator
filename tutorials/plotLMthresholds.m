@@ -1,63 +1,65 @@
 function plotLMthresholds()
     maxThreshold = 0.041;
     maxThreshold = 0.175;
+    maxConeVisualizedThreshold = 0.25 * maxThreshold; 
+
     theScriptName = 't_isoResponseLMplaneEllipses';
     
     mosaicEccDegs = [0 0];
     mosaicSizeDegs = [0.59 0.59];
     mRGCsNum = 4628;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
     mosaicEccDegs = [-4 0];
     mosaicSizeDegs = [2.1 2.1];
     mRGCsNum = 4633;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
     
     mosaicEccDegs = [-7.0 0];
     mosaicSizeDegs = [3.2 3.2];
     mRGCsNum = 4680;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
     mosaicEccDegs = [-10.0 0];
     mosaicSizeDegs = [2.9 2.9];
     mRGCsNum = 2155;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
     %maxThreshold = 0.041  * 4680/2195;
     mosaicEccDegs = [-14.0 0];
     mosaicSizeDegs = [4.1 4.1];
     mRGCsNum = 2195;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
 
     mosaicEccDegs = [-19.0 0];
     mosaicSizeDegs = [6 6];
     mRGCsNum = 2146;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
     mosaicEccDegs = [-25.0 0];
     mosaicSizeDegs = [5.8 5.8];
     mRGCsNum = 1069;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
 
     mosaicEccDegs = [-32.0 0];
     mosaicSizeDegs = [9 9];
     mRGCsNum = 1090;
-    plotCones_vs_mRGCs(maxThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
+    plotCones_vs_mRGCs(maxThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum);
 
 
 end
 
 
-function plotCones_vs_mRGCs(maxVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum)
+function plotCones_vs_mRGCs(maxVisualizedThreshold, maxConeVisualizedThreshold, theScriptName, mosaicEccDegs, mosaicSizeDegs, mRGCsNum)
     
     % Common params
     opticsType = 'loadComputeReadyRGCMosaic';   % {'loadComputeReadyRGCMosaic', 'adaptiveOptics6MM'} 
@@ -117,7 +119,8 @@ function plotCones_vs_mRGCs(maxVisualizedThreshold, theScriptName, mosaicEccDegs
             examinedDirectionsOnLMplane, ...
             coneThresholds, mRGCThresholds, ...
             'cones (L+M+S)', 'mRGCs (L+M+S)', ...
-            maxVisualizedThreshold, mosaicSizeDegs, mRGCsNum, ...
+            maxConeVisualizedThreshold, maxVisualizedThreshold, ...
+            mosaicSizeDegs, mRGCsNum, ...
             fullfile(figureFileBaseDir, sprintf('mRGCs_vs_cones_ecc_%2.0f_degs.pdf', mosaicEccDegs(1))));
 
  end
@@ -127,7 +130,8 @@ function  visualizeComparedLMplaneThresholds(...
             examinedDirectionsOnLMplane, ...
             thresholds1, thresholds2, ...
             legend1, legend2, ...
-            maxVisualizedThreshold, mosaicSizeDegs, mRGCsNum, ...
+            maxVisualizedThreshold, maxVisualizedThreshold2, ...
+            mosaicSizeDegs, mRGCsNum, ...
             pdfFileName)
 
     if (isempty(maxVisualizedThreshold))
@@ -137,19 +141,29 @@ function  visualizeComparedLMplaneThresholds(...
         end
     end
 
+    if (isempty(maxVisualizedThreshold2))
+        maxVisualizedThreshold2 = 1.05*max([max(thresholds1) max(thresholds2)]);
+        if (maxVisualizedThreshold2 < 0.055)
+            maxVisualizedThreshold2 = 0.055;
+        end
+    end
+
+
+    thresholdGainToAccountForMaxVisualizedThreshold2 = maxVisualizedThreshold2/maxVisualizedThreshold;
+
     hFig = figure(2); clf;
     set(hFig, 'Color', [1 1 1]);
     ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
 
     % Plot the axes
-    plot(theAxes{1,1},  maxVisualizedThreshold*[-1 1], [0 0], 'k-', 'LineWidth', 1.0);
+    plot(theAxes{1,1},  maxVisualizedThreshold2*[-1 1], [0 0], 'k-', 'LineWidth', 1.0);
     hold(theAxes{1,1}, 'on');
-    plot(theAxes{1,1},  [0 0], maxVisualizedThreshold*[-1 1], 'k-', 'LineWidth', 1.0);
+    plot(theAxes{1,1},  [0 0], maxVisualizedThreshold2*[-1 1], 'k-', 'LineWidth', 1.0);
 
  
-    x1 = cosd(examinedDirectionsOnLMplane) .* thresholds1;
-    y1 = sind(examinedDirectionsOnLMplane) .* thresholds1;
+    x1 = cosd(examinedDirectionsOnLMplane) .* thresholds1 * thresholdGainToAccountForMaxVisualizedThreshold2;
+    y1 = sind(examinedDirectionsOnLMplane) .* thresholds1 * thresholdGainToAccountForMaxVisualizedThreshold2;
 
     x2 = cosd(examinedDirectionsOnLMplane) .* thresholds2;
     y2 = sind(examinedDirectionsOnLMplane) .* thresholds2;
@@ -212,10 +226,8 @@ function  visualizeComparedLMplaneThresholds(...
 
    
 
-    xLims = maxVisualizedThreshold*[-1 1];
-    yLims = maxVisualizedThreshold*[-1 1];
     hold(theAxes{1,1}, 'off');
-    set(theAxes{1,1}, 'XLim', maxVisualizedThreshold*[-1 1], 'YLim', maxVisualizedThreshold*[-1 1]);
+    set(theAxes{1,1}, 'XLim', maxVisualizedThreshold2*[-1 1], 'YLim', maxVisualizedThreshold2*[-1 1]);
     axis(theAxes{1,1}, 'square');
     box(theAxes{1,1}, 'off');
     set(theAxes{1,1}, 'Color', 'none', 'Box', 'off', 'XColor', [0.1 0.1 0.1], 'YColor', [0.1 0.1 0.1]);
