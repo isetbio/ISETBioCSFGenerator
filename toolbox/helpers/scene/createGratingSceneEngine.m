@@ -44,6 +44,7 @@ function [gratingSceneEngine] = createGratingSceneEngine(chromaticDir, spatialFr
 % Set up parameters with defaults
 p = inputParser;
 varargin = ieParamFormat(varargin);
+p.addParameter('customConeFundamentals', [], @(x)(isempty(x)||isstruct(x)));
 p.addParameter('meanLuminanceCdPerM2', 40, @isscalar);
 p.addParameter('meanChromaticityXY', [0.3 0.32], @(x)(isnumeric(x) && numel(x) == 2));
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
@@ -58,6 +59,7 @@ p.addParameter('phaseDirection', 1,  @(x)(isnumeric(x) && (abs(x)==1)));
 p.addParameter('presentationMode', 'flashed', @(x)(ischar(x) && ...
     ismember(x,{'flashed', 'flashedmultiframe', 'drifted', 'counterphasemodulated'})));
 p.addParameter('stimOnFrameIndices',[],@(x)isnumeric(x));
+p.addParameter('temporalModulationParams', [], @isstruct);
 p.addParameter('pixelsNum', 128, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('fovDegs', 1.0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelopeRadiusDegs', 1.0, @(x)(isscalar(x)));
@@ -78,6 +80,7 @@ gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 % Configure those parameters that we adjust through key/value pairs.
 % chromatic direction and and spatial frequency of the grating
 % with a 90 deg orientation, and a cosine spatial phase
+gratingParams.customConeFundamentals = p.Results.customConeFundamentals;
 gratingParams.meanLuminanceCdPerM2 = p.Results.meanLuminanceCdPerM2;
 gratingParams.meanChromaticityXY = p.Results.meanChromaticityXY;
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
@@ -118,38 +121,36 @@ switch (p.Results.presentationMode)
         gratingParams.frameDurationSeconds = p.Results.frameDurationSeconds;
         if (isempty(p.Results.stimOnFrameIndices))
             gratingParams.temporalModulationParams =  struct(...
-                'stimOnFrameIndices', 1:framesNum, 'stimDurationFramesNum', framesNum);
+                'stimOnFrameIndices', 1:framesNum, ...
+                'stimDurationFramesNum', framesNum);
         else
             gratingParams.temporalModulationParams =  struct(...
-                'stimOnFrameIndices', p.Results.stimOnFrameIndices, 'stimDurationFramesNum', framesNum);
+                'stimOnFrameIndices', p.Results.stimOnFrameIndices, ...
+                'stimDurationFramesNum', framesNum);
         end
     case 'drifted'
         gratingParams.temporalModulation = 'drifted';
         gratingParams.frameDurationSeconds = p.Results.frameDurationSeconds;
-        if (isempty(p.Results.stimOnFrameIndices))
-            gratingParams.temporalModulationParams =  struct(...
-                'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
-                'phaseDirection', p.Results.phaseDirection, ...
-                'stimOnFrameIndices', 1:framesNum, 'stimDurationFramesNum', framesNum);
+        if (~isempty(p.Results.temporalModulationParams))
+            gratingParams.temporalModulationParams = p.Results.temporalModulationParams;
         else
             gratingParams.temporalModulationParams =  struct(...
                 'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
                 'phaseDirection', p.Results.phaseDirection, ...
-                'stimOnFrameIndices', p.Results.stimOnFrameIndices, 'stimDurationFramesNum', framesNum);
+                'stimOnFrameIndices', p.Results.stimOnFrameIndices, ...
+                'stimDurationFramesNum', framesNum);
         end        
     case 'counterphasemodulated'
         gratingParams.temporalModulation = 'counterphasemodulated';
         gratingParams.frameDurationSeconds = p.Results.frameDurationSeconds;
-         if (isempty(p.Results.stimOnFrameIndices))
-            gratingParams.temporalModulationParams =  struct(...
-                'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
-                'phaseDirection', p.Results.phaseDirection, ...
-                'stimOnFrameIndices', 1:framesNum, 'stimDurationFramesNum', framesNum);
+        if (~isempty(p.Results.temporalModulationParams))
+            gratingParams.temporalModulationParams = p.Results.temporalModulationParams;
         else
             gratingParams.temporalModulationParams =  struct(...
                 'temporalFrequencyHz', p.Results.temporalFrequencyHz, ...
                 'phaseDirection', p.Results.phaseDirection, ...
-                'stimOnFrameIndices', p.Results.stimOnFrameIndices, 'stimDurationFramesNum', framesNum);
+                'stimOnFrameIndices', p.Results.stimOnFrameIndices, ...
+                'stimDurationFramesNum', framesNum);
          end    
 
     otherwise

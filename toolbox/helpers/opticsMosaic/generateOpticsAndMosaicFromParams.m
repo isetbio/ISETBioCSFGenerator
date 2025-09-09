@@ -11,6 +11,8 @@ function [theOptics,theMosaic] = generateOpticsAndMosaicFromParams(opticsParams,
 % You can also just pass the mosaic in which case its parameters are
 % probably not needed.
 
+theOptics = [];
+
 % Generate theOptics
 if (isempty(theMosaic))
     switch (mosaicParams.type)
@@ -25,51 +27,23 @@ if (isempty(theMosaic))
                 );
 
         case 'mRGCMosaic'
-            % Generate the mRGC object
-            if (strcmp(opticsParams.type,'loadComputeReadyRGCMosaic'))
-                % We were passed optics parameters that the load method knows
-                % about.  Use them.
-                theMosaic = mRGCMosaic.loadComputeReadyRGCMosaic(...
-                    mosaicParams, ...
-                    opticsParams, ...
-                    mosaicParams.retinalRFmodelParams);
-
-                % Retrieve the optics that were used to optimize
-                % theMRGCmosaic we loaded, as the parameters say this is
-                % what we want here.
-                if (~isempty(theMosaic.theNativeOptics))
-                    theOptics = theMosaic.theNativeOptics;
-                elseif (~isempty(theMosaic.theCustomOptics))
-                    error('Not expecting to use theCustomOptics field here');
-                else
-                    error('No optics found in the mRGCMosaic object!')
-                end
-
-            else
-                % We will need to override the optics.  So first we genrate
-                % dummy optics parameters, generate the mRGCMosiac, then
-                % generate the optics we want below.
-                dummyOpticsParams = generateOpticsParams('loadComputeReadyRGCMosaic');
-                theMosaic = mRGCMosaic.loadComputeReadyRGCMosaic(...
-                    mosaicParams, ...
-                    dummyOpticsParams, ...
-                    mosaicParams.retinalRFmodelParams);
-
-                % We pass a cone mosaic so we can use it if needed. The
-                % only parameters we need from the mosaicParams are the
-                % eccDegs field, and these exist both for cMosaic and mRGC
-                % types so we're good.  
-                %
-                % This line might be a bit fragile.
-                theOptics = generateOpticsAndMosaicFromParams(opticsParams,theMosaic.theConeMosaic,mosaicParams);
-            end
+            opticsParams.visualizePSFonTopOfConeMosaic = true;
+            [theMosaic, theOptics] = mRGCMosaic.loadPrebakedMosaic(mosaicParams, opticsParams);
+            theMosaic.visualize(...
+                'identifyPooledCones', true, ...
+                'identifyInputCones', true, ...
+                'plotTitle', sprintf('%d mRGCs', theMosaic.rgcsNum));
 
         otherwise
             error('Unknown mosaic type pased in mosaicParams');
     end
 end
 
-% Generate optics
+if (~isempty(theOptics))
+    return;
+end
+
+% Generate optics if we loaded a cMosaic, and not  an mRGCMosaic
 switch (opticsParams.type)
     case 'opticalimage'
         % It is already and optical image, we just pass it on through.
@@ -126,8 +100,6 @@ switch (opticsParams.type)
         % Set the fNumber to correspond to the pupil size
         focalLengthMM = oiGet(theOptics,'focal length')*1000;
         theOptics = oiSet(theOptics, 'optics fnumber', focalLengthMM/opticsParams.pupilDiameterMM);
-
-    case 'loadComputeReadyRGCMosaic'
 
     otherwise
         error('Unknown opticsType specified');
