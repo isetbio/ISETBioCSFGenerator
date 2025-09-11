@@ -212,7 +212,7 @@ arguments
     options.spatialFreqs (1,:) double = [4, 8, 16, 32];
     
     % Fixed stimulus parameters
-    options.employMosaicSpecificConeFundamentals (1,1) logical = true;
+    options.employMosaicSpecificConeFundamentals (1,1) logical = false;
     options.meanLuminanceCdPerM2 (1,1) double = 100;
     options.meanChromaticityXY (1,2) double = [0.30 0.32];
     options.stimulusChroma (1,:) char = 'luminance'
@@ -765,10 +765,22 @@ end % switch (whichNoisyInstanceNre)
 if (employMosaicSpecificConeFundamentals) 
    % For this computation we need the input cone mosaic and the optics that
    % will be used for the rest of the computation
+
+   
+   switch (whichNoiseFreeNre)
+
+       case 'mRGCMosaic'
+           mosaicParams = nreNoiseFreeParams.mRGCMosaicParams;
+       case 'excitationsCmosaic'
+           mosaicParams = nreNoiseFreeParams.coneMosaicParams;
+       otherwise
+           error('noiseFreeNRE must be either ''mRGCMosaic'', or ''excitationsCmosaic''.');
+   end % switch (whichNoiseFreeNre)
+
    [theOI,theMRGCMosaic] = generateOpticsAndMosaicFromParams(...
             nreNoiseFreeParams.opticsParams, ...
             [], ...
-            nreNoiseFreeParams.mRGCMosaicParams);
+            mosaicParams);
 
     % Compute the custom cone fundamentals and store them in gratingSceneParams
     % so in the next pass, we can generate the desired scene
