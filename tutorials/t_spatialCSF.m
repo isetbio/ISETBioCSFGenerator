@@ -723,7 +723,7 @@ switch (whichNoiseFreeNre)
         % upper bound on performance for a photon limited system
         %
         % Override size and frame duration to put performance in reasonable range
-        stimSizeDegs = 0.05;
+        gratingSceneParams.fovDegs = 0.05;
         frameDurationSeconds = 1e-16;
 
         % Set up nre
@@ -900,8 +900,8 @@ end
 if (isempty(options.psychometricCurveSamplesNum))
     questEnginePara = struct( ...
         'qpPF',@qpPFWeibullLog, ...
-        'minTrial', 1280, ... %nTest*psychometricCurveSamplesNum, ...
-        'maxTrial', 1280, ... %nTest*psychometricCurveSamplesNum, ...
+        'minTrial', 1280, ...
+        'maxTrial', 1280, ... 
         'numEstimator', 1, ...
         'stopCriterion', 0.05);
 else
@@ -912,7 +912,7 @@ else
         'numEstimator', 1, ...
         'stopCriterion', 0.05);
 end
-questEnginePara
+
 
 
 %% Setup figures
