@@ -766,9 +766,7 @@ if (employMosaicSpecificConeFundamentals)
    % For this computation we need the input cone mosaic and the optics that
    % will be used for the rest of the computation
 
-   
    switch (whichNoiseFreeNre)
-
        case 'mRGCMosaic'
            mosaicParams = nreNoiseFreeParams.mRGCMosaicParams;
        case 'excitationsCmosaic'
@@ -777,17 +775,28 @@ if (employMosaicSpecificConeFundamentals)
            error('noiseFreeNRE must be either ''mRGCMosaic'', or ''excitationsCmosaic''.');
    end % switch (whichNoiseFreeNre)
 
-   [theOI,theMRGCMosaic] = generateOpticsAndMosaicFromParams(...
+   [theOI,theMosaic] = generateOpticsAndMosaicFromParams(...
             nreNoiseFreeParams.opticsParams, ...
             [], ...
             mosaicParams);
+
+    switch (whichNoiseFreeNre)
+           case 'mRGCMosaic'
+               theConeMosaic = theMosaic.inputConeMosaic;
+           case 'excitationsCmosaic'
+               theConeMosaic = theMosaic;
+    end
 
     % Compute the custom cone fundamentals and store them in gratingSceneParams
     % so in the next pass, we can generate the desired scene
     maxConesNumForAveraging = 3;
     gratingSceneParams.customConeFundamentals = visualStimulusGenerator.coneFundamentalsForPositionWithinConeMosaic(...
-            theMRGCMosaic.inputConeMosaic, theOI, ...
+            theConeMosaic, theOI, ...
             mosaicEccDegs, gratingSceneParams.fovDegs, maxConesNumForAveraging);
+
+    % Dont need these anymore
+    clear 'theConeMosaic'
+    clear 'theMosaic'
 end
 
 
