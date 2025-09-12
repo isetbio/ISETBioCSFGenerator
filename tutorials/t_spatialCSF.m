@@ -1134,7 +1134,7 @@ end
 
 %% Return threshold values if requested
 if (nargout > 0)
-    thresholdRet = threshold;
+    thresholdRet = thresholdContrasts;
 end
 
 %% Save output if desired
