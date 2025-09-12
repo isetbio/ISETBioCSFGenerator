@@ -1,4 +1,6 @@
 function plotLMthresholds()
+% UTTBSkip
+
     maxThreshold = 0.041;
     maxThreshold = 0.175;
     maxConeVisualizedThreshold = 0.25 * maxThreshold; 

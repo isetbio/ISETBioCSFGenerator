@@ -1,4 +1,5 @@
 function compareCSFs()
+% UTTBSkip
 
     % Colors
     backgroundColor = [1 1 1];
