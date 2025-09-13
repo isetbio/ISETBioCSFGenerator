@@ -10,6 +10,11 @@ function t_rasterAOSLO_FullBiophysicalOS
     % computes to around 0.51 milliseconds
     fractionLinesScannedPerSimulationTimeStep = 8/512;
 
+    % Simulation time step: here we pick a simulation time step during
+    % which the AOSLO will scan through 8 of the 512 raster lines. This
+    % computes to around 1.02 milliseconds
+    fractionLinesScannedPerSimulationTimeStep = 16/512;
+
     % 2 raster lines
     %fractionLinesScannedPerSimulationTimeStep = 2/512;
 
@@ -19,23 +24,23 @@ function t_rasterAOSLO_FullBiophysicalOS
     %nStimulusFramesPerTrial = 8;
 
     % How many trials, which also means how many fEMs
-    nTrials = 32;
+    nTrials = 2;
     maxVideoTrials = 1;
 
     testIncrementDecrementScenes = true;
 
-    observerFixationalEyeMovementCharacteristics = 'fast';
-  %observerFixationalEyeMovementCharacteristics = 'slow';
-    %observerFixationalEyeMovementCharacteristics = 'default';
+    %observerFixationalEyeMovementCharacteristics = 'fast';
+    %observerFixationalEyeMovementCharacteristics = 'slow';
+    observerFixationalEyeMovementCharacteristics = 'default';
 
     % Compute cone mosaic and retinal images of stimulus and background
-    recomputeRetinalImages = ~true;
+    recomputeRetinalImages = true;
 
     cropRetinalImagesForConeMosaic = true;
     visualizeTheSceneRadiance = true;
     
     % Compute cone excitations response
-    recomputeConeExcitations = ~true;
+    recomputeConeExcitations = true;
 
     % Visualize the stimulus and the cone excitations response
     visualizeStimulusAndConeExcitationSequence = ~true;
