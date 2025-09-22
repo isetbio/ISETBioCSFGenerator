@@ -5,6 +5,9 @@ function plotLMthresholds()
     maxThreshold = 0.175;
     maxConeVisualizedThreshold = 0.25 * maxThreshold; 
 
+    maxThreshold = [];
+    maxConeVisualizedThreshold = [];
+
     theScriptName = 't_isoResponseLMplaneEllipses';
     
     mosaicEccDegs = [0 0];
@@ -136,23 +139,52 @@ function  visualizeComparedLMplaneThresholds(...
             mosaicSizeDegs, mRGCsNum, ...
             pdfFileName)
 
-    if (isempty(maxVisualizedThreshold))
-        maxVisualizedThreshold = 1.05*max([max(thresholds1) max(thresholds2)]);
-        if (maxVisualizedThreshold < 0.055)
-            maxVisualizedThreshold = 0.055;
+    if (isempty(maxVisualizedThreshold)) && (isempty(maxVisualizedThreshold2))
+        maxVisualizedThreshold = 1.05;
+        maxVisualizedThreshold2 = 1.05;
+
+        idx = find(examinedDirectionsOnLMplane == 90);
+        thresholds1 = thresholds1 / thresholds1(idx);
+        thresholds2 = thresholds2 / thresholds2(idx);
+
+        xyTicks =  -2:1:2;
+        xyTickLabels = {'-2', '-1', '0', '+1', '+2'};
+        xyLims = 1.75*[-1 1];
+        coneThresholdMarkerSize = 20;
+        mRGCThresholdMarkerSize  = 20;
+
+        thresholdGainToAccountForMaxVisualizedThreshold2 = 1.0;
+ 
+        xAxisLabel = 'normalized L-cone threshold';
+        yAxisLabel = 'normalized M-cone threshold';
+    else  
+        if (isempty(maxVisualizedThreshold))
+            maxVisualizedThreshold = 1.05*max([max(thresholds1) max(thresholds2)]);
+            if (maxVisualizedThreshold < 0.055)
+                maxVisualizedThreshold = 0.055;
+            end
         end
+    
+        if (isempty(maxVisualizedThreshold2))
+            maxVisualizedThreshold2 = 1.05*max([max(thresholds1) max(thresholds2)]);
+            if (maxVisualizedThreshold2 < 0.055)
+                maxVisualizedThreshold2 = 0.055;
+            end
+        end
+
+        xyTicks =  -.20:0.05:0.20;
+        xyTickLabels = {'-.20', '-.15', '-.10', '-.05',  '0', '+.05', '+.10', '+.15', '+.20'};
+        xyLims = maxVisualizedThreshold2*[-1 1];
+        coneThresholdMarkerSize = 10;
+        mRGCThresholdMarkerSize  = 20;
+        thresholdGainToAccountForMaxVisualizedThreshold2 = maxVisualizedThreshold2/maxVisualizedThreshold;
+
+        xAxisLabel = 'threshold contrast (L-cone)';
+        yAxisLabel = 'threshold contrast (M-cone)';
     end
 
-    if (isempty(maxVisualizedThreshold2))
-        maxVisualizedThreshold2 = 1.05*max([max(thresholds1) max(thresholds2)]);
-        if (maxVisualizedThreshold2 < 0.055)
-            maxVisualizedThreshold2 = 0.055;
-        end
-    end
 
-
-    thresholdGainToAccountForMaxVisualizedThreshold2 = maxVisualizedThreshold2/maxVisualizedThreshold;
-
+    
     hFig = figure(2); clf;
     set(hFig, 'Color', [1 1 1]);
     ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
@@ -214,7 +246,7 @@ function  visualizeComparedLMplaneThresholds(...
 
     % LM plane thresholds-1
     
-    p1 = scatter(theAxes{1,1}, x1,y1, 10^2, ...
+    p1 = scatter(theAxes{1,1}, x1,y1, coneThresholdMarkerSize^2, ...
         'MarkerFaceColor', [1 0.5 0.7], 'MarkerEdgeColor', [1 0.5 0.7]*0.5, ...
         'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
     hold(theAxes{1,1}, 'on');
@@ -222,25 +254,26 @@ function  visualizeComparedLMplaneThresholds(...
 
     % LM plane thresholds-2
     
-    p2 = scatter(theAxes{1,1}, x2,y2, 20^2, ...
+    p2 = scatter(theAxes{1,1}, x2,y2, mRGCThresholdMarkerSize^2, ...
         'MarkerFaceColor', [0.5 1 0.85], 'MarkerEdgeColor', [0.5 1 0.85]*0.5, ...
         'MarkerFaceAlpha', 0.6, 'LineWidth', 1.5);
 
    
 
     hold(theAxes{1,1}, 'off');
-    set(theAxes{1,1}, 'XLim', maxVisualizedThreshold2*[-1 1], 'YLim', maxVisualizedThreshold2*[-1 1]);
+    set(theAxes{1,1}, 'XLim', xyLims, 'YLim', xyLims);
     axis(theAxes{1,1}, 'square');
     box(theAxes{1,1}, 'off');
     set(theAxes{1,1}, 'Color', 'none', 'Box', 'off', 'XColor', [0.1 0.1 0.1], 'YColor', [0.1 0.1 0.1]);
-    set(theAxes{1,1}, 'XTick', -.20:0.05:0.20, 'XTickLabel', {'-.20', '-.15', '-.10', '-.05',  '0', '+.05', '+.10', '+.15', '+.20'})
-    set(theAxes{1,1}, 'YTick', -.20:0.05:0.20, 'YTickLabel', {'-.20', '-.15', '-.10', '-.05',  '0', '+.05', '+.10', '+.15', '+.20'})
+    set(theAxes{1,1}, 'XTick', xyTicks, 'XTickLabel', xyTickLabels)
+    set(theAxes{1,1}, 'YTick', xyTicks, 'YTickLabel', xyTickLabels)
     legend(theAxes{1,1}, [p1 p2], {'input cone mosaic', sprintf('mRGC mosaic (%2.1f^o\\times%2.1f^o, N=%d)', mosaicSizeDegs(1), mosaicSizeDegs(2), mRGCsNum)}, 'Location', 'NorthOutside', 'NumColumns', 2)
     %PublicationReadyPlotLib.offsetAxes(theAxes{1,1},ff, xLims, yLims);
-    PublicationReadyPlotLib.labelAxes(theAxes{1,1},ff, 'threshold contrast (L-cone)', 'threshold contrast (M-cone)');
+    PublicationReadyPlotLib.labelAxes(theAxes{1,1},ff, xAxisLabel, yAxisLabel);
     PublicationReadyPlotLib.applyFormat(theAxes{1,1},ff);
     NicePlot.exportFigToPDF(pdfFileName, hFig, 300);
 
+    fprintf('PDF saved in %s\n', pdfFileName);
     %set(theThresholdAxes, 'FontSize', 24);
 
 end
