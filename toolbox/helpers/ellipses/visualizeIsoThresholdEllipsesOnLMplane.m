@@ -23,7 +23,7 @@ function theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
     set(hFig, 'HandleVisibility', 'on');
     figure(hFig);
     
-    plotColorCircle = false;
+    plotColorCircle = true;
 
     if (initializeFig)
         clf;
@@ -52,7 +52,7 @@ function theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
                     gratingSceneParams);
         
                 % Compute the stimulus scene at max contrast
-                testContrast = 1;
+                testContrast = 0.2;
                 theSceneSequence = theSceneEngine.compute(testContrast);
         
                 % Visualize the stimulus scene
