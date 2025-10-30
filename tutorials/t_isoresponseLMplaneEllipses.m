@@ -40,14 +40,63 @@ function t_isoresponseLMplaneEllipses(options)
         'useConeContrast', true);
 
 
+%Pts_coneContrast =
+%    0.2384    0.3549   -0.0000
+%   -0.3058   -0.2796    0.0000
+%    0.0000    0.0000         0
+%    0.3058    0.2796   -0.0000
+%   -0.2384   -0.3549    0.0000
+
+
 % Run with mRGCMosaic (ON mRGC mosaic, non-linear activation function, simulating case in a high saturation regime)
      t_isoresponseLMplaneEllipses(...
         'useMetaContrast', true, ...
         'whichNoiseFreeNre', 'mRGCMosaic', ...
-        'simulateHighSaturationRegime', true, ...
+        'mosaicEccDegs', [0.0 0.5], ...
+        'mosaicSizeDegs', [1 0.5], ...
+        'synthesizedRGCmosaicName', 'PLOSpaperFovealMosaic', ...
+        'visualizeCroppedRGCmosaicRelationshipToSynthesizedMosaic', true, ...
+        'referenceLMSconeContrast', [0.2384  0.3549 0.0], ...
+        'spatialFrequency', 0.0, ...
+        'spatialPhaseDegs', 0.0, ...
+        'presentationMode', 'counterphasemodulated', ...
+        'stimDurationTemporalCycles', 1.0, ...
+        'frameDurationSeconds', (1/2.5)/8, ...
+        'temporalFrequencyHz', 2.5, ...
+        'nTest', 1024, ...
+        'psychometricCurveSamplesNum', 5, ...
+        'examinedDirectionsOnLMplane', 0:45:(360-45), ...
+        'visualizeEachScene', true, ...
         'simulateONOFFmosaic', false, ...
+        'simulateHighSaturationRegime', ~true, ...
         'mRGCOutputSignalType', 'mRGCs', ...  
         'whichNoisyInstanceNre', 'Gaussian', ...
+        'gaussianSigma', 0.1, ...
+        'whichClassifierEngine', 'rceTemplateDistance', ...
+        'useConeContrast', true);
+
+
+ t_isoresponseLMplaneEllipses(...
+        'useMetaContrast', true, ...
+        'whichNoiseFreeNre', 'mRGCMosaic', ...
+        'mosaicEccDegs', [0.0 0.0], ...
+        'mosaicSizeDegs', [1 1], ...
+        'synthesizedRGCmosaicName', 'PLOSpaperFovealMosaic', ...
+        'visualizeCroppedRGCmosaicRelationshipToSynthesizedMosaic', true, ...
+        'backgroundLMSconeExcitations', [0.1529 0.1324 0.0828], ...
+        'referenceLMSconeContrast', [0.2384  0.3549 0.0], ...
+        'spatialFrequency', 0.0, ...
+        'spatialPhaseDegs', 0.0, ...
+        'presentationMode', 'static', ...
+        'nTest', 1024, ...
+        'psychometricCurveSamplesNum', 5, ...
+        'examinedDirectionsOnLMplane', 0:45:(360-45), ...
+        'visualizeEachScene', true, ...
+        'simulateONOFFmosaic', false, ...
+        'simulateHighSaturationRegime', ~true, ...
+        'mRGCOutputSignalType', 'mRGCs', ...  
+        'whichNoisyInstanceNre', 'Gaussian', ...
+        'gaussianSigma', 0.1, ...
         'whichClassifierEngine', 'rceTemplateDistance', ...
         'useConeContrast', true);
 
@@ -80,11 +129,54 @@ arguments
     %             'cones'.  Use the cone excitations (or contrast) 
     options.mRGCOutputSignalType (1,:) char = 'mRGCs'
 
-    % If the neural model is mRGCMosaic, we need to specify the
-    % eccentricity and size of the prebaked mRGCmosaic (from which we can
-    % crop a submosaic, depending on the stimulus size
-    options.mRGCMosaicRawEccDegs (1,2) double = [0.0 0.0];
-    options.mRGCMosaicRawSizeDegs (1,2) double = [2.0 2.0];
+
+    % If the neural model is mRGCMosaic, we need to specify the following
+
+    % See RGCMosaicConstructor.helper.utils.initializeRGCMosaicGenerationParameters
+    % for what is available and to add new mosaics
+    options.synthesizedRGCmosaicName (1,:) char = 'PLOSpaperFovealMosaic';
+
+    % ---- Which species to employ ----
+    % Choose between {'macaque', 'human'}. If 'macaque' is chosen, the input
+    % cone mosaic has a 1:1 L/M cone ratio.
+    options.synthesizedRGCmosaicConeMosaicSpecies  (1,:) char {mustBeMember(options.synthesizedRGCmosaicConeMosaicSpecies,{'human','macaque'})} = 'human';
+
+    % ----- Which subject optics to employ -----
+    options.synthesizedRGCmosaicOpticsSubjectName (1,:) ...
+        char ...
+        {...
+        mustBeMember(options.synthesizedRGCmosaicOpticsSubjectName, ...
+            { ...
+            'PLOSpaperDefaultSubject' ...
+            'PLOSpaperSecondSubject' ...
+            'VSS2024TalkFirstSubject' ...
+            'VSS2024TalkSecondSubject' ...
+            'PLOSpaperStrehlRatio_0.87' ...
+            'PLOSpaperStrehlRatio_0.72' ...
+            'PLOSpaperStrehlRatio_0.59' ...
+            'PLOSpaperStrehlRatio_0.60' ...
+            'PLOSpaperStrehlRatio_0.27' ...
+            'PLOSpaperStrehlRatio_0.23' ...
+            'PLOSpaperStrehlRatio_0.21' ...
+            'PLOSpaperStrehlRatio_0.19' ...
+            'PLOSpaperStrehlRatio_0.09' ...
+            } ...
+            ) ...
+        } ...
+        = 'PLOSpaperSecondSubject';
+
+
+    % ------ targetVisualSTF options ----
+    % Options are : {'default', 'x1.3 RsRcRatio'}
+    % These are with respect to the macaque data of the Croner & Kaplan '95 study
+    % 'default': target the mean Rs/Rc, and the mean Ks/Kc (Rs/Rc)^2
+    % See RGCMosaicConstructor.helper.surroundPoolingOptimizerEngine.generateTargetVisualSTFmodifiersStruct
+    % for all existing options
+    options.synthesizedRGCmosaicTargetVisualSTFdescriptor (1,:) char = 'default';
+
+    % Whether to visualize the relationship of the cropped RGC mosaic to
+    % the synthesized RGC mosaic
+    options.visualizeCroppedRGCmosaicRelationshipToSynthesizedMosaic (1,1) logical = false
 
     % If the neural model is mRGCMosaic, we can specify the Optics type to use
     options.opticsType (1,:) char  = 'loadComputeReadyRGCMosaic';
@@ -154,11 +246,22 @@ arguments
     options.nTest (1,1) double = 128
 
     % Mosaic size and eccentricity
+    % For mRGCmosaic, this will be the crop size and eccentricity
+    % so it has to be appropriate to the synthesizedRGCmosaicName
     options.mosaicEccDegs (1,2) double = [0 0];
     options.mosaicSizeDegs (1,2) double = [0.5 0.5];
 
     % Varied stimulus parameter
     options.examinedDirectionsOnLMplane (1,:) double = 0:45:315;
+
+    % The reference LMS cone contrat with respect to which the 
+    % the examinedDirectionsOnLMplane are used for compute the
+    % tested LMS cone contrsts.
+    % For contrasts symmetric around the background,
+    % referenceLMSconeContrast should be set to [0 0 0]
+    options.referenceLMSconeContrast (1,3) double = [0 0 0];
+    
+    options.backgroundLMSconeExcitations (1,:) double = [];
 
     % Fixed stimulus parameters
     options.employMosaicSpecificConeFundamentals (1,1) logical = true;
@@ -284,18 +387,33 @@ whichClassifierEngine = options.whichClassifierEngine;
 validationThresholds = options.validationThresholds;
 mRGCOutputSignalType = options.mRGCOutputSignalType;
 
+% Properties of snthesized mRGCmosaic to use
+synthesizedRGCmosaicName = options.synthesizedRGCmosaicName;
+synthesizedRGCmosaicOpticsSubjectName = options.synthesizedRGCmosaicOpticsSubjectName;
+synthesizedRGCmosaicTargetVisualSTFdescriptor = options.synthesizedRGCmosaicTargetVisualSTFdescriptor;
+synthesizedRGCmosaicConeMosaicSpecies = options.synthesizedRGCmosaicConeMosaicSpecies;
+visualizeCroppedRGCmosaicRelationshipToSynthesizedMosaic = options.visualizeCroppedRGCmosaicRelationshipToSynthesizedMosaic;
+
 % Mosaic sizes
 mosaicEccDegs = options.mosaicEccDegs;
 mosaicSizeDegs = options.mosaicSizeDegs;
-mRGCRawEccDegs = options.mRGCMosaicRawEccDegs;
-mRGCRawSizeDegs = options.mRGCMosaicRawSizeDegs;
-mRGCCropSize = mosaicSizeDegs;
 
 % Stimulus params
+% Custom cone fundamentals
 employMosaicSpecificConeFundamentals = options.employMosaicSpecificConeFundamentals;
+
+% Background
 meanLuminanceCdPerM2 = options.meanLuminanceCdPerM2;
 meanChromaticityXY = options.meanChromaticityXY;
+
+% Background LMS
+backgroundLMSconeExcitations = options.backgroundLMSconeExcitations;
+
+
+% Spatial params
 spatialPhaseDegs = options.spatialPhaseDegs;
+stimSizeDegs = options.stimSizeDegs;
+pixelsNum = options.pixelsNum;
 
 % Temporal params
 temporalFrequencyHz = options.temporalFrequencyHz;
@@ -305,10 +423,6 @@ numberOfFrames = options.numberOfFrames;
 frameDurationSeconds = options.frameDurationSeconds;
 stimDurationTemporalCycles = options.stimDurationTemporalCycles;
 presentationMode = options.presentationMode;
-
-% Size params
-stimSizeDegs = options.stimSizeDegs;
-pixelsNum = options.pixelsNum;
 
 fastParameters = options.fastParameters;
 oiPadMethod = options.oiPadMethod;
@@ -398,6 +512,8 @@ end
 
 %% List of LM angles to be tested
 examinedDirectionsOnLMplane = options.examinedDirectionsOnLMplane;
+referenceLMSconeContrast = options.referenceLMSconeContrast;
+
 
 %% Spatial frequency & orientation
 examinedSpatialFrequencyCPD = options.spatialFrequency;
@@ -410,18 +526,23 @@ debugStimulusConfig = ~true;
 %% Thresholds filename
 if (isempty(thresholdsDataFileName))
     thresholdsDataFileName = ...
-        sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
+        sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%s.mat', ...
         mRGCOutputSignalType, ...
         examinedSpatialFrequencyCPD, ...
         opticsType, ...
         mosaicEccDegs(1), mosaicEccDegs(2), ...
         mosaicSizeDegs(1),mosaicSizeDegs(2), ...
         orientationDegs, ...
+        referenceLMSconeContrast(1)*100, ...
+        referenceLMSconeContrast(2)*100, ...
+        referenceLMSconeContrast(3)*100, ...
         presentationMode);
 end
 
+fprintf('Thresholds will be saved to %s', fullfile(resultsFileBaseDir,thresholdsDataFileName));
+
 % Max RMS contrast (so as to keep stimuli within the display gamut)
-rmsLMconeContrast = 0.1;
+rmsLMconeContrast = 0.05;
 
 if (debugStimulusConfig)
     rmsLMconeContrast = 1.0;
@@ -432,12 +553,18 @@ end
 [theLMSconeContrastDirections, examinedDirectionsOnLMplane] = ...
     computeLMSconeContrastDirections(rmsLMconeContrast, examinedDirectionsOnLMplane);
 
+% Add the reference LMScone contrast. 
+% For contrasts symmetric around the background,
+% referenceLMSconeContrast should be set to [0 0 0]
+theLMSconeContrastDirections = bsxfun(@plus, theLMSconeContrastDirections, referenceLMSconeContrast(:));
+
 
 %% Set grating engine parameters
 if (strcmp(presentationMode, 'static'))
     gratingSceneParams = struct( ...
             'meanLuminanceCdPerM2', meanLuminanceCdPerM2, ...
             'meanChromaticityXY', meanChromaticityXY, ...
+            'backgroundLMSconeExcitations', backgroundLMSconeExcitations, ...
             'spectralSupport', 400:20:750, ...
             'fovDegs', stimSizeDegs, ...
             'pixelsNum', pixelsNum, ...
@@ -461,6 +588,7 @@ else
     gratingSceneParams = struct( ...
         'meanLuminanceCdPerM2', meanLuminanceCdPerM2, ...
         'meanChromaticityXY', meanChromaticityXY, ...
+        'backgroundLMSconeExcitations', backgroundLMSconeExcitations, ...
         'spectralSupport', 400:20:750, ...
         'fovDegs', stimSizeDegs, ...
         'pixelsNum', pixelsNum, ...
@@ -480,8 +608,6 @@ if (length(examinedDirectionsOnLMplane) > 50)
     % Too many, plot every other stimulus
     skippedDirections = 2;
 end
-
-
 
 
 if (employMosaicSpecificConeFundamentals)
@@ -518,35 +644,41 @@ for iStep = 1:setupStepsRequired
                 'oiPadMethod',oiPadMethod);
             
             % Modify certain parameters of interest
-            %
-            % 1. Select one of the pre-computed mRGC mosaics by specifying its
-            % eccentricity, size, and type.
-            if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1)) || (mosaicSizeDegs(2) > mRGCRawSizeDegs(2))
-                mosaicSizeDegs
-                mRGCRawSizeDegs
-                error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
-            end
-            nreNoiseFreeParams.mRGCMosaicParams.eccDegs = mRGCRawEccDegs;
-            nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
-            nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
+            % Pre-baked mRGC mosaic name
+            nreNoiseFreeParams.mosaicParams.rgcMosaicName = synthesizedRGCmosaicName;
     
-            % Adjust surround optimization substring
-            if (nreNoiseFreeParams.mRGCMosaicParams.eccDegs(1) < -20)
-                nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString = strrep(...
-                    nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString, ...
-                    'PackerDacey2002H1freeLowH1params', 'PackerDacey2002H1freeUpperH1params');
-            elseif (nreNoiseFreeParams.mRGCMosaicParams.eccDegs(1) < -16)
-                nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString = strrep(...
-                    nreNoiseFreeParams.mRGCMosaicParams.surroundOptimizationSubString, ...
-                    'PackerDacey2002H1freeLowH1params', 'PackerDacey2002H1freeMidH1params');
+            % Optics used to synthesize the mRGCMosaic
+            nreNoiseFreeParams.mosaicParams.opticsSubjectName = synthesizedRGCmosaicOpticsSubjectName;
+    
+            % Target visualSTF of synthesized mRGCmosaic
+            nreNoiseFreeParams.mosaicParams.targetVisualSTFdescriptor = synthesizedRGCmosaicTargetVisualSTFdescriptor;
+    
+            % Input cone mosaic with a cone density for human retinas
+            nreNoiseFreeParams.mosaicParams.coneMosaicSpecies = synthesizedRGCmosaicConeMosaicSpecies;
+
+            if (1==2)
+                % OLD
+                % 1. Select one of the pre-computed mRGC mosaics by specifying its
+                % eccentricity, size, and type.
+                if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1)) || (mosaicSizeDegs(2) > mRGCRawSizeDegs(2))
+                    mosaicSizeDegs
+                    mRGCRawSizeDegs
+                    error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
+                end
+                nreNoiseFreeParams.mRGCMosaicParams.eccDegs = mRGCRawEccDegs;
+                nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
+                nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
             end
+
+
 
             % 2. We can crop the mRGCmosaic to some desired size.
             %    Passing [] for sizeDegs will not crop.
             %    Passing [] for eccentricityDegs will crop the mosaic at its center.
             nreNoiseFreeParams.mRGCMosaicParams.cropParams = struct(...
-                'sizeDegs', mRGCCropSize, ...
-                'eccentricityDegs', mosaicEccDegs ...
+                'sizeDegs', mosaicSizeDegs, ...
+                'eccentricityDegs', mosaicEccDegs, ...
+                'visualizeSpatialRelationshipToSourceMosaic', visualizeCroppedRGCmosaicRelationshipToSynthesizedMosaic ...
                 );
     
             % 3. Set the input cone mosaic integration time to match the stimulus frame duration
@@ -617,15 +749,10 @@ for iStep = 1:setupStepsRequired
             % saturation regime of the activation function
     
             nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.0;
-            theVisualizedConeContrastOffset = [0.0 0.0];
     
             if (simulateHighSaturationRegime)
                 % Push responses into high saturation regime
                 nreNoiseFreeParams.mRGCMosaicParams.responseBias = 0.03;
-            
-                % This simply translates the visualized ellipse on the LM plane 
-                % (simulating a non-adapted simulation)
-                theVisualizedConeContrastOffset = [0.1 0.1];
             end
     
             if (simulateHalfWaveRectification)
@@ -668,11 +795,7 @@ for iStep = 1:setupStepsRequired
             if (isempty(gaussianSigma))
                 gaussianSigma = 50;
             end
-    
-            % NON-LINEARITY HACKS
-            % This simply translates the visualized ellipse on the LM plane 
-            % (simulating a non-adapted simulation)
-            theVisualizedConeContrastOffset = [0.0 0.0];
+   
     
         otherwise
             error('Unsupported noise free neural response engine: ''%s''.', whichNoiseFreeNre);
@@ -978,7 +1101,8 @@ end % iChromaDirection
 thresholdContrasts = 10 .^ logThreshold;
 
 % Save thresholds
-save(fullfile(resultsFileBaseDir,thresholdsDataFileName), 'options', 'examinedDirectionsOnLMplane', 'thresholdContrasts');
+save(fullfile(resultsFileBaseDir,thresholdsDataFileName), ...
+    'options', 'rmsLMconeContrast', 'examinedDirectionsOnLMplane', 'thresholdContrasts');
 
 % Figure for plotting the thresholds on the LM plane
 % along with the stimuli
@@ -989,12 +1113,12 @@ set(hFigStimuliAndThresholds, 'HandleVisibility', 'off');
 exportFig = true;
 initializeFig = true;
 theThresholdAxes = []; 
-maxVisualizedThreshold = 0.2;
+maxVisualizedThreshold = 0.5;
 visualizeIsoThresholdEllipsesOnLMplane(...
             rmsLMconeContrast, ...
             examinedSpatialFrequencyCPD, gratingSceneParams, ...
             examinedDirectionsOnLMplane, skippedDirections, ...
-            thresholdContrasts, maxVisualizedThreshold, theVisualizedConeContrastOffset, ...
+            thresholdContrasts, maxVisualizedThreshold, referenceLMSconeContrast(1:2), ...
             figureFileBaseDir, hFigStimuliAndThresholds, ...
             exportFig, initializeFig, theThresholdAxes);
 
@@ -1039,19 +1163,21 @@ end
 function [theNullSceneEngine, theTestSceneEngines] = configureStimulusSceneEngines(...
     theLMSconeContrastDirections, examinedSpatialFrequencyCPD, gratingSceneParams)
  
-
     % Create the background scene engine
+    chromaticDir = [0 0 0.4];
     theNullSceneEngine = createGratingSceneEngine(...
-            [0 0 0.4], examinedSpatialFrequencyCPD, ...
+            chromaticDir, examinedSpatialFrequencyCPD, ...
             gratingSceneParams);
 
     % Store test scene engines
     theTestSceneEngines = cell(1,size(theLMSconeContrastDirections,2));
 
+    % Create the test scene engines
     for iDir = 1:size(theLMSconeContrastDirections,2)
         % Create a grating scene engine with the examined chromatic direction
         theTestSceneEngines{iDir} = createGratingSceneEngine(...
-            theLMSconeContrastDirections(:,iDir), examinedSpatialFrequencyCPD, ...
+            theLMSconeContrastDirections(:,iDir), ...
+            examinedSpatialFrequencyCPD, ...
             gratingSceneParams);
     end % iDir
 
