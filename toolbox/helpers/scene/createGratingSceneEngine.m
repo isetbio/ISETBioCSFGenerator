@@ -47,6 +47,7 @@ varargin = ieParamFormat(varargin);
 p.addParameter('customConeFundamentals', [], @(x)(isempty(x)||isstruct(x)));
 p.addParameter('meanLuminanceCdPerM2', 40, @isscalar);
 p.addParameter('meanChromaticityXY', [0.3 0.32], @(x)(isnumeric(x) && numel(x) == 2));
+p.addParameter('backgroundLMSconeExcitations', [], @(x)((isempty(x))||(isnumeric(x) && numel(x) == 3)));
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'rect', 'soft','halfcos'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
@@ -81,8 +82,13 @@ gratingParams.spatialFrequencyCyclesPerDeg = spatialFrequency;
 % chromatic direction and and spatial frequency of the grating
 % with a 90 deg orientation, and a cosine spatial phase
 gratingParams.customConeFundamentals = p.Results.customConeFundamentals;
+
 gratingParams.meanLuminanceCdPerM2 = p.Results.meanLuminanceCdPerM2;
 gratingParams.meanChromaticityXY = p.Results.meanChromaticityXY;
+
+gratingParams.backgroundLMSconeExcitations = p.Results.backgroundLMSconeExcitations;
+
+
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
 gratingParams.filter          = p.Results.filter;
@@ -93,6 +99,25 @@ gratingParams.spatialEnvelopeRadiusDegs = p.Results.spatialEnvelopeRadiusDegs;
 gratingParams.minPixelsNumPerCycle = p.Results.minPixelsNumPerCycle;
 gratingParams.spectralSupport = p.Results.spectralSupport;
 gratingParams.warningInsteadOfErrorOnOutOfGamut = p.Results.warningInsteadOfErrorOnOutOfGamut;
+
+
+% Update meanLuminanceCdPerM2 if we get passed backgroundLMSconeExcitations
+if (...
+    isfield(gratingParams, 'backgroundLMSconeExcitations') && ...
+    ~isempty(gratingParams.backgroundLMSconeExcitations) ...
+   )
+       
+   % Compute the required display mean luminance to achieve the desired backgroundLMSconeExcitations
+   T1 = colorTransformMatrix('stockman 2 xyz');
+   backgroundXYZ = reshape(gratingParams.backgroundLMSconeExcitations, [1 3]) * T1;
+   xyY = XYZToxyY(backgroundXYZ');
+   meanLuminanceCdPerM2 = xyY(3)*683;
+
+   gratingParams.meanLuminanceCdPerM2 = meanLuminanceCdPerM2;
+end
+
+gratingParams.displayParams.meanLuminanceCdPerM2 = gratingParams.meanLuminanceCdPerM2;
+
 
 % Set pixel size
 pixelsNum = p.Results.pixelsNum;

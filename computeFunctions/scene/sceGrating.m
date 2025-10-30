@@ -269,7 +269,7 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(...
         displayLMSToLinearRGB = inv(displayLinearRGBToLMS);
     else
 
-        % Compute the RGC to LMS color transformation matrices for this display
+        % Compute the RGB to LMS color transformation matrices for this display
         % using the default (i.e. foveal) cone fundamentals
         displayLinearRGBToLMS = displayGet(presentationDisplay, 'rgb2lms');
         displayLMSToLinearRGB = inv(displayLinearRGBToLMS);
@@ -290,7 +290,7 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(...
     
     % Background LMS excitations
     backgroundLMS = imageLinearTransform(backgroundRGB, displayLinearRGBToLMS);
-    
+
     % Compute the spatial contrast modulation pattern
     contrastPattern = frameContrast * generateSpatialModulationPattern(gratingParams, frameSpatialPhaseDegs);
     
@@ -521,6 +521,7 @@ function p = generateDefaultParams()
         'customConeFundamentals', [], ...               % struct with fields {'wavelengthSupport', 'quantalExcitationSpectra'}, specifying a set of custom cone fundamentals to use (instead of the default SS2)
         'meanLuminanceCdPerM2', stimMeanLuminanceCdPerM2, ...  % background: background mean luminance, in candellas per meter squared
         'meanChromaticityXY', [0.3 0.32], ...           % background: background mean chromaticity'
+        'backgroundLMSconeExcitations', [], ...         % background LMS excitations. If non-empty it overrides the passed (meanLumin, meanXY)
         'coneContrastModulation', [0.09 -0.09 0.0], ... % chromatic direction: LMS cone contrasts
         'warningInsteadOfErrorOnOutOfGamut', false, ... % chromatic: whether to throw an error or a warning if out-of-gamut pixels are generated
         'fovDegs', 1.0, ...                             % spatial: field of view, in degrees
@@ -541,6 +542,8 @@ function p = generateDefaultParams()
             'stimDurationFramesNum', 4), ...            %   params relevant to the temporalModulationMode
         'frameDurationSeconds', 20/1000 ...             % temporal: frame duration, in seconds
     );
+
+
 end
 
 function RGBimage = tonemap(RGBimage)
