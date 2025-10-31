@@ -102,6 +102,7 @@ function t_isoresponseLMplaneEllipses(options)
         'visualizeEachScene', true, ...
         'simulateONOFFmosaic', false, ...
         'simulateHighSaturationRegime', true, ...
+        'visualizeNonLinearActivationFunction', true, ...
         'mRGCOutputSignalType', 'cones', ...  
         'whichNoisyInstanceNre', 'Gaussian', ...
         'gaussianSigma', 0.5, ...
@@ -421,6 +422,8 @@ arguments
     % Simulate an ON/OFF mRGC mosaic?
     options.simulateONOFFmosaic (1,1) logical = false
 
+    % Visualize the non-linearity
+    options.visualizeNonLinearActivationFunction  (1,1) logical = false
 end % arguments
 
 %% Set flags from key/value pairs
@@ -495,7 +498,7 @@ visualizeEachResponse = options.visualizeEachResponse;
 responseVisualizationFunction = options.responseVisualizationFunction;
 maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstances;
 maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseInstanceStimuli;
-visualizeNonLinearActivationFunction = ~true;
+visualizeNonLinearActivationFunction = options.visualizeNonLinearActivationFunction;
 
 thresholdsDataFileName = options.thresholdsDataFileName;
 parPoolSize = options.parPoolSize;
