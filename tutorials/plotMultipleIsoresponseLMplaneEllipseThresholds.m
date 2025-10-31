@@ -1,6 +1,6 @@
 function plotMultipleIsoresponseLMplaneEllipseThresholds()
 
-    linearityString = 'nonLinear20'
+    linearityString = ''; %'_nonLinear20'
     mRGCOutputSignalType = 'mRGCs'; %'cones' %'mRGCs';
     rootDir = '/Volumes/SSD1M2/Documents/MATLAB/toolboxes/ISETBioCSFGenerator/local/t_isoresponseLMplaneEllipses/results/';
     resultsFileBaseDir = fullfile(rootDir, ...
@@ -35,7 +35,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
         referenceLMSconeContrast = Pts_coneContrast(iC,:);
         referenceLMSconeContrast(3) = 0;
     thresholdsDataFileName = ...
-        sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%s_%s.mat', ...
+        sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%s%s.mat', ...
         mRGCOutputSignalType, ...
         examinedSpatialFrequencyCPD, ...
         opticsType, ...
@@ -77,7 +77,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
     
 
 
-    figName = sprintf('refC_%2.1f_%2.1f_%2.1f_%s', 100*referenceLMSconeContrast(1), 100*referenceLMSconeContrast(2), 100*referenceLMSconeContrast(3), linearityString);
+    figName = sprintf('refC_%2.1f_%2.1f_%2.1f%s', 100*referenceLMSconeContrast(1), 100*referenceLMSconeContrast(2), 100*referenceLMSconeContrast(3), linearityString);
     theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
             stimulusRMSLMconeContrast, ...
             examinedSpatialFrequencyCPD, gratingSceneParams, ...
@@ -89,7 +89,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
     initializeFig = false;
     end
 
-    figName = sprintf('Summary%s_%s',mRGCOutputSignalType, linearityString);
+    figName = sprintf('Summary%s%s',mRGCOutputSignalType, linearityString);
     set(hFigStimuliAndThresholds, 'HandleVisibility', 'on');
 
     if ((~isempty(figureFileBaseDir)) && (exportFig))
