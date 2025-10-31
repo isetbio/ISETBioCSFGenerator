@@ -3,7 +3,7 @@ function theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
     theChromaticDirections, skippedDirections, theThresholds, ...
     maxThreshold, theVisualizedConeContrastOffset, ...
     figureFileBaseDir, hFig, ...
-    exportFig, initializeFig, theThresholdAxes)
+    exportFig, initializeFig, theThresholdAxes, figName)
 
     
     %gratingSceneParams.warningInsteadOfErrorOnOutOfGamut = true;
@@ -23,7 +23,7 @@ function theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
     set(hFig, 'HandleVisibility', 'on');
     figure(hFig);
     
-    plotColorCircle = true;
+    plotColorCircle = ~true;
 
     if (initializeFig)
         clf;
@@ -52,7 +52,7 @@ function theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
                     gratingSceneParams);
         
                 % Compute the stimulus scene at max contrast
-                testContrast = 0.2;
+                testContrast = 0.1;
                 theSceneSequence = theSceneEngine.compute(testContrast);
         
                 % Visualize the stimulus scene
@@ -88,6 +88,7 @@ function theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
 
     
     % Plot the axes
+    hold(theThresholdAxes, 'on');
     plot(theThresholdAxes,  maxThreshold*[-1 1], [0 0], 'k-', 'LineWidth', 1.0);
     hold(theThresholdAxes, 'on');
     plot(theThresholdAxes,  [0 0], maxThreshold*[-1 1], 'k-', 'LineWidth', 1.0);
@@ -126,14 +127,14 @@ function theThresholdAxes = visualizeIsoThresholdEllipsesOnLMplane(...
     axis(theThresholdAxes, 'square');
     box(theThresholdAxes, 'off');
     set(theThresholdAxes, 'Color', 'none', 'Box', 'off', 'XColor', [0.1 0.1 0.1], 'YColor', [0.1 0.1 0.1]);
-    xlabel(theThresholdAxes, 'threshold contrast (L-cone)');
-    ylabel(theThresholdAxes, 'threshold contrast (M-cone)');
+    xlabel(theThresholdAxes, 'L-cone contrast');
+    ylabel(theThresholdAxes, 'M-cone contrast');
     set(theThresholdAxes, 'FontSize', 24);
     drawnow;
 
     if ((~isempty(figureFileBaseDir)) && (exportFig))
-        NicePlot.exportFigToPNG(fullfile(figureFileBaseDir,'/stimuliOnLMplane.png'), hFig, 300);
+        NicePlot.exportFigToPNG(fullfile(figureFileBaseDir,sprintf('%s.png', figName)), hFig, 300);
     end
 
-    %set(hFig, 'HandleVisibility', 'off');
+    set(hFig, 'HandleVisibility', 'off');
 end
