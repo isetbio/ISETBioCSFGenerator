@@ -1,7 +1,7 @@
 function plotMultipleIsoresponseLMplaneEllipseThresholds()
 
-    linearityString = ''; %'_nonLinear20'
-    mRGCOutputSignalType = 'mRGCs'; %'cones' %'mRGCs';
+    linearityString = '';
+    mRGCOutputSignalType = 'cones'; %'cones' %'mRGCs';
     rootDir = '/Volumes/SSD1M2/Documents/MATLAB/toolboxes/ISETBioCSFGenerator/local/t_isoresponseLMplaneEllipses/results/';
     resultsFileBaseDir = fullfile(rootDir, ...
         sprintf('t_isoresponseLMplaneEllipses_Meta_1_ConeContrast_1_FEMs_0_mRGCMosaic_Gaussian_rceTemplateDistance_%s', mRGCOutputSignalType));
@@ -29,7 +29,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
     initializeFig = true;
 
     theThresholdAxes = []; 
-    maxVisualizedThreshold = 0.5;
+    maxVisualizedThreshold = 0.41;
 
     for iC = 1:size(Pts_coneContrast,1)
         referenceLMSconeContrast = Pts_coneContrast(iC,:);
