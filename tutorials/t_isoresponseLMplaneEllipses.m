@@ -432,8 +432,6 @@ arguments
     options.figureFileBase (1,:) char = [];
     options.resultsFileBase (1,:) char = [];
 
-    % Computed thresholds filename
-    options.thresholdsDataFileName (1,:) char = '';
 
     options.parPoolSize (1,:) char = 'default'
 
@@ -524,7 +522,6 @@ maxVisualizedNoisyResponseInstances = options.maxVisualizedNoisyResponseInstance
 maxVisualizedNoisyResponseInstanceStimuli = options.maxVisualizedNoisyResponseInstanceStimuli;
 visualizeNonLinearActivationFunction = options.visualizeNonLinearActivationFunction;
 
-thresholdsDataFileName = options.thresholdsDataFileName;
 parPoolSize = options.parPoolSize;
 
 simulateONOFFmosaic = options.simulateONOFFmosaic;
@@ -619,8 +616,7 @@ for iRefContrast = 1:size(referenceLMSconeContrasts,1)
     fprintf('Running simulation for reference contrast %d of %d\n', iRefContrast, size(referenceLMSconeContrasts,1));
     
     % Thresholds filename
-    if (isempty(thresholdsDataFileName))
-        thresholdsDataFileName = ...
+    thresholdsDataFileName = ...
             sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%s.mat', ...
             mRGCOutputSignalType, ...
             examinedSpatialFrequencyCPD, ...
@@ -632,7 +628,6 @@ for iRefContrast = 1:size(referenceLMSconeContrasts,1)
             referenceLMSconeContrast(2)*100, ...
             referenceLMSconeContrast(3)*100, ...
             presentationMode);
-    end
 
     fprintf('Thresholds will be saved to %s', fullfile(resultsFileBaseDir,thresholdsDataFileName));
 
