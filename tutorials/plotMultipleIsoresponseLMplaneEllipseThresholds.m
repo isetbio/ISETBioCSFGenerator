@@ -4,11 +4,11 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
 
     useMetaContrast = true;
 
-    useConeContrast = true;
-    mRGCOutputSignalType = 'mRGCs'; %'cones' %'mRGCs';
+    %useConeContrast = true;
+    %mRGCOutputSignalType = 'mRGCs'; %'cones' %'mRGCs';
 
-    %useConeContrast = ~true;
-    %mRGCOutputSignalType = 'cones'; %'cones' %'mRGCs';
+    useConeContrast = true;
+    mRGCOutputSignalType = 'cones'; %'cones' %'mRGCs';
 
 
     noiseType = 'Gaussian_rceTemplateDistance';
@@ -42,7 +42,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
    -0.0500    0.0500         0; ...
     0.0500   -0.0500    0.0000];
 
-    %Pts_coneContrast = Pts_coneContrast([1 5],:)
+
 
     dir(resultsFileBaseDir)
     
@@ -62,7 +62,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
     for iC = 1:size(Pts_coneContrast,1)
         referenceLMSconeContrast = Pts_coneContrast(iC,:);
         referenceLMSconeContrast(3) = 0;
-        if (isempty(linearityString))
+        if (isempty(linearityString)) && (strcmp(mRGCOutputSignalType, 'mRGCs'))
             thresholdsDataFileName = ...
                 sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%sLinear.mat', ...
                 mRGCOutputSignalType, ...
@@ -77,7 +77,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
                 presentationMode);
         else
             thresholdsDataFileName = ...
-                sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%s_%s.mat', ...
+                sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%s.mat', ...
                 mRGCOutputSignalType, ...
                 examinedSpatialFrequencyCPD, ...
                 opticsType, ...
@@ -87,7 +87,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
                 referenceLMSconeContrast(1)*100, ...
                 referenceLMSconeContrast(2)*100, ...
                 referenceLMSconeContrast(3)*100, ...
-                presentationMode, linearityString);
+                presentationMode);
         end
 
     load(fullfile(resultsFileBaseDir,thresholdsDataFileName), ...
