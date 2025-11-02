@@ -1,4 +1,4 @@
-function [thresholdDeltaConeContrasts, theThresholdAxes] = visualizeIsoThresholdEllipsesOnLMplane(...
+function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints] = visualizeIsoThresholdEllipsesOnLMplane(...
     theLMSconeContrastDirections, ...
     theDeltaLMSconeContrastDirections, ...
     rmsLMconeContrast, ...
@@ -125,9 +125,11 @@ function [thresholdDeltaConeContrasts, theThresholdAxes] = visualizeIsoThreshold
         % Ellipse points
         X = Q * [a * cos(t); b * sin(t)] + repmat(z, 1, npts);
 
+        theFittedEllipsePoints = (bsxfun(@plus, referenceLMSconeContrast, X'));
+
         % PLot the ellipse points
-        h = plot(theThresholdAxes, referenceLMSconeContrast(1) + X(1,:), referenceLMSconeContrast(2) + X(2,:), 'k-', 'LineWidth', 6.0);
-        h = plot(theThresholdAxes, referenceLMSconeContrast(1) + X(1,:), referenceLMSconeContrast(2) + X(2,:), 'c-', 'LineWidth',2.0);
+        h = plot(theThresholdAxes, theFittedEllipsePoints(:,1), theFittedEllipsePoints(:,2), 'k-', 'LineWidth', 6.0);
+        h = plot(theThresholdAxes, theFittedEllipsePoints(:,1), theFittedEllipsePoints(:,2), 'c-', 'LineWidth',2.0);
     end
 
     

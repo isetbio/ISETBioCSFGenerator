@@ -1,10 +1,10 @@
 function plotMultipleIsoresponseLMplaneEllipseThresholds()
 
-    linearityString = ''; % nonlinear';  %either '' or 'nonLinear' (has to be added manually in filename);
+    linearityString = 'nonlinear'; %''; % nonlinear';  %either '' or 'nonLinear' (has to be added manually in filename);
 
     useMetaContrast = true;
     useConeContrast = true;
-    mRGCOutputSignalType = 'cones'; %'cones' %'mRGCs';
+    mRGCOutputSignalType = 'mRGCs'; %'cones' %'mRGCs';
 
     noiseType = 'Gaussian_rceTemplateDistance';
     if (~useConeContrast && strcmp(mRGCOutputSignalType,'cones'))
@@ -111,7 +111,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
         exportFig = true;
         figName = sprintf('refC_%2.1f_%2.1f_%2.1f%s', 100*referenceLMSconeContrast(1), 100*referenceLMSconeContrast(2), 100*referenceLMSconeContrast(3));
         skippedDirections = 0;
-        [thresholdDeltaConeContrasts(iC,:,:), theThresholdAxes] = visualizeIsoThresholdEllipsesOnLMplane(...
+        [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints] = visualizeIsoThresholdEllipsesOnLMplane(...
             theLMSconeContrastDirections, ...
             theDeltaLMSconeContrastDirections, ...
             stimulusRMSLMconeContrast, ...
@@ -127,20 +127,18 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
 
         initializeFig = false;
 
-
-        LconeContrastThresholds = squeeze(thresholdDeltaConeContrasts(iC,1,:));
-        MconeContrastThresholds = squeeze(thresholdDeltaConeContrasts(iC,2,:));
-
-        [LconeContrastThresholds(:) MconeContrastThresholds(:)]
         if (~isempty(linearityString))
             theThresholdsDataFile = sprintf('%s_%s_%s_%s.mat', mRGCOutputSignalType,noiseType, linearityString, figName);
         else
             theThresholdsDataFile = sprintf('%s_%s_%s.mat', mRGCOutputSignalType, noiseType, figName);
         end
 
-        allData(figName) = [LconeContrastThresholds(:) MconeContrastThresholds()];
+        allData(figName) = struct(...
+            'referenceLMconeContrast', referenceLMSconeContrast, ...
+            'thresholdDeltaConeContrasts', thresholdDeltaConeContrasts, ...
+            'fittedEllipse', theFittedEllipsePoints);
 
-        save(fullfile(resultsFileBaseDir,theThresholdsDataFile), 'referenceLMSconeContrast', 'LconeContrastThresholds', 'MconeContrastThresholds');
+        save(fullfile(resultsFileBaseDir,theThresholdsDataFile), 'referenceLMSconeContrast', 'thresholdDeltaConeContrasts', 'theFittedEllipsePoints');
         fprintf('LM cone contrast thresholds saved in %s\n', theThresholdsDataFile);
     end
 
