@@ -30,8 +30,8 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
 
     hFig = figure(999); clf;
     set(hFig, 'Position', [100 400 1400 640], 'Color', [1 1 1]); 
-    ax = subplot('Position', [0.01 0.07 0.45 0.9]);
-    axModulation = subplot('Position', [0.50 0.07 0.45 0.9]); 
+    ax = subplot('Position', [0.01 0.07 0.45 0.85]);
+    axModulation = subplot('Position', [0.50 0.07 0.45 0.85]);
         
 
     for frameIndex = 1:scenesNum
@@ -95,11 +95,10 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         hold(ax, 'off');
         set(ax, 'CLim', [0 1], 'XLim', 0.5*xPixels*[-1 1], 'YLim', 0.5*yPixels*[-1 1]);
         set(ax, 'FontSize', 16,  'XTick', [], 'YTick', []);
-        title(ax,sprintf('%s LMS: %2.3f,%2.3f,%2.3f, xyY = (%2.3f,%2.3f,%2.2f cd/m2) (%2.0f msec)', ...
+        title(ax,sprintf('%s\nLMS: %2.3f,%2.3f,%2.3f, xyY = (%2.2f,%2.2f,%2.1f cd/m2) (t:%2.0f msec)', ...
             sceneGet(sceneSequence{frameIndex}, 'name'), ...
             meanL, meanM, meanS, ...
-            mean(xChroma(:)), mean(yChroma(:)), ...
-            sceneGet(sceneSequence{frameIndex}, 'mean luminance'), ...
+            mean(xChroma(:)), mean(yChroma(:)), sceneGet(sceneSequence{frameIndex}, 'mean luminance'), ...
             temporalSupportSeconds(frameIndex)*1000));
         
         % Render RGB gun modulation at center of stimulus
@@ -111,7 +110,7 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         set(axModulation, 'FontSize', 16, 'YLim', [min(min(RGBgunTrace(1:frameIndex,:))) max(max(RGBgunTrace(1:frameIndex,:)))], ...
                                  'XLim', [temporalSupportSeconds(1) temporalSupportSeconds(end)+eps]);
         xlabel(axModulation,'time (seconds)');
-        title(axModulation,'gun modulation at center of stimulus');
+        title(axModulation,'RGB gun modulation at center of stimulus');
         drawnow;
 
         if (~isempty(videoFileName))
