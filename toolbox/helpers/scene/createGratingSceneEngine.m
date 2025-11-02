@@ -85,7 +85,6 @@ gratingParams.customConeFundamentals = p.Results.customConeFundamentals;
 
 gratingParams.meanLuminanceCdPerM2 = p.Results.meanLuminanceCdPerM2;
 gratingParams.meanChromaticityXY = p.Results.meanChromaticityXY;
-
 gratingParams.backgroundLMSconeExcitations = p.Results.backgroundLMSconeExcitations;
 
 
@@ -99,23 +98,6 @@ gratingParams.spatialEnvelopeRadiusDegs = p.Results.spatialEnvelopeRadiusDegs;
 gratingParams.minPixelsNumPerCycle = p.Results.minPixelsNumPerCycle;
 gratingParams.spectralSupport = p.Results.spectralSupport;
 gratingParams.warningInsteadOfErrorOnOutOfGamut = p.Results.warningInsteadOfErrorOnOutOfGamut;
-
-
-% Update meanLuminanceCdPerM2 if we get passed backgroundLMSconeExcitations
-if (...
-    isfield(gratingParams, 'backgroundLMSconeExcitations') && ...
-    ~isempty(gratingParams.backgroundLMSconeExcitations) ...
-   )
-       
-   % Compute the required display mean luminance to achieve the desired backgroundLMSconeExcitations
-   T1 = colorTransformMatrix('stockman 2 xyz');
-   backgroundXYZ = reshape(gratingParams.backgroundLMSconeExcitations, [1 3]) * T1;
-   xyY = XYZToxyY(backgroundXYZ');
-   meanLuminanceCdPerM2 = xyY(3)*683;
-
-   gratingParams.meanLuminanceCdPerM2 = meanLuminanceCdPerM2;
-end
-
 gratingParams.displayParams.meanLuminanceCdPerM2 = gratingParams.meanLuminanceCdPerM2;
 
 

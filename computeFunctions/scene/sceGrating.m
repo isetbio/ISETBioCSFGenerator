@@ -281,15 +281,23 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(...
 
     % Background chromaticity and mean luminance vector
     xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.displayParams.meanLuminanceCdPerM2];
-    
+
     % Background XYZ tri-stimulus values
     backgroundXYZ = (xyYToXYZ(xyY(:)))';
-    
+
     % Background linear RGB primary values for the presentation display
     backgroundRGB = imageLinearTransform(backgroundXYZ, displayXYZToLinearRGB);
-    
+
     % Background LMS excitations
     backgroundLMS = imageLinearTransform(backgroundRGB, displayLinearRGBToLMS);
+
+    if (isfield(gratingParams, 'backgroundLMSconeExcitations'))
+        backgroundLMSatCurrentMeanLuminance = backgroundLMS
+        backgroundLMS = gratingParams.backgroundLMSconeExcitations
+        if (any(backgroundLMS > backgroundLMSatCurrentMeanLuminance))
+            fprintf('\nmean luminance (%2.1f) is not sufficient to support the desired background LMS\n', gratingParams.displayParams.meanLuminanceCdPerM2);
+        end
+    end
 
     % Compute the spatial contrast modulation pattern
     contrastPattern = frameContrast * generateSpatialModulationPattern(gratingParams, frameSpatialPhaseDegs);
