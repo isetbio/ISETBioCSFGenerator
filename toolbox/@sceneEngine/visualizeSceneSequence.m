@@ -1,9 +1,11 @@
 function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, varargin)
     p = inputParser;
     p.addParameter('videoFilename', [], @(x)(isempty(x)||ischar(x)));
+    p.addParameter('sRGBforSceneVisualization', false, @islogical);
     parse(p, varargin{:});
     videoFileName = p.Results.videoFilename;
-    
+    sRGBforSceneVisualization = p.Results.sRGBforSceneVisualization;
+
     scenesNum = numel(sceneSequence);
     RGBgunTrace = zeros(scenesNum,3);
     
@@ -17,7 +19,8 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
     % Compute the RGB settings for the display
     displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
-     
+    displayLinearRGBToLMS = displayGet(presentationDisplay, 'rgb2lms');
+
     if (~isempty(videoFileName))
         videoOBJ = VideoWriter(videoFileName, 'MPEG-4');
         videoOBJ.FrameRate = 10;
@@ -33,8 +36,11 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
 
     for frameIndex = 1:scenesNum
         
+
         % Extract the XYZ image representation
         xyzImage = sceneGet(sceneSequence{frameIndex}, 'xyz');
+        displaySettingsImage = sceneGet(sceneSequence{frameIndex}, 'rgb');
+
         if (frameIndex == 1)
             xPixels = size(xyzImage,2);
             yPixels = size(xyzImage,1);
@@ -49,10 +55,17 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         % Linear RGB image
         displayLinearRGBimage = imageLinearTransform(xyzImage, displayXYZToLinearRGB);
         RGBgunTrace(frameIndex,:) = squeeze(displayLinearRGBimage(mo,no,:));
-       
-        % Settings RGB image.  Can't pass values less than 0.
-        displayLinearRGBimage(displayLinearRGBimage < 0) = 0;
-        displaySettingsImage = (ieLUTLinear(displayLinearRGBimage, displayGet(presentationDisplay, 'inverse gamma'))) / displayGet(presentationDisplay, 'nLevels');
+
+        displayLinearLMSimage = imageLinearTransform(displayLinearRGBimage,displayLinearRGBToLMS);
+        Limage = squeeze(displayLinearLMSimage(:,:,1));
+        Mimage = squeeze(displayLinearLMSimage(:,:,2));
+        Simage = squeeze(displayLinearLMSimage(:,:,3));
+        meanL = mean(Limage(:));
+        meanM = mean(Mimage(:));
+        meanS = mean(Simage(:));
+
+        xChroma = xyzImage(:,:,1)./sum(xyzImage,3);
+        yChroma = xyzImage(:,:,2)./sum(xyzImage,3);
 
         % Render image
         stimProfile = squeeze(sum(displayLinearRGBimage(mo,:,:),3));
@@ -64,8 +77,13 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
             normalizedStimProfile = stimProfile*0;
         end
 
-        
-        image(ax,x,y,displaySettingsImage); hold(ax, 'on');
+        if (sRGBforSceneVisualization)
+            image(ax,x,y,lrgb2srgb(displaySettingsImage));
+        else
+            image(ax,x,y,displaySettingsImage);
+        end
+
+        hold(ax, 'on');
         
         % Profile of the R+B+G guns
         plot(ax, x, yPixels/2 * normalizedStimProfile, 'k.-');
@@ -75,12 +93,16 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         %plot(ax, max(abs(x))*[-1 1], [0 0],'k-');
         axis(ax, 'image');
         hold(ax, 'off');
-        set(ax, 'CLim', [min(displaySettingsImage(:)) max(displaySettingsImage(:))], 'XLim', 0.5*xPixels*[-1 1], 'YLim', 0.5*yPixels*[-1 1]);
+        set(ax, 'CLim', [0 1], 'XLim', 0.5*xPixels*[-1 1], 'YLim', 0.5*yPixels*[-1 1]);
         set(ax, 'FontSize', 16,  'XTick', [], 'YTick', []);
-        title(ax,sprintf('%s (%2.0f msec)', sceneGet(sceneSequence{frameIndex}, 'name'),temporalSupportSeconds(frameIndex)*1000));
+        title(ax,sprintf('%s LMS: %2.3f,%2.3f,%2.3f, xyY = (%2.3f,%2.3f,%2.2f cd/m2) (%2.0f msec)', ...
+            sceneGet(sceneSequence{frameIndex}, 'name'), ...
+            meanL, meanM, meanS, ...
+            mean(xChroma(:)), mean(yChroma(:)), ...
+            sceneGet(sceneSequence{frameIndex}, 'mean luminance'), ...
+            temporalSupportSeconds(frameIndex)*1000));
         
         % Render RGB gun modulation at center of stimulus
-        
         plot(axModulation, temporalSupportSeconds(1:frameIndex), RGBgunTrace(1:frameIndex,1), 'ro-', 'MarkerSize', 12, 'MarkerFaceColor', [1 0.5 0.5], 'LineWidth', 1.5); 
         hold(axModulation, 'on');
         plot(axModulation, temporalSupportSeconds(1:frameIndex), RGBgunTrace(1:frameIndex,2), 'go-', 'MarkerSize', 12, 'MarkerFaceColor', [0 1 0.5], 'LineWidth', 1.5);
