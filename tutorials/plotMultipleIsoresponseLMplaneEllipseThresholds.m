@@ -1,15 +1,10 @@
 function plotMultipleIsoresponseLMplaneEllipseThresholds()
 
-    linearityString = '';  %either '' or 'nonLinear' (has to be added manually in filename);
+    linearityString = ''; % nonlinear';  %either '' or 'nonLinear' (has to be added manually in filename);
 
     useMetaContrast = true;
-
-    %useConeContrast = true;
-    %mRGCOutputSignalType = 'mRGCs'; %'cones' %'mRGCs';
-
     useConeContrast = true;
     mRGCOutputSignalType = 'cones'; %'cones' %'mRGCs';
-
 
     noiseType = 'Gaussian_rceTemplateDistance';
     if (~useConeContrast && strcmp(mRGCOutputSignalType,'cones'))
@@ -20,16 +15,9 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
     matlabDir = strrep(isetbioRootPath, '/toolboxes/isetbio', '');
     rootDir = fullfile(matlabDir, 'toolboxes/ISETBioCSFGenerator/local/t_isoresponseLMplaneEllipses/results');
 
-    if (useConeContrast)
-       resultsFileBaseDir = fullfile(rootDir, ...
-            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_1_FEMs_0_mRGCMosaic_%s_%s', useMetaContrast,noiseType, mRGCOutputSignalType));
-    else
-        resultsFileBaseDir = fullfile(rootDir, ...
-            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_0_FEMs_0_mRGCMosaic_%s_%s', useMetaContrast,noiseType, mRGCOutputSignalType));
-    end
 
-
-
+    resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', useMetaContrast, useConeContrast, noiseType, mRGCOutputSignalType));
     figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
 
 
@@ -59,9 +47,12 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
     theThresholdAxes = []; 
     maxVisualizedThreshold = 0.35;
 
+    allData = containers.Map();
+
     for iC = 1:size(Pts_coneContrast,1)
+
         referenceLMSconeContrast = Pts_coneContrast(iC,:);
-        referenceLMSconeContrast(3) = 0;
+
         if (isempty(linearityString)) && (strcmp(mRGCOutputSignalType, 'mRGCs'))
             thresholdsDataFileName = ...
                 sprintf('%sCSF_SF_%2.2fCPD_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_RefLMScontrast_%2.1f_%2.1f_%2.1f%sLinear.mat', ...
@@ -90,13 +81,13 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
                 presentationMode);
         end
 
-    load(fullfile(resultsFileBaseDir,thresholdsDataFileName), ...
-        'options', ...
-        'theLMSconeContrastDirections', 'theDeltaLMSconeContrastDirections', ...
-        'stimulusRMSLMconeContrast', 'examinedDirectionsOnLMplane', 'thresholdContrasts');
+        load(fullfile(resultsFileBaseDir,thresholdsDataFileName), ...
+            'options', ...
+            'theLMSconeContrastDirections', 'theDeltaLMSconeContrastDirections', ...
+            'stimulusRMSLMconeContrast', 'examinedDirectionsOnLMplane', 'thresholdContrasts');
 
-    skippedDirections = 0;
-    gratingSceneParams = struct( ...
+
+        gratingSceneParams = struct( ...
             'meanLuminanceCdPerM2', options.meanLuminanceCdPerM2, ...
             'meanChromaticityXY', options.meanChromaticityXY, ...
             'backgroundLMSconeExcitations', options.backgroundLMSconeExcitations, ...
@@ -111,19 +102,16 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
             'frameDurationSeconds', options.frameDurationSeconds, ...
             'spatialPhase', options.spatialPhaseDegs);
 
-    % Figure for plotting the thresholds on the LM plane
-    % along with the stimuli
-    hFigStimuliAndThresholds = figure(2346); clf;
-    set(hFigStimuliAndThresholds, 'Color', [1 1 1], 'Position', [10 10 1200 1200]);
-    set(hFigStimuliAndThresholds, 'HandleVisibility', 'off');
-    
-    exportFig = true;
-    
-    
+        % Figure for plotting the thresholds on the LM plane
+        % along with the stimuli
+        hFigStimuliAndThresholds = figure(2346); clf;
+        set(hFigStimuliAndThresholds, 'Color', [1 1 1], 'Position', [10 10 1200 1200]);
+        set(hFigStimuliAndThresholds, 'HandleVisibility', 'off');
 
-    figName = sprintf('refC_%2.1f_%2.1f_%2.1f%s', 100*referenceLMSconeContrast(1), 100*referenceLMSconeContrast(2), 100*referenceLMSconeContrast(3), linearityString);
-
-    [thresholdDeltaConeContrasts(iC,:,:), theThresholdAxes] = visualizeIsoThresholdEllipsesOnLMplane(...
+        exportFig = true;
+        figName = sprintf('refC_%2.1f_%2.1f_%2.1f%s', 100*referenceLMSconeContrast(1), 100*referenceLMSconeContrast(2), 100*referenceLMSconeContrast(3));
+        skippedDirections = 0;
+        [thresholdDeltaConeContrasts(iC,:,:), theThresholdAxes] = visualizeIsoThresholdEllipsesOnLMplane(...
             theLMSconeContrastDirections, ...
             theDeltaLMSconeContrastDirections, ...
             stimulusRMSLMconeContrast, ...
@@ -137,15 +125,23 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
             figureFileBaseDir, hFigStimuliAndThresholds, ...
             exportFig, initializeFig, theThresholdAxes, figName);
 
-    initializeFig = false;
+        initializeFig = false;
 
 
-    LconeContrastThresholds = squeeze(thresholdDeltaConeContrasts(iC,1,:));
-    MconeContrastThresholds = squeeze(thresholdDeltaConeContrasts(iC,2,:));
+        LconeContrastThresholds = squeeze(thresholdDeltaConeContrasts(iC,1,:));
+        MconeContrastThresholds = squeeze(thresholdDeltaConeContrasts(iC,2,:));
 
-    [LconeContrastThresholds(:) MconeContrastThresholds(:)]
-    save(sprintf('%s_%s%s.mat', mRGCOutputSignalType,noiseType, figName), 'referenceLMSconeContrast', 'LconeContrastThresholds', 'MconeContrastThresholds');
+        [LconeContrastThresholds(:) MconeContrastThresholds(:)]
+        if (~isempty(linearityString))
+            theThresholdsDataFile = sprintf('%s_%s_%s_%s.mat', mRGCOutputSignalType,noiseType, linearityString, figName);
+        else
+            theThresholdsDataFile = sprintf('%s_%s_%s.mat', mRGCOutputSignalType, noiseType, figName);
+        end
 
+        allData(figName) = [LconeContrastThresholds(:) MconeContrastThresholds()];
+
+        save(fullfile(resultsFileBaseDir,theThresholdsDataFile), 'referenceLMSconeContrast', 'LconeContrastThresholds', 'MconeContrastThresholds');
+        fprintf('LM cone contrast thresholds saved in %s\n', theThresholdsDataFile);
     end
 
 
@@ -153,7 +149,13 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
     set(hFigStimuliAndThresholds, 'HandleVisibility', 'on');
 
     if ((~isempty(figureFileBaseDir)) && (exportFig))
-        NicePlot.exportFigToPNG(fullfile(figureFileBaseDir,figName), hFigStimuliAndThresholds, 300);
+        theFigName = fullfile(figureFileBaseDir,figName);
+        NicePlot.exportFigToPNG(theFigName, hFigStimuliAndThresholds, 300);
     end
+
+    theSummaryDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_%s_Summary.mat', mRGCOutputSignalType, noiseType, linearityString));
+    save(theSummaryDataFile, 'allData');
+
+    fprintf(sprintf('Summary threshold data for all reference points saved in %s\n', theSummaryDataFile));
 
 end
