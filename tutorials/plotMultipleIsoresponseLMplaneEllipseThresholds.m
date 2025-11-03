@@ -1,10 +1,10 @@
 function plotMultipleIsoresponseLMplaneEllipseThresholds()
 
-    linearityString = 'nonlinear'; %''; % nonlinear';  %either '' or 'nonLinear' (has to be added manually in filename);
+    linearityString = ''; %''; % nonlinear';  %either '' or 'nonLinear' (has to be added manually in filename);
 
     useMetaContrast = true;
-    useConeContrast = true;
-    mRGCOutputSignalType = 'mRGCs'; %'cones' %'mRGCs';
+    useConeContrast = ~true;
+    mRGCOutputSignalType = 'cones'; %'cones' %'mRGCs';
 
     noiseType = 'Gaussian_rceTemplateDistance';
     if (~useConeContrast && strcmp(mRGCOutputSignalType,'cones'))

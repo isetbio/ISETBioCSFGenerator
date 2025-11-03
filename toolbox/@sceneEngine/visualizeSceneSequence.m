@@ -1,7 +1,7 @@
 function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, varargin)
     p = inputParser;
     p.addParameter('videoFilename', [], @(x)(isempty(x)||ischar(x)));
-    p.addParameter('sRGBforSceneVisualization', false, @islogical);
+    p.addParameter('sRGBforSceneVisualization', true, @islogical);
     parse(p, varargin{:});
     videoFileName = p.Results.videoFilename;
     sRGBforSceneVisualization = p.Results.sRGBforSceneVisualization;
