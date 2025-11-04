@@ -1,38 +1,50 @@
 function plotMultipleIsoresponseLMplaneEllipseThresholds()
+%
+% Script to integrate LMellipse data points computes for a set of reference contrasts
+% These data are previously computed by running t_isoresponseLMplaneEllipses()
+% The integrated data are then loaded by compareHumanToMRGCmosaicEllipses()
+% which generates Figure 13 of the 2025 R01
 
+
+% History:
+%    11/01/25  NPC  Wrote it.
+
+% Examples:
+%{
+
+% UTTBSkip
+
+    plotMultipleIsoresponseLMplaneEllipseThresholds();
+
+%}
+
+    % Examined reference contrasts
+    Pts_coneContrast = [
+       -0.3000   -0.3000         0; ...
+       -0.1500   -0.1500    0.0000; ...
+        0.0000    0.0000         0; ...
+        0.1500    0.1500         0; ...
+        0.3000    0.3000         0; ...
+       -0.0500    0.0500         0; ...
+        0.0500   -0.0500    0.0000];
+
+    % Choose which condition to load data for
     linearityString = ''; %''; % nonlinear';  %either '' or 'nonLinear' (has to be added manually in filename);
 
     useMetaContrast = true;
     useConeContrast = ~true;
-    mRGCOutputSignalType = 'cones'; %'cones' %'mRGCs';
-
-    noiseType = 'Gaussian_rceTemplateDistance';
-    if (~useConeContrast && strcmp(mRGCOutputSignalType,'cones'))
-        noiseType = 'Poisson_rcePoisson';
-    end
+    mRGCOutputSignalType = 'cones'; % Choose from {'cones' %'mRGCs'};
+    noiseType = 'Gaussian_rceTemplateDistance'; % Choose from {'Gaussian_rceTemplateDistance', 'Poisson_rcePoisson'}
 
 
     matlabDir = strrep(isetbioRootPath, '/toolboxes/isetbio', '');
     rootDir = fullfile(matlabDir, 'toolboxes/ISETBioCSFGenerator/local/t_isoresponseLMplaneEllipses/results');
-
-
     resultsFileBaseDir = fullfile(rootDir, ...
             sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', useMetaContrast, useConeContrast, noiseType, mRGCOutputSignalType));
     figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
 
 
-    Pts_coneContrast = [
-   -0.3000   -0.3000         0; ...
-   -0.1500   -0.1500    0.0000; ...
-    0.0000    0.0000         0; ...
-    0.1500    0.1500         0; ...
-    0.3000    0.3000         0; ...
-   -0.0500    0.0500         0; ...
-    0.0500   -0.0500    0.0000];
 
-
-
-    dir(resultsFileBaseDir)
     
     examinedSpatialFrequencyCPD = 0;
     opticsType = 'loadComputeReadyRGCMosaic';

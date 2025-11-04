@@ -1,17 +1,84 @@
 function compareHumanToMRGCmosaicEllipses()
+%
+% Script to generate Figure 13 of the 2025 R01 which compares human to model LM ellipses
+% The model data are integrated by running plotMultipleIsoresponseLMplaneEllipseThresholds()
 
+% History:
+%    11/01/25  NPC  Wrote it.
+
+% Examples:
+%{
+
+% UTTBSkip
+
+    compareHumanToMRGCmosaicEllipses();
+
+%}
+
+    % Load human data provided by FangFang
     humanEllipses = humanEllipsesFromFangFangNov2025();
 
+    % Whether to draw the individual data points
     drawIndividualPoints = ~true;
 
-    hFig = generateFigure(1, humanEllipses, 'cones_Poisson_rcePoisson_Summary.mat', 210, ' cones (Poisson noise, ideal observer) ', drawIndividualPoints);
-    NicePlot.exportFigToPDF('conesPoisson.pdf', hFig, 300);
+    % Set up source directory
+    matlabDir = strrep(isetbioRootPath, '/toolboxes/isetbio', '');
+    rootDir = fullfile(matlabDir, 'toolboxes/ISETBioCSFGenerator/local/t_isoresponseLMplaneEllipses/results');
 
-    hFig = generateFigure(2, humanEllipses, 'cones_Gaussian_rceTemplateDistance_Summary.mat', 120, ' cones (Gaussian noise, template observer) ', drawIndividualPoints);
-    NicePlot.exportFigToPDF('conesGaussian.pdf', hFig, 300);
 
-    hFig = generateFigure(3, humanEllipses, 'mRGCs_Gaussian_rceTemplateDistance_Summary.mat', 0.75, ' mRGCs (Gaussian noise, template observer) ', drawIndividualPoints);
-    NicePlot.exportFigToPDF('mRGCsGaussian.pdf', hFig, 300);
+    % Load the computed ellipses for the different reference points.
+    % The data across different reference points are aggregated by
+    % calling plotMultipleIsoresponseLMplaneEllipseThresholds()
+
+    % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Poisson noise
+    useMetaContrast = true;
+    useConeContrast = false;
+    mRGCOutputSignalType = 'cones';
+    noiseAndClassifierType = 'Poisson_rcePoisson';
+    resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', ...
+            useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
+    figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
+    theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
+    mRGCmosaicEllipseScalingFactor = 210;
+    theLegend = ' cones (Poisson noise, ideal observer) ';
+    hFig = generateFigure(1, humanEllipses, theModelDataFile, ...
+        mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
+    NicePlot.exportFigToPDF(fullfile(figureFileBaseDir ,'conesPoisson.pdf'), hFig, 300);
+
+
+    % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Gaussian noise
+    useMetaContrast = true;
+    useConeContrast = false;
+    mRGCOutputSignalType = 'cones';
+    noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
+    resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', ...
+            useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
+    figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
+    theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
+    theLegend = ' cones (Gaussian noise, template observer) ';
+    mRGCmosaicEllipseScalingFactor = 120;
+    hFig = generateFigure(2, humanEllipses, theModelDataFile, ...
+        mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
+    NicePlot.exportFigToPDF(fullfile(figureFileBaseDir, 'conesGaussian.pdf'), hFig, 300);
+
+
+    % Compare human ellipses to coneMosaic ellipses computed on mRGC responses + Gaussian noise
+    useMetaContrast = true;
+    useConeContrast = true;
+    mRGCOutputSignalType = 'mRGCs';
+    noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
+    resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', ...
+            useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
+    figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
+    theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
+    theLegend = ' mRGCs (Gaussian noise, template observer) ';
+    mRGCmosaicEllipseScalingFactor = 0.75;
+    hFig = generateFigure(3, humanEllipses, theModelDataFile, ...
+        mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
+    NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , 'mRGCsGaussian.pdf'), hFig, 300);
 
 
 end
