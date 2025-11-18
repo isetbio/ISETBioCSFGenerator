@@ -30,9 +30,11 @@ else
     % Use employed display
     presentationDisplay = obj.presentationDisplay;
 end
+
 % Compute the RGB settings for the display
 displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
 displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
+displayLinearRGBToLMS = displayGet(presentationDisplay, 'rgb2lms');
 
 % Extract the XYZ image representation
 if (isempty(theOI))
@@ -40,6 +42,31 @@ if (isempty(theOI))
 else
     xyzImage = oiGet(theOI, 'xyz');
 end
+
+
+% Linear RGB image
+displayLinearRGBimage = imageLinearTransform(xyzImage, displayXYZToLinearRGB);
+displayLinearLMSimage = imageLinearTransform(displayLinearRGBimage,displayLinearRGBToLMS);
+Limage = squeeze(displayLinearLMSimage(:,:,1));
+Mimage = squeeze(displayLinearLMSimage(:,:,2));
+Simage = squeeze(displayLinearLMSimage(:,:,3));
+meanL = mean(Limage(:));
+meanM = mean(Mimage(:));
+meanS = mean(Simage(:));
+
+xChroma = xyzImage(:,:,1)./sum(xyzImage,3);
+yChroma = xyzImage(:,:,2)./sum(xyzImage,3);
+luma = xyzImage(:,:,3);
+
+middleRow = round(size(Limage,1)/2);
+middleCol = round(size(Limage,2)/2);
+centerL = Limage(middleRow, middleCol);
+centerM = Mimage(middleRow, middleCol);
+centerS = Simage(middleRow, middleCol);
+centerChromaX = xChroma(middleRow, middleCol,1);
+centerChromaY = yChroma(middleRow, middleCol,1);
+centerLuminance = luma(middleRow, middleCol,1);
+
 
 if (frameIndex == 1)
     xPixels = size(xyzImage,2);
@@ -50,13 +77,7 @@ if (frameIndex == 1)
     y = y-mean(y);
 end
 
-if (skipOutOfGamutCheck)
-    if (isempty(theOI))
-        displaySettingsImage = sceneGet(theScene, 'rgb');
-    else
-        displaySettingsImage = oiGet(theOI, 'rgb');
-    end
-else
+if (~skipOutOfGamutCheck)
     % Linear RGB image
     displayLinearRGBimage = imageLinearTransform(xyzImage, displayXYZToLinearRGB);
 
@@ -80,8 +101,12 @@ else
         fprintf(2,'\t%2.1f of the image pixels were > 1)\n', 100*numel(overOneIdx)/pixelsNum);
     end
 
-    % Settings RGB image
-    displaySettingsImage = (ieLUTLinear(displayLinearRGBimage, displayGet(presentationDisplay, 'inverse gamma'))) / displayGet(presentationDisplay, 'nLevels');
+end
+
+if (isempty(theOI))
+    displaySettingsImage = sceneGet(theScene, 'rgb');
+else
+    displaySettingsImage = oiGet(theOI, 'rgb');
 end
 
 % Render image
@@ -100,6 +125,14 @@ axis(axesHandle, 'image');
 % Cross hairs
 hold(axesHandle,'on');
 set(axesHandle, 'XTick', [], 'YTick', []);
+
+title(axesHandle,sprintf('mean LMS: %2.3f,%2.3f,%2.3f\nmean xyY: (%2.2f,%2.2f,%2.1f(%2.1f) cd/m2)\ncenter LMS: %2.3f,%2.3f,%2.3f\ncenter xyY: (%2.2f,%2.2f,%2.1f cd/m2)', ...
+    meanL, meanM, meanS, ...
+    mean(xChroma(:)), mean(yChroma(:)), sceneGet(sceneSequence{frameIndex}, 'mean luminance'), mean(luma(:)), ...
+    centerL, centerM, centerS, ...
+    centerChromaX, centerChromaY, centerLuminance));
+
+
 drawnow;
 
 end

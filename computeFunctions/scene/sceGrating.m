@@ -283,25 +283,26 @@ function [theSceneFrame, outOfGamutFlag] = generateGratingSequenceFrame(...
     displayLinearRGBToXYZ = displayGet(presentationDisplay, 'rgb2xyz');
     displayXYZToLinearRGB = inv(displayLinearRGBToXYZ);
 
-    % Background chromaticity and mean luminance vector
-    xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.displayParams.meanLuminanceCdPerM2];
 
-    % Background XYZ tri-stimulus values
-    backgroundXYZ = (xyYToXYZ(xyY(:)))';
+    if ((isfield(gratingParams, 'backgroundLMSconeExcitations')) && (~isempty(gratingParams.backgroundLMSconeExcitations)))
+        backgroundLMS = gratingParams.backgroundLMSconeExcitations;
+        backgroundRGB = imageLinearTransform(backgroundLMS, displayLMSToLinearRGB);
+        backgroundXYZ = imageLinearTransform(backgroundRGB, displayLinearRGBToXYZ);
+        xyY = XYZToxyY(backgroundXYZ(:));
+    else
+        % Background chromaticity and mean luminance vector
+        xyY = [gratingParams.meanChromaticityXY(1) gratingParams.meanChromaticityXY(2)  gratingParams.displayParams.meanLuminanceCdPerM2];
 
-    % Background linear RGB primary values for the presentation display
-    backgroundRGB = imageLinearTransform(backgroundXYZ, displayXYZToLinearRGB);
+        % Background XYZ tri-stimulus values
+        backgroundXYZ = (xyYToXYZ(xyY(:)))';
 
-    % Background LMS excitations
-    backgroundLMS = imageLinearTransform(backgroundRGB, displayLinearRGBToLMS);
+        % Background linear RGB primary values for the presentation display
+        backgroundRGB = imageLinearTransform(backgroundXYZ, displayXYZToLinearRGB);
 
-    if (isfield(gratingParams, 'backgroundLMSconeExcitations'))
-        backgroundLMSatCurrentMeanLuminance = backgroundLMS
-        backgroundLMS = gratingParams.backgroundLMSconeExcitations
-        if (any(backgroundLMS > backgroundLMSatCurrentMeanLuminance))
-            fprintf('\nmean luminance (%2.1f) is not sufficient to support the desired background LMS\n', gratingParams.displayParams.meanLuminanceCdPerM2);
-        end
+        % Background LMS excitations
+        backgroundLMS = imageLinearTransform(backgroundRGB, displayLinearRGBToLMS);
     end
+
 
     % Compute the spatial contrast modulation pattern
     contrastPattern = frameContrast * generateSpatialModulationPattern(gratingParams, frameSpatialPhaseDegs);

@@ -8,7 +8,8 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
 
     scenesNum = numel(sceneSequence);
     RGBgunTrace = zeros(scenesNum,3);
-    
+
+
     if (isempty(obj.presentationDisplay))
        % Generate generic display
        presentationDisplay = displayCreate('LCD-Apple');
@@ -28,14 +29,22 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         videoOBJ.open();
     end
 
-    hFig = figure(999); clf;
-    set(hFig, 'Position', [100 400 1400 640], 'Color', [1 1 1]); 
-    ax = subplot('Position', [0.01 0.07 0.45 0.85]);
-    axModulation = subplot('Position', [0.50 0.07 0.45 0.85]);
-        
+    theSceneEngineName = obj.name;
+    theSceneName = sceneGet(sceneSequence{1}, 'name');
+    if (strcmp(theSceneName, 'narrow band'))
+        hFig = figure(9000); clf;
+        set(hFig, 'Position', [5000 10 1400 640], 'Color', [1 1 1]);
+    else
+        hFig = figure(1000); clf;
+        set(hFig, 'Position', [100 400 1400 640], 'Color', [1 1 1]);
+    end
+
+    ax = subplot('Position', [0.01 0.07 0.45 0.80]);
+    axModulation = subplot('Position', [0.50 0.07 0.45 0.80]);
 
     for frameIndex = 1:scenesNum
         
+        theSceneName = sceneGet(sceneSequence{frameIndex}, 'name');
 
         % Extract the XYZ image representation
         xyzImage = sceneGet(sceneSequence{frameIndex}, 'xyz');
@@ -66,6 +75,16 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
 
         xChroma = xyzImage(:,:,1)./sum(xyzImage,3);
         yChroma = xyzImage(:,:,2)./sum(xyzImage,3);
+        luma = xyzImage(:,:,3);
+
+        middleRow = round(size(Limage,1)/2);
+        middleCol = round(size(Limage,2)/2);
+        centerL = Limage(middleRow, middleCol);
+        centerM = Mimage(middleRow, middleCol);
+        centerS = Simage(middleRow, middleCol);
+        centerChromaX = xChroma(middleRow, middleCol,1);
+        centerChromaY = yChroma(middleRow, middleCol,1);
+        centerLuminance = luma(middleRow, middleCol,1);
 
         % Render image
         stimProfile = squeeze(sum(displayLinearRGBimage(mo,:,:),3));
@@ -95,10 +114,12 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         hold(ax, 'off');
         set(ax, 'CLim', [0 1], 'XLim', 0.5*xPixels*[-1 1], 'YLim', 0.5*yPixels*[-1 1]);
         set(ax, 'FontSize', 16,  'XTick', [], 'YTick', []);
-        title(ax,sprintf('%s\nLMS: %2.3f,%2.3f,%2.3f, xyY = (%2.2f,%2.2f,%2.1f cd/m2) (t:%2.0f msec)', ...
-            sceneGet(sceneSequence{frameIndex}, 'name'), ...
+        title(ax,sprintf('%s-%s\nmean(LMS): %2.3f,%2.3f,%2.3f, mean(xyY) = (%2.2f,%2.2f,%2.1f cd/m2)\ncenter(LMS): %2.3f,%2.3f,%2.3f, center(xyY) = (%2.2f,%2.2f,%2.1f cd/m2)\n(t:%2.0f msec)', ...
+            theSceneEngineName, theSceneName, ...
             meanL, meanM, meanS, ...
             mean(xChroma(:)), mean(yChroma(:)), sceneGet(sceneSequence{frameIndex}, 'mean luminance'), ...
+            centerL, centerM, centerS, ...
+            centerChromaX, centerChromaY, centerLuminance, ...
             temporalSupportSeconds(frameIndex)*1000));
         
         % Render RGB gun modulation at center of stimulus
