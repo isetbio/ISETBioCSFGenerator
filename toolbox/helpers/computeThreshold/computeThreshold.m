@@ -135,6 +135,7 @@ p.addParameter('visualizeStimulus', false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('datasavePara', [], @(x)(isempty(x) || (isstruct(x))));
 p.addParameter('TAFC', false, @islogical);
+p.addParameter('nullSceneEngineToEmploy', [], @(x)(isempty(x) || (isa(x, 'sceneEngine'))));
 p.addParameter('useMetaContrast', false, @islogical);
 p.addParameter('trainFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 p.addParameter('testFixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
@@ -146,6 +147,7 @@ visualizeStimulus = p.Results.visualizeStimulus;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 datasavePara = p.Results.datasavePara;
 isTAFC = p.Results.TAFC;
+theNullSceneEngine = p.Results.nullSceneEngineToEmploy;
 trainFixationalEMObj = p.Results.trainFixationalEM;
 testFixationalEMObj = p.Results.testFixationalEM;
 maxVisualizedNoisyResponseInstanceStimuli = p.Results.maxVisualizedNoisyResponseInstanceStimuli;
@@ -214,8 +216,13 @@ testedContrasts = [];
 % contrasts studied.
 
 if isTAFC
-    nullContrast = 0.0;
-    [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
+    if (isempty(theNullSceneEngine))
+        nullContrast = 0.0;
+        [theNullSceneSequence, theSceneTemporalSupportSeconds] = theSceneEngine.compute(nullContrast);
+    else
+        nullContrast = 0.0;
+        [theNullSceneSequence, theSceneTemporalSupportSeconds] = theNullSceneEngine.compute(nullContrast);
+    end
 end
 
 % Set up for saving diagnostic information if desired.
