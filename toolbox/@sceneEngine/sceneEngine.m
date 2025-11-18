@@ -58,6 +58,9 @@ classdef sceneEngine < handle
     
     %% Private properties
     properties (SetAccess=private)
+        % User-passed name
+        name = 'none';
+
         % User-passed function handle to the scene computation routine
         sceneComputeFunction
         

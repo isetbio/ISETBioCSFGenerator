@@ -103,10 +103,14 @@ function dataOut = sceGrating(sceneEngineOBJ, testContrast, gratingParams)
     
     % Generate the display on which the gratings are rendered
     gratingParams.displayParams.spectralSupport = gratingParams.spectralSupport;
+    gratingParams.displayParams.meanLuminanceCdPerM2 = gratingParams.meanLuminanceCdPerM2;
+
     presentationDisplay = generateConventionalxyYDisplay(gratingParams.displayParams);
     
+
     % Generate ths scene sequence depicting frames of the modulated grating
-    [theSceneSequence, temporalSupportSeconds, statusReport] = generateGratingSequence(presentationDisplay, gratingParams, testContrast);
+    [theSceneSequence, temporalSupportSeconds, statusReport] = ...
+        generateGratingSequence(presentationDisplay, gratingParams, testContrast);
 
     % Check the visualizeEachCompute flag of the sceneEngineOBJ, and if set to true,
     % call its visualizeSceneSequence() method to visualize the generate scene sequence.
@@ -521,6 +525,7 @@ function p = generateDefaultParams()
     displayParams.meanLuminanceCdPerM2 = stimMeanLuminanceCdPerM2;
 
     p = struct(...
+        'sceneEngineName', 'sceGratingEngine', ...      % an optional name (label) for the parent sceneEngine
         'spectralSupport', 400:10:750, ...              % spectral support for the computations
         'displayParams', displayParams, ...
         'filter',struct(...                             % spatial: apply a filter in front of the display 
