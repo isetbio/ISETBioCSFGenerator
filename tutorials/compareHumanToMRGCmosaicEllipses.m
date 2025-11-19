@@ -19,7 +19,7 @@ function compareHumanToMRGCmosaicEllipses()
     humanEllipses = humanEllipsesFromFangFangNov2025();
 
     % Whether to draw the individual data points
-    drawIndividualPoints = ~true;
+    drawIndividualPoints = true;
 
     % Set up source directory
     matlabDir = strrep(isetbioRootPath, '/toolboxes/isetbio', '');
@@ -33,22 +33,22 @@ function compareHumanToMRGCmosaicEllipses()
     % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Poisson noise
     useMetaContrast = true;
     useConeContrast = false;
-    mRGCOutputSignalType = 'cones';
     noiseAndClassifierType = 'Poisson_rcePoisson';
+    mRGCOutputSignalType = 'cones';
+
     resultsFileBaseDir = fullfile(rootDir, ...
             sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', ...
             useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
     figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
     theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
-    mRGCmosaicEllipseScalingFactor = 210;
-    theLegend = ' cones (Poisson noise, ideal observer) ';
+    mRGCmosaicEllipseScalingFactor = 240;
+    theLegend = ' cone excitations (Poisson noise, ideal observer) ';
     hFig = generateFigure(1, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir ,'conesPoisson.pdf'), hFig, 300);
 
 
     % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Gaussian noise
-    useMetaContrast = true;
     useConeContrast = false;
     mRGCOutputSignalType = 'cones';
     noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
@@ -57,15 +57,31 @@ function compareHumanToMRGCmosaicEllipses()
             useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
     figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
     theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
-    theLegend = ' cones (Gaussian noise, template observer) ';
-    mRGCmosaicEllipseScalingFactor = 120;
+    theLegend = ' cone excitations (Gaussian noise, template observer) ';
+    mRGCmosaicEllipseScalingFactor = 51;
     hFig = generateFigure(2, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir, 'conesGaussian.pdf'), hFig, 300);
 
 
+    % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Gaussian noise
+    useConeContrast = true;
+    mRGCOutputSignalType = 'cones';
+    noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
+    resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', ...
+            useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
+    figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
+    theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
+    theLegend = ' cone contrasts (Gaussian noise, template observer) ';
+    mRGCmosaicEllipseScalingFactor = 21;
+    hFig = generateFigure(3, humanEllipses, theModelDataFile, ...
+        mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
+    NicePlot.exportFigToPDF(fullfile(figureFileBaseDir, 'conesContrastGaussian.pdf'), hFig, 300);
+
+
+pause
     % Compare human ellipses to coneMosaic ellipses computed on mRGC responses + Gaussian noise
-    useMetaContrast = true;
     useConeContrast = true;
     mRGCOutputSignalType = 'mRGCs';
     noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
@@ -76,7 +92,7 @@ function compareHumanToMRGCmosaicEllipses()
     theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
     theLegend = ' mRGCs (Gaussian noise, template observer) ';
     mRGCmosaicEllipseScalingFactor = 0.75;
-    hFig = generateFigure(3, humanEllipses, theModelDataFile, ...
+    hFig = generateFigure(4, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , 'mRGCsGaussian.pdf'), hFig, 300);
 
@@ -100,7 +116,6 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
 
     % Draw
 
-    
     for iRef = 1:numel(theReferenceContrastLabels)
         d = allData(theReferenceContrastLabels{iRef});
         if (drawIndividualPoints)
@@ -110,7 +125,7 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
             meanY = mean(y);
             x = meanX + (x-meanX) * mRGCmosaicEllipseScalar;
             y = meanY + (y-meanY) * mRGCmosaicEllipseScalar;
-            plot(ax,x, y, 'ro', 'MarkerSize', 8, 'LineWidth', 1.0, 'MarkerEdgeColor', 0.5*[0.7 0.5 0.5], 'MarkerFaceColor', [0.7 0.5 0.5]);
+            plot(ax,x, y, 'ro', 'MarkerSize', 12, 'LineWidth', 1.0, 'MarkerEdgeColor', 0.5*[0.7 0.5 0.5], 'MarkerFaceColor', [0.7 0.5 0.5]);
         end
 
         x = d.fittedEllipse(:,1);
@@ -150,7 +165,7 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
     hL = legend(ax, [p1 p2], {mRGCmosaicLabel, ' human'}, 'Location', 'NorthWest', 'NumColumns',1);
     set(hL, 'EdgeColor', [0.9 0.9 0.9], 'Color', [0.95 0.95 0.95]);
 
-    maxVisualizedContrast = 0.21;
+    maxVisualizedContrast = 0.37;
     set(ax, 'FontSize', 40);
     set(ax, 'XLim', maxVisualizedContrast*[-1 1], 'YLim', maxVisualizedContrast*[-1 1], 'XTick', -1:0.05:1, 'YTick', -1:0.05:1);
     set(ax, 'LineWidth', 1.5, 'XColor', [0.3 0.3 0.3], 'YColor', [0.3 0.3 0.3])

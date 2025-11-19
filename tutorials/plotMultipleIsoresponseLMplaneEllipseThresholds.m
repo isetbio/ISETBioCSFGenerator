@@ -28,13 +28,14 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
        -0.0500    0.0500         0; ...
         0.0500   -0.0500    0.0000];
 
+
     % Choose which condition to load data for
     linearityString = ''; %''; % nonlinear';  %either '' or 'nonLinear' (has to be added manually in filename);
 
     useMetaContrast = true;
-    useConeContrast = ~true;
+    useConeContrast = true;
     mRGCOutputSignalType = 'cones'; % Choose from {'cones' %'mRGCs'};
-    noiseType = 'Gaussian_rceTemplateDistance'; % Choose from {'Gaussian_rceTemplateDistance', 'Poisson_rcePoisson'}
+    noiseType =  'Gaussian_rceTemplateDistance'; % Choose from {'Gaussian_rceTemplateDistance', 'Poisson_rcePoisson'}
 
 
     matlabDir = strrep(isetbioRootPath, '/toolboxes/isetbio', '');
@@ -133,7 +134,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
             skippedDirections, ...
             thresholdContrasts, ...
             maxVisualizedThreshold, ...
-            referenceLMSconeContrast(1:2), ...
+            referenceLMSconeContrast, ...
             figureFileBaseDir, hFigStimuliAndThresholds, ...
             exportFig, initializeFig, theThresholdAxes, figName);
 
@@ -163,7 +164,7 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds()
         NicePlot.exportFigToPNG(theFigName, hFigStimuliAndThresholds, 300);
     end
 
-    theSummaryDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_%s_Summary.mat', mRGCOutputSignalType, noiseType, linearityString));
+    theSummaryDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_%sSummary.mat', mRGCOutputSignalType, noiseType, linearityString));
     save(theSummaryDataFile, 'allData');
 
     fprintf(sprintf('Summary threshold data for all reference points saved in %s\n', theSummaryDataFile));

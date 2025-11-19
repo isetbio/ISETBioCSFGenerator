@@ -15,9 +15,15 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
 
     %gratingSceneParams.warningInsteadOfErrorOnOutOfGamut = true;
 
+    gratingSceneParamsForNullScene = gratingSceneParams;
+    if (~isempty(gratingSceneParamsForNullScene.backgroundLMSconeExcitations))
+        gratingSceneParamsForNullScene.backgroundLMSconeExcitations = ...
+                gratingSceneParamsForNullScene.backgroundLMSconeExcitations .* (1+referenceLMSconeContrast);
+    end
+
     % Create the background scene engine
     theNullSceneEngine = createGratingSceneEngine(...
-            [0 0 0.4], examinedSpatialFrequencyCPD, ...
+            [0 0 0], examinedSpatialFrequencyCPD, ...
             gratingSceneParams);
 
     % Compute the scene sequence
@@ -55,7 +61,7 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
                     theLMSconeContrastDirections(:,iDir), examinedSpatialFrequencyCPD, ...
                     gratingSceneParams);
         
-                % Compute the stimulus scene at max contrast
+                % Compute the stimulus scene at a high contrast
                 testContrast = 0.1;
                 theSceneSequence = theSceneEngine.compute(testContrast);
         
@@ -87,14 +93,14 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
     end % if (initializeFig)
 
     % Validate that they are by comparing their RMS values to what was loaded
-    assert(all(sqrt(sum(theLMSconeContrastDirections.^2,1))-rmsLMconeContrast) == 0, 'not validating');
+    assert(all(sqrt(sum(theDeltaLMSconeContrastDirections.^2,1))-rmsLMconeContrast) == 0, 'not validating');
     
-    thresholdDeltaConeContrasts(1,:)= cosd(theChromaticAnglesDegs) .* rmsLMconeContrast .* theThresholds;
+
+    thresholdDeltaConeContrasts(1,:) = cosd(theChromaticAnglesDegs) .* rmsLMconeContrast .* theThresholds;
     thresholdDeltaConeContrasts(2,:) = sind(theChromaticAnglesDegs) .* rmsLMconeContrast .* theThresholds;
 
-    LconeContrastThresholds = thresholdDeltaConeContrasts(1,:)+referenceLMSconeContrast(1);
-    MconeContrastThresholds = thresholdDeltaConeContrasts(2,:)+referenceLMSconeContrast(2);
-
+    LconeContrastThresholds = thresholdDeltaConeContrasts(1,:) + referenceLMSconeContrast(1);
+    MconeContrastThresholds = thresholdDeltaConeContrasts(2,:) + referenceLMSconeContrast(2);
 
     % Plot the axes
     hold(theThresholdAxes, 'on');
@@ -105,6 +111,7 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
 
 
     % Plot the data points
+    plot(theThresholdAxes, LconeContrastThresholds, MconeContrastThresholds, 'k-');
     scatter(theThresholdAxes, LconeContrastThresholds, MconeContrastThresholds, 111, ...
         'MarkerEdgeColor', [0.99 0.0 0.0], 'MarkerFaceColor', [0.95 0.5 0.5], ...
         'LineWidth', 2.0, 'MarkerFaceAlpha', 0.7);
@@ -113,7 +120,7 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
         [z, a, b, rotationRadians] = fitEllipseToXYpoints(...
             thresholdDeltaConeContrasts, ...
             'nonLinear', false);
-        %[z, a, b, rotationRadians] = fitellipse(thresholdConeContrasts, 'linear');
+        %[z, a, b, rotationRadians] = fitellipse(thresholdDeltaConeContrasts, 'linear');
     
         % Plot the fitted ellipse
         % form the parameter vector
@@ -125,7 +132,7 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
         % Ellipse points
         X = Q * [a * cos(t); b * sin(t)] + repmat(z, 1, npts);
 
-        theFittedEllipsePoints = (bsxfun(@plus, referenceLMSconeContrast, X'));
+        theFittedEllipsePoints = (bsxfun(@plus, referenceLMSconeContrast(1:2), X'));
 
         % PLot the ellipse points
         h = plot(theThresholdAxes, theFittedEllipsePoints(:,1), theFittedEllipsePoints(:,2), 'k-', 'LineWidth', 6.0);
@@ -145,7 +152,7 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
     drawnow;
 
     if ((~isempty(figureFileBaseDir)) && (exportFig))
-        NicePlot.exportFigToPNG(fullfile(figureFileBaseDir,sprintf('%s.png', figName)), hFig, 300);
+        NicePlot.exportFigToPNG(fullfile(figureFileBaseDir,sprintf('%s.png', figName)), hFig, 300, 'beVerbose');
     end
 
     set(hFig, 'HandleVisibility', 'off');
