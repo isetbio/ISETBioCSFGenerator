@@ -80,7 +80,6 @@ function compareHumanToMRGCmosaicEllipses()
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir, 'conesContrastGaussian.pdf'), hFig, 300);
 
 
-pause
     % Compare human ellipses to coneMosaic ellipses computed on mRGC responses + Gaussian noise
     useConeContrast = true;
     mRGCOutputSignalType = 'mRGCs';
@@ -101,9 +100,14 @@ end
 
 function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName, mRGCmosaicEllipseScalar, mRGCmosaicLabel, drawIndividualPoints)
 
+    % Get ready for publication-quality visualization
+    ff = PublicationReadyPlotLib.figureComponents('1x1 giant rectangular-wide mosaic');
+    ff.backgroundColor = [1 1 1];
+
+    % Plot the mosaic of mRGC RF centers only
     hFig = figure(figureNo); clf;
-    set(hFig, 'Position', [10 10 1400 1400], 'Color', [1 1 1]);
-    ax = subplot('Position', [0.107 0.09, 0.89 0.89]);
+    theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
+    ax = theAxes{1,1};
 
     % Draw axes
     plot(ax,[-1 1], [0 0], 'k-');
@@ -125,7 +129,7 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
             meanY = mean(y);
             x = meanX + (x-meanX) * mRGCmosaicEllipseScalar;
             y = meanY + (y-meanY) * mRGCmosaicEllipseScalar;
-            plot(ax,x, y, 'ro', 'MarkerSize', 12, 'LineWidth', 1.0, 'MarkerEdgeColor', 0.5*[0.7 0.5 0.5], 'MarkerFaceColor', [0.7 0.5 0.5]);
+            scatter(ax,x, y, 144, 'LineWidth', 1.0, 'MarkerFaceAlpha', 0.5, 'MarkerEdgeColor', [1 .2 .2], 'MarkerFaceColor', 0.7*[1.0 0.5 0.5]);
         end
 
         x = d.fittedEllipse(:,1);
@@ -140,7 +144,7 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
             'Vertices',d.fittedEllipse, ...
             'FaceColor', [1 0.5 0.5], ...
             'EdgeColor', [1 0 0], ...
-            'LineWidth', 1.5, ...
+            'LineWidth', 2.0, ...
             'FaceAlpha', 0.5, ...
             'EdgeAlpha', 1.0);
     end
@@ -156,8 +160,8 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
             'Faces',1:size(d.fittedEllipse,1), ...
             'Vertices',d.fittedEllipse, ...
             'FaceColor', [0.8 0.8 0.8], ...
-            'EdgeColor', [0.5 0.5 0.5], ...
-            'LineWidth', 1.5, ...
+            'EdgeColor', [0.25 0.25 0.25], ...
+            'LineWidth', 2.0, ...
             'FaceAlpha', 0.5, ...
             'EdgeAlpha', 1.0);
     end
@@ -165,13 +169,16 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
     hL = legend(ax, [p1 p2], {mRGCmosaicLabel, ' human'}, 'Location', 'NorthWest', 'NumColumns',1);
     set(hL, 'EdgeColor', [0.9 0.9 0.9], 'Color', [0.95 0.95 0.95]);
 
-    maxVisualizedContrast = 0.37;
-    set(ax, 'FontSize', 40);
-    set(ax, 'XLim', maxVisualizedContrast*[-1 1], 'YLim', maxVisualizedContrast*[-1 1], 'XTick', -1:0.05:1, 'YTick', -1:0.05:1);
-    set(ax, 'LineWidth', 1.5, 'XColor', [0.3 0.3 0.3], 'YColor', [0.3 0.3 0.3])
+    maxVisualizedContrast = 0.40;
+    axis(ax, 'square');
+    set(ax, 'XLim', maxVisualizedContrast*[-1 1], 'YLim', maxVisualizedContrast*[-1 1], 'XTick', -1:0.1:1, 'YTick', -1:0.1:1);
     grid(ax, 'on')
     xlabel(ax, 'L cone contrast');
     ylabel(ax, 'M cone contrast');
+
+    % Finalize figure using the Publication-Ready format
+    PublicationReadyPlotLib.applyFormat(ax,ff);
+
 
 end
 
