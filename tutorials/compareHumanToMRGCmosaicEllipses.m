@@ -32,6 +32,7 @@ function compareHumanToMRGCmosaicEllipses()
 
     % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Poisson noise
     useMetaContrast = true;
+    
     useConeContrast = false;
     noiseAndClassifierType = 'Poisson_rcePoisson';
     mRGCOutputSignalType = 'cones';
@@ -62,7 +63,7 @@ function compareHumanToMRGCmosaicEllipses()
     hFig = generateFigure(2, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir, 'conesGaussian.pdf'), hFig, 300);
-
+    
 
     % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Gaussian noise
     useConeContrast = true;
@@ -90,7 +91,7 @@ function compareHumanToMRGCmosaicEllipses()
     figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
     theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
     theLegend = ' mRGCs (Gaussian noise, template observer) ';
-    mRGCmosaicEllipseScalingFactor = 0.75;
+    mRGCmosaicEllipseScalingFactor = 3.5;
     hFig = generateFigure(4, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , 'mRGCsGaussian.pdf'), hFig, 300);
@@ -129,7 +130,7 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
             meanY = mean(y);
             x = meanX + (x-meanX) * mRGCmosaicEllipseScalar;
             y = meanY + (y-meanY) * mRGCmosaicEllipseScalar;
-            scatter(ax,x, y, 144, 'LineWidth', 1.0, 'MarkerFaceAlpha', 0.5, 'MarkerEdgeColor', [1 .2 .2], 'MarkerFaceColor', 0.7*[1.0 0.5 0.5]);
+            scatter(ax,x, y, 64, 'LineWidth', 1.0, 'MarkerFaceAlpha', 0.7, 'MarkerEdgeColor', 0.3*[1 .5 .5], 'MarkerFaceColor', 0.8*[1.0 0.5 0.5]);
         end
 
         x = d.fittedEllipse(:,1);
@@ -169,7 +170,7 @@ function hFig=generateFigure(figureNo, humanEllipses, mRGCmosaicEllipsesFileName
     hL = legend(ax, [p1 p2], {mRGCmosaicLabel, ' human'}, 'Location', 'NorthWest', 'NumColumns',1);
     set(hL, 'EdgeColor', [0.9 0.9 0.9], 'Color', [0.95 0.95 0.95]);
 
-    maxVisualizedContrast = 0.40;
+    maxVisualizedContrast = 0.4;
     axis(ax, 'square');
     set(ax, 'XLim', maxVisualizedContrast*[-1 1], 'YLim', maxVisualizedContrast*[-1 1], 'XTick', -1:0.1:1, 'YTick', -1:0.1:1);
     grid(ax, 'on')
