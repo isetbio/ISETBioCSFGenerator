@@ -191,8 +191,6 @@ classdef neuralResponseEngine < handle
     % Public static methods.  These are useful functions that can be called
 	% without having to instantiate a @nre object first
 	methods (Static)
-        theNeuralResponses = applyActivationFunction(theNoiseFreeResponses, ...
-            theNoisyResponseInstances, activationFunctionParams);
         [figureHandle, axesHandle, clearAxesBeforeDrawing, responseLabel, ...
             responseVideoFileName, neuralPipelineID, visualizeResponsesAsModulations] = parseVisualizationOptions(options);
     end % static methods

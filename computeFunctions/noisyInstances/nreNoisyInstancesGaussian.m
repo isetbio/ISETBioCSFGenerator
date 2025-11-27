@@ -179,12 +179,6 @@ function dataOut = nreNoisyInstancesGaussian(...
             error('noiseFlag must be ''random'' or ''none''');
     end
 
-    % If an activation function has been specified, apply it to the noisy repsonse instances here
-    if (isfield(noisyInstancesComputeParams, 'activationFunctionParams'))
-       noisyResponseInstances = neuralResponseEngine.applyActivationFunction(...
-            noiseFreeResponses, noisyResponseInstances, noisyInstancesComputeParams.activationFunctionParams);
-    end
-
     % Restore
     if (~isempty(p.Results.rngSeed))
         rng(oldSeed);
