@@ -114,8 +114,9 @@ p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 p.addParameter('opticsType','loadComputeReadyRGCMosaic',@(x)(ischar(x) | isstruct(x)));
 p.addParameter('oiPadMethod','zero',@ischar);
 p.addParameter('verbose',true,@islogical);
-p.addParameter('visualizeActivationFunction', true, @islogical);
+p.addParameter('visualizeActivationFunction', false, @islogical);
 varargin = ieParamFormat(varargin);
+
 p.parse(varargin{:});
 fixationalEMObj = p.Results.fixationalEM;
 opticsType = p.Results.opticsType;
@@ -271,6 +272,8 @@ if (~isempty(coneMosaicNullResponse))
             coneMosaicNormalizingResponse);
 end
 
+mRGCnonLinearityFigureHandle = [];
+
 % Handle what kind of output we are asked for
 switch (noiseFreeComputeParams.mRGCMosaicParams.outputSignalType)
     case 'cones'
@@ -288,9 +291,45 @@ switch (noiseFreeComputeParams.mRGCMosaicParams.outputSignalType)
         if (verbose)
             fprintf('\tComputing noise-free mRGC responses \n');
         end
-        [theNeuralResponses, ~, temporalSupportSeconds] = theMRGCmosaic.compute( ...
-            noiseFreeConeMosaicResponses, temporalSupportSeconds);
+
+        % If 'simulateONOFFmosaic' has been set, flip the response sign of the odd-numbered mRGCs
+        mRGCindicesWithFlippedResponseSigns = [];
+        if (isfield(noiseFreeComputeParams.mRGCMosaicParams,'simulateONOFFmosaic'))
+            if (noiseFreeComputeParams.mRGCMosaicParams.simulateONOFFmosaic)
+                if (verbose)
+                    fprintf('Will flip signs of linear responses in odd-numbered mRGCs\n');
+                end
+                mRGCindicesWithFlippedResponseSigns = 1:2:theMRGCmosaic.rgcsNum;
+            end
+        end
+
+        [theNeuralResponses, ~, temporalSupportSeconds, theLinearNeuralResponses] = theMRGCmosaic.compute( ...
+            noiseFreeConeMosaicResponses, temporalSupportSeconds, ...
+            'nonLinearitiesList', noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList, ...
+            'flipLinearResponsePolarityForCellsWithIndices', mRGCindicesWithFlippedResponseSigns);
+
+        if (~isempty(noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList)) && (visualizeActivationFunction)
+
+            if (noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.visualizeNonLinearActivationFunction)
+                maxResponse = 0.8;
+                maxLinearResponse = 0.2;
+                xTicks = -1:0.05:1;
+                yTicks = -1:0.1:1;
+                showXlabel = true;
+                plotTitle = sprintf('Rectification:%s, c50: %2.2f, n: %2.2f', ...
+                    noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.params.rectification, ...
+                    noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.params.c50, ...
+                    noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.params.n);
+                mRGCnonLinearityFigureHandle = plotNonLinearity(...
+                    theNeuralResponses, theLinearNeuralResponses, ...
+                    mRGCindicesWithFlippedResponseSigns, ...
+                    maxResponse, maxLinearResponse, xTicks, yTicks, showXlabel, plotTitle);
+            end
+        end
+
         theNeuralResponses = permute(theNeuralResponses,[1, 3, 2]);
+        theLinearNeuralResponses = permute(theLinearNeuralResponses,[1, 3, 2]);
+
 end
 
 %% Apply temporal filter if needed
@@ -330,26 +369,6 @@ if (~isempty(noiseFreeComputeParams.temporalFilter))
     clear newNeuralResponses;
 end
 
-% If 'simulateONOFFmosaic' has been set, flip the response sign of the odd-numbered mRGCs
-if (strcmp(noiseFreeComputeParams.mRGCMosaicParams.outputSignalType, 'mRGCs'))
-    if (isfield(noiseFreeComputeParams.mRGCMosaicParams,'simulateONOFFmosaic'))
-        if (noiseFreeComputeParams.mRGCMosaicParams.simulateONOFFmosaic)
-            mResponses = size(theNeuralResponses,2);
-            fprintf('Flipping signs of odd-numbered RGCs\n')
-            oddNumberedRGCs = 1:2:mResponses;
-            theNeuralResponses(:,oddNumberedRGCs,:) = -theNeuralResponses(:,oddNumberedRGCs,:);
-        end
-    end
-end
-
-% If we have a halfwave rectifier nonlinear activation function and a response bias has been specified, 
-% apply the response bias to the noise-free responses.
-% In the current implementation, the actual activation function is applied to the noisy response instances
-% See comments in @neuralResponseEngine.applyActivationFunction
-if (isfield(noiseFreeComputeParams.mRGCMosaicParams, 'responseBias'))
-    theNeuralResponses = theNeuralResponses + noiseFreeComputeParams.mRGCMosaicParams.responseBias;
-end
-
 
 % Check the visualizeEachCompute flag of the neuralEngineOBJ, and if set to true,
 % call the neuralEngineOBJ.visualize() function to visualize the responses
@@ -377,9 +396,13 @@ if (neuralEngineOBJ.visualizeEachCompute)
 end
 
 % Assemble the dataOut struct
+metaData = struct();
+metaData.mRGCnonLinearityFigureHandle  = mRGCnonLinearityFigureHandle;
+
 dataOut = struct(...
     'neuralResponses', theNeuralResponses, ...
-    'temporalSupport', temporalSupportSeconds);
+    'temporalSupport', temporalSupportSeconds, ...
+    'metaData', metaData);
 
 
 if (returnTheNoiseFreePipeline)
@@ -392,6 +415,74 @@ if (returnTheNoiseFreePipeline)
 end
 
 end
+
+
+function hFig = plotNonLinearity(theResponse, theLinearResponse, mRGCindicesWithFlippedResponseSigns, ...
+    maxResponse, maxLinearResponse, xTicks, yTicks, showXlabel, plotTitle)
+
+    ff = PublicationReadyPlotLib.figureComponents('1x1 giant square mosaic');
+
+    hFig = figure(); clf;
+    theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
+    ff.backgroundColor = [1 1 1];
+    ax = theAxes{1,1};
+
+
+    cellsNum = size(theResponse,3);
+    mRGCindicesWithNonFlippedResponseSigns = setdiff(1:cellsNum, mRGCindicesWithFlippedResponseSigns);
+
+    ax = subplot(1,1,1);
+    plot(ax, maxResponse*[0 1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
+    hold(ax, 'on')
+    plot(ax, maxResponse*[0 -1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
+    plot(ax, maxResponse*[-1 1], [0 0], 'k-', 'LineWidth', 1.0);
+    plot(ax, [0 0], maxResponse*[-1 1], 'k-', 'LineWidth', 1.0);
+
+    linearResponseNonFlipped = squeeze(theLinearResponse(:,:,mRGCindicesWithNonFlippedResponseSigns));
+    nonLinearResponseNonFlipped = squeeze(theResponse(:,:,mRGCindicesWithNonFlippedResponseSigns));
+    linearResponseFlipped = squeeze(theLinearResponse(:,:,mRGCindicesWithFlippedResponseSigns));
+    nonLinearResponseFlipped = squeeze(theResponse(:,:,mRGCindicesWithFlippedResponseSigns));
+
+    scatter(ax, linearResponseNonFlipped, nonLinearResponseNonFlipped, 64, ...
+        'LineWidth', 1.0, 'MarkerFaceAlpha', 0.2, 'MarkerEdgeAlpha', 0.5, ...
+        'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerEdgeColor', [1 0.5 0.5]);
+    scatter(ax, linearResponseFlipped, nonLinearResponseFlipped, 64, ...
+        'LineWidth', 1.0, 'MarkerFaceAlpha', 0.2, 'MarkerEdgeAlpha', 0.5, ...
+        'MarkerFaceColor', [0.5 0.5 1], 'MarkerEdgeColor', [0.5 0.5 1]);
+
+    p1 = plot(ax, mean(linearResponseNonFlipped(:)), mean(nonLinearResponseNonFlipped(:)), ...
+        'bs', 'MarkerSize', 20, 'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerEdgeColor',0.5*[1.0 0.5 0.5], 'LineWidth', 1.5);
+
+    p2 = plot(ax, mean(linearResponseFlipped(:)), mean(nonLinearResponseFlipped(:)), ...
+        'bs', 'MarkerSize', 20, 'MarkerFaceColor', [0.5 0.5 1], 'MarkerEdgeColor',0.5*[0.5 0.5 1], 'LineWidth', 1.5);
+
+
+    legend(ax, [p1 p2], {'ON-center', 'OFF-center (simulated)'}, 'Location', 'SouthWest');
+    hold(ax, 'off')
+
+    axis(ax, 'square');
+    set(ax, 'XTick', xTicks, 'YTick', yTicks);
+    set(ax, 'YLim', maxResponse * [-0.1 1], 'XLim', maxLinearResponse * [-1 1]);
+    xtickangle(ax, 00);
+
+    title(plotTitle);
+    if (showXlabel)
+        xlabel(ax, 'linear mRGC response');
+    end
+    ylabel(ax, 'mRGC response');
+
+    PublicationReadyPlotLib.applyFormat(ax,ff);
+
+    drawnow;
+end
+
+
+
+
+
+
+
+
 
 function p = generateDefaultParams(opticsType,oiPadMethod)
 
@@ -422,63 +513,26 @@ function p = generateDefaultParams(opticsType,oiPadMethod)
     % Generate optics params through common bottleneck
     opticsParams = generateOpticsParams(opticsType,oiPadMethod);
 
-if (1==2)
-    % OLD - WAY
-    % Generate optics params through common bottleneck
-    opticsParams = generateOpticsParams(opticsType,oiPadMethod);
-    
-    % Cropping params. If sizeDegs is empty there is no cropping.
-    % We can crop the mRGCmosaic at different eccentricities.
-    % Passing an empty value for eccentricityDegs will crop
-    % the mosaic at its center.
-    cropParams = struct(...
-        'sizeDegs', [], ...
-        'eccentricityDegs', []);
-    
-    % Neurons of the pre-computed mRGCMosaic have spatial RFs that were
-    % optimized using a double exponential surround model with parameters around
-    % those of the 4-th H1 neuron recorded by Packer&Dacey (2002):
-    % "Receptive field structure of H1 horizontal cells in macaque monkey
-    % retina", (2002) JoV, 2, 272-292
-    retinalRFmodelParams = struct(...
-        'conePoolingModel', 'arbitraryCenterConeWeights_doubleExpH1cellIndex4SurroundWeights' ...
+
+    % If the user sets the nullStimulusSceneSequence, then mRGC responses are
+    % computed on modulated cone responses with respect to the cone
+    % response to the null stimulus scene sequence.
+    nullStimulusSceneSequence = [];
+
+    % Temporal filter
+    %
+    % The user can supply a temporal filter.  It is applied
+    % to each output sequence, on the assumption that its time
+    % base matches that of the signal, but we do pass the filter
+    % time base so that this could be generalized in the future.
+    temporalFilter = [];
+
+    % Assemble all params in a struct
+    p = struct(...
+        'opticsParams', opticsParams, ...
+        'mRGCMosaicParams', mosaicParams, ...
+        'nullStimulusSceneSequence', nullStimulusSceneSequence, ...
+        'temporalFilter', temporalFilter ...
         );
-    
-    mosaicParams = struct(...
-        'type', 'mRGCMosaic', ...
-        'spatialCompactnessSpectralPurityTradeoff', 1.0, ...
-        'surroundOptimizationSubString', 'PackerDacey2002H1freeLowH1paramsNarrowVisualSTFparamTolerance_vSTF_1.0_1.0', ...
-        'eccDegs', [7 0], ...
-        'sizeDegs',  [6 3], ...
-        'rgcType', 'ONcenterMidgetRGC', ...
-        'cropParams', cropParams, ...
-        'retinalRFmodelParams', retinalRFmodelParams, ...
-        'inputSignalType', 'coneExcitations', ...
-        'outputSignalType', 'mRGCs', ...
-        'responseBias', 0, ...
-        'coneIntegrationTimeSeconds', 10/1000);
-end
-
-
-% If the user sets the nullStimulusSceneSequence, then mRGC responses are
-% computed on modulated cone responses with respect to the cone
-% response to the null stimulus scene sequence.
-nullStimulusSceneSequence = [];
-
-% Temporal filter
-%
-% The user can supply a temporal filter.  It is applied
-% to each output sequence, on the assumption that its time
-% base matches that of the signal, but we do pass the filter
-% time base so that this could be generalized in the future.
-temporalFilter = [];
-
-% Assemble all params in a struct
-p = struct(...
-    'opticsParams', opticsParams, ...
-    'mRGCMosaicParams', mosaicParams, ...
-    'nullStimulusSceneSequence', nullStimulusSceneSequence, ...
-    'temporalFilter', temporalFilter ...
-    );
 
 end

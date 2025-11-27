@@ -1,4 +1,4 @@
-function [predictions, theClassifierEngine, responses, whichAlternatives, whichResponses] = computePerformance(theScenes, ...
+function [predictions, theClassifierEngine, responses, whichAlternatives, whichResponses, whichMetaData] = computePerformance(theScenes, ...
     temporalSupport, nTrain, nTest, theNeuralEngine, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     varargin)
 % Compute performance of a classifier given different scenes, a neural
@@ -116,12 +116,14 @@ p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
 p.addParameter('verbose', true, @islogical);
 p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
+p.addParameter('conditionLabel', '', @ischar);
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
 saveResponses = p.Results.saveResponses;
 visualizeAllComponents = p.Results.visualizeAllComponents;
 fixationalEMObj = p.Results.fixationalEM;
+conditionLabel = p.Results.conditionLabel;
 
 % Empty responses
 responses = [];
@@ -149,6 +151,7 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
     % Note that if nTimeBins is 1, the last dimension is implicit,
     % following Matlab conventions.
     inSampleStimResponsesCell = cell(1,nScenes);
+    neuralResponseEngineMetaData = cell(1, nScenes);
     for n = 1:nScenes
         if (p.Results.useMetaContrast && ~isTAFC)
             % We will only call the nre visualization function of we are testing.
@@ -161,6 +164,22 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
                 theScenes, ...
                 temporalSupport, ...
                 'fixationalEM',fixationalEMObj);
+
+            if (visualizeAllComponents)
+                % Call the noise-free compute function directly to get the dataOut.metaData
+                dataOut = theNeuralEngine{n}.noiseFreeComputeFunction(...
+                    theNeuralEngine{n}, ...
+                    theNeuralEngine{n}.noiseFreeComputeParams, ...
+                    theScenes, ...
+                    temporalSupport, ...
+                    'fixationalEM',fixationalEMObj, ...
+                    'visualizeActivationFunction', true);
+
+                if (isfield(dataOut, 'metaData'))
+                    dataOut.metaData.conditionLabel = conditionLabel;
+                    neuralResponseEngineMetaData{n} = dataOut.metaData;
+                end
+            end
 
             % Add noise (or not) to nth alternative responses
             [inSampleStimResponsesCell{n}, ~] = theNeuralEngine{n}.computeNoisyInstances( ...
@@ -182,6 +201,22 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
                 theScenes{n}, ...
                 temporalSupport, ...
                 'fixationalEM',fixationalEMObj);
+
+            if (visualizeAllComponents)
+                % Call the noise-free compute function directly to get the dataOut.metaData
+                dataOut = theNeuralEngine.noiseFreeComputeFunction(...
+                    theNeuralEngine, ...
+                    theNeuralEngine.noiseFreeComputeParams, ...
+                    theScenes{n}, ...
+                    temporalSupport, ...
+                    'fixationalEM',fixationalEMObj, ...
+                    'visualizeActivationFunction', true);
+
+                if (isfield(dataOut, 'metaData'))
+                    dataOut.metaData.conditionLabel = conditionLabel;
+                    neuralResponseEngineMetaData{n} = dataOut.metaData;
+                end
+            end
 
             % Add noise (or not) to nth alternative responses
             [inSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
@@ -261,6 +296,8 @@ end
 % TAFC than true N-way.  We handle that here.
 if (nTest ~= 0)
     outSampleStimResponsesCell = cell(1,nScenes);
+    neuralResponseEngineMetaData = cell(1, nScenes);
+
     if isTAFC
         nTest_eachScene = nTest;
     else
@@ -297,6 +334,22 @@ if (nTest ~= 0)
                 temporalSupport, ...
                 'fixationalEM',fixationalEMObj);
 
+            if (visualizeAllComponents)
+                % Call the noise-free compute function directly to get the dataOut.metaData
+                dataOut = theNeuralEngine{n}.noiseFreeComputeFunction(...
+                    theNeuralEngine{n}, ...
+                    theNeuralEngine{n}.noiseFreeComputeParams, ...
+                    theScenes, ...
+                    temporalSupport, ...
+                    'fixationalEM',fixationalEMObj, ...
+                    'visualizeActivationFunction', true);
+
+                if (isfield(dataOut, 'metaData'))
+                    dataOut.metaData.conditionLabel = conditionLabel;
+                    neuralResponseEngineMetaData{n} = dataOut.metaData;
+                end
+            end
+
             % Add noise (or not) to nth alternative responses
             [outSampleStimResponsesCell{n}, ~] = theNeuralEngine{n}.computeNoisyInstances( ...
                 outSampleNoiseFreeStimResponsesCell{n}, ...
@@ -310,6 +363,22 @@ if (nTest ~= 0)
                 temporalSupport, ...
                 'fixationalEM',fixationalEMObj);
 
+            if (visualizeAllComponents)
+                % Call the noise-free compute function directly to get the dataOut.metaData
+                dataOut = theNeuralEngine.noiseFreeComputeFunction(...
+                    theNeuralEngine, ...
+                    theNeuralEngine.noiseFreeComputeParams, ...
+                    theScenes{n}, ...
+                    temporalSupport, ...
+                    'fixationalEM',fixationalEMObj, ...
+                    'visualizeActivationFunction', true);
+
+                if (isfield(dataOut, 'metaData'))
+                    dataOut.metaData.conditionLabel = conditionLabel;
+                    neuralResponseEngineMetaData{n} = dataOut.metaData;
+                end
+            end
+
             % Add noise (or not) to nth alternative responses
             [outSampleStimResponsesCell{n}, ~] = theNeuralEngine.computeNoisyInstances( ...
                 outSampleNoiseFreeStimResponsesCell{n}, ...
@@ -318,6 +387,7 @@ if (nTest ~= 0)
                 testNoiseFlag);
         end
     end
+
     e = toc(eStart);
     if (p.Results.verbose)
         fprintf('computePerformance: Took %0.1f secs to generate test responses for all alternatives\n',e);
@@ -374,11 +444,15 @@ if (nTest ~= 0)
     % Set whichResponses return variable
     whichResponses = dataOut.whichAlternativePredicted(:);
 
+    % Set whichMetaData return variable
+    whichMetaData = neuralResponseEngineMetaData;
+
 else
     % Not testing, only training
     predictions = [];
     responses = [];
     whichAlternatives = [];
+    whichMetaData = [];
 end
 
 end
