@@ -65,6 +65,7 @@ function compareHumanToMRGCmosaicEllipses()
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir, 'conesGaussian.pdf'), hFig, 300);
     
 
+    if (1==2)
     % Compare human ellipses to coneMosaic ellipses computed on cone excitations + Gaussian noise
     useConeContrast = true;
     mRGCOutputSignalType = 'cones';
@@ -79,23 +80,68 @@ function compareHumanToMRGCmosaicEllipses()
     hFig = generateFigure(3, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
     NicePlot.exportFigToPDF(fullfile(figureFileBaseDir, 'conesContrastGaussian.pdf'), hFig, 300);
+    end
 
 
-    % Compare human ellipses to coneMosaic ellipses computed on mRGC responses + Gaussian noise
+    % Compare human ellipses to coneMosaic ellipses computed on LINEAR mRGC responses + Gaussian noise
     useConeContrast = true;
     mRGCOutputSignalType = 'mRGCs';
     noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
-    resultsFileBaseDir = fullfile(rootDir, ...
+
+    nonLinearityString = 'LINEAR';
+
+    if (~isempty(nonLinearityString ))
+        resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s_%s', ...
+                useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType, nonLinearityString));
+    else
+        resultsFileBaseDir = fullfile(rootDir, ...
             sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', ...
-            useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
+                useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
+    end
     figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
     theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
-    theLegend = ' mRGCs (Gaussian noise, template observer) ';
+    theLegend = ' linear mRGCs (Gaussian noise, template observer) ';
     mRGCmosaicEllipseScalingFactor = 3.5;
     hFig = generateFigure(4, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
-    NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , 'mRGCsGaussian.pdf'), hFig, 300);
 
+    if (~isempty(nonLinearityString))
+        NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , 'mRGCsGaussian.pdf'), hFig, 300);
+    else
+        NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , sprintf('mRGCsGaussian_%s.pdf', nonLinearityString)), hFig, 300);
+    end
+
+    % Compare human ellipses to coneMosaic ellipses computed on NON-LINEAR mRGC responses + Gaussian noise
+    useConeContrast = true;
+    useMetaContrast = false;
+    mRGCOutputSignalType = 'mRGCs';
+    noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
+
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n2.0_s1.0';
+
+    if (~isempty(nonLinearityString))
+        resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s_%s', ...
+                useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType, nonLinearityString));
+    else
+        resultsFileBaseDir = fullfile(rootDir, ...
+            sprintf('t_isoresponseLMplaneEllipses_Meta_%d_ConeContrast_%d_FEMs_0_mRGCMosaic_%s_%s', ...
+                useMetaContrast, useConeContrast, noiseAndClassifierType, mRGCOutputSignalType));
+    end
+    figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
+    theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
+    theLegend = ' nonLinear mRGCs (Gaussian noise, template observer) ';
+    mRGCmosaicEllipseScalingFactor = 12;
+    hFig = generateFigure(4, humanEllipses, theModelDataFile, ...
+        mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
+
+    if (~isempty(nonLinearityString))
+        NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , 'mRGCsGaussian.pdf'), hFig, 300);
+    else
+        NicePlot.exportFigToPDF(fullfile(figureFileBaseDir , sprintf('mRGCsGaussian_%s.pdf', nonLinearityString)), hFig, 300);
+    end
 
 end
 
