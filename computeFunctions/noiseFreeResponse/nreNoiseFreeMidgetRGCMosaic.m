@@ -311,15 +311,42 @@ switch (noiseFreeComputeParams.mRGCMosaicParams.outputSignalType)
         if (~isempty(noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList)) && (visualizeActivationFunction)
 
             if (noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.visualizeNonLinearActivationFunction)
-                maxResponse = 0.8;
-                maxLinearResponse = 0.2;
-                xTicks = -1:0.05:1;
-                yTicks = -1:0.1:1;
+                maxResponse = 0.121;
+                maxLinearResponse = 0.121;
+
+                maxResponse = max([max(abs(theNeuralResponses(:))) max(abs(theLinearNeuralResponses(:)))]);
+
+                if (maxResponse < 0.005)
+                    maxResponse = 0.005;
+                    xTicks = -0.005:0.001:0.005;
+                    yTicks = -0.005:0.001:0.005;
+                elseif (maxResponse < 0.01)
+                    maxResponse = 0.01;
+                    xTicks = -0.01:0.002:0.01;
+                    yTicks = -0.01:0.002:0.01;
+                elseif (maxResponse < 0.1)
+                    maxResponse = 0.1;
+                    xTicks = -0.1:0.02:0.1;
+                    yTicks = -0.1:0.02:0.1;
+                elseif (maxResponse < 0.5)
+                    maxResponse = 0.5;
+                    xTicks = -0.5:0.1:0.5;
+                    yTicks = -0.5:0.1:0.5;
+                else
+                    maxResponse = 1.0;
+                    xTicks = -1:0.2:1;
+                    yTicks = -1:0.2:1;
+                end
+
+                maxLinearResponse = maxResponse;
+
+
                 showXlabel = true;
                 plotTitle = sprintf('Rectification:%s, c50: %2.2f, n: %2.2f', ...
                     noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.params.rectification, ...
                     noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.params.c50, ...
                     noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.params.n);
+
                 mRGCnonLinearityFigureHandle = plotNonLinearity(...
                     theNeuralResponses, theLinearNeuralResponses, ...
                     mRGCindicesWithFlippedResponseSigns, ...
@@ -420,65 +447,134 @@ end
 function hFig = plotNonLinearity(theResponse, theLinearResponse, mRGCindicesWithFlippedResponseSigns, ...
     maxResponse, maxLinearResponse, xTicks, yTicks, showXlabel, plotTitle)
 
-    ff = PublicationReadyPlotLib.figureComponents('1x1 giant square mosaic');
+    ff = PublicationReadyPlotLib.figureComponents('1x1 giant square mosaic with side plots');
 
     hFig = figure(); clf;
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
     ff.backgroundColor = [1 1 1];
-    ax = theAxes{1,1};
-
+    axNonLinearity = theAxes{1,1};
+    axTopSidePlot = theAxes{1,2};
+    axRightSidePlot = theAxes{1,3};
 
     cellsNum = size(theResponse,3);
     mRGCindicesWithNonFlippedResponseSigns = setdiff(1:cellsNum, mRGCindicesWithFlippedResponseSigns);
 
-    ax = subplot(1,1,1);
-    plot(ax, maxResponse*[0 1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
-    hold(ax, 'on')
-    plot(ax, maxResponse*[0 -1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
-    plot(ax, maxResponse*[-1 1], [0 0], 'k-', 'LineWidth', 1.0);
-    plot(ax, [0 0], maxResponse*[-1 1], 'k-', 'LineWidth', 1.0);
+
+    plot(axNonLinearity, maxResponse*[0 1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
+    hold(axNonLinearity, 'on')
+    plot(axNonLinearity, maxResponse*[0 -1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
+    plot(axNonLinearity, maxResponse*[-1 1], [0 0], 'k-', 'LineWidth', 1.5);
+    plot(axNonLinearity, [0 0], maxResponse*[-1 1], 'k-', 'LineWidth', 1.5);
 
     linearResponseNonFlipped = squeeze(theLinearResponse(:,:,mRGCindicesWithNonFlippedResponseSigns));
     nonLinearResponseNonFlipped = squeeze(theResponse(:,:,mRGCindicesWithNonFlippedResponseSigns));
     linearResponseFlipped = squeeze(theLinearResponse(:,:,mRGCindicesWithFlippedResponseSigns));
     nonLinearResponseFlipped = squeeze(theResponse(:,:,mRGCindicesWithFlippedResponseSigns));
 
-    scatter(ax, linearResponseNonFlipped, nonLinearResponseNonFlipped, 64, ...
+    p1 = scatter(axNonLinearity, linearResponseNonFlipped, nonLinearResponseNonFlipped, 81, ...
         'LineWidth', 1.0, 'MarkerFaceAlpha', 0.2, 'MarkerEdgeAlpha', 0.5, ...
         'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerEdgeColor', [1 0.5 0.5]);
-    scatter(ax, linearResponseFlipped, nonLinearResponseFlipped, 64, ...
+    p2 = scatter(axNonLinearity, linearResponseFlipped, nonLinearResponseFlipped, 81, ...
         'LineWidth', 1.0, 'MarkerFaceAlpha', 0.2, 'MarkerEdgeAlpha', 0.5, ...
         'MarkerFaceColor', [0.5 0.5 1], 'MarkerEdgeColor', [0.5 0.5 1]);
 
-    p1 = plot(ax, mean(linearResponseNonFlipped(:)), mean(nonLinearResponseNonFlipped(:)), ...
-        'bs', 'MarkerSize', 20, 'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerEdgeColor',0.5*[1.0 0.5 0.5], 'LineWidth', 1.5);
 
-    p2 = plot(ax, mean(linearResponseFlipped(:)), mean(nonLinearResponseFlipped(:)), ...
-        'bs', 'MarkerSize', 20, 'MarkerFaceColor', [0.5 0.5 1], 'MarkerEdgeColor',0.5*[0.5 0.5 1], 'LineWidth', 1.5);
+    hL = legend(axNonLinearity, [p1 p2], {'ON-center', 'OFF-center (simulated)'}, 'Location', 'SouthWest');
+    hold(axNonLinearity, 'off')
 
+    set(axNonLinearity, 'XTick', xTicks, 'YTick', yTicks);
+    set(axNonLinearity, 'XLim', maxLinearResponse * [-1 1], 'YLim', maxResponse * [-0.03 1]);
+    xtickangle(axNonLinearity, 00);
 
-    legend(ax, [p1 p2], {'ON-center', 'OFF-center (simulated)'}, 'Location', 'SouthWest');
-    hold(ax, 'off')
-
-    axis(ax, 'square');
-    set(ax, 'XTick', xTicks, 'YTick', yTicks);
-    set(ax, 'YLim', maxResponse * [-0.1 1], 'XLim', maxLinearResponse * [-1 1]);
-    xtickangle(ax, 00);
-
-    title(plotTitle);
+    title(axNonLinearity, plotTitle);
     if (showXlabel)
-        xlabel(ax, 'linear mRGC response');
+        xlabel(axNonLinearity, 'linear mRGC response');
     end
-    ylabel(ax, 'mRGC response');
+    ylabel(axNonLinearity, 'mRGC response');
 
-    PublicationReadyPlotLib.applyFormat(ax,ff);
+    PublicationReadyPlotLib.applyFormat(axNonLinearity,ff);
+
+
+    % The top plot (linear response histograms)
+    countsLim = [0 0.2];
+    theBinWidth = maxLinearResponse/51;
+    theBins = 0:theBinWidth:maxLinearResponse;
+    theBins = cat(2,-fliplr(theBins), theBins(2:end))
+
+
+    theCounts = [0 histcounts(linearResponseNonFlipped(:), theBins)];
+    theFrequency = theCounts/sum(theCounts(:));
+
+    plotWithNegativePolarity = false;
+    faceColor = [1.0 0.5 0.5];
+    edgeColor = faceColor;
+    faceAlpha = 0.8;
+    lineWidth = 1.0;
+    lineStyle = '-';
+    RGCMosaicAnalyzer.visualize.shadedHistogram(axTopSidePlot,...
+        theBins, theFrequency, theBinWidth, plotWithNegativePolarity,...
+        faceColor, edgeColor, faceAlpha, lineWidth, lineStyle);
+    hold(axTopSidePlot, 'on');
+
+    theCounts = [0 histcounts(linearResponseFlipped(:), theBins)];
+    theFrequency = theCounts/sum(theCounts(:));
+    faceAlpha = 0.5;
+    faceColor = [[0.5 0.5 1]];
+    edgeColor = 0.5*[[0.5 0.5 1]];
+
+    RGCMosaicAnalyzer.visualize.shadedHistogram(axTopSidePlot,...
+        theBins, theFrequency, theBinWidth, plotWithNegativePolarity,...
+        faceColor, edgeColor, faceAlpha, lineWidth, lineStyle);
+
+    plot(axTopSidePlot, [0 0], [0 1], 'k-')
+    set(axTopSidePlot, ...
+        'XTick', xTicks, 'XTickLabel', {}, ...
+        'YTick', 0:0.02:1.0, 'YLim', countsLim, 'YTickLabel', {});
+    set(axTopSidePlot, 'XLim', maxLinearResponse * [-1 1]);
+    PublicationReadyPlotLib.applyFormat(axTopSidePlot,ff);
+
+
+    % The right plot (non-linear response histograms)
+    theBins = -0.1*maxResponse:theBinWidth:maxResponse;
+
+    theCounts = [0 histcounts(nonLinearResponseNonFlipped(:), theBins)];
+    theFrequency = theCounts/sum(theCounts(:));
+
+    plotWithNegativePolarity = false;
+    faceAlpha = 0.8;
+    faceColor = [1.0 0.5 0.5];
+    edgeColor = [1.0 0.5 0.5];
+
+    RGCMosaicAnalyzer.visualize.shadedHistogram(axRightSidePlot,...
+        theBins, theFrequency, theBinWidth, plotWithNegativePolarity,...
+        faceColor, edgeColor, faceAlpha, lineWidth, lineStyle, ...
+        'flipXY', true);
+    hold(axRightSidePlot, 'on');
+
+    theCounts = [0 histcounts(nonLinearResponseFlipped(:), theBins)];
+    theFrequency = theCounts/sum(theCounts(:));
+
+    plotWithNegativePolarity = false;
+    faceAlpha = 0.5;
+    faceColor = [0.5 0.5 1];
+    edgeColor = 0.5*[0.5 0.5 1];
+
+    RGCMosaicAnalyzer.visualize.shadedHistogram(axRightSidePlot,...
+        theBins, theFrequency, theBinWidth, plotWithNegativePolarity,...
+        faceColor, edgeColor, faceAlpha, lineWidth, lineStyle, ...
+        'flipXY', true);
+
+    plot(axRightSidePlot, [0 1], [0 0], 'k-')
+    set(axRightSidePlot, ...
+        'YTick', yTicks, 'YTickLabel', {}, ...
+        'XTick', 0:0.02:1.0, 'XLim', countsLim, 'XTickLabel', {});
+    set(axRightSidePlot, 'YLim', maxResponse * [-0.02 1]);
+    PublicationReadyPlotLib.applyFormat(axRightSidePlot,ff);
+    set(axRightSidePlot, 'YDir', 'normal');
+
 
     drawnow;
 end
-
-
-
-
 
 
 
