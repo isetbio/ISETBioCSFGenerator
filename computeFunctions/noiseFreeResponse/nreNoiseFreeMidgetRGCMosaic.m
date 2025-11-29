@@ -311,27 +311,29 @@ switch (noiseFreeComputeParams.mRGCMosaicParams.outputSignalType)
         if (~isempty(noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList)) && (visualizeActivationFunction)
 
             if (noiseFreeComputeParams.mRGCMosaicParams.nonLinearitiesList{1}.visualizeNonLinearActivationFunction)
-                maxResponse = 0.121;
-                maxLinearResponse = 0.121;
 
                 maxResponse = max([max(abs(theNeuralResponses(:))) max(abs(theLinearNeuralResponses(:)))]);
 
-                if (maxResponse < 0.005)
-                    maxResponse = 0.005;
-                    xTicks = -0.005:0.001:0.005;
-                    yTicks = -0.005:0.001:0.005;
-                elseif (maxResponse < 0.01)
-                    maxResponse = 0.01;
-                    xTicks = -0.01:0.002:0.01;
-                    yTicks = -0.01:0.002:0.01;
-                elseif (maxResponse < 0.1)
-                    maxResponse = 0.1;
-                    xTicks = -0.1:0.02:0.1;
-                    yTicks = -0.1:0.02:0.1;
-                elseif (maxResponse < 0.5)
-                    maxResponse = 0.5;
+                if (maxResponse <= 0.006)
+                    maxResponse = 0.006;
+                    xTicks = -0.006:0.001:0.006;
+                    yTicks = -0.006:0.001:0.006;
+                elseif (maxResponse <= 0.15)
+                    maxResponse = 0.15;
+                    xTicks = -0.15:0.03:0.15;
+                    yTicks = -0.15:0.03:0.15;
+                elseif (maxResponse <= 0.31)
+                    maxResponse = 0.30;
+                    xTicks = -0.3:0.05:0.3;
+                    yTicks = -0.3:0.05:0.3;
+                elseif (maxResponse <= 0.51)
+                    maxResponse = 0.50;
                     xTicks = -0.5:0.1:0.5;
                     yTicks = -0.5:0.1:0.5;
+                elseif (maxResponse <= 0.75)
+                    maxResponse = 0.75;
+                    xTicks = -0.75:0.15:0.75;
+                    yTicks = -0.75:0.15:0.75;
                 else
                     maxResponse = 1.0;
                     xTicks = -1:0.2:1;
@@ -460,9 +462,9 @@ function hFig = plotNonLinearity(theResponse, theLinearResponse, mRGCindicesWith
     mRGCindicesWithNonFlippedResponseSigns = setdiff(1:cellsNum, mRGCindicesWithFlippedResponseSigns);
 
 
-    plot(axNonLinearity, maxResponse*[0 1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
+    plot(axNonLinearity, maxResponse*[0 1], maxResponse*[0 1], 'k:', 'LineWidth', 1.5);
     hold(axNonLinearity, 'on')
-    plot(axNonLinearity, maxResponse*[0 -1], maxResponse*[0 1], 'k--', 'LineWidth', 1.0);
+    plot(axNonLinearity, maxResponse*[0 -1], maxResponse*[0 1], 'k:', 'LineWidth', 1.5);
     plot(axNonLinearity, maxResponse*[-1 1], [0 0], 'k-', 'LineWidth', 1.5);
     plot(axNonLinearity, [0 0], maxResponse*[-1 1], 'k-', 'LineWidth', 1.5);
 
@@ -479,7 +481,8 @@ function hFig = plotNonLinearity(theResponse, theLinearResponse, mRGCindicesWith
         'MarkerFaceColor', [0.5 0.5 1], 'MarkerEdgeColor', [0.5 0.5 1]);
 
 
-    hL = legend(axNonLinearity, [p1 p2], {'ON-center', 'OFF-center (simulated)'}, 'Location', 'SouthWest');
+    hL = legend(axNonLinearity, [p1 p2], {'ON-center', 'OFF-center (simulated)'}, 'Location', 'NorthWest');
+
     hold(axNonLinearity, 'off')
 
     set(axNonLinearity, 'XTick', xTicks, 'YTick', yTicks);
@@ -494,9 +497,15 @@ function hFig = plotNonLinearity(theResponse, theLinearResponse, mRGCindicesWith
 
     PublicationReadyPlotLib.applyFormat(axNonLinearity,ff);
 
+    hL.BackgroundAlpha = 0.7;
+    hL.Color = [1 1 1];
+    hL.Box = 'on';
+    hl.lineWidth = 1.0;
+    hL.EdgeColor = [0.7 0.7 0.7];
+
 
     % The top plot (linear response histograms)
-    countsLim = [0 0.2];
+    countsLim = [0 0.1];
     theBinWidth = maxLinearResponse/51;
     theBins = 0:theBinWidth:maxLinearResponse;
     theBins = cat(2,-fliplr(theBins), theBins(2:end))
