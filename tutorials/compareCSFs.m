@@ -10,6 +10,69 @@ function compareCSFs()
     colorMRGCAdaptiveOpticsRedGreen = 0.75*colorMRGCPhysiologicalOpticsRedGreen;
 
     
+
+
+    % REVIEWER FIGURES (Gaussian noise effect)
+
+    colorMRGCPhysiologicalOpticsLuminanceDoubleNoise = [0.85 0.85 0.0];
+    colorMRGCPhysiologicalOpticsRedGreenDoubleNoise = [1.0 0.0 0.0];
+    colorMRGCAdaptiveOpticsLuminanceDoubleNoise = 0.75*colorMRGCPhysiologicalOpticsLuminanceDoubleNoise;
+    colorMRGCAdaptiveOpticsRedGreenDoubleNoise = 0.75 * colorMRGCPhysiologicalOpticsRedGreenDoubleNoise;
+
+    % PARAFOVEAL MOSAIC (14 degs)
+    maxCSFvisualized = 40;
+    psfOrientationDegs = 15;
+    mosaicEccDegs = [-14 0];
+    mosaicSizeDegs = [4.1 4.1];
+
+    maxSFvisualized = 80;
+    maxSFvisualizedCones = 90;
+    maxSFvisualizedAO = 120;
+
+    % L+M+S  (physiological optics)
+    opticsType = 'loadComputeReadyRGCMosaic'; 
+    mRGCOutputSignalType = 'mRGCs';
+    finalizePlotWithLegends = '';
+    hFig = [];
+    ax = [];
+    p0 = [];
+    p00 = [];
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCPhysiologicalOpticsLuminance, colorMRGCPhysiologicalOpticsRedGreen, backgroundColor);
+
+    finalizePlotWithLegends = {' 1 x sigma (L+M+S)',  ' 1 x sigma (L-M)', ' 2 x sigma (L+M+S)',  ' 2 x sigma (L-M)'};
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs+1, ...
+        colorMRGCPhysiologicalOpticsLuminanceDoubleNoise, colorMRGCPhysiologicalOpticsRedGreenDoubleNoise, backgroundColor);
+
+
+    % L+M+S  (adaptive optics)
+    opticsType = 'adaptiveOptics6MM';
+    mRGCOutputSignalType = 'mRGCs';
+    finalizePlotWithLegends = '';
+    hFig = [];
+    ax = [];
+    p0 = [];
+    p00 = [];
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorMRGCAdaptiveOpticsLuminance, colorMRGCAdaptiveOpticsRedGreen, backgroundColor);
+
+    finalizePlotWithLegends = {' 1 x sigma (L+M+S)',  ' 1 x sigma (L-M)', ' 2 x sigma (L+M+S)',  ' 2 x sigma (L-M)'};
+    [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizePlotWithLegends, ...
+        maxCSFvisualized, maxSFvisualized, opticsType, mRGCOutputSignalType, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs+1, ...
+        colorMRGCAdaptiveOpticsLuminanceDoubleNoise, colorMRGCAdaptiveOpticsRedGreenDoubleNoise, backgroundColor);
+
+
+    pause
+
+    % DEFAULT FIGURES
+
     % FOVEAL MOSAIC
     psfOrientationDegs = 120;
     mosaicEccDegs = [0 0];
@@ -21,10 +84,11 @@ function compareCSFs()
     maxSFvisualizedAO = 200;
 
     % input cone mosaic- vs. mRGC mosaic- CSF
-    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance, backgroundColor);
+    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorCones, colorMRGCPhysiologicalOpticsLuminance, backgroundColor);
     
 
-    
     % L+M+S vs. L-M (physiological optics)
     opticsType = 'loadComputeReadyRGCMosaic'; 
     mRGCOutputSignalType = 'mRGCs';
@@ -155,7 +219,9 @@ function compareCSFs()
     mosaicSizeDegs = [4.1 4.1];
 
     % input cone mosaic- vs. mRGC mosaic- CSF
-    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, colorCones, colorMRGCPhysiologicalOpticsLuminance, backgroundColor);
+    plotCones_vs_mRGCs(maxCSFvisualized, maxSFvisualized, maxSFvisualizedCones, ...
+        mosaicEccDegs, mosaicSizeDegs, psfOrientationDegs, ...
+        colorCones, colorMRGCPhysiologicalOpticsLuminance, backgroundColor);
 
 
     % L+M+S vs. L-M (physiological optics)
@@ -279,7 +345,8 @@ function compareCSFs()
 
 end
 
-function [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, finalizeFigureWithLegends, ...
+function [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(...
+    hFig, ax, p0, p00, finalizeFigureWithLegends, ...
     maxCSF, maxSFvisualized, opticsType, ...
     mRGCOutputSignalType, mosaicEccDegs, mosaicSizeDegs, orientationDegs, ...
     color1, color2, backgroundColor)
@@ -300,7 +367,6 @@ function [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, f
         whichClassifierEngine,mRGCOutputSignalType);
 
 
-    
     thresholdsDataFileName = ...
         sprintf('%sCSF_%s_Optics_%s_EccDegs_x%2.1f_%2.1f_SizeDegs_%2.1fx%2.1f_OriDegs_%2.0f_%s.mat', ...
         mRGCOutputSignalType, ...
@@ -310,6 +376,7 @@ function [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, f
         mosaicSizeDegs(1),mosaicSizeDegs(2), ...
         orientationDegs, ...
         presentationMode);
+
     load(thresholdsDataFileName, 'spatialFreqs', 'thresholdContrasts');
     luminanceThresholds = 1./thresholdContrasts;
     luminanceSpatialFreqs = spatialFreqs;
@@ -359,8 +426,6 @@ function [hFig, ax, p0, p00] = plotAchromatic_vs_LMopponent(hFig, ax, p0, p00, f
         theSymbols, theLegends, ...
         color1, color2, backgroundColor, ...
         fullfile(figureFileBaseDir, sprintf('%s_luma_vs_red_green_eccDegs_%2.1f_%s.pdf', mRGCOutputSignalType, mosaicEccDegs(1), opticsType)));
-
-    
 end
 
 
