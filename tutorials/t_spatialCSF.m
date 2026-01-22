@@ -598,14 +598,38 @@ switch (whichNoiseFreeNre)
         %
         % 1. Select one of the pre-computed mRGC mosaics by specifying its
         % eccentricity, size, and type.
+
+        nreNoiseFreeParams.mRGCMosaicParams.eccDegs = mRGCRawEccDegs;
+        nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
+
+        % Find the synthesized mRGC mosaic name that matches (mRGCRawEccDegs, mRGCRawSizeDegs)
+        synthesizedRGCmosaicNames = RGCMosaicConstructor.helper.utils.initializeRGCMosaicGenerationParameters([], [], [], []);
+        theMatchingRGCmosaicName = '';
+        for iName = 1:numel(synthesizedRGCmosaicNames)
+            tmpPstruct = RGCMosaicConstructor.helper.utils.initializeRGCMosaicGenerationParameters('human', 'PLOSpaperDefaultSubject', synthesizedRGCmosaicNames{iName}, []);
+            if (...
+                    all(tmpPstruct.rgcMosaicSurroundOptimization.mosaicEccDegs == mRGCRawEccDegs) && ...
+                    all(tmpPstruct.rgcMosaicSurroundOptimization.mosaicSizeDegs == mRGCRawSizeDegs) ...
+               )
+                    theMatchingRGCmosaicName = synthesizedRGCmosaicNames{iName};
+            end
+        end
+
+        if (isempty(theMatchingRGCmosaicName))
+            error('Did not find a synthesized mRGCmosaicName to match the desired mRGCRawEccDegs and mRGCRawSizeDegs')
+        end
+
+        % Change name to match mRGCRawEccDegs; mRGCRawSizeDegs;
+        nreNoiseFreeParams.mRGCMosaicParams.rgcMosaicName = theMatchingRGCmosaicName;
+        nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
+
+        % Check that the size desired is less than the mRGCRawSizeDegs
         if (mosaicSizeDegs(1) > mRGCRawSizeDegs(1)) || (mosaicSizeDegs(2) > mRGCRawSizeDegs(2))
             mosaicSizeDegs
             mRGCRawSizeDegs
             error('Cannot ask for mosaic larger than mRGCRawSizeDegs');
         end
-        nreNoiseFreeParams.mRGCMosaicParams.eccDegs = mRGCRawEccDegs;
-        nreNoiseFreeParams.mRGCMosaicParams.sizeDegs = mRGCRawSizeDegs;
-        nreNoiseFreeParams.mRGCMosaicParams.rgcType = 'ONcenterMidgetRGC';
+
 
         % Adjust surround optimization substring
         if (nreNoiseFreeParams.mRGCMosaicParams.eccDegs(1) < -20)
@@ -745,6 +769,8 @@ switch (whichNoiseFreeNre)
         error('Unsupported noise free nre specified');
 end
 
+
+
 % Setup the noisy neural response engine
 switch (whichNoisyInstanceNre)
     case 'Poisson'
@@ -761,7 +787,6 @@ switch (whichNoisyInstanceNre)
 end % switch (whichNoisyInstanceNre)
 
 
-
 if (employMosaicSpecificConeFundamentals) 
    % For this computation we need the input cone mosaic and the optics that
    % will be used for the rest of the computation
@@ -775,6 +800,7 @@ if (employMosaicSpecificConeFundamentals)
            error('noiseFreeNRE must be either ''mRGCMosaic'', or ''excitationsCmosaic''.');
    end % switch (whichNoiseFreeNre)
 
+   
    [theOI,theMosaic] = generateOpticsAndMosaicFromParams(...
             nreNoiseFreeParams.opticsParams, ...
             [], ...
