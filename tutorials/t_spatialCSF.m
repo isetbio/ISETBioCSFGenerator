@@ -685,9 +685,15 @@ switch (whichNoiseFreeNre)
             nreNoiseFreeParams.mRGCMosaicParams.inputSignalType = 'coneExcitations';
         end
 
+        % No non-linearities
+        nreNoiseFreeParams.mRGCMosaicParams.nonLinearitiesList = [];
+
 
         % Handle temporal filter
         nreNoiseFreeParams.temporalFilter = temporalFilter;
+
+
+       
 
         % Sanity check on the amount of mRGCMosaicVMembraneGaussianNoiseSigma for
         % the specified noiseFreeParams.mRGCMosaicParams.inputSignalType
