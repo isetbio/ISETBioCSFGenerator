@@ -14,8 +14,8 @@ function compareCSFs()
 
     % REVIEWER FIGURES (Gaussian noise effect)
 
-    colorMRGCPhysiologicalOpticsLuminanceDoubleNoise = [0.85 0.85 0.0];
-    colorMRGCPhysiologicalOpticsRedGreenDoubleNoise = [1.0 0.0 0.0];
+    colorMRGCPhysiologicalOpticsLuminanceDoubleNoise = [0.65 0.85 1.0];
+    colorMRGCPhysiologicalOpticsRedGreenDoubleNoise = [0.8 0.0 1.0];
     colorMRGCAdaptiveOpticsLuminanceDoubleNoise = 0.75*colorMRGCPhysiologicalOpticsLuminanceDoubleNoise;
     colorMRGCAdaptiveOpticsRedGreenDoubleNoise = 0.75 * colorMRGCPhysiologicalOpticsRedGreenDoubleNoise;
 

@@ -23,6 +23,11 @@ function t_isoresponseLMplaneEllipses(options)
 % Examples:
 %{
 
+% ETTBSkip
+
+% Skip running the example during autovalidation because it
+% requires results of simulations that the user may not have run
+
 % Run with CMosaic
      t_isoresponseLMplaneEllipses(...
         'useMetaContrast', true, ...

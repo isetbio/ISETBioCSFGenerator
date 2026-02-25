@@ -12,7 +12,20 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds(Pts_coneContrast)
 % Examples:
 %{
 
-% UTTBSkip
+% ETTBSkip
+
+    % Skip running the example during autovalidation because it
+    % requires results of simulations that the user may not have run
+
+
+    Pts_coneContrast = [
+   -0.3000   -0.3000         0; ...
+   -0.1500   -0.1500    0.0000; ...
+    0.0000    0.0000         0; ...
+    0.1500    0.1500         0; ...
+    0.3000    0.3000         0; ...
+   -0.0500    0.0500         0; ...
+    0.0500   -0.0500    0.0000];
 
     plotMultipleIsoresponseLMplaneEllipseThresholds(Pts_coneContrast);
 
@@ -31,7 +44,17 @@ function plotMultipleIsoresponseLMplaneEllipseThresholds(Pts_coneContrast)
 
     if (strcmp(mRGCOutputSignalType, 'mRGCs'))
         nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.0';
-        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n2.0_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.03_n2.0_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n1.3_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.03_n1.3_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.01_n1.3_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n1.2_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.02_n1.4_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.3';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.03_n2.0_s1.0';
+        nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n1.5_s1.2';
+
         %nonLinearityString = 'LINEAR';
     else
         nonLinearityString = '';

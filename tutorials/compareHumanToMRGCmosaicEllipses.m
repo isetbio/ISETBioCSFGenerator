@@ -9,7 +9,10 @@ function compareHumanToMRGCmosaicEllipses()
 % Examples:
 %{
 
-% UTTBSkip
+% ETTBSkip
+
+    % Skip running the example during autovalidation because it
+    % requires results of simulations that the user may not have run
 
     compareHumanToMRGCmosaicEllipses();
 
@@ -119,7 +122,19 @@ function compareHumanToMRGCmosaicEllipses()
     noiseAndClassifierType = 'Gaussian_rceTemplateDistance';
 
     nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.0';
-    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n2.0_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.03_n2.0_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.3';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.5';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n1.3_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.03_n1.3_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.01_n1.3_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n1.2_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.03_n2.0_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.02_n1.4_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.07_n1.2_s1.3';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.03_n2.0_s1.0';
+    nonLinearityString = 'ON_OFF_Emulation_nLinearRect_''half''_c50_0.05_n1.5_s1.2';
 
     if (~isempty(nonLinearityString))
         resultsFileBaseDir = fullfile(rootDir, ...
@@ -133,7 +148,7 @@ function compareHumanToMRGCmosaicEllipses()
     figureFileBaseDir = strrep(resultsFileBaseDir, 'results', 'figures');
     theModelDataFile = fullfile(resultsFileBaseDir, sprintf('%s_%s_Summary.mat', mRGCOutputSignalType, noiseAndClassifierType));
     theLegend = ' nonLinear mRGCs (Gaussian noise, template observer) ';
-    mRGCmosaicEllipseScalingFactor = 12;
+    mRGCmosaicEllipseScalingFactor = 3.5;
     hFig = generateFigure(4, humanEllipses, theModelDataFile, ...
         mRGCmosaicEllipseScalingFactor, theLegend, drawIndividualPoints);
 
