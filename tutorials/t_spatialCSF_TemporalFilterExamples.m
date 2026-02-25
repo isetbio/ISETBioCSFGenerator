@@ -1,4 +1,4 @@
-% t_spatialCSF_EMExamples
+% t_spatialCSF_TemporalFilterExamples
 %
 % Temporal filter examples for t_spatialCSF
 
