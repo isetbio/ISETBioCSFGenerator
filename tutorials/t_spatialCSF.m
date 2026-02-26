@@ -213,7 +213,7 @@ arguments
     
     % Fixed stimulus parameters
     options.employMosaicSpecificConeFundamentals (1,1) logical = false;
-    options.meanLuminanceCdPerM2 (1,1) double = 100;
+    options.meanLuminanceCdPerM2 (1,:) double = 40;
     options.meanChromaticityXY (1,2) double = [0.30 0.32];
     options.stimulusChroma (1,:) char = 'luminance'
 
