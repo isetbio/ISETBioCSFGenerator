@@ -16,7 +16,7 @@ function [thresholdDeltaConeContrasts, theThresholdAxes, theFittedEllipsePoints]
     %gratingSceneParams.warningInsteadOfErrorOnOutOfGamut = true;
 
     gratingSceneParamsForNullScene = gratingSceneParams;
-    if (~isempty(gratingSceneParamsForNullScene.backgroundLMSconeExcitations))
+    if (isfield(gratingSceneParamsForNullScene, 'backgroundLMSconeExcitations')) && (~isempty(gratingSceneParamsForNullScene.backgroundLMSconeExcitations))
         gratingSceneParamsForNullScene.backgroundLMSconeExcitations = ...
                 gratingSceneParamsForNullScene.backgroundLMSconeExcitations .* (1+referenceLMSconeContrast);
     end
