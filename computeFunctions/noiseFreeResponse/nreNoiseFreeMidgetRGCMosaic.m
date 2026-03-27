@@ -597,10 +597,10 @@ function p = generateDefaultParams(opticsType,oiPadMethod)
     %mosaicParams.rgcType = 'ONcenterMidgetRGC';
 
     % Pre-baked mRGC mosaic name
-    mosaicParams.rgcMosaicName = 'PLOSpaperFovealMosaic';
+    mosaicParams.rgcMosaicName = 'JCNpaperFovealMosaic';
     
     % Optics used to synthesize the mRGCMosaic
-    mosaicParams.opticsSubjectName = 'PLOSpaperDefaultSubject';
+    mosaicParams.opticsSubjectName = 'JCNpaperDefaultSubject';
     
     % Target visualSTF of synthesized mRGCmosaic
     mosaicParams.targetVisualSTFdescriptor = 'default';
