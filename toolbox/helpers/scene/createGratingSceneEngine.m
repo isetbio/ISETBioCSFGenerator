@@ -47,10 +47,11 @@ varargin = ieParamFormat(varargin);
 p.addParameter('sceneEngineName', '', @ischar);
 p.addParameter('customConeFundamentals', [], @(x)(isempty(x)||isstruct(x)));
 p.addParameter('meanLuminanceCdPerM2', 40, @isscalar);
+p.addParameter('luminanceHeadroom', 0.1, @isscalar);
 p.addParameter('meanChromaticityXY', [0.3 0.32], @(x)(isnumeric(x) && numel(x) == 2));
 p.addParameter('backgroundLMSconeExcitations', [], @(x)((isempty(x))||(isnumeric(x) && numel(x) == 3)));
 p.addParameter('spatialPhase', 0, @(x)(isnumeric(x) && numel(x) == 1));
-p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'rect', 'soft','halfcos'})));
+p.addParameter('spatialEnvelope', 'disk', @(x)(ischar(x) && ismember(x, {'disk', 'rect', 'soft','halfcos', 'none'})));
 p.addParameter('orientation', 90, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('duration', 0.1, @(x)(isnumeric(x) && numel(x) == 1));
 p.addParameter('frameDurationSeconds',0.1, @(x)(isnumeric(x) && numel(x) == 1));
@@ -92,7 +93,7 @@ gratingParams.customConeFundamentals = p.Results.customConeFundamentals;
 gratingParams.meanLuminanceCdPerM2 = p.Results.meanLuminanceCdPerM2;
 gratingParams.meanChromaticityXY = p.Results.meanChromaticityXY;
 gratingParams.backgroundLMSconeExcitations = p.Results.backgroundLMSconeExcitations;
-
+gratingParams.luminanceHeadroom = p.Results.luminanceHeadroom;
 
 gratingParams.spatialPhaseDegs = p.Results.spatialPhase;
 gratingParams.spatialEnvelope = p.Results.spatialEnvelope;
@@ -105,6 +106,7 @@ gratingParams.minPixelsNumPerCycle = p.Results.minPixelsNumPerCycle;
 gratingParams.spectralSupport = p.Results.spectralSupport;
 gratingParams.warningInsteadOfErrorOnOutOfGamut = p.Results.warningInsteadOfErrorOnOutOfGamut;
 gratingParams.displayParams.meanLuminanceCdPerM2 = gratingParams.meanLuminanceCdPerM2;
+gratingParams.displayParams.luminanceHeadroom = gratingParams.luminanceHeadroom;
 
 
 % Set pixel size
