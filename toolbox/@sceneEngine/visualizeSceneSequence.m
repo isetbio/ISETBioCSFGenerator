@@ -91,9 +91,9 @@ function visualizeSceneSequence(obj, sceneSequence, temporalSupportSeconds, vara
         m1 = min(stimProfile);
         m2 = max(stimProfile);
         if (m1 == m2)
-            normalizedStimProfile = 2*((stimProfile-m1)/(m2-m1)-0.5);
-        else
             normalizedStimProfile = stimProfile*0;
+        else
+            normalizedStimProfile = 2*((stimProfile-m1)/(m2-m1)-0.5);
         end
 
         if (sRGBforSceneVisualization)
