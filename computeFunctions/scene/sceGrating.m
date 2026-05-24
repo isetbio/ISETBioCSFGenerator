@@ -536,7 +536,7 @@ function p = generateDefaultParams()
             'transmission',[]),...                      %   A corresponding vector of transmission values (ranging from 0 - 1) for each wavelength specified in 'spectralSupport'  
         'customConeFundamentals', [], ...               % struct with fields {'wavelengthSupport', 'quantalExcitationSpectra'}, specifying a set of custom cone fundamentals to use (instead of the default SS2)
         'meanLuminanceCdPerM2', stimMeanLuminanceCdPerM2, ...  % background: background mean luminance, in candellas per meter squared
-        'luminanceHeadroom', 0.0, ...
+        'luminanceHeadroom', 0.1, ...                   % 10% headroom
         'meanChromaticityXY', [0.3 0.32], ...           % background: background mean chromaticity'
         'backgroundLMSconeExcitations', [], ...         % background LMS excitations. If non-empty it overrides the passed (meanLumin, meanXY)
         'coneContrastModulation', [0.09 -0.09 0.0], ... % chromatic direction: LMS cone contrasts
