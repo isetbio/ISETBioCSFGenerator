@@ -32,6 +32,7 @@ function thresholdRet = t_spatialCSF(options)
 %   04/17/24  dhb   Remove oldWay option.  Ever forward.  Enforce sine phase.
 %   12/19/24  dhb   Update for new architecture.
 %   07/30/25  NPC   Numerous updates for mRGCs.
+%   05/26/25  NPC   Added zeroPistonAndTiltZernikeCoefficients option
 
 % Note additional examples that use mRGC are in t_spatialCSF_mRGCExamples.
 % Split out so they get run in smaller bunches.
@@ -39,6 +40,9 @@ function thresholdRet = t_spatialCSF(options)
 % Examples:
 %{
      % Validate without meta contrast
+
+     % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+     % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
      validationThresholds                = [0.0418    0.0783    0.1540    0.6759];
      validationThresholdsForZ1Z2Z3setTo0 = [0.0374    0.0728    0.1532    0.6289];
 
@@ -53,6 +57,8 @@ function thresholdRet = t_spatialCSF(options)
         'validationThresholds', validationThresholds);
 
      % Validate with meta contrast
+     % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+     % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
      validationThresholds                = [0.0418    0.0783    0.1540    0.6759];
      validationThresholdsForZ1Z2Z3setTo0 = [0.0374    0.0728    0.1523    0.6289];
 
@@ -67,6 +73,8 @@ function thresholdRet = t_spatialCSF(options)
         'validationThresholds', validationThresholds);
 
      % Validate with meta contrast, more frames
+     % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+     % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
      validationThresholds                = [0.0208    0.0370    0.0770    0.3300];
      validationThresholdsForZ1Z2Z3setTo0 = [0.0192    0.0388    0.0826    0.3175];
 
@@ -82,6 +90,9 @@ function thresholdRet = t_spatialCSF(options)
         'validationThresholds',  validationThresholds);
      
     % Verify that Gaussian noise works, as well as template classifier
+
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.0997    0.1703    0.3581    1.0000];
     validationThresholdsForZ1Z2Z3setTo0 = [0.0929    0.1812    0.3841    1.0000];
 
@@ -96,6 +107,8 @@ function thresholdRet = t_spatialCSF(options)
         'validationThresholds', validationThresholds);
 
     % Verify that rcePcaSVM works
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.0377    0.0796    0.1427    0.6956];
     validationThresholdsForZ1Z2Z3setTo0 = [0.0407    0.0844    0.1643    0.6968];
 
@@ -156,6 +169,11 @@ arguments
 
     % If the neural model is mRGCMosaic, we can specify the Optics type to use
     options.opticsType (1,:) char  = 'loadComputeReadyRGCMosaic';
+
+    % Choose whether to zero the first 3 Zernike coefficients.
+    % Zeroing these out results in a PSF centered at the origin and is
+    % recommended as they may be measured arbitrarily (as per Derek Nankivil)
+    options.zeroPistonAndTiltZernikeCoefficients (1,1) logical = false;
 
     % Choose noise model
     %   Choices: 'Poisson'
@@ -373,8 +391,12 @@ stimSizeDegs = options.stimSizeDegs;
 pixelsNum = options.pixelsNum;
 
 fastParameters = options.fastParameters;
+
+% Optics params
+zeroPistonAndTiltZernikeCoefficients = options.zeroPistonAndTiltZernikeCoefficients;
 oiPadMethod = options.oiPadMethod;
 opticsType = options.opticsType;
+
 thresholdPara = options.thresholdPara;
 
 verbose = options.verbose;
@@ -809,6 +831,11 @@ switch (whichNoisyInstanceNre)
         error('Unsupported noisy instances nre specified');
 end % switch (whichNoisyInstanceNre)
 
+
+if (zeroPistonAndTiltZernikeCoefficients)
+    nreNoiseFreeParams.opticsParams.zeroCenterPSF = false;
+    nreNoiseFreeParams.opticsParams.withZeroedPistonAndTiltZernikeCoefficients = true;
+end
 
 if (employMosaicSpecificConeFundamentals) 
    % For this computation we need the input cone mosaic and the optics that

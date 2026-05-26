@@ -5,6 +5,8 @@
 % Examples:
 %{
     % mRGCMosaic nre basic test: achromatic CSF
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.6919 0.3525 0.2286 0.2115 0.1791 0.1741 0.3280 1.0000];
     validationThresholdsForZ1Z2Z3setTo0 = [0.6872 0.3564 0.2306 0.2117 0.1808 0.1746 0.3238 1.0000];
 

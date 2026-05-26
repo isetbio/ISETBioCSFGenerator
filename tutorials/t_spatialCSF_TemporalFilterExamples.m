@@ -7,6 +7,8 @@
     % Validate with cone contrast, temporal filter, meta contrast.  This
     % is a delta function and should not change threshold relative to the
     % same parameters without a filter.
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                =  [0.0208    0.0370    0.0770    0.3300];
     validationThresholdsForZ1Z2Z3setTo0 =  [0.0192    0.0388    0.0826    0.3175];
 
@@ -24,6 +26,9 @@
     % SHOULD UPDATE THE FOLLOWING TO USE CONTRAST, BUT NEED TO FUSS WITH
     % SIGMA TO GET THRESHOLDS IN RANGE AND THEN UPDATE VALIDATION DATA
     % Validate with temporal filter based on photocurrent, meta contrast.
+
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                =  [0.0088    0.0152    0.0374    0.1279];
     validationThresholdsForZ1Z2Z3setTo0 =  [0.0090    0.0171    0.0437    0.1400];
 
@@ -47,6 +52,8 @@
 
     % Validate with temporal filter based on photocurrent, meta contrast.
     % This version with eye movements.
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.0108    0.0203    0.0613    0.2277];
     validationThresholdsForZ1Z2Z3setTo0 = [0.0112    0.0198    0.0526    0.2223];
 
@@ -70,6 +77,8 @@
 
     % Validate with temporal filter based Watson's filter with
     % its default parameters.
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                =  [0.0471    0.0903    0.1963    0.7077];
     validationThresholdsForZ1Z2Z3setTo0 =  [0.0484    0.0848    0.2095    0.7322];
 
@@ -93,6 +102,8 @@
 
     % Validate with temporal filter based Watson's filter with
     % its default parameters and eye movements.
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.0485    0.0838    0.2022    0.7811];
     validationThresholdsForZ1Z2Z3setTo0 = [0.0490    0.0763    0.2074    0.7627];
 
@@ -116,6 +127,8 @@
 
     % For comparison to the above. Same conditions with no temporal filter,
     % no FEMs. 
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.0040    0.0061    0.0151   0.0646];
     validationThresholdsForZ1Z2Z3setTo0 = [0.0040    0.0070    0.0143   0.0540];
 
@@ -138,7 +151,9 @@
         'validationThresholds',validationThresholds);
 
     % For comparison to the above. Same conditions with no temporal filter,
-    % with FEMS. 
+    % with FEMS.
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.0040    0.0073    0.0173    0.0624];
     validationThresholdsForZ1Z2Z3setTo0 = [0.0040    0.0076    0.0154    0.0654];
 

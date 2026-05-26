@@ -6,6 +6,9 @@
 %{
     % Verify that cMosaic FEMs work without crashing. Same EM paths on
     % train and test.
+
+    % If ('zeroPistonAndTiltZernikeCoefficients', true) is passed to 
+    % t_spactialCSF(), use the validationThresholdsForZ1Z2Z3setTo0 thresholds
     validationThresholds                = [0.0194    0.0368    0.0766    0.4235];
     validationThresholdsForZ1Z2Z3setTo0 = [0.0202    0.0403    0.0881    0.4638];
 
