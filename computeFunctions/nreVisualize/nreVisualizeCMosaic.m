@@ -222,7 +222,14 @@ function nreVisualizeCMosaic(neuralPipeline, neuralResponses, temporalSupportSec
 
             drawnow;
             if (~isempty(responseVideoFileName) && ischar(responseVideoFileName))
-                videoOBJ.writeVideo(getframe(figureHandle));
+                theFrame = getframe(figureHandle);
+                vH = videoOBJ.Height;
+                vW = videoOBJ.Width;
+                if ~isempty(vH) && ~isempty(vW) && vH > 0 && vW > 0 && ...
+                        (size(theFrame.cdata,1) ~= vH || size(theFrame.cdata,2) ~= vW)
+                    theFrame.cdata = imresize(theFrame.cdata, [vH, vW]);
+                end
+                videoOBJ.writeVideo(theFrame);
             end
 
         end % iPoint

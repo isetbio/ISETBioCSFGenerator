@@ -388,6 +388,17 @@ if (nTest ~= 0)
         end
     end
 
+    % Restore responseVideoFileName to its pre-loop value so that a second
+    % call to computePerformance (e.g. for the test phase after training)
+    % does not accumulate an extra _scene<N> suffix.
+    if (iscell(theNeuralEngine))
+        for nn = 1:length(theNeuralEngine)
+            theNeuralEngine{nn}.responseVideoFileName = responseAltVideoFileNameBase{nn};
+        end
+    else
+        theNeuralEngine.responseVideoFileName = responseAltVideoFileNameBase;
+    end
+
     e = toc(eStart);
     if (p.Results.verbose)
         fprintf('computePerformance: Took %0.1f secs to generate test responses for all alternatives\n',e);
