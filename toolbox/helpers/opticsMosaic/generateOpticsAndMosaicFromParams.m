@@ -95,6 +95,32 @@ switch (opticsParams.type)
         theOptics = oiEnsemble{1};
         clear oiEnsemble
 
+    case 'maxStrehlRatioWithResidualRefractionError'
+        % Check that this will work
+        if (~isa(theMosaic,'cMosaic'))
+            error('Generating optics with ''oiEnsembleGenerate'' requires theMosaic be a cMosaic');
+        end
+
+        examinedRefractionErrorDiopters = -6:0.25:1;
+        psfUpsampleFactor = [];
+        visualizeStrehlRatioOptimization = true;
+        contrastMaxStrehlRatioPSFtoAsMeasuredAndCentralCorrection = true;
+	    [theOptics,~, theOptimalStrehlRatioDefocusDiopters, theOptimalStrehlRatio, StrehlRatioAsAFunctionOfDefocus] = ...
+		      RGCMosaicConstructor.helper.optics.optimizedStrehlRatioPSF(...
+					examinedRefractionErrorDiopters, ...
+					theMosaic, mosaicParams.eccDegs, opticsParams, ...
+                    opticsParams.wavefrontSpatialSamples, psfUpsampleFactor, ...
+					visualizeStrehlRatioOptimization, contrastMaxStrehlRatioPSFtoAsMeasuredAndCentralCorrection);
+
+        fprintf('MaxStrehlRatio achieved for defocus of %2.2f D (adding %2.2f of residual error)\n', theOptimalStrehlRatioDefocusDiopters, opticsParams.refractiveErrorDiopters)
+        if (abs(opticsParams.refractiveErrorDiopters)>0)
+            theOptics = RGCMosaicConstructor.helper.optics.optimizedStrehlRatioPSF(...
+					theOptimalStrehlRatioDefocusDiopters + opticsParams.refractiveErrorDiopters, ...
+					theConeMosaic, oiPositionDegs, opticsParams, wavefrontSpatialSamples, psfUpsampleFactor, ...
+					false, false);
+        end
+
+
     case 'BerkeleyAO'
         % Set up wavefront optics object directly
         %
