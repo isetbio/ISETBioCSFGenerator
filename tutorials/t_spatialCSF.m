@@ -827,6 +827,9 @@ switch (whichNoisyInstanceNre)
         nreNoisyInstancesParams = nreNoisyInstancesGaussian;
         nreNoisyInstancesParams.sigma = gaussianSigma;
 
+   case 'Photocurrent'
+        nreNoisyInstancesComputeFunction = @nreNoisyInstancesPhotocurrentNoise;
+        nreNoisyInstancesParams = [];
     otherwise
         error('Unsupported noisy instances nre specified');
 end % switch (whichNoisyInstanceNre)
