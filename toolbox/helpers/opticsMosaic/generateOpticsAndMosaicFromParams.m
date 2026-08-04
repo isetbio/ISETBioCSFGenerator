@@ -95,6 +95,72 @@ switch (opticsParams.type)
         theOptics = oiEnsemble{1};
         clear oiEnsemble
 
+    case 'maxStrehlRatio3DoptimizedWithResidualRefractionError'
+        % Check that this will work
+        if (~isa(theMosaic,'cMosaic'))
+            error('Generating optics with ''oiEnsembleGenerate'' requires theMosaic be a cMosaic');
+        end
+
+        
+        if ( (isfield(opticsParams, 'StrehlRatio3DoptimizationParams')) && (~isempty(opticsParams.StrehlRatio3DoptimizationParams)))
+            examinedRefractionErrorDiopters = opticsParams.StrehlRatio3DoptimizationParams.defocusDioptersRange;
+            examinedObliqueAstigmatismErrorsMicrons = opticsParams.StrehlRatio3DoptimizationParams.obliqueAstigmatismErrorsMicronsRange;
+            examinedVerticalAstigmatismErrorsMicrons = opticsParams.StrehlRatio3DoptimizationParams.verticalAstigmatismErrorsMicronsRange;
+        else
+            examinedRefractionErrorDiopters = -2:0.25:2;
+            examinedObliqueAstigmatismErrorsMicrons = -4:1:4;
+            examinedVerticalAstigmatismErrorsMicrons = -5:1:5;
+        end
+
+
+
+        [X,Y,Z] = meshgrid(...
+            examinedRefractionErrorDiopters, ...
+            examinedObliqueAstigmatismErrorsMicrons, ...
+            examinedVerticalAstigmatismErrorsMicrons);
+
+        examinedRefractionErrorDioptersObliqueAndVerticalAstigmatismErrorsMicronsGrid = [X(:) Y(:) Z(:)];
+
+        psfUpsampleFactor = [];
+        visualizeStrehlRatioOptimization = true;
+        contrastMaxStrehlRatioPSFtoAsMeasuredAndCentralCorrection = ~true;
+        useParfor = true;
+	    [theOptics,~, theOptimalStrehlRatioDefocusDioptersObliqueAndVerticalAstigmatismErrorsMicrons, ...
+         theOptimalStrehlRatio, StrehlRatioAsAFunctionOfDefocusAndAstigmatism] = ...
+		      RGCMosaicConstructor.helper.optics.optimized3DStrehlRatioPSF(...
+					examinedRefractionErrorDioptersObliqueAndVerticalAstigmatismErrorsMicronsGrid, ...
+					theMosaic, mosaicParams.eccDegs, opticsParams, ...
+                    opticsParams.wavefrontSpatialSamples, psfUpsampleFactor, ...
+					visualizeStrehlRatioOptimization, contrastMaxStrehlRatioPSFtoAsMeasuredAndCentralCorrection, ...
+                    examinedRefractionErrorDiopters, examinedObliqueAstigmatismErrorsMicrons, examinedVerticalAstigmatismErrorsMicrons, ...
+                    useParfor);
+
+        if (isfield(opticsParams, 'visualizeStrehlRatioDependenceOnDefocus') && ...
+            opticsParams.visualizeStrehlRatioDependenceOnDefocus)
+
+            if (isfield(opticsParams, 'visualizedStrehlRatioFigureDir'))
+                visualizedtrehlRatioFigureDir = opticsParams.visualizedStrehlRatioFigureDir;
+            else
+                visualizedtrehlRatioFigureDir = '';
+            end
+
+
+            RGCMosaicConstructor.visualize.StrehlRatioAsAFunctionOfDefocusAndAstigmatism(...
+                examinedRefractionErrorDioptersObliqueAndVerticalAstigmatismErrorsMicronsGrid, StrehlRatioAsAFunctionOfDefocusAndAstigmatism, ...
+                theOptimalStrehlRatioDefocusDioptersObliqueAndVerticalAstigmatismErrorsMicrons, theOptimalStrehlRatio, ...
+                examinedRefractionErrorDiopters, examinedObliqueAstigmatismErrorsMicrons, examinedVerticalAstigmatismErrorsMicrons, ...
+                theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID, ...
+                'figureDir', visualizedtrehlRatioFigureDir, ...
+                'darkScheme', true, ...
+                'backgroundIsTransparent', true);
+
+            fprintf('\n**************\n %s (subject index:%d): MaxStrehlRatio achieved for defocus of %2.2f D and astigmatism values of %2.2f and %2.2f microns\n****************\n\n', ...
+                theMosaic.whichEye, opticsParams.subjectID, theOptimalStrehlRatioDefocusDioptersObliqueAndVerticalAstigmatismErrorsMicrons(1), ...
+                theOptimalStrehlRatioDefocusDioptersObliqueAndVerticalAstigmatismErrorsMicrons(2), theOptimalStrehlRatioDefocusDioptersObliqueAndVerticalAstigmatismErrorsMicrons(3))
+            pause(1);
+
+        end
+
     case 'maxStrehlRatioWithResidualRefractionError'
         % Check that this will work
         if (~isa(theMosaic,'cMosaic'))
@@ -158,6 +224,7 @@ switch (opticsParams.type)
         end
 
 
+ 
     case 'BerkeleyAO'
         % Set up wavefront optics object directly
         %
@@ -194,7 +261,7 @@ switch (opticsParams.type)
         theOptics = oiSet(theOptics, 'optics fnumber', focalLengthMM/opticsParams.pupilDiameterMM);
 
     otherwise
-        error('Unknown opticsType specified');
+        error('Unknown opticsType specified: ''%s''.', opticsParams.type);
 end
 
 end
