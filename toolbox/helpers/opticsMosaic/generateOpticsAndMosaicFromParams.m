@@ -121,14 +121,13 @@ switch (opticsParams.type)
             'wavefrontSpatialSamples', opticsParams.wavefrontSpatialSamples);
 
 
-        % The Thibos Z-coeff indices start from 1
+        % The Z-coeff indices start from 1 (in ThibosOptics)
         theDefocusZcoeffIndex = wvfOSAIndexToVectorIndex('defocus');
         theObliqueAstigmatismZcoeffIndex = wvfOSAIndexToVectorIndex('oblique_astigmatism');
         theVerticalAstigmatismZcoeffIndex = wvfOSAIndexToVectorIndex('vertical_astigmatism');
 
-       
         if (contains(opticsParams.zernikeDataBase, 'Artal')) || (contains(opticsParams.zernikeDataBase, 'Polans'))
-            % The Artal Z-coeff indices start from 0, not 1
+            % The Artal/Polans Z-coeff indices start from 0, not 1
             theDefocusZcoeffIndex = theDefocusZcoeffIndex - 1;
             theObliqueAstigmatismZcoeffIndex = theObliqueAstigmatismZcoeffIndex - 1;
             theVerticalAstigmatismZcoeffIndex = theVerticalAstigmatismZcoeffIndex - 1;
@@ -139,23 +138,40 @@ switch (opticsParams.type)
         obliqueAstigmatismDioptersCenter = wvfAstigmatismMicronsToDiopters(zCoeffsMicrons(theObliqueAstigmatismZcoeffIndex), opticsParams.pupilDiameterMM);
         verticalAstigmatismDioptersCenter = wvfAstigmatismMicronsToDiopters(zCoeffsMicrons(theVerticalAstigmatismZcoeffIndex), opticsParams.pupilDiameterMM);
 
+        % Round to closest quarter diopter
+        defocusDioptersCenter = sign(defocusDioptersCenter) * 0.25*round(4*abs(defocusDioptersCenter));
+        obliqueAstigmatismDioptersCenter = sign(obliqueAstigmatismDioptersCenter) * 0.25*round(4*abs(obliqueAstigmatismDioptersCenter));
+        verticalAstigmatismDioptersCenter = sign (verticalAstigmatismDioptersCenter) * 0.25*round(4*abs(verticalAstigmatismDioptersCenter));
 
-        if ( (isfield(opticsParams, 'StrehlRatioOptimizationParams')) && (~isempty(opticsParams.StrehlRatioOptimizationParams)))
-            examinedDefocusDiopters = opticsParams.StrehlRatioOptimizationParams.defocusDioptersRange;
-            examinedObliqueAstigmatismDiopters = opticsParams.StrehlRatioOptimizationParams.obliqueAstigmatismDioptersRange;
-            examinedVerticalAstigmatismDiopters = opticsParams.StrehlRatioOptimizationParams.verticalAstigmatismDioptersRange;
+        previouslyComputedStrehlRatio = [];
+        if (isfield(opticsParams, 'StrehlRatioOptimizedParams')) && (isstruct(opticsParams.StrehlRatioOptimizedParams)) && ...
+            (isfield(opticsParams.StrehlRatioOptimizedParams, 'defocusDiopters')) && ...
+            (isfield(opticsParams.StrehlRatioOptimizedParams, 'obliqueAstigmatismDiopters')) && ...
+            (isfield(opticsParams.StrehlRatioOptimizedParams, 'verticalAstigmatismDiopters'))
+            % Fixed values, from a previous optimization search
+            examinedDefocusDiopters = opticsParams.StrehlRatioOptimizedParams.defocusDiopters;
+            examinedObliqueAstigmatismDiopters = opticsParams.StrehlRatioOptimizedParams.obliqueAstigmatismDiopters;
+            examinedVerticalAstigmatismDiopters = opticsParams.StrehlRatioOptimizedParams.verticalAstigmatismDiopters;
+            if (isfield(opticsParams.StrehlRatioOptimizedParams, 'validationRatio'))
+                previouslyComputedStrehlRatio = opticsParams.StrehlRatioOptimizedParams.validationRatio;
+            end
+
         else
-            examinedDefocusDiopters = -1:0.25:1;
-            examinedObliqueAstigmatismDiopters = -1:0.25:1;
-            examinedVerticalAstigmatismDiopters = -1:0.25:1;
+            if ( (isfield(opticsParams, 'StrehlRatioOptimizationParams')) && (~isempty(opticsParams.StrehlRatioOptimizationParams)))
+                examinedDefocusDioptersRange = opticsParams.StrehlRatioOptimizationParams.defocusDioptersRange;
+                examinedObliqueAstigmatismDioptersRange = opticsParams.StrehlRatioOptimizationParams.obliqueAstigmatismDioptersRange;
+                examinedVerticalAstigmatismDioptersRange = opticsParams.StrehlRatioOptimizationParams.verticalAstigmatismDioptersRange;
+            else
+                examinedDefocusDioptersRange = -1:0.25:1;
+                examinedObliqueAstigmatismDiopters = -1:0.25:1;
+                examinedVerticalAstigmatismDiopters = -1:0.25:1;
+            end
+    
+            % Center the 3D search around (0,0,0) defocus and astigmatism Z coeffs
+            examinedDefocusDiopters = examinedDefocusDioptersRange - defocusDioptersCenter;
+            examinedObliqueAstigmatismDiopters = examinedObliqueAstigmatismDioptersRange - obliqueAstigmatismDioptersCenter;
+            examinedVerticalAstigmatismDiopters = examinedVerticalAstigmatismDioptersRange -verticalAstigmatismDioptersCenter;
         end
-
-
-        % Center the 3D search around (0,0,0) defocus and astigmatism Z coeffs
-        examinedDefocusDiopters = examinedDefocusDiopters - defocusDioptersCenter;
-        examinedObliqueAstigmatismDiopters = examinedObliqueAstigmatismDiopters - obliqueAstigmatismDioptersCenter;
-        examinedVerticalAstigmatismDiopters = examinedVerticalAstigmatismDiopters -verticalAstigmatismDioptersCenter;
-
 
         % 3D search grid
         [X,Y,Z] = ndgrid(...
@@ -179,6 +195,11 @@ switch (opticsParams.type)
                     examinedDefocusDiopters, examinedObliqueAstigmatismDiopters, examinedVerticalAstigmatismDiopters, ...
                     useParfor);
 
+        if (~isempty(previouslyComputedStrehlRatio))
+            assert(abs(previouslyComputedStrehlRatio-round(theOptimalStrehlRatio*1000)/1000.0)<100*eps, ...
+                'validation Strehl ratio (%f) not close to current Sthrel ratio (%f)', previouslyComputedStrehlRatio, theOptimalStrehlRatio);
+        end
+
         if (isfield(opticsParams, 'visualizeStrehlRatioDependenceOnDefocus') && ...
             opticsParams.visualizeStrehlRatioDependenceOnDefocus)
 
@@ -188,6 +209,12 @@ switch (opticsParams.type)
                 visualizedtrehlRatioFigureDir = '';
             end
 
+            if (~isempty(previouslyComputedStrehlRatio))
+                thePDFfileName = sprintf('StrehlRatio3DpreviouslyOptimized_%s_%s_subjID_%d', theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID);
+            else
+                thePDFfileName = '';
+            end
+
             RGCMosaicConstructor.visualize.StrehlRatioAsAFunctionOfDefocusAndAstigmatism(...
                 StrehlRatioAsAFunctionOfDefocusAndAstigmatism, ...
                 theOptimalStrehlRatioDefocusAndAstigmatismDiopters, theOptimalStrehlRatio, thePSF, ...
@@ -195,7 +222,8 @@ switch (opticsParams.type)
                 theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID, ...
                 'figureDir', visualizedtrehlRatioFigureDir, ...
                 'darkScheme', true, ...
-                'backgroundIsTransparent', false);
+                'backgroundIsTransparent', false, ...
+                'pdfFileName', thePDFfileName)
 
             fprintf('\n**************\n %s (subject index:%d): MaxStrehlRatio achieved for defocus of %2.2f D and astigmatism values of %2.2fD and %2.2f D\n****************\n\n', ...
                 theMosaic.whichEye, opticsParams.subjectID, ...
@@ -216,13 +244,33 @@ switch (opticsParams.type)
             examinedDefocusDiopters = -6:0.25:3;
         end
 
+        previouslyComputedStrehlRatio = [];
+        if (isfield(opticsParams, 'StrehlRatioOptimizedParams')) && ...
+            (isstruct(opticsParams.StrehlRatioOptimizedParams)) && ...
+            (isfield(opticsParams.StrehlRatioOptimizedParams, 'defocusDiopters'))
+            % Fixed values, from a previous optimization search
+            examinedDefocusDiopters = opticsParams.StrehlRatioOptimizedParams.defocusDiopters;
+            
+            if (isfield(opticsParams.StrehlRatioOptimizedParams, 'validationRatio'))
+                previouslyComputedStrehlRatio = opticsParams.StrehlRatioOptimizedParams.validationRatio;
+            end
+
+        end
+
         psfUpsampleFactor = [];
-	    [theOptics,~, theOptimalStrehlRatioDefocusDiopters, theOptimalStrehlRatio, StrehlRatioAsAFunctionOfDefocus] = ...
+	    [theOptics, thePSF, theOptimalStrehlRatioDefocusDiopters, theOptimalStrehlRatio, StrehlRatioAsAFunctionOfDefocus] = ...
 		      RGCMosaicConstructor.helper.optics.optimizedStrehlRatioPSF(...
 					examinedDefocusDiopters, ...
 					theMosaic, mosaicParams.eccDegs, opticsParams, ...
                     opticsParams.wavefrontSpatialSamples, psfUpsampleFactor, ...
 					visualizeStrehlRatioOptimization, contrastMaxStrehlRatioPSFtoAsMeasuredAndCentralCorrection);
+
+
+        if (~isempty(previouslyComputedStrehlRatio))
+            assert(abs(previouslyComputedStrehlRatio-round(theOptimalStrehlRatio*1000)/1000.0)<100*eps, ...
+                'validation Strehl ratio (%f) not close to current Sthrel ratio (%f)', previouslyComputedStrehlRatio, theOptimalStrehlRatio);
+        end
+
 
         if (isfield(opticsParams, 'visualizeStrehlRatioDependenceOnDefocus') && ...
             opticsParams.visualizeStrehlRatioDependenceOnDefocus)
@@ -233,13 +281,20 @@ switch (opticsParams.type)
                 visualizedtrehlRatioFigureDir = '';
             end
 
+            if (~isempty(previouslyComputedStrehlRatio))
+                thePDFfileName = sprintf('StrehlRatio3DpreviouslyOptimized_%s_%s_subjID_%d', theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID);
+            else
+                thePDFfileName = '';
+            end
+
             RGCMosaicConstructor.visualize.StrehlRatioAsAFunctionOfDefocus(...
                 examinedDefocusDiopters, StrehlRatioAsAFunctionOfDefocus, ...
-                theOptimalStrehlRatioDefocusDiopters, theOptimalStrehlRatio, ...
+                theOptimalStrehlRatioDefocusDiopters, theOptimalStrehlRatio, thePSF, ...
                 theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID, ...
                 'figureDir', visualizedtrehlRatioFigureDir, ...
                 'darkScheme', true, ...
-                'backgroundIsTransparent',false);
+                'backgroundIsTransparent',false, ...
+                'pdfFileName', thePDFfileName);
 
             fprintf('\n**************\n %s (subject index:%d): MaxStrehlRatio achieved for defocus of %2.2f D\n****************\n\n', ...
                 theMosaic.whichEye, opticsParams.subjectID, theOptimalStrehlRatioDefocusDiopters)
