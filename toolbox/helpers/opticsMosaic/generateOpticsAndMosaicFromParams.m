@@ -210,7 +210,7 @@ switch (opticsParams.type)
             end
 
             if (~isempty(previouslyComputedStrehlRatio))
-                thePDFfileName = sprintf('StrehlRatio3DpreviouslyOptimized_%s_%s_subjID_%d', theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID);
+                thePDFfileName = sprintf('StrehlRatio3DpreviouslyOptimizedPSF_%s_%s_subjID_%d', theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID);
             else
                 thePDFfileName = '';
             end
@@ -321,7 +321,7 @@ switch (opticsParams.type)
             end
 
             if (~isempty(previouslyComputedStrehlRatio))
-                thePDFfileName = sprintf('StrehlRatio3DpreviouslyOptimized_%s_%s_subjID_%d', theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID);
+                thePDFfileName = sprintf('StrehlRatio1DpreviouslyOptimizedPSF_%s_%s_subjID_%d', theMosaic.whichEye, opticsParams.zernikeDataBase, opticsParams.subjectID);
             else
                 thePDFfileName = '';
             end
