@@ -153,14 +153,15 @@ metaNeuralParams.neuralEngine.visualizeEachCompute = saveNeuralEngineVisualize;
 % Assemble the dataOut struct
 if (returnTheNeuralPipeline)
     dataOut = struct(...
-    'neuralResponses', theNoiseFreeNeuralResponses, ...
-    'temporalSupport', noiseFreeResponsePipeline.temporalSupportSecs);
-    dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
+        'neuralResponses', theNoiseFreeNeuralResponses, ...
+        'temporalSupport', noiseFreeResponsePipeline.temporalSupportSecs);
 
+    dataOut.noiseFreeResponsePipeline = noiseFreeResponsePipeline;
+    dataOut.StrehlRatioOptimizedParams = metaNeuralParams.neuralEngine.neuralPipeline.noiseFreeResponse.StrehlRatioOptimizedParams;
 else
      dataOut = struct(...
-    'neuralResponses', theNoiseFreeNeuralResponses);
-     dataOut.temporalSupport = neuralEngine.neuralPipeline.noiseFreeResponse.temporalSupportSecs;
+        'neuralResponses', theNoiseFreeNeuralResponses, ...
+        'temporalSupport', neuralEngine.neuralPipeline.noiseFreeResponse.temporalSupportSecs);
 end
 
 end

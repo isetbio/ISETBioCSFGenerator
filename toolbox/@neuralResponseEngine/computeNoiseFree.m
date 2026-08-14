@@ -55,6 +55,11 @@ function [noiseFreeResponses, temporalSupportSeconds] = computeNoiseFree(obj, ..
     if (isfield(dataOut, 'noiseFreeResponsePipeline'))
         obj.neuralPipeline.noiseFreeResponse = dataOut.noiseFreeResponsePipeline;
     end
-             
+
+    
+    if (isfield(dataOut, 'StrehlRatioOptimizedParams'))
+        obj.neuralPipeline.StrehlRatioOptimizedParams = dataOut.StrehlRatioOptimizedParams;
+    end
+
 end
         

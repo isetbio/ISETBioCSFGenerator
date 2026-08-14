@@ -1,8 +1,8 @@
-function [theOptics,theMosaic] = generateOpticsAndMosaicFromParams(opticsParams,theMosaic,mosaicParams)
+function [theOptics,theMosaic, StrehlRatioOptimizedParams] = generateOpticsAndMosaicFromParams(opticsParams,theMosaic,mosaicParams)
 % Generate optics and mosaic from the parameters, based on parameter types.
 %
 % Syntax:
-%    [theOptics,theMosaic] = generateOpticsAndMosaicFromParams(opticsParams,theMosaic,mosaicParams)
+%    [theOptics,theMosaic, StrehlRatioOptimizedParams] = generateOpticsAndMosaicFromParams(opticsParams,theMosaic,mosaicParams)
 %
 % Description:
 %    Generate optics and mosaic objects from parameters.
@@ -59,6 +59,9 @@ if (isempty(theMosaic))
             error('Unknown mosaic type pased in mosaicParams');
     end
 end
+
+% Return struct with optimized optics params
+StrehlRatioOptimizedParams = [];
 
 if (~isempty(theOptics))
     return;
@@ -195,8 +198,17 @@ switch (opticsParams.type)
                     examinedDefocusDiopters, examinedObliqueAstigmatismDiopters, examinedVerticalAstigmatismDiopters, ...
                     useParfor);
 
+        % Return struct with optimized optics params 
+        StrehlRatioOptimizedParams = struct(...
+            'defocusDiopters', theOptimalStrehlRatioDefocusAndAstigmatismDiopters(1), ...
+            'obliqueAstigmatismDiopters', theOptimalStrehlRatioDefocusAndAstigmatismDiopters(2), ...
+            'verticalAstigmatismDiopters', theOptimalStrehlRatioDefocusAndAstigmatismDiopters(3), ...
+            'validationRatio', theOptimalStrehlRatio ...  
+        );
+
+
         if (~isempty(previouslyComputedStrehlRatio))
-            assert(abs(previouslyComputedStrehlRatio-round(theOptimalStrehlRatio*1000)/1000.0)<100*eps, ...
+            assert(abs(round(previouslyComputedStrehlRatio*1000)/1000.0-round(theOptimalStrehlRatio*1000)/1000.0)<100*eps, ...
                 'validation Strehl ratio (%f) not close to current Sthrel ratio (%f)', previouslyComputedStrehlRatio, theOptimalStrehlRatio);
         end
 
@@ -304,9 +316,14 @@ switch (opticsParams.type)
                     opticsParams.wavefrontSpatialSamples, psfUpsampleFactor, ...
 					visualizeStrehlRatioOptimization, contrastMaxStrehlRatioPSFtoAsMeasuredAndCentralCorrection);
 
+        % Return struct with optimized optics params
+        StrehlRatioOptimizedParams = struct(...
+            'defocusDiopters', theOptimalStrehlRatioDefocusDiopters, ...
+            'validationRatio', theOptimalStrehlRatio ...  
+        );
 
         if (~isempty(previouslyComputedStrehlRatio))
-            assert(abs(previouslyComputedStrehlRatio-round(theOptimalStrehlRatio*1000)/1000.0)<100*eps, ...
+            assert(abs(round(previouslyComputedStrehlRatio*1000)/1000.0-round(theOptimalStrehlRatio*1000)/1000.0)<100*eps, ...
                 'validation Strehl ratio (%f) not close to current Sthrel ratio (%f)', previouslyComputedStrehlRatio, theOptimalStrehlRatio);
         end
 

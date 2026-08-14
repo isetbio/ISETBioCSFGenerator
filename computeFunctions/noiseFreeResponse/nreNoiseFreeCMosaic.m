@@ -194,7 +194,7 @@ if (isempty(neuralEngineOBJ.neuralPipeline) | ~isfield(neuralEngineOBJ.neuralPip
 
    
     % Generate optics and mosaic
-    [theOptics,theConeMosaic] = generateOpticsAndMosaicFromParams(...
+    [theOptics, theConeMosaic, StrehlRatioOptimizedParams] = generateOpticsAndMosaicFromParams(...
         noiseFreeComputeParams.opticsParams, ...
         [], ...
         noiseFreeComputeParams.coneMosaicParams);
@@ -477,6 +477,7 @@ dataOut = struct(...
     'temporalSupport', temporalSupportSeconds);
 
 if (returnTheNoiseFreePipeline)
+    dataOut.noiseFreeResponsePipeline.StrehlRatioOptimizedParams = StrehlRatioOptimizedParams;
     dataOut.noiseFreeResponsePipeline.optics = theOptics;
     dataOut.noiseFreeResponsePipeline.coneMosaic = theConeMosaic;
     dataOut.noiseFreeResponsePipeline.temporalFilter = noiseFreeComputeParams.temporalFilter;
