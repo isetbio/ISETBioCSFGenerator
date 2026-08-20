@@ -1,5 +1,5 @@
 function [predictions, theClassifierEngine, responses, whichAlternatives, whichResponses, whichMetaDataLeftEye, whichMetaDataRightEye] = ...
-    computeBinocularPerformance(theScenes, temporalSupport, nTrain, nTest, ...
+    computeBinocularPerformance(theLeftEyeScenes, theRightEyeScenes, temporalSupport, nTrain, nTest, ...
     theNeuralEngineLeftEye, theNeuralEngineRightEye, theClassifierEngine, trainNoiseFlag, testNoiseFlag, ...
     varargin)
 % Compute performance of a classifier given different scenes, a neural
@@ -8,7 +8,8 @@ function [predictions, theClassifierEngine, responses, whichAlternatives, whichR
 %
 % Syntax:
 %    [predictions, theClassifierEngine, responses, whichAlternatives] = ...
-%        computePerformance(theScenes, temporalSupport, nTrain, nTest, theNeuralEngine, ...
+%       computeBinocularPerformance(theLeftEyeScenes, theRightEyeScenes, temporalSupport, nTrain, nTest, ...
+%       theNeuralEngineLeftEye, theNeuralEngineRightEye,
 %       theClassifierEngine, trainNoiseFlag, testNoiseFlag, varargin)
 %
 % Description:
@@ -21,7 +22,14 @@ function [predictions, theClassifierEngine, responses, whichAlternatives, whichR
 %     these scenes, and the classifer.
 %
 % Inputs:
-%     theScenes               - A collection of scenes (type: cell)
+%     theLeftEyeScenes        - A collection of scenes for the left eye(type: cell)
+%                               If the task is TAFC, then the cell has a size
+%                               of 1 x 2, the first for the null stimulus,
+%                               and the second for the test stimulus.
+%                               If the task is NWay_OneStimulusPerTrial, then
+%                               the cell has a size of 1 x #alternative
+%                               stimuli.
+%     theRightEyeScenes       - A collection of scenes for the right eye(type: cell)
 %                               If the task is TAFC, then the cell has a size
 %                               of 1 x 2, the first for the null stimulus,
 %                               and the second for the test stimulus.
@@ -117,23 +125,30 @@ p.addParameter('TAFC', false, @islogical);
 p.addParameter('useMetaContrast', false, @islogical);
 p.addParameter('saveResponses',false, @islogical);
 p.addParameter('visualizeAllComponents', false, @islogical);
+p.addParameter('visualizeBinocularSummation', true, @islogical);
 p.addParameter('verbose', true, @islogical);
 p.addParameter('fixationalEM', [], @(x)(isempty(x) || (isa(x,'fixationalEM'))));
 p.addParameter('conditionLabel', '', @ischar);
+p.addParameter('binocularSummationPipeline', [], @(x)(isempty(x) || (isstruct(x))));
 
 parse(p, varargin{:});
 isTAFC = p.Results.TAFC;
 saveResponses = p.Results.saveResponses;
 visualizeAllComponents = p.Results.visualizeAllComponents;
+visualizeBinocularSummation = p.Results.visualizeBinocularSummation;
 fixationalEMObj = p.Results.fixationalEM;
 conditionLabel = p.Results.conditionLabel;
+binocularSummationPipeline = p.Results.binocularSummationPipeline;
+
 
 % Empty responses
 responses = [];
 if (p.Results.useMetaContrast && ~isTAFC)
+    assert(length(theNeuralEngineLeftEye) == length(theNeuralEngineRightEye), 'Left and Right eye neural engines must have equal numerosity')
     nScenes = length(theNeuralEngineLeftEye);
 else
-    nScenes = length(theScenes);
+    assert(length(theLeftEyeScenes) == length(theRightEyeScenes), 'Left and Right eye scenes must have equal numerosity')
+    nScenes = length(theLeftEyeScenes);
 end
 
 
@@ -162,7 +177,7 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
      neuralResponseTemporalSupport, theNeuralEngineLeftEye] = ...
         computeInSampleResponses(nTrain, nScenes, p.Results.useMetaContrast, isTAFC, ...
             theNeuralEngineLeftEye, fixationalEMObj, trainNoiseFlag, ...
-            theScenes, temporalSupport, ... 
+            theLeftEyeScenes, temporalSupport, ... 
             visualizeAllComponents);
 
     % Right eye in-sample responses
@@ -170,7 +185,7 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
      neuralResponseTemporalSupport, theNeuralEngineRightEye] = ...
         computeInSampleResponses(nTrain, nScenes, p.Results.useMetaContrast, isTAFC, ...
             theNeuralEngineRightEye, fixationalEMObj, trainNoiseFlag, ...
-             theScenes, temporalSupport, ... 
+             theRightEyeScenes, temporalSupport, ... 
              visualizeAllComponents);
 
 
@@ -191,11 +206,28 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
         % Concatenate them along the 2nd dimension (responses) in both
         % orders
 
-        % Concatenate Left and Right eye responses
-        inSampleStimResponsesCell{1} = concatenateLeftRightEyeResponses(...
-                inSampleStimResponsesCellLeftEye{1}, inSampleStimResponsesCellRightEye{1});
-        inSampleStimResponsesCell{2} = concatenateLeftRightEyeResponses(...
-                inSampleStimResponsesCellLeftEye{2}, inSampleStimResponsesCellRightEye{2});
+        % Compute binocular responses to the NULL stimulus
+        [inSampleStimResponsesCell{1}, theLinearBinocularSummationNULLresponses] = applyBinocularSummationPipeline(...
+                inSampleStimResponsesCellLeftEye{1}, ...
+                inSampleStimResponsesCellRightEye{1}, ...
+                binocularSummationPipeline);
+
+        % Compute binocular responses to the TEST stimulus
+        [inSampleStimResponsesCell{2}, theLinearBinocularSummationTESTresponses] = applyBinocularSummationPipeline(...
+                inSampleStimResponsesCellLeftEye{2}, ...
+                inSampleStimResponsesCellRightEye{2}, ...
+                binocularSummationPipeline);
+
+        if (visualizeBinocularSummation)
+
+            visualizeBinocularSummationKernelsAndSignals(...
+                inSampleStimResponsesCellLeftEye{2}, ...
+                inSampleStimResponsesCellRightEye{2}, ...
+                inSampleStimResponsesCell{2}, ...
+                theLinearBinocularSummationTESTresponses, ...
+                binocularSummationPipeline, ...
+                conditionLabel);
+        end
 
         cat1 = cat(2, inSampleStimResponsesCell{1}, ...
             inSampleStimResponsesCell{2}); %[null, test]
@@ -206,8 +238,10 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
         inSampleStimResponsesMassagedCell = {cat1, cat2};
     else
         % Concatenate Left and Right eye responses
-        inSampleStimResponsesCell = concatenateLeftRightEyeResponses(...
-                inSampleStimResponsesCellLeftEye, inSampleStimResponsesCellRightEye);
+        inSampleStimResponsesCell = applyBinocularSummationPipeline(...
+                inSampleStimResponsesCellLeftEye, ...
+                inSampleStimResponsesCellRightEye, ...
+                binocularSummationPipeline);
 
         inSampleStimResponsesMassagedCell = inSampleStimResponsesCell;
     end
@@ -220,7 +254,7 @@ if (~isempty(trainNoiseFlag) & nTrain ~= 0)
     if visualizeAllComponents
         % TAFC: 1st stim is the test; NWay: 1st stim is the correct stim
         theStim = 1;
-        visualizeConeResps(theNeuralEngineLeftEte, inSampleStimResponsesCellLeftEye, theStim);
+        visualizeConeResps(theNeuralEngineLeftEye, inSampleStimResponsesCellLeftEye, theStim);
         visualizeConeResps(theNeuralEngineRightEye, inSampleStimResponsesCellRightEye, theStim);
     end
 
@@ -253,21 +287,23 @@ end
 
 
 if (nTest ~= 0)
+    
     % Left eye out-of-sample responses
     [outSampleStimResponsesCellLeftEye, neuralResponseEngineMetaDataLeftEye, nTest_eachScene, ...
      neuralResponseTemporalSupport, theNeuralEngineLeftEye] =  computeOutOfSampleResponses(...
         nTest, nScenes, p.Results.useMetaContrast, isTAFC,  ...
         theNeuralEngineLeftEye, fixationalEMObj, testNoiseFlag, ...
-        theScenes, temporalSupport, ... 
+        theLeftEyeScenes, temporalSupport, ... 
         visualizeAllComponents, p.Results.verbose);
 
 
     % Right eye out-of-sample responses
     [outSampleStimResponsesCellRightEye, neuralResponseEngineMetaDataRightEye, nTest_eachScene,  ...
-     neuralResponseTemporalSupport, theNeuralEngineRightEye] = computeOutOfSampleResponses(nTest, nScenes, p.Results.useMetaContrast, isTAFC,  ...
-                theNeuralEngineRightEye, fixationalEMObj, testNoiseFlag, ...
-                 theScenes, temporalSupport, ... 
-                 visualizeAllComponents, p.Results.verbose);
+     neuralResponseTemporalSupport, theNeuralEngineRightEye] = computeOutOfSampleResponses(...
+        nTest, nScenes, p.Results.useMetaContrast, isTAFC,  ...
+        theNeuralEngineRightEye, fixationalEMObj, testNoiseFlag, ...
+        theRightEyeScenes, temporalSupport, ... 
+        visualizeAllComponents, p.Results.verbose);
 
 
     % If it's TAFC , massage the responses to be
@@ -293,9 +329,21 @@ if (nTest ~= 0)
         outSampleStimResponsesCell = cell(1, nScenes);
         for nn = 1:nScenes
 
-            % Concatenate Left and Right eye responses
-            outSampleStimResponsesCell{nn} = concatenateLeftRightEyeResponses(...
-                outSampleStimResponsesCellLeftEye{nn}, outSampleStimResponsesCellRightEye{nn});
+            % Binocular summation of Left and Right eye responses
+            [outSampleStimResponsesCell{nn},  theLinearBinocularSummationTESTresponses]= applyBinocularSummationPipeline(...
+                outSampleStimResponsesCellLeftEye{nn}, ...
+                outSampleStimResponsesCellRightEye{nn}, ...
+                binocularSummationPipeline);
+
+            if (visualizeBinocularSummation)
+                visualizeBinocularSummationKernelsAndSignals(...
+                    outSampleStimResponsesCellLeftEye{nn}, ...
+                    outSampleStimResponsesCellRightEye{nn}, ...
+                    outSampleStimResponsesCell{nn}, ...
+                    theLinearBinocularSummationTESTresponses, ...
+                    binocularSummationPipeline, ...
+                    sprintf('%s\n-- scene: %d of %d --', conditionLabel, nn, nScenes));
+            end
 
             outSampleStimResponsesMassaged = ...
                 cat(2, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
@@ -308,8 +356,10 @@ if (nTest ~= 0)
         for nn = 1:nScenes
 
             % Concatenate Left and Right eye responses
-            outSampleStimResponsesCell{nn} = concatenateLeftRightEyeResponses(...
-                outSampleStimResponsesCellLeftEye{nn}, outSampleStimResponsesCellRightEye{nn});
+            outSampleStimResponsesCell{nn} = applyBinocularSummationPipeline(...
+                outSampleStimResponsesCellLeftEye{nn}, ...
+                outSampleStimResponsesCellRightEye{nn}, ...
+                binocularSummationPipeline);
 
             outSampleStimResponsesMassaged = ...
                 cat(1, outSampleStimResponsesMassaged, outSampleStimResponsesCell{nn});
@@ -349,9 +399,246 @@ end
 end
 
 
-function  concatenatedLeftEyeRightEyeResponses = concatenateLeftRightEyeResponses(...
-               leftEyeResponses, rightEyeResponses)
-    concatenatedLeftEyeRightEyeResponses = cat(2, leftEyeResponses, rightEyeResponses);
+
+function visualizeBinocularSummationKernelsAndSignals(...
+                theLeftEyeConeMosaicResponses, ...
+                theRightEyeConeMosaicResponses, ...
+                theBinocularSummationResponses, ...
+                theLinearBinocularSummationResponses, ...
+                theBinocularSummationPipeline, ...
+                conditionLabel)
+
+    
+    if (~isfield(theBinocularSummationPipeline, 'components')) || ...
+       ((isfield(theBinocularSummationPipeline, 'components'))&&(isempty(theBinocularSummationPipeline.components)))
+        fprintf('Binocular pipeline of type has no components to visualize\n', theBinocularSummationPipeline.type)
+        return;
+    end
+
+    
+    theLeftConeMosaic = [];
+    theRightConeMosaic = [];
+    if (isfield(theBinocularSummationPipeline.components, 'leftEyeConeMosaic'))
+        theLeftConeMosaic = theBinocularSummationPipeline.components.leftEyeConeMosaic;
+    end
+
+    if (isfield(theBinocularSummationPipeline.components, 'rightEyeConeMosaic'))
+        theRightConeMosaic = theBinocularSummationPipeline.components.rightEyeConeMosaic;
+    end
+
+
+    [timeBinsNum, theRightMosaicConesNum] = size(theBinocularSummationPipeline.components.rightConeMosaicSummationWeights);
+    [nReps, theRightMosaicConesNumCheck] = size(theRightEyeConeMosaicResponses);
+    
+    [timeBinsNumCheck, theLeftMosaicConesNum] = size(theBinocularSummationPipeline.components.leftConeMosaicSummationWeights);
+    [nRepsCheck, theLeftMosaicConesNumCheck] = size(theLeftEyeConeMosaicResponses);
+
+    assert(nReps == nRepsCheck, 'inconsistent cones num between LEFT and RIGHT response reps');
+    assert(theRightMosaicConesNum == theRightMosaicConesNumCheck, 'inconsistent cones num between RIGHT cone mosaic weights and responses');
+    assert(theLeftMosaicConesNum == theLeftMosaicConesNumCheck, 'inconsistent cones num between LEFT cone mosaic weights and responses');
+    assert(timeBinsNum==timeBinsNumCheck, 'inconsistent time bins num between LEFT cone mosaic weights and responses');
+
+    % Reshape
+    rightEyeRF = reshape(theBinocularSummationPipeline.components.rightConeMosaicSummationWeights, [1 timeBinsNum theRightMosaicConesNum]);
+    rightEyeInputSignal = reshape(theRightEyeConeMosaicResponses, [nReps timeBinsNum theRightMosaicConesNum]);
+
+    leftEyeRF = reshape(theBinocularSummationPipeline.components.leftConeMosaicSummationWeights, [1 timeBinsNum theLeftMosaicConesNum]);
+    leftEyeInputSignal = reshape(theLeftEyeConeMosaicResponses, [nReps timeBinsNum theLeftMosaicConesNum]);
+
+    rfColormap = brewermap(256, '*reds');
+    rfColormap = cat(1, rfColormap, brewermap(256, 'blues'));
+    rfColormap = rfColormap(end:-1:1,:);
+
+    activationColormap = brewermap(256, 'greys');
+
+    maxRF = max([max(abs(rightEyeRF(:))) max(abs(leftEyeRF(:)))]);
+    maxActivation = max([prctile(abs(rightEyeInputSignal(:)), 95) prctile(abs(leftEyeInputSignal(:)),95)]);
+
+    [~,repResultingInMinLinearActivation] = min(theLinearBinocularSummationResponses(:));
+    [~,repResultingInMaxLinearActivation] = max(theLinearBinocularSummationResponses(:));
+    [~,repResultingInZeroLinearActivation] = min(abs(theLinearBinocularSummationResponses(:)));
+
+    visualizeReps = unique([...
+        repResultingInMinLinearActivation ...
+        repResultingInZeroLinearActivation ...
+        repResultingInMaxLinearActivation]);
+
+
+    mosaicSizeDegsRound = round(max(theLeftConeMosaic.sizeDegs)*10)/10;
+    domainVisualizationLimits(1:2) = theLeftConeMosaic.eccentricityDegs(1) + 0.5*[-1 1]*mosaicSizeDegsRound;
+    domainVisualizationLimits(3:4) = theLeftConeMosaic.eccentricityDegs(2) + 0.5*[-1 1]*mosaicSizeDegsRound;
+    domainVisualizationTicks = struct(...
+        'x', round(10*(theLeftConeMosaic.eccentricityDegs(1) + 0.5*mosaicSizeDegsRound*[-1 0 1]))/10, ...
+        'y', round(10*(theLeftConeMosaic.eccentricityDegs(2) + 0.5*mosaicSizeDegsRound*[-1 0 1]))/10);
+
+    hFig = figure(99); clf;
+    set(hFig, 'Position', [10 10 1500 850]);
+
+    for idx = 1:numel(visualizeReps)
+
+        iRep = visualizeReps(idx);
+
+        if (~isempty(theLeftConeMosaic)) 
+        
+             ax = subplot(2,3,1);
+             theLeftConeMosaic.visualize(...
+                 'figureHandle', hFig, ...
+                 'axesHandle', ax, ...
+                 'activation', leftEyeInputSignal(iRep,:,:), ...
+                 'activationColormap', activationColormap, ...
+                 'activationRange', maxActivation*[-1 1], ...
+                 'domainVisualizationLimits', domainVisualizationLimits, ...
+                 'domainVisualizationTicks', domainVisualizationTicks, ...
+                 'plotTitle', sprintf('cone mosaic modulation (LE)\n(instance: %d)', iRep));
+    
+             ax = subplot(2,3,2);
+             theLeftConeMosaic.visualize(...
+                 'figureHandle', hFig, ...
+                 'axesHandle', ax, ...
+                 'activation', leftEyeRF, ...
+                 'activationColormap', rfColormap, ...
+                 'activationRange', maxRF*[-1 1], ...
+                 'domainVisualizationLimits', domainVisualizationLimits, ...
+                 'domainVisualizationTicks', domainVisualizationTicks, ...
+                 'plotTitle', 'V1 cone pooling weights (LE)');
+    
+         end
+
+         if (~isempty(theRightConeMosaic)) 
+    
+             ax = subplot(2,3,4);
+             theRightConeMosaic.visualize(...
+                 'figureHandle', hFig, ...
+                 'axesHandle', ax, ...
+                 'activation', rightEyeInputSignal(iRep,:,:), ...
+                 'activationColormap', activationColormap, ...
+                 'activationRange', maxActivation*[-1 1], ...
+                 'domainVisualizationLimits', domainVisualizationLimits, ...
+                 'domainVisualizationTicks', domainVisualizationTicks, ...
+                 'plotTitle', sprintf('cone mosaic modulation (RE)\n(instance: %d)', iRep));
+
+             ax = subplot(2,3,5);
+             theRightConeMosaic.visualize(...
+                 'figureHandle', hFig, ...
+                 'axesHandle', ax, ...
+                 'activation', rightEyeRF, ...
+                 'activationColormap', rfColormap, ...
+                 'activationRange', maxRF*[-1 1], ...
+                 'domainVisualizationLimits', domainVisualizationLimits, ...
+                 'domainVisualizationTicks', domainVisualizationTicks, ...
+                 'plotTitle', 'V1 cone pooling weights (RE)');
+         end
+     
+
+         % The light weighting functions of the cone pooling
+
+         theRightConeMosaicROI = regionOfInterest(...
+            'geometryStruct', struct(...
+                'units', 'degs', ...
+                'shape', 'rect', ...
+                'center', theRightConeMosaic.eccentricityDegs, ...
+                'width', theRightConeMosaic.sizeDegs(1), ...
+                'height', 0.1, ...
+                'rotation', 0.0...
+            ));
+
+         theLeftConeMosaicROI = regionOfInterest(...
+            'geometryStruct', struct(...
+                'units', 'degs', ...
+                'shape', 'rect', ...
+                'center', theLeftConeMosaic.eccentricityDegs, ...
+                'width', theLeftConeMosaic.sizeDegs(1), ...
+                'height', 0.1, ...
+                'rotation', 0.0...
+            ));
+
+
+         visualizedConeIndices = theRightConeMosaicROI.indicesOfPointsInside(theRightConeMosaic.coneRFpositionsDegs);
+         theRightEyeXcoords = squeeze(theRightConeMosaic.coneRFpositionsDegs(visualizedConeIndices,1));
+         theRightEyeConePoolingWeights = squeeze(rightEyeRF(1,1,visualizedConeIndices));
+
+         visualizedConeIndices = theLeftConeMosaicROI.indicesOfPointsInside(theLeftConeMosaic.coneRFpositionsDegs);
+         theLeftEyeXcoords = squeeze(theLeftConeMosaic.coneRFpositionsDegs(visualizedConeIndices,1));
+         theLeftEyeConePoolingWeights = squeeze(leftEyeRF(1,1,visualizedConeIndices));
+
+         ax = subplot(2,3,3);
+         plot(ax, theRightEyeXcoords, theRightEyeConePoolingWeights, 'r.');
+         hold (ax, 'on');
+         plot(ax, theLeftEyeXcoords, theLeftEyeConePoolingWeights, 'b.');
+         axis(ax, 'square')
+         set(ax, 'YLim', [-1 1], 'XLim',  domainVisualizationLimits(1:2), 'XTick', domainVisualizationTicks.x);
+         xlabel(ax, 'space, x (degs)');
+         ylabel(ax, 'pooling amplitude');
+         
+
+         ax = subplot(2,3,6);
+         plot(ax, theLinearBinocularSummationResponses, theBinocularSummationResponses, 'b.');
+         hold (ax, 'on');
+         plot(ax, theLinearBinocularSummationResponses(iRep), theBinocularSummationResponses(iRep), 'ro');
+
+         axis(ax, 'equal');
+         axis(ax, 'square');
+         xlabel(ax, 'linear binocular summation response');
+         ylabel(ax, 'non-linear binocular summation response');
+         title(ax, sprintf('activation function\n%s\n(%d instances, %d time bins)', ...
+             conditionLabel, ...
+             size(theBinocularSummationResponses,1), size(theBinocularSummationResponses,2)));
+
+         drawnow;
+    end % iRep
+
+end
+
+
+function [theBinocularResponse, theLinearBinocularSummationResponse] = applyBinocularSummationPipeline(...
+    leftEyeResponses, rightEyeResponses, ...
+    binocularSummationPipeline)
+
+    switch (binocularSummationPipeline.type)
+        case 'left + right eye response concatenation'
+            theBinocularResponse = cat(2, leftEyeResponses, rightEyeResponses);
+            theLinearBinocularSummationResponse = [];
+
+        case 'zeroDisparityTunedSimpleCell'
+
+            [timeBinsNum, theRightMosaicConesNum] = size(binocularSummationPipeline.components.rightConeMosaicSummationWeights);
+            [nReps, theRightMosaicConesNumCheck] = size(rightEyeResponses);
+            
+            [timeBinsNumCheck, theLeftMosaicConesNum] = size(binocularSummationPipeline.components.leftConeMosaicSummationWeights);
+            [nRepsCheck, theLeftMosaicConesNumCheck] = size(leftEyeResponses);
+
+            assert(nReps == nRepsCheck, 'inconsistent cones num between LEFT and RIGHT response reps');
+            assert(theRightMosaicConesNum == theRightMosaicConesNumCheck, 'inconsistent cones num between RIGHT cone mosaic weights and responses');
+            assert(theLeftMosaicConesNum == theLeftMosaicConesNumCheck, 'inconsistent cones num between LEFT cone mosaic weights and responses');
+            assert(timeBinsNum==timeBinsNumCheck, 'inconsistent time bins num between LEFT cone mosaic weights and responses');
+
+            % Reshape
+            rightEyeRF = reshape(binocularSummationPipeline.components.rightConeMosaicSummationWeights, [1 timeBinsNum theRightMosaicConesNum]);
+            rightEyeInputSignal = reshape(rightEyeResponses, [nReps timeBinsNum theRightMosaicConesNum]);
+
+            leftEyeRF = reshape(binocularSummationPipeline.components.leftConeMosaicSummationWeights, [1 timeBinsNum theLeftMosaicConesNum]);
+            leftEyeInputSignal = reshape(leftEyeResponses, [nReps timeBinsNum theLeftMosaicConesNum]);
+
+            % Preallocate memory
+            theLinearBinocularSummationResponse = zeros(nReps, timeBinsNum, 1);
+
+            % Compute the limear binocular summation of LE and RE signals weighted by
+            % the LE and RE receptive fields
+            parfor iRep = 1:nReps
+                theLinearBinocularSummationResponse(iRep,:) = ...
+                    dot(leftEyeInputSignal(iRep, 1:timeBinsNum, :),  leftEyeRF(1, 1:timeBinsNum,:),  3) + ...
+                    dot(rightEyeInputSignal(iRep, 1:timeBinsNum, :), rightEyeRF(1, 1:timeBinsNum,:), 3);
+            end
+        
+            % Apply the instantaneous static non-linearity
+            theBinocularResponse = binocularSummationPipeline.components.activationFunction(...
+                theLinearBinocularSummationResponse, ...
+                binocularSummationPipeline.components.activationFunctionParams);
+
+        otherwise
+            error('Unknown binocular summation pipeline type: ''%s''.', binocularSummationPipeline.type)
+    end
+
 end
 
 
