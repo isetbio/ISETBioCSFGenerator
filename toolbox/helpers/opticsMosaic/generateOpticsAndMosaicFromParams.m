@@ -1,4 +1,5 @@
-function [theOptics,theMosaic, StrehlRatioOptimizedParams] = generateOpticsAndMosaicFromParams(opticsParams,theMosaic,mosaicParams)
+function [theOptics,theMosaic, StrehlRatioOptimizedParams] = generateOpticsAndMosaicFromParams(...
+    opticsParams,theMosaic,mosaicParams)
 % Generate optics and mosaic from the parameters, based on parameter types.
 %
 % Syntax:
@@ -33,8 +34,6 @@ if (isempty(theMosaic))
                 'random seed', theConeMosaicRandomSeed, ...
                 'noiseFlag', 'none' ...
                 );
-            theMosaic.visualize(...
-                'plotTitle', sprintf('cMosaic (%d cones)', theMosaic.conesNum));
 
         case 'mRGCMosaic'
             
