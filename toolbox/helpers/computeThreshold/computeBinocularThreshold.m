@@ -179,8 +179,6 @@ else
     stimulatedEye = 'NULL';
 end
 
-fprintf(2, '\n*******\nIn computeBinocularThreshold\n******\n');
-
 % Construct a QUEST threshold estimator estimate threshold
 %
 % The questThreshold estimator is associated with a psychometric function,
